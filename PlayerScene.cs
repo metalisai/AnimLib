@@ -1,264 +1,23 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace AnimLib {
-
-    public class ShowInEditorAttribute : Attribute {
-
-    }
-
-    [Serializable]
-    public class SceneTransform {
-        public Vector3 Pos {get; set; }
-        public Quaternion Rot {get; set; }
-        public SceneTransform() {
-            
-        }
-        public SceneTransform(Vector3 p, Quaternion r) {
-            this.Pos = p;
-            this.Rot = r;
-        }
-    }
-    [Serializable]
-    public abstract class SceneObject {
-        [ShowInEditor]
-        [JsonIgnore]
-        public Vector3 position {
-            get {
-                return transform.Pos;
-            }
-            set {
-                transform.Pos = value;
-            }
-        }
-        [ShowInEditor]
-        public double startTime {get; set; }
-        [ShowInEditor]
-        public double endTime {get; set; }
-        [ShowInEditor]
-        public string name {get; set; } = Guid.NewGuid().ToString();
-        [JsonIgnore]
-        public abstract bool Is2D {get;}
-        [JsonIgnore]
-        public (double,double) timeslice { 
-            get { return (startTime, endTime); }
-            set { startTime = value.Item1; endTime = value.Item2; }
-        }
-        // get 2D handles that can be dragged on a surface in the editor
-        // (the handles are in world space)
-        public abstract Vector3[] GetHandles2D();
-        public abstract void SetHandle(int id, Vector3 wpos);
-        public abstract object Clone();
-        // get surface if 2D object or null if not
-        public abstract Plane? GetSurface();
-        public SceneTransform transform {get; set; }
-        [NonSerialized]
-        public VisualEntity worldRef;
-        [JsonIgnore]
-        public (string, Func<object>, Action<object>)[] Properties { get; protected set;} = new (string, Func<object>, Action<object>)[]{};
-
-        public SceneObject() {
-            var props = this.GetType().GetProperties();
-            var showProps = props.Where(x => Attribute.IsDefined(x, typeof(ShowInEditorAttribute))).ToArray();
-            var propsArr = new (string, Func<object>, Action<object>)[showProps.Length];
-            int i = 0;
-            foreach(var prop in showProps) {
-                (string, Func<object>, Action<object>) cprop = (prop.Name, () => {
-                    return prop.GetGetMethod().Invoke(this, new object[]{});
-                }, (newvalue) => {
-                    prop.GetSetMethod().Invoke(this, new object[] {newvalue});
-                });
-                propsArr[i] = cprop;
-                i++;
-            }
-            Properties = propsArr;
-        }
-    }
-
-    [Serializable]
-    public class PlayerCircle : SceneObject {
-        [ShowInEditor]
-        public float radius { get; set; }
-        [ShowInEditor]
-        public Color color { get; set; } = Color.RED;
-        [JsonIgnore]
-        public override bool Is2D { get { return false; } }
-
-        public override Vector3[] GetHandles2D() {
-            var handle = transform.Pos + transform.Rot*(radius*Vector3.RIGHT);
-            return new Vector3[] {handle};
-        }
-        public override Plane? GetSurface() {
-            var norm = this.transform.Rot * -Vector3.FORWARD;
-            return new Plane {
-                n = norm,
-                // TODO: is this right?
-                o = -Vector3.Dot(transform.Pos, norm),
-            };
-        }
-
-        public override void SetHandle(int id, Vector3 wpos) {
-            System.Diagnostics.Debug.Assert(id == 0); // circle only has one handle for radius
-            float r = (wpos - transform.Pos).Length;
-            this.radius = r;
-        }
-
-        public override object Clone() {
-            return new PlayerCircle() {
-                radius = radius,
-                transform = new SceneTransform(transform.Pos, transform.Rot),
-                color = color,
-                timeslice = timeslice,
-            };
-        }
-    }
-    public class PlayerArrow : SceneObject {
-        [ShowInEditor]
-        public float width {get; set; }
-        [ShowInEditor]
-        public Vector3 start {get ; set; }
-        [ShowInEditor]
-        public Vector3 end {get ; set; }
-        [ShowInEditor]
-        public Color startColor {get; set; } = Color.BLACK;
-        [ShowInEditor]
-        public Color endColor {get; set; } = Color.BLACK;
-        [JsonIgnore]
-        public override bool Is2D { get { return false; } }
-        public override Vector3[] GetHandles2D() {
-            var h1 = transform.Pos + start;
-            var h2 = transform.Pos + end;
-            return new Vector3[] {h1, h2};
-        }
-        public override Plane? GetSurface() {
-            var norm = this.transform.Rot * -Vector3.FORWARD;
-            return new Plane {
-                n = norm,
-                // TODO: is this right?
-                o = -Vector3.Dot(transform.Pos, norm),
-            };
-        }
-        public override void SetHandle(int id, Vector3 wpos) {
-            if(id == 0) {
-                start = wpos - transform.Pos;
-            } else {
-                end = wpos - transform.Pos;
-            }
-        }
-
-        public override object Clone() {
-            return new PlayerArrow() {
-                timeslice = timeslice,
-                width = width,
-                start = start, 
-                end = end,
-                transform = new SceneTransform(transform.Pos, transform.Rot),
-                startColor = startColor,
-                endColor = endColor,
-            };
-        }
-    }
-
-    public class Player2DText : SceneObject {
-        [ShowInEditor]
-        public float size {get; set;}
-        [ShowInEditor]
-        public Color color{get; set;}
-        [ShowInEditor]
-        public string text {get; set;}
-        [JsonIgnore]
-        public override bool Is2D { get { return true; } }
-
-        public override object Clone()
-        {
-            return new Player2DText() {
-                timeslice = timeslice,
-                transform = new SceneTransform(transform.Pos, transform.Rot),
-                size = size,
-                color = color,
-                text = text,
-            };
-        }
-
-        public override Vector3[] GetHandles2D()
-        {
-            return new Vector3[0];
-        }
-
-        public override Plane? GetSurface()
-        {
-            return new Plane() {
-                o = 0.0f,
-                n = new Vector3(0.0f, 0.0f, -1.0f),
-            };
-        }
-
-        public override void SetHandle(int id, Vector3 wpos)
-        {
-        }
-    }
-
-    public class PlayerLine : SceneObject {
-        [ShowInEditor]
-        public float width {get; set; }
-        [ShowInEditor]
-        public Vector3 start {get ; set; }
-        [ShowInEditor]
-        public Vector3 end {get ; set; }
-        [ShowInEditor]
-        public Color color {get; set; } = Color.BLACK;
-        [JsonIgnore]
-        public override bool Is2D { get { return false; } }
-        public override Vector3[] GetHandles2D() {
-            var h1 = transform.Pos + start;
-            var h2 = transform.Pos + end;
-            return new Vector3[] {h1, h2};
-        }
-        public override Plane? GetSurface() {
-            var norm = this.transform.Rot * -Vector3.FORWARD;
-            var ret = new Plane {
-                n = norm,
-                // TODO: is this right?
-                o = -Vector3.Dot(transform.Pos, norm),
-            };
-            return ret;
-        }
-        public override void SetHandle(int id, Vector3 wpos) {
-            if(id == 0) {
-                start = wpos - transform.Pos;
-            } else {
-                end = wpos - transform.Pos;
-            }
-        }
-
-        public override object Clone() {
-            return new PlayerLine() {
-                timeslice = timeslice,
-                color = color,
-                start = start, 
-                end = end, 
-                width = width, 
-                transform = new SceneTransform(transform.Pos, transform.Rot)
-            };
-        }
-    }
-
     public class PlayerScene {
         public enum SceneEventType {
             None,
             Create,
             Delete,
         }
+
         public class SceneEvent {
             public SceneEventType type;
             public SceneObject obj;
             public double time;
         }
+
         public class SEComparer : IComparer<SceneEvent>
         {
             public int Compare([AllowNull] SceneEvent x, [AllowNull] SceneEvent y)
@@ -275,6 +34,7 @@ namespace AnimLib {
         public IList<PlayerCircle> Circles { get; set; } = new List<PlayerCircle>();
         public IList<PlayerArrow> Arrows { get; set; } = new List<PlayerArrow>();
         public IList<PlayerLine> Lines {get ; set; } = new List<PlayerLine>();
+        public IList<PlayerQSpline> QSplines { get; set; } = new List<PlayerQSpline>();
         public IList<Player2DText> Texts2D {get ; set ;} = new List<Player2DText>();
 
         [NonSerialized]
@@ -290,6 +50,9 @@ namespace AnimLib {
                 break;
                 case PlayerLine l1:
                 Lines.Add(l1);
+                break;
+                case PlayerQSpline q1:
+                QSplines.Add(q1);
                 break;
                 case Player2DText t1:
                 Texts2D.Add(t1);
@@ -309,8 +72,10 @@ namespace AnimLib {
             return Circles.Select(x => (SceneObject)x)
                 .Concat(Arrows.Select(x => (SceneObject)x))
                 .Concat(Lines.Select(x => (SceneObject)x))
-                .Concat(Texts2D.Select(x => (SceneObject)x)).ToArray();
+                .Concat(Texts2D.Select(x => (SceneObject)x)).ToArray()
+                .Concat(QSplines.Select(x => (SceneObject)x)).ToArray();
         }
+
         public List<SceneEvent> GenerateEvents() {
             var ret = new List<SceneEvent>();
             var objs = GetObjects();
@@ -345,6 +110,9 @@ namespace AnimLib {
                 case PlayerLine l1:
                 Lines.Remove(l1);
                 break;
+                case PlayerQSpline q1:
+                QSplines.Remove(q1);
+                break;
                 case Player2DText t1:
                 Texts2D.Remove(t1);
                 break;
@@ -361,28 +129,8 @@ namespace AnimLib {
             if(sceneObjects.TryGetValue(id, out ret)) {
                 return ret;
             }
-            /*var objs = GetObjects();
-            foreach(var obj in objs) {
-                if(obj.worldRef is VisualEntity) {
-                    var ent = obj.worldRef as VisualEntity;
-                    if(ent.EntityId == id) {
-                        return obj;
-                    }
-                }
-            }*/
             return null;
         }
-
-        /*public VisualEntity[] GetSceneEntitiesByName(string start) {
-            var objs = GetObjects();
-            List<SceneObject> ents = new List<SceneObject>();
-            foreach(var obj in objs) {
-                if(obj.name.StartsWith(start)){
-                    ents.Add(obj);
-                }
-            }
-            return ents.OrderBy(x => x.name).Select(x => x.worldRef).ToArray();;
-        }*/
 
         public VisualEntity GetSceneEntityByName(string name) {
             // TODO: use hash map!
@@ -402,6 +150,7 @@ namespace AnimLib {
             return sos.Select(x => x.worldRef).ToArray();
         }
 
+        // TODO: this needs to be refactored
         public void ManageSceneObjects(World world) {
             if(SceneEvents == null) {
                 UpdateEvents();
@@ -452,6 +201,17 @@ namespace AnimLib {
                             world.CreateInstantly(t);
                             t1.worldRef = t;
                             ent = t;
+                            break;
+                            case PlayerQSpline q1:
+                            var qs = new BezierSpline();
+                            qs.Points = q1.points.ToArray();
+                            qs.Color = q1.color;
+                            qs.Width = q1.width;
+                            qs.Transform.Pos = q1.transform.Pos;
+                            world.CreateInstantly(qs);
+                            q1.worldRef = qs;
+                            ent = qs;
+                            Debug.TLog($"Create QSpline ({q1.points.Length} points, pos {q1.transform.Pos})");
                             break;
                         }
                         sceneObjects[ent.EntityId] = e.obj;

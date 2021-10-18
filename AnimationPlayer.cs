@@ -104,17 +104,6 @@ namespace AnimLib {
             }
         }
 
-        public (int,int)? RenderSizeOverride {
-            get { 
-                if(export != null) {
-                    return (1920, 1080);
-                } else {
-                    return null;
-                }
-
-            }
-        }
-
         public void SetBehaviour(AnimationBehaviour behaviour) {
             var settings = new AnimationSettings();
             behaviour.Init(settings);
@@ -188,6 +177,13 @@ namespace AnimLib {
             return obj.Cast<T>().ToArray();
         }*/
 
+        public void OnEndRenderScene() {
+            if(CaptureFrame) {
+                var tex = controls.MainView.CaptureScene();
+                FrameCaptured(tex);
+            }
+        }
+
 
         internal void ExportAnimation(string filename, double start, double end)
         {
@@ -205,7 +201,7 @@ namespace AnimLib {
             if(!string.IsNullOrEmpty(root)) {
                 Directory.CreateDirectory(root);
             }
-            export.exporter.Start(path, 1920, 1080, 60);
+            export.exporter.Start(path, settings.Width, settings.Height, (int)Math.Round(settings.FPS));
         }
 
         internal void FrameCaptured(CapturedFrame cap)
@@ -292,7 +288,7 @@ namespace AnimLib {
             }
 
             var prep = preparedAnimation;
-            if(prep != null) {
+            if(prep != null) { // new animation set
                 var progress = machine.HasProgram ? machine.GetProgress() : 0.0;
                 preparedAnimation = null;
 
@@ -332,6 +328,10 @@ namespace AnimLib {
                 trackPlayer.Track = currentAnimation.SoundTrack;
                 trackPlayer.Seek(progress);
                 machine.Seek(progress);
+
+                if(controls.MainView.Buffer.Width != settings.Width || controls.MainView.Buffer.Height != settings.Height) {
+                    controls.MainView.ResizeBuffer(settings.Width, settings.Height);
+                }
             }
 
             if(!machine.HasProgram)
@@ -345,7 +345,7 @@ namespace AnimLib {
                 controls.SetProgress((float)progress, machine.GetPlaybackTime());
                 return machine.GetWorldSnapshot();
             } else {
-                machine.Step(1.0 / 60.0);
+                machine.Step(1.0 / (double)settings.FPS);
                 var frame = machine.GetWorldSnapshot();
                 if(machine.GetPlaybackTime() > export.endTime) {
                     export.exporter.Stop();

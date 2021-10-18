@@ -127,7 +127,7 @@ namespace AnimLib {
                     n = new Vector3(0.0f, 0.0f, -1.0f),
                     o = 0.0f,
                 };
-                var ray = cam.RayFromClip(new Vector2((UserInterface.mousePosition.x/UserInterface.Width)*2.0f-1.0f, (UserInterface.mousePosition.y/UserInterface.Height)*-2.0f+1.0f), UserInterface.Width/UserInterface.Height);
+                var ray = cam.RayFromClip(new Vector2((UserInterface.mousePosition.x/view.Buffer.Width)*2.0f-1.0f, (UserInterface.mousePosition.y/view.Buffer.Height)*-2.0f+1.0f), view.Buffer.Width/view.Buffer.Height);
                 var pos3 = ray.Intersect(plane);
                 if(pos3 != null) {
                     switch(Clipboard.Object) {
@@ -225,6 +225,18 @@ namespace AnimLib {
                                 };
                                 lock(player.Scene.sceneLock) {
                                     player.Scene.Add(text);
+                                }
+                                break;
+                                case 4:
+                                var qs = new PlayerQSpline() {
+                                    width = 1.0f,
+                                    color = Color.BLACK,
+                                    transform = new SceneTransform(pos3.Value, Quaternion.IDENTITY),
+                                    timeslice = (0.0, 9999999.0),
+                                    points = new Vector3[] { Vector3.ZERO, new Vector3(1.0f, 0.0f, 0.0f), new Vector3(2.0f, 1.0f, 0.0f) },
+                                };
+                                lock(player.Scene.sceneLock) {
+                                    player.Scene.Add(qs);
                                 }
                                 break;
                             }
@@ -427,6 +439,7 @@ namespace AnimLib {
                     createItem("Line", 1);
                     createItem("Arrow", 2);
                     createItem("Text", 3);
+                    createItem("Quadratic spline", 4);
                 }
                 ImGui.EndMenu();
             }

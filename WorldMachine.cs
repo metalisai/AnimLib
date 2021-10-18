@@ -14,6 +14,7 @@ namespace AnimLib {
         List<CubeState> _cubes = new List<CubeState>();
         List<EntityState> _cameras =  new List<EntityState>();
         List<LabelState> _labels = new List<LabelState>();
+        List<BezierState> _beziers = new List<BezierState>();
         //Dictionary<VisualEntity, EntityState> _entities = new Dictionary<VisualEntity, EntityState>();
         Dictionary<int, EntityState> _entities = new Dictionary<int, EntityState>();
         Dictionary<int, AbsorbDestruction> _absorbs = new Dictionary<int, AbsorbDestruction>();
@@ -48,6 +49,7 @@ namespace AnimLib {
             _playCursorCmd = 0;
             _currentPlaybackTime = 0.0;
             _entities.Clear();
+            _beziers.Clear();
             //var cam = new PerspectiveCamera();
             //cam.Position = new Vector3(0.0f, 0.0f, -13.0f);
             //_activeCamera = cam;
@@ -112,6 +114,7 @@ namespace AnimLib {
             ret.TexRects = _trects.Where(x => x.active).ToArray();
             ret.MeshBackedGeometries = _mbgeoms.Where(x => x.active).ToArray();
             ret.Cubes = _cubes.Where(x => x.active).ToArray();
+            ret.Beziers = _beziers.Where(x => x.active).ToArray();
             ret.resolver = new EntityStateResolver {
                 GetEntityState = entid => {
                     return _entities.ContainsKey(entid) ? _entities[entid] : null;
@@ -161,6 +164,10 @@ namespace AnimLib {
                 //state = c2;
                 _cubes.Add((CubeState)state);
                 break;
+                case BezierState bz:
+                state = (EntityState)bz.Clone();
+                _beziers.Add((BezierState)state);
+                break;
                 case LabelState l1:
                 state = (EntityState)l1.Clone();
                 _labels.Add((LabelState)state);
@@ -199,6 +206,9 @@ namespace AnimLib {
                 break;
                 case CubeState c2:
                 _cubes.RemoveAll(x => x.entityId == entityId);
+                break;
+                case BezierState bz:
+                _beziers.RemoveAll(x => x.entityId == entityId);
                 break;
                 case LabelState l1:
                 _labels.RemoveAll(x => x.entityId == entityId);

@@ -132,7 +132,7 @@ void main() {
     float dd = length(vec2(dx, dy));
 
     float edgeLocation = min(min(dd, dd1), 0.1);
-    vec3 edge = vec3(smoothstep(edgeLocation-1.5*dd, edgeLocation+2*dd, d));
+    vec3 edge = vec3(smoothstep(edgeLocation-1.5*dd, edgeLocation+1.5*dd, d));
     vec3 outColorRGB = _Color.rgb*g_color.rgb*edge;
     float alpha = _Color.a*g_color.a;
     outColor = vec4(outColorRGB, alpha);
@@ -194,6 +194,157 @@ void main() {
     outColor = vec4(outColorRGB, alpha);
     //outColor = vec4(vec3(v_texCoord, 1.0), alpha);
     outEntityId = _EntityId;
+}";
+
+string quadBezierGeo = @"#version 330 core
+layout (points) in;
+layout (triangle_strip, max_vertices=4) out;
+uniform vec4 _Point1;
+uniform vec4 _Point2;
+uniform vec4 _Point3;
+uniform mat4 _ModelToClip;
+uniform ivec2 _ScreenSize;
+uniform float _Width;
+out vec2 v_position;
+flat out vec4 p1;
+flat out vec4 p2;
+flat out vec4 p3;
+vec2 toScreen(vec4 p) {
+    return ((p.xy/p.w)+vec2(1.0))*(_ScreenSize/2);
+}
+void main() {
+    p1 = _ModelToClip*_Point1;
+    p2 = _ModelToClip*_Point2;
+    p3 = _ModelToClip*_Point3;
+    vec3 c1 = p1.xyz / p1.w;
+    vec3 c2 = p2.xyz / p2.w;
+    vec3 c3 = p3.xyz / p3.w;
+    vec3 cmin = min(min(c1, c2), c3);
+    vec3 cmax = max(max(c1, c2), c3);
+    if(cmin.z < -1.0 || p1.w < 0)
+        return;
+    if(cmax.z > 1.0)
+        return;
+    // TODO: use tight bounds
+    vec2 sssize = _Width / _ScreenSize;
+    vec2 min = min(min(c1.xy, c2.xy), c3.xy) - sssize;
+    vec2 max = max(max(c1.xy, c2.xy), c3.xy) + sssize;
+    //min = vec2(-0.9, -0.9);
+    //max = vec2(0.9, 0.9);
+    gl_Position = vec4(min, 0.0f, 1.0f);
+    v_position = toScreen(gl_Position);
+    EmitVertex();
+    gl_Position = vec4(vec2(max.x, min.y), 0.0f, 1.0f);
+    v_position = toScreen(gl_Position);
+    EmitVertex();
+    gl_Position = vec4(vec2(min.x, max.y), 0.0f, 1.0f);
+    v_position = toScreen(gl_Position);
+    EmitVertex();
+    gl_Position = vec4(max, 0.0f, 1.0f);
+    v_position = toScreen(gl_Position);
+    EmitVertex();
+    EndPrimitive();
+}";
+
+string quadBezierVert = @"#version 330 core
+layout(location = 0) in vec4 position;
+uniform mat4 _ModelToClip;
+void main() {
+    gl_Position = /*_ModelToClip**/position;
+    //v_position = position.xy/position.w;
+}";
+
+string quadBezierFrag = @"#version 330 core
+layout(location = 0) out vec4 outColor;
+layout(location = 1) out int outEntityId;
+in vec2 v_position;
+flat in vec4 p1;
+flat in vec4 p2;
+flat in vec4 p3;
+uniform vec4 _Point1;
+uniform vec4 _Point2;
+uniform vec4 _Point3;
+uniform vec4 _Color;
+uniform mat4 _ModelToClip;
+uniform ivec2 _ScreenSize;
+uniform float _Width;
+uniform int _EntityId;
+uniform sampler2D _depthPeelTex;
+
+// Copy paste from - https://www.shadertoy.com/view/MlKcDD
+
+// Test if point p crosses line (a, b), returns sign of result
+float testCross(vec2 a, vec2 b, vec2 p) {
+    return sign((b.y-a.y) * (p.x-a.x) - (b.x-a.x) * (p.y-a.y));
+}
+
+// Determine which side we're on (using barycentric parameterization)
+float signBezier(vec2 A, vec2 B, vec2 C, vec2 p)
+{ 
+    vec2 a = C - A, b = B - A, c = p - A;
+    vec2 bary = vec2(c.x*b.y-b.x*c.y,a.x*c.y-c.x*a.y) / (a.x*b.y-b.x*a.y);
+    vec2 d = vec2(bary.y * 0.5, 0.0) + 1.0 - bary.x - bary.y;
+    return mix(sign(d.x * d.x - d.y), mix(-1.0, 1.0, 
+        step(testCross(A, B, p) * testCross(B, C, p), 0.0)),
+        step((d.x - d.y), 0.0)) * testCross(A, C, B);
+}
+
+// Solve cubic equation for roots
+vec3 solveCubic(float a, float b, float c)
+{
+    float p = b - a*a / 3.0, p3 = p*p*p;
+    float q = a * (2.0*a*a - 9.0*b) / 27.0 + c;
+    float d = q*q + 4.0*p3 / 27.0;
+    float offset = -a / 3.0;
+    if(d >= 0.0) { 
+        float z = sqrt(d);
+        vec2 x = (vec2(z, -z) - q) / 2.0;
+        vec2 uv = sign(x)*pow(abs(x), vec2(1.0/3.0));
+        return vec3(offset + uv.x + uv.y);
+    }
+    float v = acos(-sqrt(-27.0 / p3) * q / 2.0) / 3.0;
+    float m = cos(v), n = sin(v)*1.732050808;
+    return vec3(m + m, -n - m, n - m) * sqrt(-p / 3.0) + offset;
+}
+
+// Find the signed distance from a point to a bezier curve
+float sdBezier(vec2 A, vec2 B, vec2 C, vec2 p)
+{    
+    B = mix(B + vec2(1e-4), B, abs(sign(B * 2.0 - A - C)));
+    vec2 a = B - A, b = A - B * 2.0 + C, c = a * 2.0, d = A - p;
+    vec3 k = vec3(3.*dot(a,b),2.*dot(a,a)+dot(d,b),dot(d,a)) / dot(b,b);      
+    vec3 t = clamp(solveCubic(k.x, k.y, k.z), 0.0, 1.0);
+    vec2 pos = A + (c + b*t.x)*t.x;
+    float dis = length(pos - p);
+    pos = A + (c + b*t.y)*t.y;
+    dis = min(dis, length(pos - p));
+    pos = A + (c + b*t.z)*t.z;
+    dis = min(dis, length(pos - p));
+    return dis * signBezier(A, B, C, p);
+}
+vec2 toScreen(vec4 p) {
+    return ((p.xy/p.w)+vec2(1.0))*(_ScreenSize/2);
+}
+void main() {
+    float depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), 0).x;
+    if(gl_FragCoord.z >= depth) {
+        discard;
+    }
+
+    vec2 c1 = toScreen(p1);
+    vec2 c2 = toScreen(p2);
+    vec2 c3 = toScreen(p3);
+
+    float ds = abs(sdBezier(c1, c2, c3, v_position));
+
+    float w = _Width/2.0;
+    float d = smoothstep(w+1.0, w-1.0, ds);
+    outColor = vec4(_Color.rgb, d);
+    if(d > 0.0) {
+        outEntityId = _EntityId;
+    } else {
+        discard;
+    }
 }";
 
 string staticLineVert = @"#version 330 core 

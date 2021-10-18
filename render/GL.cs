@@ -44,7 +44,7 @@ namespace AnimLib
         public OnEndRenderSceneDelegate OnEndRenderScene;
         private int _circleProgram, _rectangleProgram, _defaultProgram, _textProgram, _staticLineProgram;
         private int _texRectProgram, _cubeProgram, _blitProgram, _arrowProgram, _imguiProgram;
-        private int _meshProgram;
+        private int _meshProgram, _bezierProgram;
         private int rectVao;
 
         private EntityStateResolver entRes;
@@ -71,20 +71,9 @@ namespace AnimLib
         PerspectiveCameraState debugCamera;
         Vector2 debugCamRot;
 
-        private (int,int)? _sizeOverride = null;
-        public (int,int)? SizeOverride {
-            get {
-                return _sizeOverride;
-            }
-            set {
-                _sizeOverride = value;
-                UpdateSize();
-            }
-        }
-
         public void UpdateSize() {
-            int width = _sizeOverride == null ? this.Width : _sizeOverride.Value.Item1;
-            int height = _sizeOverride == null ? this.Height : _sizeOverride.Value.Item2;
+            int width = this.Width;
+            int height = this.Height;
             if(uiRenderBuffer.Width != width || uiRenderBuffer.Height != height) {
                 //Console.WriteLine($"Resize to {width}x{height}");
                 uiRenderBuffer.Resize(width, height);
@@ -124,6 +113,45 @@ namespace AnimLib
 
         private void mouseScroll(object sender, MouseWheelEventArgs args) {
             scrollValue = args.ValuePrecise;
+        }
+
+        public void RenderBeziers(BezierState[] beziers, M4x4 mat, M4x4 orthoMat, RenderBuffer buf) {
+            if(beziers.Length > 0) {
+                GL.Disable(EnableCap.CullFace);
+                GL.Disable(EnableCap.DepthTest);
+                GL.UseProgram(_bezierProgram);
+                var loc = GL.GetUniformLocation(_bezierProgram, "_ModelToClip");
+                var colLoc = GL.GetUniformLocation(_bezierProgram, "_Color");
+                var idLoc = GL.GetUniformLocation(_bezierProgram, "_EntityId");
+                var p1Loc = GL.GetUniformLocation(_bezierProgram, "_Point1");
+                var p2Loc = GL.GetUniformLocation(_bezierProgram, "_Point2");
+                var p3Loc = GL.GetUniformLocation(_bezierProgram, "_Point3");
+                var ssLoc = GL.GetUniformLocation(_bezierProgram, "_ScreenSize");
+                var wLog = GL.GetUniformLocation(_bezierProgram, "_Width");
+                GL.BindVertexArray(rectVao);
+                foreach(var bz in beziers) {
+                    int count = 1 + (bz.points.Length-3)/2;
+                    M4x4 modelToWorld, modelToClip;
+                    if(bz.points == null || bz.points.Length < 3)
+                        continue;
+                    modelToWorld = bz.ModelToWorld(entRes);
+                    modelToClip = mat * modelToWorld;
+                    GL.UniformMatrix4(loc, 1, false, ref modelToClip.m11);
+                    var col4 = Vector4.FromInt32(bz.color.ToU32());
+                    GL.Uniform4(colLoc, col4.x, col4.y, col4.z, col4.w);
+                    GL.Uniform1(idLoc, bz.entityId);
+                    GL.Uniform1(wLog, bz.width);
+                    for(int i = 0; i < count; i++) {
+                        int idx = i*2;
+                        GL.Uniform4(p1Loc, bz.points[idx].x, bz.points[idx].y, bz.points[idx].z, 1.0f);
+                        GL.Uniform4(p2Loc, bz.points[idx+1].x, bz.points[idx+1].y, bz.points[idx+1].z, 1.0f);
+                        GL.Uniform4(p3Loc, bz.points[idx+2].x, bz.points[idx+2].y, bz.points[idx+2].z, 1.0f);
+                        GL.Uniform2(ssLoc, buf.Width, buf.Height);
+                        GL.DrawArrays(PrimitiveType.Points, 0, 1);
+                        drawId++;
+                    }
+                }
+            }
         }
 
         public void RenderCircles(CircleState[] circles, M4x4 mat, M4x4 orthoMat) {
@@ -324,7 +352,9 @@ namespace AnimLib
             var cam = worldCamera;
             foreach(var ch in gs) {
                 var modelToWorld = ch.ModelToWorld(entRes);
+                //Vector2 anchorPos = ch.anchor * screenSize;
                 Vector3 pos = new Vector3(modelToWorld.m14, modelToWorld.m24, modelToWorld.m34);
+                //pos += (Vector3)anchorPos;
                 _fr.PushCharacter(ch, pos);
             }
             _fr.RenderTest(_textProgram, mat);
@@ -702,6 +732,9 @@ namespace AnimLib
                 if(ss.Labels != null) {
                     RenderLabels(new Vector2(pb.Width, pb.Height), ss.Labels, UserInterface.WorldCamera);
                 }
+                if(ss.Beziers != null) {
+                    RenderBeziers(ss.Beziers, worldToClip, smat, sv.Buffer);
+                }
 
                 //TODO:
                 //RenderTriangleMeshes();
@@ -820,6 +853,7 @@ namespace AnimLib
 
         private void CompileShaders() {
             _circleProgram = AddShader(circleVert, circleFrag, null);
+            _bezierProgram = AddShader(quadBezierVert, quadBezierFrag, quadBezierGeo);
             _rectangleProgram = AddShader(rectangleVert, rectangleFrag, null);
             _texRectProgram = AddShader(rectangleVert, texRectFrag, null);
             _defaultProgram = AddShader(vertShader, fragShader, null);

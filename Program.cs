@@ -158,7 +158,6 @@ namespace AnimLib
             game.OnBeginRenderScene += () => {
                 WorldSnapshot ret;
                 mainCtx.InvokeAllPosted();
-                game.SizeOverride = player.RenderSizeOverride;
                 if(player.RenderUI) {
                     foreach(var h in player.GetAnimationHandles()) {
                         if(h.StartTime <= AnimationTime.Time) {
@@ -196,13 +195,7 @@ namespace AnimLib
                return ret;
             };
 
-            game.OnEndRenderScene += () => {
-                var capture = player.CaptureFrame;
-                if(capture) {
-                    var tex = pctrl.MainView.CaptureScene();
-                    player.FrameCaptured(tex);
-                }
-            };
+            game.OnEndRenderScene += player.OnEndRenderScene;
 
             game.Run();
             player.Close();

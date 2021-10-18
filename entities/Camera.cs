@@ -1,0 +1,28 @@
+
+namespace AnimLib {
+    public abstract class CameraState : EntityState {
+        public Color clearColor = Color.WHITE;
+
+        public CameraState() {}
+
+        public CameraState(CameraState cs) : base(cs) {
+        }
+
+        public abstract M4x4 CreateWorldToClipMatrix(float aspect);
+    }
+
+    public abstract class Camera : VisualEntity {
+        public Camera() {}
+        public Camera(Camera c) : base(c) {}
+
+        public Color ClearColor {
+            get {
+                return ((CameraState)state).clearColor;
+            }
+            set {
+                World.current.SetProperty(this, "clearColor", value, ((CameraState)state).clearColor);
+                ((CameraState)state).clearColor = value;
+            }
+        }
+    }
+}

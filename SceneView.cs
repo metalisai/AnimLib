@@ -51,6 +51,10 @@ namespace AnimLib {
             this.height = height;
         }
 
+        public void ResizeBuffer(int w, int h) {
+            renderBuffer.Resize(w, h);
+        }
+
         public int TextureHandle {
             get {
                 return renderBuffer.Texture();
@@ -76,7 +80,7 @@ namespace AnimLib {
         public (int,int,int,int) CalculateArea(int x, int y, int width, int height)
         {
             // calculate scene view "bars" (aspect ratio correction)
-            double targetAspect = 16.0/9.0;
+            double targetAspect = (double)this.renderBuffer.Width/(double)this.renderBuffer.Height;
             double aspect = (double)width / (double)height;
             int w, h;
             int wShrink = 0;

@@ -18,14 +18,7 @@ namespace AnimLib {
         }
 
         public void Start(string filename, int width, int height, int framerate, int crf = 15) {
-            /*int width = 1920;
-            int height = 1080;
-            double framerate = 60;*/
-
-            // string av1 options = "-c:v libaom-av1  -strict -2"
-
-            string outputOpt = $"-c:v libx264 -crf {crf}";
-            //string outputOpt = "-c:v libvpx-vp9 -lossless 1";
+            string outputOpt = "-c:v libvpx-vp9 -lossless 1";
 
             var opt = $"-y -f rawvideo -vcodec rawvideo -pixel_format rgb24 -video_size {width}x{height} -r {framerate} -i - -vf vflip {outputOpt} \"{filename}\"";
 
