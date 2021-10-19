@@ -14,7 +14,7 @@ namespace AnimLib
     public interface IRenderer {
         void RenderCircles(CircleState[] circles, M4x4 mat, M4x4 orthoMat);
         void RenderRectangles(RectangleState[] rectangles, M4x4 mat, M4x4 orthoMat);
-        void RenderBeziers(BezierState[] beziers, M4x4 mat, M4x4 orthoMat, RenderBuffer rb);
+        void RenderBeziers(BezierState[] beziers, M4x4 mat, M4x4 orthoMat, IRenderBuffer rb);
         void RenderTextureRectangles(TexRectState[] rectangles, M4x4 mat);
         void RenderMeshes(ColoredTriangleMesh[] meshes, M4x4 camMat, M4x4 orthoMat);
         void RenderScene(WorldSnapshot ss, SceneView sv);
@@ -64,7 +64,7 @@ namespace AnimLib
 
         public ColoredTriangleMeshGeometry cubeGeometry;
 
-        RenderBuffer uiRenderBuffer = new DepthPeelRenderBuffer();
+        IRenderBuffer uiRenderBuffer = new DepthPeelRenderBuffer();
 
         FontCache _fr;
         TypeSetting ts = new TypeSetting();
@@ -81,10 +81,10 @@ namespace AnimLib
         public void UpdateSize() {
             int width = this.Width;
             int height = this.Height;
-            if(uiRenderBuffer.Width != width || uiRenderBuffer.Height != height) {
+            if(uiRenderBuffer.Size.Item1 != width || uiRenderBuffer.Size.Item2 != height) {
                 //Console.WriteLine($"Resize to {width}x{height}");
                 uiRenderBuffer.Resize(width, height);
-                RectTransform.RootTransform.Size = new Vector2(uiRenderBuffer.Width, uiRenderBuffer.Height);
+                RectTransform.RootTransform.Size = new Vector2(uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2);
             }
         }
 
@@ -222,7 +222,7 @@ namespace AnimLib
             GL.Disable(EnableCap.DepthTest);
             GL.UseProgram(_imguiProgram);
             var matLoc = GL.GetUniformLocation(_imguiProgram, "_ModelToClip");
-            var mat = M4x4.Ortho(0.0f, uiRenderBuffer.Width, 0.0f, uiRenderBuffer.Height, -1.0f, 1.0f);
+            var mat = M4x4.Ortho(0.0f, uiRenderBuffer.Size.Item1, 0.0f, uiRenderBuffer.Size.Item2, -1.0f, 1.0f);
             GL.UniformMatrix4(matLoc, 1, false, ref mat.m11);
             var texLoc = GL.GetUniformLocation(_imguiProgram, "_AtlasTex");
             var entIdLoc = GL.GetUniformLocation(_imguiProgram, "_entityId");
@@ -263,7 +263,7 @@ namespace AnimLib
         public void RenderGUI((ImDrawDataPtr, Texture2D)? data)
         {
             DepthPeelRenderBuffer pb;
-            GL.Viewport(0, 0, uiRenderBuffer.Width, uiRenderBuffer.Height);
+            GL.Viewport(0, 0, uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2);
             pb = uiRenderBuffer as DepthPeelRenderBuffer;
 
             GL.Enable(EnableCap.PolygonOffsetFill);
@@ -291,7 +291,7 @@ namespace AnimLib
             //GL.BlendFuncSeparate(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha, BlendingFactorSrc.One, BlendingFactorDest.Zero); 
             GL.Enable(EnableCap.Blend);
 
-            var smat = M4x4.Ortho(0.0f, pb.Width, 0.0f, pb.Height, -1.0f, 1.0f);
+            var smat = M4x4.Ortho(0.0f, pb.Size.Item1, 0.0f, pb.Size.Item2, -1.0f, 1.0f);
             GL.ColorMask(true, true, true, true);
             GL.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             GL.Clear(ClearBufferMask.DepthBufferBit/* | ClearBufferMask.ColorBufferBit*/);
@@ -308,13 +308,15 @@ namespace AnimLib
 
 
         public int GetSceneEntityAtPixel(SceneView sv, Vector2 pixel) {
+            if(sv.Buffer == null)
+                return 0;
             var area = sv.LastArea;
             if (area == null) return -2;
             var a = area.Value;
             var offset = pixel - new Vector2(a.Item1, a.Item2);
             var normalizedInViewport = offset / new Vector2(a.Item3, a.Item4);
-            var bufW = sv.Buffer.Width;
-            var bufH = sv.Buffer.Height;
+            var bufW = sv.BufferWidth;
+            var bufH = sv.BufferHeight;
             pixel = normalizedInViewport * new Vector2(bufW, bufH);
             sv.Buffer.Bind();
             GL.ReadBuffer(ReadBufferMode.ColorAttachment1);
@@ -327,13 +329,13 @@ namespace AnimLib
             }
         }
 
-        public int GetGuiEntityAtPixel(RenderBuffer pb, Vector2 pixel) {
+        public int GetGuiEntityAtPixel(IRenderBuffer pb, Vector2 pixel) {
             pb.Bind();
             GL.ReadBuffer(ReadBufferMode.ColorAttachment1);
             var pixs = new int[1];
             //System.Console.WriteLine(pixs[0]);
-            if(pixel.x >= 0.0f && pixel.x < pb.Width && pixel.y >= 0.0f && pixel.y < pb.Height) {
-                GL.ReadPixels((int)pixel.x, pb.Height-(int)pixel.y-1, 1, 1, PixelFormat.RedInteger, PixelType.Int, pixs);
+            if(pixel.x >= 0.0f && pixel.x < pb.Size.Item1 && pixel.y >= 0.0f && pixel.y < pb.Size.Item2) {
+                GL.ReadPixels((int)pixel.x, pb.Size.Item2-(int)pixel.y-1, 1, 1, PixelFormat.RedInteger, PixelType.Int, pixs);
                 return pixs[0];
             } else {
                 return -2;
@@ -664,19 +666,19 @@ namespace AnimLib
                 scroll = scrollValue,
             };
 
-            foreach(var view in views) view.Buffer.Clear();
+            foreach(var view in views) view.Buffer?.Clear();
             uiRenderBuffer.Clear();
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.DrawBuffer(DrawBufferMode.Back);
-            GL.Viewport(0, 0, uiRenderBuffer.Width, uiRenderBuffer.Height);
+            GL.Viewport(0, 0, uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2);
             GL.ColorMask(true, true, true, true);
             GL.ClearColor(1.0f, 1.0f, 1.0f, 1.0f);
             GL.ClearDepth(1.0f);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             
-            UserInterface.Size = new Vector2(uiRenderBuffer.Width, uiRenderBuffer.Height);
-            UserInterface.BeginFrame(mouseState, uiRenderBuffer.Width, uiRenderBuffer.Height);
+            UserInterface.Size = new Vector2(uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2);
+            UserInterface.BeginFrame(mouseState, uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2);
             foreach(var view in views) {
                 view.BeginFrame();
             }

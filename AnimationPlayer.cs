@@ -329,7 +329,7 @@ namespace AnimLib {
                 trackPlayer.Seek(progress);
                 machine.Seek(progress);
 
-                if(controls.MainView.Buffer.Width != settings.Width || controls.MainView.Buffer.Height != settings.Height) {
+                if((controls.MainView.BufferWidth != settings.Width || controls.MainView.BufferHeight != settings.Height) && controls.MainView.Buffer != null) {
                     controls.MainView.ResizeBuffer(settings.Width, settings.Height);
                 }
             }

@@ -127,7 +127,9 @@ namespace AnimLib {
                     n = new Vector3(0.0f, 0.0f, -1.0f),
                     o = 0.0f,
                 };
-                var ray = cam.RayFromClip(new Vector2((UserInterface.mousePosition.x/view.Buffer.Width)*2.0f-1.0f, (UserInterface.mousePosition.y/view.Buffer.Height)*-2.0f+1.0f), view.Buffer.Width/view.Buffer.Height);
+                var w = view.Buffer.Size.Item1;
+                var h = view.Buffer.Size.Item2;
+                var ray = cam.RayFromClip(new Vector2((UserInterface.mousePosition.x/w)*2.0f-1.0f, (UserInterface.mousePosition.y/h)*-2.0f+1.0f), w/h);
                 var pos3 = ray.Intersect(plane);
                 if(pos3 != null) {
                     switch(Clipboard.Object) {

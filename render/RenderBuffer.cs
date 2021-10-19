@@ -4,25 +4,31 @@ using OpenTK;
 using OpenTK.Graphics.OpenGL4;
 
 namespace AnimLib {
-    public abstract class RenderBuffer : IDisposable{
+    public interface IRenderBuffer : IDisposable{
             public abstract void Bind();
             public abstract void BlendToScreen(int screenWidth, int screenHeight, int program);
             public abstract void Resize(int width, int height);
-            public abstract void Dispose();
             public abstract int Texture();
             public abstract void Clear();
-            public int Width, Height;
+            public (int, int) Size { get; }
 
             public abstract void ReadPixels(ref byte data);
         }
 
-        public class DepthPeelRenderBuffer : RenderBuffer {
+        public class DepthPeelRenderBuffer : IRenderBuffer, IDisposable {
             public int _depthTex1 = -1, _depthTex2 = -1, _fbo = -1;
             public int _colorTex = -1;
             public int _entityIdTex = -1;
+            int _width, _height;
             int _boundDepthTexture;
 
             int _blitvao = -1, _blitvbo = -1;
+
+            public (int,int) Size {
+                get {
+                    return (_width, _height);
+                }
+            }
 
             public int PeelTex {
                 get {
@@ -34,7 +40,7 @@ namespace AnimLib {
                 
             }
 
-            public override int Texture() {
+            public int Texture() {
                 return _colorTex;
             }
 
@@ -73,7 +79,7 @@ namespace AnimLib {
                 }
             }
 
-            public override void Resize(int width, int height) {
+            public void Resize(int width, int height) {
 
                 if(_blitvao == -1) {
                     _blitvao = GL.GenVertexArray();
@@ -138,18 +144,18 @@ namespace AnimLib {
                 if(err != FramebufferErrorCode.FramebufferComplete) {
                     System.Diagnostics.Debug.Fail("Frame buffer not complete: " + err);
                 }
-                Width = width;
-                Height = height;
+                _width = width;
+                _height = height;
 
                 GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, dbuf);
                 GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, rbuf);
             }
 
-            public override void Bind() {
+            public void Bind() {
                 GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fbo);
             }
 
-            public override void BlendToScreen(int sw, int sh, int _blitProgram) {
+            public void BlendToScreen(int sw, int sh, int _blitProgram) {
                 int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);
                 int rbuf = GL.GetInteger(GetPName.ReadFramebufferBinding);
                 GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
@@ -201,7 +207,7 @@ namespace AnimLib {
                 GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, rbuf);
             }
 
-            public override void Dispose() {
+            public void Dispose() {
                 DeleteBuffers();
                 GL.DeleteFramebuffer(_fbo);
                 GL.DeleteVertexArray(_blitvao);
@@ -211,7 +217,7 @@ namespace AnimLib {
                 _fbo = -1;
             }
 
-            public override void Clear()
+            public void Clear()
             {
                 //GL.DrawBuffers(3, new DrawBuffersEnum[] {DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1, DrawBuffersEnum.ColorAttachment2});
                 int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);
@@ -226,7 +232,7 @@ namespace AnimLib {
                 GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, dbuf);
             }
 
-            public override void ReadPixels(ref byte data)
+            public void ReadPixels(ref byte data)
             {
                 //GL.ReadPixels(0, 0, Width, Height, PixelFormat.Rgb, PixelType.UnsignedByte, ref data);
                 GL.BindTexture(TextureTarget.Texture2D, _colorTex);

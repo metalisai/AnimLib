@@ -110,7 +110,7 @@ namespace AnimLib {
             }
         }
 
-        public void RenderBeziers(BezierState[] beziers, M4x4 mat, M4x4 orthoMat, RenderBuffer buf) {
+        public void RenderBeziers(BezierState[] beziers, M4x4 mat, M4x4 orthoMat, IRenderBuffer buf) {
             if(beziers.Length > 0) {
                 GL.Disable(EnableCap.CullFace);
                 GL.Disable(EnableCap.DepthTest);
@@ -141,7 +141,8 @@ namespace AnimLib {
                         GL.Uniform4(p1Loc, bz.points[idx].x, bz.points[idx].y, bz.points[idx].z, 1.0f);
                         GL.Uniform4(p2Loc, bz.points[idx+1].x, bz.points[idx+1].y, bz.points[idx+1].z, 1.0f);
                         GL.Uniform4(p3Loc, bz.points[idx+2].x, bz.points[idx+2].y, bz.points[idx+2].z, 1.0f);
-                        GL.Uniform2(ssLoc, buf.Width, buf.Height);
+                        var size = buf.Size;
+                        GL.Uniform2(ssLoc, size.Item1, size.Item2);
                         GL.DrawArrays(PrimitiveType.Points, 0, 1);
                         drawId++;
                     }
@@ -345,8 +346,15 @@ namespace AnimLib {
             entRes = ss.resolver;
 
             DepthPeelRenderBuffer pb;
+            var w = sv.BufferWidth;
+            var h = sv.BufferHeight;
+            if(!(sv.Buffer is DepthPeelRenderBuffer) || sv.Buffer == null) {
+                var buf = new DepthPeelRenderBuffer();
+                buf.Resize(w, h);
+                sv.Buffer = buf;
+            }
             pb = sv.Buffer as DepthPeelRenderBuffer;
-            GL.Viewport(0, 0, pb.Width, pb.Height);
+            GL.Viewport(0, 0, pb.Size.Item1, pb.Size.Item2);
             if (pb == null) {
                 Console.WriteLine("Can't render scene because renderbuffer isn't DepthPeelRenderBuffer");
                 return;
@@ -379,7 +387,7 @@ namespace AnimLib {
             //GL.BlendFuncSeparate(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha, BlendingFactorSrc.One, BlendingFactorDest.Zero); 
             GL.Enable(EnableCap.Blend);
 
-            var smat = M4x4.Ortho(0.0f, pb.Width, 0.0f, pb.Height, -1.0f, 1.0f);
+            var smat = M4x4.Ortho(0.0f, pb.Size.Item1, 0.0f, pb.Size.Item2, -1.0f, 1.0f);
             var query = GL.GenQuery();
 
             var _programs = rs.Programs;
@@ -400,19 +408,20 @@ namespace AnimLib {
 
                 // TODO: bind framebuffer when we have render targets
                 var sceneCamera = ss.Camera;
+                var pbSize = pb.Size;
 
                 if(sceneCamera is OrthoCameraState) {
                     var cam = sceneCamera as OrthoCameraState;
-                    cam.width = pb.Width;
-                    cam.height = pb.Height;
+                    cam.width = pbSize.Item1;
+                    cam.height = pbSize.Item2;
                 }
-                M4x4 worldToClip = sceneCamera.CreateWorldToClipMatrix((float)pb.Width/(float)pb.Height);
+                M4x4 worldToClip = sceneCamera.CreateWorldToClipMatrix((float)pbSize.Item1/(float)pbSize.Item2);
                 if(rs.overrideCamera && sceneCamera is PerspectiveCameraState) {
-                    worldToClip = rs.debugCamera.CreateWorldToClipMatrix((float)pb.Width/(float)pb.Height);
+                    worldToClip = rs.debugCamera.CreateWorldToClipMatrix((float)pbSize.Item2/(float)pbSize.Item2);
                 }
 
                 RectTransform.RootTransform = new RectTransform(new Dummy());
-                RectTransform.RootTransform.Size = new Vector2(pb.Width, pb.Height);
+                RectTransform.RootTransform.Size = new Vector2(pbSize.Item1, pbSize.Item2);
 
                 if(ss.MeshBackedGeometries != null) {
                     int i = 0;
@@ -485,10 +494,10 @@ namespace AnimLib {
                     Render2DTexts2(new Vector2(pb.Width, pb.Height), ss.Texts, sceneCamera as PerspectiveCameraState);
                 }*/
                 if(ss.Glyphs != null) {
-                    RenderGlyphs(new Vector2(pb.Width, pb.Height), ss.Glyphs, sceneCamera as PerspectiveCameraState);
+                    RenderGlyphs(new Vector2(pbSize.Item1, pbSize.Item2), ss.Glyphs, sceneCamera as PerspectiveCameraState);
                 }
                 if(ss.Labels != null) {
-                    RenderLabels(new Vector2(pb.Width, pb.Height), ss.Labels, UserInterface.WorldCamera);
+                    RenderLabels(new Vector2(pbSize.Item1, pbSize.Item2), ss.Labels, UserInterface.WorldCamera);
                 }
                 if(ss.Beziers != null) {
                     RenderBeziers(ss.Beziers, worldToClip, smat, sv.Buffer);
