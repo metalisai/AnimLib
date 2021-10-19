@@ -187,16 +187,13 @@ namespace AnimLib {
                 // TODO: winding order is wrong?
                 GL.Disable(EnableCap.CullFace);
                 GL.FrontFace(FrontFaceDirection.Ccw);
-                //GL.DepthFunc(DepthFunction.Lequal);
                 GL.Enable(EnableCap.DepthTest);
 
-                //GL.VertexAttrib4(1, 1.0f, 1.0f, 1.0f, 1.0f);
                 foreach(var m in meshes) {
                     var program = GetProgram(m.Shader);
                     GL.UseProgram(program);
                     var loc = GL.GetUniformLocation(program, "_ModelToClip");
                     var colLoc = GL.GetUniformLocation(program, "_Color");
-                    //var outlineLoc = GL.GetUniformLocation(program, "_Outline");
                     var entLoc = GL.GetUniformLocation(program, "_EntityId");
 
                     foreach(var prop in m.shaderProperties) {
@@ -488,11 +485,6 @@ namespace AnimLib {
                 if(ss.TexRects != null) {
                     RenderTextureRectangles(ss.TexRects, worldToClip);
                 }
-                /*if(ss.Texts != null)
-                    Render2DTexts(ss.Texts);*/
-                /*if(ss.Texts != null) {
-                    Render2DTexts2(new Vector2(pb.Width, pb.Height), ss.Texts, sceneCamera as PerspectiveCameraState);
-                }*/
                 if(ss.Glyphs != null) {
                     RenderGlyphs(new Vector2(pbSize.Item1, pbSize.Item2), ss.Glyphs, sceneCamera as PerspectiveCameraState);
                 }

@@ -514,7 +514,6 @@ namespace AnimLib
             CompileShaders();
             CreateMeshes();
 
-            //renderBuffer.Resize(this.Width, this.Height);
             uiRenderBuffer.Resize(1024, 1024);
 
             proc = new DebugProc(debugCallback);
@@ -522,8 +521,6 @@ namespace AnimLib
             GL.Disable(EnableCap.Dither);
             GL.Enable(EnableCap.DebugOutput);
             GL.Enable(EnableCap.Blend);
-            //GL.BlendEquationSeparate(BlendEquationMode.FuncAdd, BlendEquationMode.FuncAdd);
-            //GL.BlendFuncSeparate(BlendingFactorSrc.One, BlendingFactorDest.OneMinusSrc1Alpha, BlendingFactorSrc.One, BlendingFactorDest.Zero);
             GL.BlendEquation(BlendEquationMode.FuncAdd);
             GL.BlendFunc(BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
             GL.Enable(EnableCap.CullFace);
@@ -580,7 +577,6 @@ namespace AnimLib
             this.OnUpdate += () => {
                 var kstate = Keyboard.GetState();
                 if(overrideCamera) {
-                    //UIOldCam = UserInterface.WorldCamera;
                     float dt = (float)this.UpdatePeriod;
                     float s = 5.0f;
                     if(kstate.IsKeyDown(Key.ShiftLeft)) {
@@ -632,8 +628,6 @@ namespace AnimLib
             }
             base.OnResize(e);
         }
-
-        //static CameraState UIOldCam;
 
         protected override void OnRenderFrame(FrameEventArgs e) {
 
@@ -694,7 +688,6 @@ namespace AnimLib
             if(worldSnapshot != null)
             {
                 foreach(var sv in views) {
-                    //RenderScene(worldSnapshot, sv, new Vector4(0.5f, 0.3f, 0.7f, 1.0f));
                     renderer.RenderScene(worldSnapshot, sv);
                 }
             }
@@ -721,10 +714,6 @@ namespace AnimLib
                     UserInterface.MouseEntityId = guiEntity;
             }
             
-            //Console.WriteLine(UserInterface.MouseEntityId);
-
-            //renderBuffer.BlendToScreen(this.Width, this.Height, _blitProgram);
-
             Context.SwapBuffers();
             base.OnRenderFrame(e);
         }
