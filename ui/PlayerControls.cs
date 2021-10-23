@@ -241,6 +241,17 @@ namespace AnimLib {
                                     player.Scene.Add(qs);
                                 }
                                 break;
+                                case 5:
+                                var rr = new PlayerRect() {
+                                    size = new Vector2(1.0f, 1.0f),
+                                    color = Color.WHITE,
+                                    transform = new SceneTransform(pos3.Value, Quaternion.IDENTITY),
+                                    timeslice = (0.0, 9999999.0),
+                                };
+                                lock(player.Scene.sceneLock) {
+                                    player.Scene.Add(rr);
+                                }
+                                break;
                             }
                             lock(player.Scene.sceneLock) {
                                 player.Scene.UpdateEvents();
@@ -438,6 +449,7 @@ namespace AnimLib {
                         }
                     };
                     createItem("Circle", 0);
+                    createItem("Rectangle", 5);
                     createItem("Line", 1);
                     createItem("Arrow", 2);
                     createItem("Text", 3);
@@ -617,6 +629,13 @@ namespace AnimLib {
                         System.Numerics.Vector3 v = v1;
                         if(ImGui.InputFloat3(propF.Item1, ref v)) {
                             propF.Item3((Vector3)v);
+                            player.SetAnimationDirty();
+                        }
+                        break;
+                        case Vector2 v2:
+                        System.Numerics.Vector2 vv = v2;
+                        if(ImGui.InputFloat2(propF.Item1, ref vv)) {
+                            propF.Item3((Vector2)vv);
                             player.SetAnimationDirty();
                         }
                         break;

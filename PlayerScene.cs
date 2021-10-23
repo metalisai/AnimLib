@@ -32,6 +32,7 @@ namespace AnimLib {
         }
 
         public IList<PlayerCircle> Circles { get; set; } = new List<PlayerCircle>();
+        public IList<PlayerRect> Rects { get; set; } = new List<PlayerRect>();
         public IList<PlayerArrow> Arrows { get; set; } = new List<PlayerArrow>();
         public IList<PlayerLine> Lines {get ; set; } = new List<PlayerLine>();
         public IList<PlayerQSpline> QSplines { get; set; } = new List<PlayerQSpline>();
@@ -44,6 +45,9 @@ namespace AnimLib {
             switch(obj) {
                 case PlayerCircle c1:
                 Circles.Add(c1);
+                break;
+                case PlayerRect pr1:
+                Rects.Add(pr1);
                 break;
                 case PlayerArrow a1:
                 Arrows.Add(a1);
@@ -73,7 +77,8 @@ namespace AnimLib {
                 .Concat(Arrows.Select(x => (SceneObject)x))
                 .Concat(Lines.Select(x => (SceneObject)x))
                 .Concat(Texts2D.Select(x => (SceneObject)x)).ToArray()
-                .Concat(QSplines.Select(x => (SceneObject)x)).ToArray();
+                .Concat(QSplines.Select(x => (SceneObject)x)).ToArray()
+                .Concat(Rects.Select(x => (SceneObject)x)).ToArray();
         }
 
         public List<SceneEvent> GenerateEvents() {
@@ -103,6 +108,9 @@ namespace AnimLib {
             switch(obj) {
                 case PlayerCircle c1:
                 Circles.Remove(c1);
+                break;
+                case PlayerRect pr1:
+                Rects.Remove(pr1);
                 break;
                 case PlayerArrow a1:
                 Arrows.Remove(a1);
@@ -211,7 +219,16 @@ namespace AnimLib {
                             world.CreateInstantly(qs);
                             q1.worldRef = qs;
                             ent = qs;
-                            Debug.TLog($"Create QSpline ({q1.points.Length} points, pos {q1.transform.Pos})");
+                            break;
+                            case PlayerRect pr1:
+                            var pr = new Rectangle();
+                            pr.Width = pr1.size.x;
+                            pr.Height = pr1.size.y;
+                            pr.Color = pr1.color;
+                            pr.Transform.Pos = pr1.transform.Pos;
+                            world.CreateInstantly(pr);
+                            pr1.worldRef = pr;
+                            ent = pr;
                             break;
                         }
                         sceneObjects[ent.EntityId] = e.obj;

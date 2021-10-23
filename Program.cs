@@ -27,13 +27,6 @@ namespace AnimLib
 
     class Program
     {
-        /*static string path = "/home/ttammear/Projects/animtest/bin/Debug/netcoreapp3.1/";
-        static string filename = "animtest.dll";*/
-
-        //static sring path = "/home/ttammear/Projects/QuickAlgos/astar/bin/Debug/netcoreapp3.1/";
-        //static string filename = "astar.dll";
-        
-
         static PlayerControls pctrl;
         static AnimationPlayer player;
 
@@ -71,7 +64,6 @@ namespace AnimLib
         static AnimationBehaviour LoadBehaviour(string fullpath) {
             System.Console.WriteLine($"Trying to load animation assemlby {fullpath}");
             var assemblyLoadContext = new AssemblyLoadContext("asmloadctx", true);
-            //var asm = assemblyLoadContext.LoadFromAssemblyPath(fullpath);
             using (var fs = new FileStream(fullpath, FileMode.Open, FileAccess.Read))
             {
 

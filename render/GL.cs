@@ -318,25 +318,17 @@ namespace AnimLib
             var bufW = sv.BufferWidth;
             var bufH = sv.BufferHeight;
             pixel = normalizedInViewport * new Vector2(bufW, bufH);
-            sv.Buffer.Bind();
-            GL.ReadBuffer(ReadBufferMode.ColorAttachment1);
-            var pixs = new int[1];
             if(pixel.x >= 0.0f && pixel.x < bufW && pixel.y >= 0.0f && pixel.y < bufH) {
-                GL.ReadPixels((int)pixel.x, bufH-(int)pixel.y-1, 1, 1, PixelFormat.RedInteger, PixelType.Int, pixs);
-                return pixs[0];
+                return sv.Buffer.GetEntityAtPixel((int)pixel.x, bufH-(int)pixel.y-1);
             } else {
                 return -2;
             }
         }
 
         public int GetGuiEntityAtPixel(IRenderBuffer pb, Vector2 pixel) {
-            pb.Bind();
-            GL.ReadBuffer(ReadBufferMode.ColorAttachment1);
-            var pixs = new int[1];
             //System.Console.WriteLine(pixs[0]);
             if(pixel.x >= 0.0f && pixel.x < pb.Size.Item1 && pixel.y >= 0.0f && pixel.y < pb.Size.Item2) {
-                GL.ReadPixels((int)pixel.x, pb.Size.Item2-(int)pixel.y-1, 1, 1, PixelFormat.RedInteger, PixelType.Int, pixs);
-                return pixs[0];
+                return pb.GetEntityAtPixel((int)pixel.x, pb.Size.Item2-(int)pixel.y-1);
             } else {
                 return -2;
             }
@@ -498,7 +490,7 @@ namespace AnimLib
         static void debugCallback(DebugSource source, DebugType type, int id, DebugSeverity severity, int length, IntPtr message, IntPtr userParam) {
             if(type == DebugType.DebugTypeOther)
                 return;
-            Console.WriteLine($"OpenGL debug ({type}): {Marshal.PtrToStringAnsi(message)}");
+            Console.WriteLine($"OpenGL debug ({type}) src:{source} message: {Marshal.PtrToStringAnsi(message)}");
         }
 
         public RenderState(int width, int height) : base(width, height, new OpenTK.Graphics.GraphicsMode(), "Test", 0 , DisplayDevice.Default, 3, 3, OpenTK.Graphics.GraphicsContextFlags.ForwardCompatible) {
@@ -510,6 +502,7 @@ namespace AnimLib
 
         protected override void OnLoad(EventArgs e) {
             renderer = new DistanceFieldRenderer(this);
+            //renderer = new TessallationRenderer(this);
 
             CompileShaders();
             CreateMeshes();
@@ -660,7 +653,10 @@ namespace AnimLib
                 scroll = scrollValue,
             };
 
-            foreach(var view in views) view.Buffer?.Clear();
+            foreach(var view in views) {
+                view.Buffer?.Clear();
+                view.Buffer?.OnPreRender();
+            }
             uiRenderBuffer.Clear();
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
@@ -694,6 +690,10 @@ namespace AnimLib
 
             if(OnEndRenderScene != null) {
                 OnEndRenderScene();
+            }
+
+            foreach(var view in views) {
+                view.Buffer?.OnPostRender();
             }
 
             // Render UI

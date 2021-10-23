@@ -358,7 +358,6 @@ namespace AnimLib {
             }
 
             GL.Enable(EnableCap.PolygonOffsetFill);
-            System.Diagnostics.Debug.Assert(pb is DepthPeelRenderBuffer);
 
             pb.Bind();
             GL.DepthMask(true);
