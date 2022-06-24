@@ -413,7 +413,7 @@ namespace AnimLib {
                 }
                 M4x4 worldToClip = sceneCamera.CreateWorldToClipMatrix((float)pbSize.Item1/(float)pbSize.Item2);
                 if(rs.overrideCamera && sceneCamera is PerspectiveCameraState) {
-                    worldToClip = rs.debugCamera.CreateWorldToClipMatrix((float)pbSize.Item2/(float)pbSize.Item2);
+                    worldToClip = rs.debugCamera.CreateWorldToClipMatrix((float)pbSize.Item1/(float)pbSize.Item2);
                 }
 
                 RectTransform.RootTransform = new RectTransform(new Dummy());

@@ -421,6 +421,8 @@ namespace AnimLib {
                 {
                     _showProperties = true;
                 }
+                if(ImGui.MenuItem("Preferences")) {
+                }
                 ImGui.EndMenu();
             }
             if(ImGui.BeginMenu("Create")) {

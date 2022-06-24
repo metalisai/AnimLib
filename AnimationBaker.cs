@@ -22,7 +22,6 @@ namespace AnimLib {
 
     // This is the API available to animation
     public class Animator {
-
         public class AnimationHandle2D {
             public string Identifier;
             public double StartTime;

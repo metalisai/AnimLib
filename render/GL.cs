@@ -12,11 +12,6 @@ namespace AnimLib
 {
 
     public interface IRenderer {
-        void RenderCircles(CircleState[] circles, M4x4 mat, M4x4 orthoMat);
-        void RenderRectangles(RectangleState[] rectangles, M4x4 mat, M4x4 orthoMat);
-        void RenderBeziers(BezierState[] beziers, M4x4 mat, M4x4 orthoMat, IRenderBuffer rb);
-        void RenderTextureRectangles(TexRectState[] rectangles, M4x4 mat);
-        void RenderMeshes(ColoredTriangleMesh[] meshes, M4x4 camMat, M4x4 orthoMat);
         void RenderScene(WorldSnapshot ss, SceneView sv);
     }
 
@@ -82,7 +77,7 @@ namespace AnimLib
             int width = this.Width;
             int height = this.Height;
             if(uiRenderBuffer.Size.Item1 != width || uiRenderBuffer.Size.Item2 != height) {
-                //Console.WriteLine($"Resize to {width}x{height}");
+                Console.WriteLine($"Resize to {width}x{height}");
                 uiRenderBuffer.Resize(width, height);
                 RectTransform.RootTransform.Size = new Vector2(uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2);
             }
@@ -334,7 +329,7 @@ namespace AnimLib
             }
         }
 
-        public int AddShader(string v, string f, string g) {
+        public int AddShader(string v, string f, string g, string tcs = null, string tes = null) {
             Console.WriteLine("Compile shader!");
             int[] ps = new int[1];
             var vs = GL.CreateShader(ShaderType.VertexShader);
@@ -384,6 +379,37 @@ namespace AnimLib
                 GL.AttachShader(ret, gs);
                 GL.DeleteShader(gs);
             }
+
+            if((tcs == null) != (tes == null)) {
+                Debug.Error("To use tessellation, both TCS and TES need to be set!");
+            }
+            if(tcs != null) {
+                var tcss = GL.CreateShader(ShaderType.TessControlShader); 
+                GL.ShaderSource(tcss, tcs);
+                GL.CompileShader(tcss);
+                GL.GetShader(tcss, ShaderParameter.CompileStatus, ps);
+                if(ps[0] != 1) {
+                    int slen;
+                    string slog = "";
+                    GL.GetShaderInfoLog(tcss, 256, out slen, out slog);
+                    Debug.Error($"Failed to compile TCS shader! Log: {slog}");
+                }
+                var tess = GL.CreateShader(ShaderType.TessEvaluationShader);
+                GL.ShaderSource(tess, tes);
+                GL.CompileShader(tess);
+                GL.GetShader(tess, ShaderParameter.CompileStatus, ps);
+                if(ps[0] != 1) {
+                    int slen;
+                    string slog = "";
+                    GL.GetShaderInfoLog(tess, 256, out slen, out slog);
+                    Debug.Error($"Failed to compile TES shader! Log: {slog}");
+                }
+                GL.AttachShader(ret, tcss);
+                GL.AttachShader(ret, tess);
+                GL.DeleteShader(tcss);
+                GL.DeleteShader(tess);
+            }
+
             GL.LinkProgram(ret);
             GL.GetProgram(ret, GetProgramParameterName.LinkStatus, ps);
             if(ps[0] != 1) {
@@ -392,6 +418,8 @@ namespace AnimLib
                 GL.GetProgramInfoLog(ret, 256, out slen, out slog);
                 Console.WriteLine("Failed to link program!");
                 Console.WriteLine(slog);
+            } else {
+                Debug.Log("Program linked!");
             }
             _programs.Add(ret);
             // TODO: delete shaders?

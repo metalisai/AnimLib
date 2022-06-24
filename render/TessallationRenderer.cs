@@ -3,21 +3,140 @@ using OpenTK.Graphics.OpenGL4;
 using System.Collections.Generic;
 
 namespace AnimLib {
-    partial class TessallationRenderer : IRenderer {
+    partial class TessallationRenderer : IRenderer, IDisposable {
+
+        class RenderContext {
+            public Vector3 camPosWorld;
+            public M4x4 worldToClip;
+            public M4x4 screenToClip;
+        }
 
         private EntityStateResolver entRes;
         private RenderState rs;
 
+        private int _circleVao = -1;
+        private int _cubeVao = -1;
+
         int _standardProgram = -1;
+        int _circleProgram = -1;
+
+        const int circleSegments = 360;
+
+        RenderContext ctx = new RenderContext();
 
         public TessallationRenderer(RenderState rs) {
             this.rs = rs;
             _standardProgram = rs.AddShader(vertShader, fragShader, null);
+            _circleProgram = rs.AddShader(tessVS, fragShader, null, tessTCS, tessTES);
+            CreateMeshes();
         }
 
-        public void RenderCircles(CircleState[] circles, M4x4 mat, M4x4 orthoMat)
-        {
+        private void CreateMeshes() {
+            var initial = new Vector2(1.0f, 0.0f);
+            var circleVertices = new float[(circleSegments + 2)*2];
+            circleVertices[0] = 0.0f;
+            circleVertices[1] = 0.0f;
+            // Note: this should be rendered as triangle fan
+            for(int i = 0; i <= circleSegments; i++) {
+                float angle = (float)i * (MathF.PI/180.0f);
+                var pos = initial.Rotated(angle);
+                circleVertices[(i+1)*2] = pos.x;
+                circleVertices[(i+1)*2 + 1] = pos.y;
+            }
+            _circleVao = GL.GenVertexArray();
+            GL.BindVertexArray(_circleVao);
+            var vbo = GL.GenBuffer();
+            GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
+            GL.BufferData(BufferTarget.ArrayBuffer, circleVertices.Length*sizeof(float)*2, circleVertices, BufferUsageHint.StaticDraw);
+            GL.EnableVertexAttribArray(0);
+            GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, 0, 0);
+
+            var cubeV = new Vector3[] {
+                new Vector3(-0.5f, -0.5f, -0.5f),
+                new Vector3(0.5f, -0.5f, -0.5f),
+                new Vector3(-0.5f, 0.5f, -0.5f),
+                new Vector3(0.5f, 0.5f, -0.5f),
+                new Vector3(-0.5f, -0.5f, 0.5f),
+                new Vector3(0.5f, -0.5f, 0.5f),
+                new Vector3(-0.5f, 0.5f, 0.5f),
+                new Vector3(0.5f, 0.5f, 0.5f),
+            };
+            var cubeI = new uint[] {
+                0,1,2, 1,3,2, 0,4,1, 1,4,5, 2,7,6, 2,3,7, 1,7,3, 1,5,7, 4,2,6, 4,0,2, 5,6,7, 5,4,6
+            };
+            _cubeVao = GL.GenVertexArray();
+            GL.BindVertexArray(_cubeVao);
+            var cvbo = GL.GenBuffer();
+            var cebo = GL.GenBuffer();
+            GL.BindBuffer(BufferTarget.ArrayBuffer, cvbo);
+            GL.BufferData(BufferTarget.ArrayBuffer, cubeV.Length*sizeof(float)*3, ref cubeV[0].x, BufferUsageHint.StaticDraw);
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, cebo);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, cubeI.Length*sizeof(int), ref cubeI[0], BufferUsageHint.StaticDraw);
+            GL.EnableVertexAttribArray(0);
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 0, 0);
+
+            GL.BindVertexArray(0);
         }
+
+        public void RenderCircles(CircleState[] circles)
+        {
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+            if(circles.Length > 0) {
+                GL.Disable(EnableCap.CullFace);
+                GL.Enable(EnableCap.DepthTest);
+                GL.UseProgram(_circleProgram);
+                GL.PatchParameter(PatchParameterInt.PatchVertices, 1);
+                var m2wL = GL.GetUniformLocation(_circleProgram, "_ModelToWorld");
+                var w2cL = GL.GetUniformLocation(_circleProgram, "_WorldToClip");
+                var cwpL = GL.GetUniformLocation(_circleProgram, "_CamPosWorld");
+                var rL = GL.GetUniformLocation(_circleProgram, "_Radius");
+                //var loc = GL.GetUniformLocation(_standardProgram, "_ModelToClip");
+                var colLoc = GL.GetUniformLocation(_circleProgram, "_Color");
+                var entLoc = GL.GetUniformLocation(_circleProgram, "_EntityId");
+                GL.VertexAttrib4(1, 1.0f, 1.0f, 1.0f, 1.0f);
+                GL.BindVertexArray(_circleVao);
+                foreach(var c in circles) {
+                    M4x4 modelToWorld;
+                    modelToWorld = c.ModelToWorld(entRes) * M4x4.Scale(new Vector3(c.radius, c.radius, c.radius));
+                    //modelToClip = (c.is2d ? orthoMat : mat)*modelToWorld;
+                    GL.UniformMatrix4(m2wL, 1, false, ref modelToWorld.m11);
+                    GL.UniformMatrix4(w2cL, 1, false, ref ctx.worldToClip.m11);
+                    GL.Uniform3(cwpL, ctx.camPosWorld.x, ctx.camPosWorld.y, ctx.camPosWorld.z);
+                    GL.Uniform1(rL, c.radius);
+                    var col4 = Vector4.FromInt32(c.color.ToU32());
+                    GL.Uniform4(colLoc, col4.x, col4.y, col4.z, col4.w);
+                    GL.Uniform1(entLoc, c.entityId);
+                    //GL.DrawArrays(PrimitiveType.TriangleFan, 0, circleSegments+2);
+                    GL.DrawArrays(PrimitiveType.Patches, 0, 1); 
+                }
+            }
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+        }
+
+        public void RenderCubes(CubeState[] cubes, M4x4 mat)
+        {
+            if(cubes.Length > 0) {
+                GL.Disable(EnableCap.CullFace);
+                GL.Enable(EnableCap.DepthTest);
+                GL.UseProgram(_standardProgram);
+                var loc = GL.GetUniformLocation(_standardProgram, "_ModelToClip");
+                var colLoc = GL.GetUniformLocation(_standardProgram, "_Color");
+                var entLoc = GL.GetUniformLocation(_standardProgram, "_EntityId");
+                GL.VertexAttrib4(1, 1.0f, 1.0f, 1.0f, 1.0f);
+                GL.BindVertexArray(_cubeVao);
+                foreach(var c in cubes) {
+                    M4x4 modelToWorld, modelToClip;
+                    modelToWorld = c.ModelToWorld(entRes);
+                    modelToClip = mat*modelToWorld;
+                    GL.UniformMatrix4(loc, 1, false, ref modelToClip.m11);
+                    var col4 = Vector4.FromInt32(c.color.ToU32());
+                    GL.Uniform4(colLoc, col4.x, col4.y, col4.z, col4.w);
+                    GL.Uniform1(entLoc, c.entityId);
+                    GL.DrawElements(PrimitiveType.Triangles, 36, DrawElementsType.UnsignedInt, 0);
+                }
+            }
+        }
+
         public void RenderRectangles(RectangleState[] rectangles, M4x4 mat, M4x4 orthoMat)
         {
             if(rectangles.Length > 0) {
@@ -96,6 +215,8 @@ namespace AnimLib {
             var sceneCamera = ss.Camera;
             var pbSize = pb.Size;
 
+            var activecam = sceneCamera;
+
             if(sceneCamera is OrthoCameraState) {
                 var cam = sceneCamera as OrthoCameraState;
                 cam.width = pbSize.Item1;
@@ -104,11 +225,16 @@ namespace AnimLib {
 
             M4x4 worldToClip = sceneCamera.CreateWorldToClipMatrix((float)pbSize.Item1/(float)pbSize.Item2);
             if(rs.overrideCamera && sceneCamera is PerspectiveCameraState) {
-                worldToClip = rs.debugCamera.CreateWorldToClipMatrix((float)pbSize.Item2/(float)pbSize.Item2);
+                worldToClip = rs.debugCamera.CreateWorldToClipMatrix((float)pbSize.Item1/(float)pbSize.Item2);
+                activecam = rs.debugCamera;
             }
 
             RectTransform.RootTransform = new RectTransform(new Dummy());
             RectTransform.RootTransform.Size = new Vector2(pbSize.Item1, pbSize.Item2);
+
+            ctx.worldToClip = worldToClip;
+            ctx.screenToClip = smat;
+            ctx.camPosWorld = activecam.position;
 
             // render rectangles
             if(ss.Rectangles != null) {
@@ -116,13 +242,24 @@ namespace AnimLib {
             }
             // render meshbackedgeometries
             // render cubes
+            if(ss.Cubes != null) {
+                RenderCubes(ss.Cubes, worldToClip);
+            }
             // render circles
+            if(ss.Circles != null) {
+                RenderCircles(ss.Circles);
+            }
             // render meshes
             // render texrects
             // render glyphs
             // render labels
             // render beziers
 
+        }
+
+        public void Dispose() {
+            // TODO; delete shaders
+            // TODO: delete circle vao and vbo
         }
     }
 }
