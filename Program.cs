@@ -42,6 +42,7 @@ namespace AnimLib
         [STAThread]
         static void OnChanged(object sender, FileSystemEventArgs args) {
             AnimationBehaviour plugin = null;
+            Debug.Log("Behaviour changed, trying to reload");
             for(int i = 0; i < 5; i++) {
                 try {
                     Thread.Sleep(100);
@@ -62,40 +63,50 @@ namespace AnimLib
         }
 
         static AnimationBehaviour LoadBehaviour(string fullpath) {
-            System.Console.WriteLine($"Trying to load animation assemlby {fullpath}");
+            System.Console.WriteLine($"Trying to load animation assembly {fullpath}");
             var assemblyLoadContext = new AssemblyLoadContext("asmloadctx", true);
-            using (var fs = new FileStream(fullpath, FileMode.Open, FileAccess.Read))
-            {
+            try {
+                using (var fs = new FileStream(fullpath, FileMode.Open, FileAccess.Read))
+                {
 
-                // pdb
-                System.Reflection.Assembly asm;
-                using(var fs2 = new FileStream(fullpath.Replace(".dll", ".pdb"), FileMode.Open, FileAccess.Read)) {
-                    asm = assemblyLoadContext.LoadFromStream(fs, fs2);
+                    // pdb
+                    System.Reflection.Assembly asm;
+                    using(var fs2 = new FileStream(fullpath.Replace(".dll", ".pdb"), FileMode.Open, FileAccess.Read)) {
+                        asm = assemblyLoadContext.LoadFromStream(fs, fs2);
+                    }
+                    Type[] animPlugins = asm.GetExportedTypes().Where(x => !x.IsInterface && !x.IsAbstract && typeof(AnimationBehaviour).IsAssignableFrom(x)).ToArray();
+                    if(animPlugins.Length == 0) {
+                        System.Console.WriteLine($"Assembly did not contain animation behaviour");
+                        return null;
+                    }
+                    var instance = Activator.CreateInstance(animPlugins[0]);
+                    //assemblyLoadContext.Unload();
+                    watcher.EnableRaisingEvents = true;
+                    System.Console.WriteLine($"Animation behaviour loaded");
+                    return (AnimationBehaviour)instance;
                 }
-                Type[] animPlugins = asm.GetExportedTypes().Where(x => !x.IsInterface && !x.IsAbstract && typeof(AnimationBehaviour).IsAssignableFrom(x)).ToArray();
-                if(animPlugins.Length == 0) {
-                    System.Console.WriteLine($"Assembly did not contain animation behaviour");
-                    return null;
-                }
-                var instance = Activator.CreateInstance(animPlugins[0]);
-                //assemblyLoadContext.Unload();
+            }
+            catch (Exception e) {
+                Debug.Error($"Exception when loading behaviour: {e}\nUsing empty behaviour");
                 watcher.EnableRaisingEvents = true;
-                System.Console.WriteLine($"Animation behaviour loaded");
-                return (AnimationBehaviour)instance;
+                return new EmptyBehaviour();
             }
         }
 
         static AnimationBehaviour LoadAndWatchBehaviour(string fullpath) {
             if (watcher != null)
             {
+                Debug.Log($"Current behaviour watch disposed");
                 watcher.Dispose();
                 watcher = null;
             }
+            Debug.Log($"Starting new behaviour watch on {fullpath}");
             watcher = new FileSystemWatcher();
             watcher.Path = Path.GetDirectoryName(fullpath);
-            watcher.NotifyFilter = NotifyFilters.LastWrite;
+            watcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.FileName | NotifyFilters.LastWrite;
             watcher.Filter = Path.GetFileName(fullpath);
             watcher.Changed += OnChanged;
+            //watcher.Created += OnChanged;
             return LoadBehaviour(fullpath);
         }
 

@@ -248,7 +248,7 @@ namespace AnimLib
             entity.EntityCreated();
         }
 
-        public VisualEntity CreateInstantly(VisualEntity ent) {
+        public T CreateInstantly<T>(T ent) where T : VisualEntity {
             EntityCreated(ent);
             return ent;
         } 
@@ -262,19 +262,25 @@ namespace AnimLib
                 }, 0.0f, 1.0f, duration);
         }
 
-        public VisualEntity CloneInstantly(VisualEntity ent) {
+        /*public VisualEntity CloneInstantly(VisualEntity ent) {
             var ret = (VisualEntity)ent.Clone();
             CreateInstantly(ret);
             return ret;
+        }*/
+        
+         public T Clone<T>(T e) where T : VisualEntity, new() {
+            var ret = (T)e.Clone();
+            return ret;
         }
 
-        public T CloneInstantly<T>(T e) where T : VisualEntity, new() {
+        public T CreateClone<T>(T e) where T : VisualEntity, new() {
             var ret = (T)e.Clone();
             CreateInstantly(ret);
             return ret;
         }
 
         public void Destroy(VisualEntity obj) {
+            if(!obj.created) return;
             var cmd = new WorldDestroyCommand() {
                 time = AnimationTime.Time,
                 entityId = obj.EntityId,

@@ -96,7 +96,15 @@ namespace AnimLib {
                 resourcesDirty = true;
                 var ret = Save();
                 if(OnAssemblyChanged != null) {
-                    OnAssemblyChanged(GetAssemblyPath(directoryPath, name));
+                    var asmPath = GetAssemblyPath(directoryPath, name);
+                    try {
+                        var asmDir = Path.GetDirectoryName(asmPath);
+                        System.IO.Directory.CreateDirectory(asmDir);
+                        Debug.Log($"Created directory {asmDir}");
+                    } catch (Exception e) {
+                        Debug.Error($"Failed to create destination path {e}");
+                    }
+                    OnAssemblyChanged(asmPath);
                 }
                 return ret;
             }

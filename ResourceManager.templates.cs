@@ -47,6 +47,12 @@ public class ");
         hw.HAlign = TextHorizontalAlignment.Center;
         hw.VAlign = TextVerticalAlignment.Center;
         hw.Text = ""Hello, world!"";
+
+        var hw2 = world.Clone(hw);
+        hw2.Transform.Pos = new Vector2(100.0f, 200.0f);
+        hw2.Text = ""Already here"";
+        world.CreateInstantly(hw2);
+
         await world.CreateFadeIn(hw, 1.0f);
         // create sine animation and change text color on every update (2hz sine black->red)
         await AnimationTransform.Sine(x => {
