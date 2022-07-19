@@ -36,8 +36,6 @@ namespace AnimLib {
         // get surface if 2D object or null if not
         public abstract Plane? GetSurface();
         public SceneTransform transform {get; set; }
-        [NonSerialized]
-        public VisualEntity worldRef;
         [JsonIgnore]
         public (string, Func<object>, Action<object>)[] Properties { get; protected set;} = new (string, Func<object>, Action<object>)[]{};
 

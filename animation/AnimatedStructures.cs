@@ -26,7 +26,7 @@ namespace AnimLib {
                 text = text,
                 position = newpos,
             });
-            await AnimationTransform.SmoothFloat((x) => {
+            await Animate.InterpF((x) => {
                 text.Transform.Pos = new Vector3(Vector2.Lerp(startpos, newpos, x), text.state.position.z);
             }, 0.0f, 1.0f, 1.0);
         }
@@ -44,7 +44,7 @@ namespace AnimLib {
                 position = newpos,
             };
             items.Insert(idx, newitem);
-            await AnimationTransform.SmoothFloat((x) => {
+            await Animate.InterpF((x) => {
                 text.Transform.Pos = new Vector3(Vector2.Lerp(startpos, newpos, x), text.state.position.z);
                 for(int i = idx+1; i < items.Count; i++) {
                     items[i].text.Transform.Pos = new Vector3(Vector2.Lerp(items[i].position, items[i].position+new Vector2(0.0f, heightOffset),x), items[i].text.state.position.z);
@@ -63,7 +63,7 @@ namespace AnimLib {
 
         public async Task RemoveItem(int idx) {
             int count = items.Count;
-            await AnimationTransform.SmoothFloat((x) => {
+            await Animate.InterpF((x) => {
                 for(int i = idx+1; i < count; i++) {
                     items[i].text.Transform.Pos = new Vector3(Vector2.Lerp(items[i].position, items[i].position-new Vector2(0.0f, heightOffset),x), items[i].text.state.position.z);
                     //text.Transform.Pos = new Vector3(Vector2.Lerp(startpos, newpos, x), text.state.position.z);

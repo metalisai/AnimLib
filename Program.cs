@@ -103,7 +103,7 @@ namespace AnimLib
             Debug.Log($"Starting new behaviour watch on {fullpath}");
             watcher = new FileSystemWatcher();
             watcher.Path = Path.GetDirectoryName(fullpath);
-            watcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.FileName | NotifyFilters.LastWrite;
+            watcher.NotifyFilter = NotifyFilters.LastWrite;
             watcher.Filter = Path.GetFileName(fullpath);
             watcher.Changed += OnChanged;
             //watcher.Created += OnChanged;
@@ -124,6 +124,8 @@ namespace AnimLib
             player = new AnimationPlayer(null, pctrl);
             player.ResourceManager.OnAssemblyChanged += AssemblyPathChanged;
             pctrl.SetPlayer(player);
+
+            player.SetBehaviour(new NoProjectBehaviour());
             
             SynchronizationContext.SetSynchronizationContext(mainCtx);
 
@@ -163,7 +165,7 @@ namespace AnimLib
                 mainCtx.InvokeAllPosted();
                 if(player.RenderUI) {
                     foreach(var h in player.GetAnimationHandles()) {
-                        if(h.StartTime <= AnimationTime.Time) {
+                        if(h.StartTime <= Time.T) {
                             bool update;
                             h.Position = pctrl.Show2DHandle(h.Identifier, h.Position, h.Anchor, out update);
                             if(update) {
@@ -175,7 +177,7 @@ namespace AnimLib
                     }
                     int i = 0;
                     foreach(var h in player.GetAnimationHandles3D()) {
-                        if(h.StartTime <= AnimationTime.Time) {
+                        if(h.StartTime <= Time.T) {
                             if((UserInterface.WorldCamera.position - h.Position).Length > 1.0f) {
                                 bool update;
                                 h.Position = pctrl.Show3DHandle(h.Identifier, h.Position, out update);
@@ -193,6 +195,8 @@ namespace AnimLib
                 ret = player.NextFrame(1.0/refreshRate);
                 if(ret != null) {
                     UserInterface.WorldCamera = ret.Camera;
+                } else {
+                    Debug.Log("No scene to render!");
                 }
                i++;
                return ret;

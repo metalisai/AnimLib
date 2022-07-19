@@ -14,6 +14,57 @@ namespace AnimLib {
         void Init(AnimationSettings settings);
     }
 
+    // no project loaded
+    public class NoProjectBehaviour : AnimationBehaviour {
+        public void Init(AnimationSettings settings) {
+            settings.MaxLength = 1.0;
+        }
+        public async Task Animation(World world, Animator animator) {
+            var hw = new Text2D();
+            hw.Transform.Pos = new Vector2(100.0f, 100.0f);
+            hw.Size = 22.0f;
+            hw.Color = Color.RED;
+            hw.Anchor = new Vector2(0.5f, 0.5f);
+            hw.HAlign = TextHorizontalAlignment.Center;
+            hw.VAlign = TextVerticalAlignment.Center;
+            // TODO: this thing  is screaming for multiline text
+            hw.Text = "No project loaded!";
+            var hw2 = world.Clone(hw);
+            hw2.Transform.Pos = new Vector2(100.0f, 131.0f);
+            hw2.Text = "File->New project... or File->Open project... to continue";
+            world.CreateInstantly(hw);
+            world.CreateInstantly(hw2);
+            await Task.Yield();
+        }
+    }
+
+
+    // no project loaded
+    public class ErrorBehaviour : AnimationBehaviour {
+        public void Init(AnimationSettings settings) {
+            settings.MaxLength = 1.0;
+        }
+        public async Task Animation(World world, Animator animator) {
+            var hw = new Text2D();
+            hw.Transform.Pos = new Vector2(100.0f, 100.0f);
+            hw.Size = 22.0f;
+            hw.Color = Color.RED;
+            hw.Anchor = new Vector2(0.5f, 0.5f);
+            hw.HAlign = TextHorizontalAlignment.Center;
+            hw.VAlign = TextVerticalAlignment.Center;
+            // TODO: this thing  is screaming for multiline text
+            hw.Text = "Error occurred during animation";
+            var hw2 = world.Clone(hw);
+            hw2.Transform.Pos = new Vector2(100.0f, 131.0f);
+            hw2.Text = "Fix your animation and try again!";
+            world.CreateInstantly(hw);
+            world.CreateInstantly(hw2);
+            await Task.Yield();
+        }
+    }
+
+
+    // project loaded but no assembly found
     public class EmptyBehaviour : AnimationBehaviour {
         public void Init(AnimationSettings settings) {
             settings.MaxLength = 1.0;

@@ -299,9 +299,13 @@ namespace AnimLib {
                     if(OnError != null) {
                         OnError(prep.error, prep.stackTrace);
                     }
+                    if (currentAnimation == null) {
+                        currentAnimation = prep;
+                    }                
+                } else {
+                    currentAnimation = prep;
                 }
 
-                currentAnimation = prep;
                 DeserializeHandles(); // Load stored handles
                 foreach(var handle in prep.Handles2D) {
                     Vector2 pos;
@@ -323,8 +327,8 @@ namespace AnimLib {
                         }
                     }
                 }
+                // NOTE: machine.Reset() sideeffect when setting new program
                 machine.SetProgram(currentAnimation.Commands);
-                machine.Reset();
                 trackPlayer.Track = currentAnimation.SoundTrack;
                 trackPlayer.Seek(progress);
                 machine.Seek(progress);
@@ -334,8 +338,9 @@ namespace AnimLib {
                 }
             }
 
-            if(!machine.HasProgram)
+            if(!machine.HasProgram) {
                 return null;
+            }
 
             if(export == null) {
                 if(!paused) {
@@ -346,8 +351,10 @@ namespace AnimLib {
                 return machine.GetWorldSnapshot();
             } else {
                 machine.Step(1.0 / (double)settings.FPS);
+                var endTime = Math.Min(export.endTime, machine.GetEndTime());
+                Debug.Log($"Time {machine.GetPlaybackTime()}/{endTime}");
                 var frame = machine.GetWorldSnapshot();
-                if(machine.GetPlaybackTime() > export.endTime) {
+                if(machine.GetPlaybackTime() >= endTime) {
                     export.exporter.Stop();
                     var sound = currentAnimation.SoundTrack;
                     var count = Math.Min(sound.samples[0].Length, (int)Math.Round(export.endTime * sound.sampleRate));
@@ -379,6 +386,8 @@ namespace AnimLib {
         private void DeserializeHandles() {
             lock(handleLock) {
                 var props = ResourceManager.GetProperties();
+                if(props == null) // dummy behaviour most likely
+                    return;
                 VectorHandleMap = new Dictionary<string, Vector2>(props.VectorHandleMap);
                 VectorHandleMap3D = new Dictionary<string, Vector3>(props.VectorHandleMap3D);
                 Values = props.Values ?? new PlayerValues();

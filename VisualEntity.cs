@@ -9,6 +9,7 @@ namespace AnimLib {
     public abstract class EntityState : ICloneable {
         // TODO: find way to reference state without VisualEntity
         public int parentId;
+        public object creator; // AnimationBehaviour or SceneObject
         public Vector3 position;
         public Vector2 anchor;
         public Quaternion rotation = Quaternion.IDENTITY;

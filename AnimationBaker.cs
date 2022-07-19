@@ -70,8 +70,8 @@ namespace AnimLib {
             }
             var handle = new AnimationHandle2D {
                 Identifier = key,
-                StartTime = AnimationTime.Time,
-                EndTime = AnimationTime.Time + 1000.0,
+                StartTime = Time.T,
+                EndTime = Time.T + 1000.0,
                 Position = pos,
                 Anchor = anchor,
             };
@@ -87,8 +87,8 @@ namespace AnimLib {
             }
             var handle = new AnimationHandle3D {
                 Identifier = key,
-                StartTime = AnimationTime.Time,
-                EndTime = AnimationTime.Time + 1000.0,
+                StartTime = Time.T,
+                EndTime = Time.T + 1000.0,
                 Position = pos,
             };
             VectorHandles3D.Add(handle);
@@ -181,18 +181,35 @@ namespace AnimLib {
             string error = "";
             string stackTrace = "";
 
-            AnimationTime.Reset();
+            bool dummy = scene == null;
+
+            Time.Reset();
             world.Reset();
             double t = 0.0;
             double dt = 1.0 / settings.FPS;
             double start = 0.0;
             double end = settings.MaxLength;
-            lock(scene.sceneLock) {
-                scene.LastTime = start;
-                scene.UpdateEvents();
-                scene.ManageSceneObjects(world);
+            if(!dummy) { // scene can be null for dummy behaviour
+                lock(scene.sceneLock) {
+                    scene.LastTime = start;
+                    scene.UpdateEvents();
+                    scene.ManageSceneObjects(world);
+                }
             }
-            var anim = behaviour1.Animation(world, animator);
+
+            world.StartEditing(behaviour1);
+            System.Threading.Tasks.Task anim = null;
+            try {
+                anim = behaviour1.Animation(world, animator);
+            } catch (Exception e) {
+                // TODO: print error to user
+                anim = (new ErrorBehaviour()).Animation(world, animator);
+                haveError = true;
+                error = e.Message;
+                stackTrace = e.StackTrace;
+            }
+            world.EndEditing();
+
             if(anim.Exception != null) {
                 haveError = true;
                 var cap = ExceptionDispatchInfo.Capture(anim.Exception.InnerException);
@@ -200,6 +217,7 @@ namespace AnimLib {
                 stackTrace = cap.SourceException.StackTrace.ToString();
                 Debug.Error(cap.SourceException.StackTrace);
             }
+
             while(t <= end && !anim.IsCompleted) {
                 if(anim.Exception != null) {
                     haveError = true;
@@ -209,11 +227,18 @@ namespace AnimLib {
                     Debug.Error(cap.SourceException.StackTrace);
                     break;
                 }
-                AnimationTime.NewFrame(dt);
+
+
+                world.StartEditing(behaviour1);
+                Time.NewFrame(dt);
                 world.Update(dt);
+                world.EndEditing();
+
                 if(t >= start) {
-                    lock(scene.sceneLock) {
-                        scene.ManageSceneObjects(world);
+                    if(!dummy) {
+                        lock(scene.sceneLock) {
+                            scene.ManageSceneObjects(world);
+                        }
                     }
                 }
                 t += dt; 
@@ -231,7 +256,7 @@ namespace AnimLib {
                 }
             }
 
-            System.Console.WriteLine($"Baked animation has {cmds.Length} commands");
+            Debug.Log($"Baked animation has {cmds.Length} commands");
 
             World.current = null;
 

@@ -21,7 +21,7 @@ namespace AnimLib {
                 t.Text = current;
                 bool pause = c == ' ' || c == '!' || c == ',' || c == '.';
                 var waitTime = (1.0-(rnd.NextDouble()*0.25-0.125)) * (pause ? 1.5 : 1.0) * average;
-                await AnimationTime.WaitSeconds(waitTime);
+                await Time.WaitSeconds(waitTime);
             }
             return t;
         }

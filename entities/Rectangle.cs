@@ -27,7 +27,7 @@ namespace AnimLib {
         }
     }
 
-    public class Rectangle : VisualEntity {
+    public class Rectangle : VisualEntity, IColored {
         public float Width {
             get {
                 return ((RectangleState)state).width;

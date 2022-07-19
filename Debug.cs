@@ -27,6 +27,7 @@ namespace AnimLib {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"{file}:{lineNumber} {t}");
             Console.ResetColor();
+            Console.WriteLine($"Trace: {System.Environment.StackTrace}");
 #endif
         }
 

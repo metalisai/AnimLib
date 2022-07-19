@@ -45,7 +45,6 @@ namespace AnimLib {
                     g.state.selectable = false;
 
                     g.Transform.parent = this.Transform;
-                    g.EntityId = World.current.GetUniqueId();
 
                     Glyphs.Add(g);
                 }

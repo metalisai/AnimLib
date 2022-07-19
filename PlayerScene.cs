@@ -71,7 +71,7 @@ namespace AnimLib {
 
         [NonSerialized]
         private List<SceneEvent> SceneEvents;
-        public double LastTime = 0.0;
+        public double LastTime = 0.0; // AnimationTime.T scene is currently set up for
         SceneObject[] GetObjects() {
             return Circles.Select(x => (SceneObject)x)
                 .Concat(Arrows.Select(x => (SceneObject)x))
@@ -145,17 +145,24 @@ namespace AnimLib {
             var objs = GetObjects();
             foreach(var obj in objs) {
                 if(obj.name == name){ 
-                    return obj.worldRef;
+                    var ent = World.current.FindEntityByCreator(obj);
+                    if(ent == null) {
+                        // TODO: player error
+                        Debug.Error($"Scene entity {name} exists, but is either already destroyed or not created yet!");
+                    }
+                    return ent;
                 }
             }
+            Debug.Error($"Scene entity {name} does not exist");
             return null;
         }
 
         public VisualEntity[] GetSceneEntitiesByName(string pattern) {
-            Regex ex = new Regex(pattern);
+            throw new NotImplementedException();
+            /*Regex ex = new Regex(pattern);
             var objs = GetObjects();
             var sos = objs.Where(x => ex.IsMatch(x.name)).OrderBy(x => x.name);
-            return sos.Select(x => x.worldRef).ToArray();
+            return sos.Select(x => x.worldRef).ToArray();*/
         }
 
         // TODO: this needs to be refactored
@@ -166,9 +173,10 @@ namespace AnimLib {
             foreach(var e in SceneEvents) {
                 if(e.time < LastTime) {
                     continue;
-                } else if(e.time >= LastTime && e.time < AnimationTime.Time && e.time != 0.0 || e.time == 0.0 && AnimationTime.Time == 0.0) {
+                } else if(e.time >= LastTime && e.time < Time.T && e.time != 0.0 || e.time == 0.0 && Time.T == 0.0) {
                     if(e.type == SceneEventType.Create) {
                         VisualEntity ent = null;
+                        world.StartEditing(e.obj);
                         switch(e.obj) {
                             case PlayerCircle pc:
                             var c = new Circle(false);
@@ -177,7 +185,6 @@ namespace AnimLib {
                             c.Transform.Pos = pc.transform.Pos;
                             c.Transform.Rot = pc.transform.Rot;
                             world.CreateInstantly(c);
-                            pc.worldRef = c;
                             ent = c;
                             break;
                             case PlayerArrow pa:
@@ -188,7 +195,6 @@ namespace AnimLib {
                             a.StartColor = pa.startColor;
                             a.EndColor= pa.endColor;
                             world.CreateInstantly(a);
-                            pa.worldRef = a;
                             ent = a;
                             break;
                             case PlayerLine pl:
@@ -197,7 +203,6 @@ namespace AnimLib {
                             l.Width = pl.width;
                             l.Color = pl.color;
                             world.CreateInstantly(l);
-                            pl.worldRef = l;
                             ent = l;
                             break;
                             case Player2DText t1:
@@ -207,7 +212,6 @@ namespace AnimLib {
                             t.Color = t1.color;
                             t.Text = t1.text;
                             world.CreateInstantly(t);
-                            t1.worldRef = t;
                             ent = t;
                             break;
                             case PlayerQSpline q1:
@@ -217,7 +221,6 @@ namespace AnimLib {
                             qs.Width = q1.width;
                             qs.Transform.Pos = q1.transform.Pos;
                             world.CreateInstantly(qs);
-                            q1.worldRef = qs;
                             ent = qs;
                             break;
                             case PlayerRect pr1:
@@ -227,19 +230,23 @@ namespace AnimLib {
                             pr.Color = pr1.color;
                             pr.Transform.Pos = pr1.transform.Pos;
                             world.CreateInstantly(pr);
-                            pr1.worldRef = pr;
                             ent = pr;
                             break;
                         }
+                        world.EndEditing();
                         sceneObjects[ent.EntityId] = e.obj;
                     } else if(e.type == SceneEventType.Delete) {
-                        world.Destroy(e.obj.worldRef);
+                        var ent = world.FindEntityByCreator(e.obj);
+                        if(ent == null) {
+                            Debug.Error($"Scene destroying entity that isn't created by us {e.obj.name}");
+                        }
+                        world.Destroy(ent);
                     }
                 } else {
                     break;
                 }
             }
-            LastTime = AnimationTime.Time;
+            LastTime = Time.T;
         }
     }
 }

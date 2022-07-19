@@ -130,6 +130,8 @@ namespace AnimLib {
         }
 
         public void Seek(double progress) {
+            if(currentTrack == null) // no track, cant seek
+                return;
             Bass.ChannelStop(bassStream);
             if(_playing)
                 Bass.ChannelPlay(bassStream);

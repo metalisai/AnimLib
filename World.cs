@@ -122,6 +122,7 @@ namespace AnimLib
 
     public class World
     {
+        static int worldId = 0;
         [ThreadStatic]
         static int entityId = 1;
         [ThreadStatic]
@@ -134,9 +135,12 @@ namespace AnimLib
         private Dictionary<int, VisualEntity> _entities = new Dictionary<int, VisualEntity>();
 
         public TypeSetting ts = new TypeSetting();
+        object currentEditor = null; // who edits things right now (e.g. scene or animationbehaviour)
 
         public EntityResolver EntityResolver;
         Color background = Color.WHITE;
+
+        public readonly int Id;
 
         Camera _activeCamera;
         public Camera ActiveCamera {
@@ -146,11 +150,27 @@ namespace AnimLib
                 var cmd = new WorldSetActiveCameraCommand() {
                     oldCamEntId = _activeCamera?.EntityId ?? 0,
                     cameraEntId = value?.EntityId ?? 0,
-                    time = AnimationTime.Time,
+                    time = Time.T,
                 };
                 _commands.Add(cmd);
                 _activeCamera = value;
             }
+        }
+        
+        public void StartEditing(object editor) {
+            if(editor == null) {
+                Debug.Error("Use EndEditing() instead of passing null");
+            }
+            if(currentEditor != null)
+            {
+                Debug.Error("StartEditing() should always have a matchin EndEditing(). Someone forgot to do that!");
+                Debug.Error("This isn't critical but helps avoid certain type of bugs");
+            }
+            this.currentEditor = editor;
+        }
+
+        public void EndEditing() {
+            this.currentEditor = null;
         }
 
         public World() {
@@ -160,6 +180,7 @@ namespace AnimLib
                     return _entities[entid];
                 }
             };
+            Id = worldId++;
             //this._activeCamera.Position = new Vector3(0.0f, 0.0f, 13.0f);
             Reset();
         }
@@ -183,7 +204,7 @@ namespace AnimLib
 
         public void PlaySound(SoundSample sound, float volume = 1.0f) {
             var command = new WorldPlaySoundCommand() {
-                time = AnimationTime.Time,
+                time = Time.T,
                 volume = volume,
                 sound = sound,
             };
@@ -195,6 +216,7 @@ namespace AnimLib
         }
 
         public void Reset() {
+            StartEditing(this);
             Resources?.Dispose();
             Resources = new WorldResources();
             _commands.Clear();
@@ -206,6 +228,16 @@ namespace AnimLib
             cam.Transform.Pos = new Vector3(0.0f, 0.0f, -13.0f);
             CreateInstantly(cam);
             ActiveCamera = cam;
+            EndEditing();
+        }
+
+        public VisualEntity FindEntityByCreator(object creator) {
+            foreach(var ent in _entities.Values) {
+                if(ent.state.creator == creator) {
+                    return ent;
+                }
+            }
+            return null;
         }
 
         public void AddResource(ColoredTriangleMeshGeometry geometry) {
@@ -222,7 +254,7 @@ namespace AnimLib
             if(entity.created) {
                 var cmd = new WorldPropertyCommand {
                     entityId = entity.EntityId,
-                    time = AnimationTime.Time,
+                    time = Time.T,
                     property = propert,
                     newvalue = value,
                     oldvalue = oldvalue,
@@ -233,8 +265,12 @@ namespace AnimLib
 
         private void EntityCreated(VisualEntity entity) {
             entity.state.entityId = GetUniqueId();
+            if(currentEditor == null) {
+                Debug.Error("Entity created when no one is editing!? Use StartEditing() before modifying world.");
+            }
+            entity.state.creator = currentEditor;
             var cmd = new WorldCreateCommand() {
-                time = AnimationTime.Time,
+                time = Time.T,
                 entity = entity.state.Clone(),
             };
             _commands.Add(cmd);
@@ -256,7 +292,7 @@ namespace AnimLib
         public Task CreateFadeIn<T>(T entity, float duration) where T : VisualEntity,IColored {
             CreateInstantly(entity);
             var c = entity.Color;
-            return AnimationTransform.SmoothT<float>(x => {
+            return Animate.InterpT<float>(x => {
                     c.a = (byte)Math.Round(x*255.0f);
                     entity.Color = c;
                 }, 0.0f, 1.0f, duration);
@@ -273,7 +309,7 @@ namespace AnimLib
             return ret;
         }
 
-        public T CreateClone<T>(T e) where T : VisualEntity, new() {
+        public T CreateClone<T>(T e) where T : VisualEntity {
             var ret = (T)e.Clone();
             CreateInstantly(ret);
             return ret;
@@ -282,14 +318,14 @@ namespace AnimLib
         public void Destroy(VisualEntity obj) {
             if(!obj.created) return;
             var cmd = new WorldDestroyCommand() {
-                time = AnimationTime.Time,
+                time = Time.T,
                 entityId = obj.EntityId,
             };
             _commands.Add(cmd);
         }
 
         public WorldCommand[] GetCommands() {
-            return _commands.Concat(new WorldCommand[]{new WorldEndCommand{time = AnimationTime.Time}}).ToArray();
+            return _commands.Concat(new WorldCommand[]{new WorldEndCommand{time = Time.T}}).ToArray();
         }
 
         public WorldSoundCommand[] GetSoundCommands() {

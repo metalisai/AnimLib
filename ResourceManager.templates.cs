@@ -38,7 +38,7 @@ public class ");
         settings.MaxLength = 60.0f; 
     }
 
-    public async Task Animation(World world, Animator player) {
+    public async Task Animation(World world, Animator animator) {
         var hw = new Text2D();
         hw.Transform.Pos = new Vector2(100.0f, 100.0f);
         hw.Size = 22.0f;

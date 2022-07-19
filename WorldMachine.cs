@@ -22,6 +22,7 @@ namespace AnimLib {
         Dictionary<int, EntityState> _destroyedEntities = new Dictionary<int, EntityState>();
 
         public double fps = 60.0;
+        string _lastAction = ""; // this is for debug
 
         public bool HasProgram {
             get {
@@ -29,7 +30,16 @@ namespace AnimLib {
             }
         }
 
-        WorldCommand[] _program;
+        private WorldCommand[] Program {
+            get {
+                if (_program == null)
+                    return new WorldCommand[0];
+                else
+                    return _program;
+            }
+        }
+
+        private WorldCommand[] _program;
         int _playCursorCmd = 0;
         double _currentPlaybackTime = 0.0;
 
@@ -62,45 +72,54 @@ namespace AnimLib {
 
         // returns true if done playing
         public bool Step(double dt) {
-            if(dt >= 0) {
+            var program = Program;
+            if(dt >= 0) { // advance
                 _currentPlaybackTime += dt;
-                _currentPlaybackTime = Math.Min(_currentPlaybackTime, _program.Last().time);
-                while(_playCursorCmd < _program.Length && _program[_playCursorCmd].time <= _currentPlaybackTime) {
-                    Execute(_program[_playCursorCmd]);
+                _currentPlaybackTime = Math.Min(_currentPlaybackTime, GetEndTime());
+                while(_playCursorCmd < program.Length && program[_playCursorCmd].time <= _currentPlaybackTime) {
+                    Execute(program[_playCursorCmd]);
                     _playCursorCmd++;
                 }
-            } else if(_currentPlaybackTime > 0.0) {
+            } else if(_currentPlaybackTime > 0.0) { // reversing or still
                 _currentPlaybackTime += dt;
                 _currentPlaybackTime = Math.Max(0.0, _currentPlaybackTime);
-                while(_playCursorCmd-1 > 0 && _program[_playCursorCmd-1].time > _currentPlaybackTime) {
-                    Undo(_program[_playCursorCmd-1]);
+                while(_playCursorCmd-1 > 0 && program[_playCursorCmd-1].time > _currentPlaybackTime) {
+                    Undo(program[_playCursorCmd-1]);
                     _playCursorCmd--;
                 }
             }
-            return _currentPlaybackTime == 0.0 || _currentPlaybackTime == _program.Last().time;
+            return _currentPlaybackTime == 0.0 || _currentPlaybackTime == GetEndTime();
         }
 
         public double GetPlaybackTime() {
             return _currentPlaybackTime;
         }
 
+        public double GetEndTime() {
+            return Program.LastOrDefault()?.time ?? 0.0;
+        }
+
         // from 0.0 to 1.0
         public double GetProgress() {
-            double length = _program.Last().time;
+            double length = GetEndTime();
+            if(length == 0.0) // can't divide by 0
+                return 0.0;
             return _currentPlaybackTime / length;
         }
 
         public void Seek(double progress) {
-            double time = progress * _program.Last().time;
+            _lastAction = $"Seek to {progress} (range 0.0 - 1.0)";
+            double endT = GetEndTime();
+            double time = progress * endT;
             time = Math.Max(0.0, time);
-            time = Math.Min(_program.Last().time, time);
+            time = Math.Min(endT, time);
             double delta = time - _currentPlaybackTime;
             Step(delta);
         }
 
         public void SeekSeconds(double seconds) {
             seconds = Math.Max(0.0, seconds);
-            seconds = Math.Min(_program.Last().time, seconds);
+            seconds = Math.Min(GetEndTime(), seconds);
             double delta = seconds - _currentPlaybackTime;
             Step(delta);
         }
@@ -241,6 +260,11 @@ namespace AnimLib {
                 case WorldPropertyCommand worldProperty:
                 //Console.WriteLine($"Property {worldProperty.property} set!");
                 var lower = char.ToLower(worldProperty.property[0]) + worldProperty.property.Substring(1);
+                if(!_entities.ContainsKey(worldProperty.entityId)) {
+                    Debug.Error($"Setting property of an entity that doesnt exist. Entity {worldProperty.entityId}, property {worldProperty.property}");
+                    Debug.Error($"Last worldmachine action: {_lastAction}");
+                    Debug.Error($"Command {_playCursorCmd}/{Program.Length}");
+                }
 
                 var state = _entities[worldProperty.entityId];
                 var field = state.GetType().GetField(lower);
