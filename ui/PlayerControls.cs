@@ -323,12 +323,12 @@ namespace AnimLib {
             //ImGui.SameLine((size.X - btnSize.X/2.0f - fpadding.X) / 2.0f);
             ImGui.SameLine(area.Item1 + 2*fpadding.X);
             if(!playing) {
-                if(ImGui.Button(playText)) {
+                if(ImGui.Button(playText, new ImVec2(50.0f, 20.0f))) {
                     OnPlay();
                 }
             }
             else {
-                if(ImGui.Button(pauseText)) {
+                if(ImGui.Button(pauseText, new ImVec2(50.0f, 20.0f))) {
                     OnStop();
                 }
             }

@@ -19,21 +19,23 @@ namespace AnimLib {
         int drawId = 0;
 
         private EntityStateResolver entRes;
+        private OpenTKPlatform platform;
         private RenderState rs;
 
-        public DistanceFieldRenderer(RenderState rs) {
+        public DistanceFieldRenderer(OpenTKPlatform platform, RenderState rs) {
+            this.platform = platform;
             this.rs = rs;
-            _circleProgram = rs.AddShader(circleVert, circleFrag, null);
-            _bezierProgram = rs.AddShader(quadBezierVert, quadBezierFrag, quadBezierGeo);
-            _rectangleProgram = rs.AddShader(rectangleVert, rectangleFrag, null);
-            _texRectProgram = rs.AddShader(rectangleVert, texRectFrag, null);
-            _arrowProgram = rs.AddShader(rectangleVert, arrowFrag, null);
-            _staticLineProgram = rs.AddShader(staticLineVert, staticLineFrag, null);
-            _cubeProgram = rs.AddShader(staticLineVert, cubeFrag, null);
-            _meshProgram = rs.AddShader(vertShader, meshFrag, meshGeom);
+            _circleProgram = platform.AddShader(circleVert, circleFrag, null);
+            _bezierProgram = platform.AddShader(quadBezierVert, quadBezierFrag, quadBezierGeo);
+            _rectangleProgram = platform.AddShader(rectangleVert, rectangleFrag, null);
+            _texRectProgram = platform.AddShader(rectangleVert, texRectFrag, null);
+            _arrowProgram = platform.AddShader(rectangleVert, arrowFrag, null);
+            _staticLineProgram = platform.AddShader(staticLineVert, staticLineFrag, null);
+            _cubeProgram = platform.AddShader(staticLineVert, cubeFrag, null);
+            _meshProgram = platform.AddShader(vertShader, meshFrag, meshGeom);
             //_wireTriangleProgram = AddShader(wireTriangleVert, wireTriangleFrag, null);
             //_lineProgram = AddShader(lineVert, lineFrag, lineGeom);
-            _textProgram = rs.AddShader(textVert, textFrag, null);
+            _textProgram = platform.AddShader(textVert, textFrag, null);
 
         }
 
@@ -47,7 +49,7 @@ namespace AnimLib {
                 var colLoc = GL.GetUniformLocation(_circleProgram, "_Color");
                 var outlineLoc = GL.GetUniformLocation(_circleProgram, "_Outline");
                 var idLoc = GL.GetUniformLocation(_circleProgram, "_EntityId");
-                GL.BindVertexArray(rs.rectVao);
+                GL.BindVertexArray(platform.rectVao);
                 GL.VertexAttrib4(1, 1.0f, 1.0f, 1.0f, 1.0f);
                 foreach(var c in circles) {
                     M4x4 modelToWorld, modelToClip;
@@ -84,7 +86,7 @@ namespace AnimLib {
                 var outlineLoc = GL.GetUniformLocation(_rectangleProgram, "_Outline");
                 var colLoc = GL.GetUniformLocation(_rectangleProgram, "_Color");
                 var entLoc = GL.GetUniformLocation(_rectangleProgram, "_EntityId");
-                GL.BindVertexArray(rs.rectVao);
+                GL.BindVertexArray(platform.rectVao);
                 GL.VertexAttrib4(1, 1.0f, 1.0f, 1.0f, 1.0f);
                 foreach(var r in rectangles) {
                     M4x4 modelToWorld, modelToClip;
@@ -123,7 +125,7 @@ namespace AnimLib {
                 var p3Loc = GL.GetUniformLocation(_bezierProgram, "_Point3");
                 var ssLoc = GL.GetUniformLocation(_bezierProgram, "_ScreenSize");
                 var wLog = GL.GetUniformLocation(_bezierProgram, "_Width");
-                GL.BindVertexArray(rs.rectVao);
+                GL.BindVertexArray(platform.rectVao);
                 foreach(var bz in beziers) {
                     int count = 1 + (bz.points.Length-3)/2;
                     M4x4 modelToWorld, modelToClip;
@@ -159,11 +161,11 @@ namespace AnimLib {
                 var outlineLoc = GL.GetUniformLocation(_texRectProgram, "_Outline");
                 var colLoc = GL.GetUniformLocation(_texRectProgram, "_Color");
                 var texLoc = GL.GetUniformLocation(_texRectProgram, "_MainTex");
-                GL.BindVertexArray(rs.rectVao);
+                GL.BindVertexArray(platform.rectVao);
                 GL.VertexAttrib4(1, 1.0f, 1.0f, 1.0f, 1.0f);
                 foreach(var r in rectangles) {
                     if(r.texture.GLHandle == -1) {
-                        rs.LoadTexture(r.texture);
+                        platform.LoadTexture(r.texture);
                     }
                     GL.BindTextureUnit(0, r.texture.GLHandle);
                     GL.Uniform1(texLoc, 0);
@@ -238,11 +240,13 @@ namespace AnimLib {
                             m.Geometry.VBOHandle = vbo;
                             m.Geometry.EBOHandle = ebo;
                             // register owner for deletion (if owner gets destroyed)
+                            // (we created a new buffer, but we don't know the lifetime of it)
                             if(m.Geometry.GetOwnerGuid() != "") {
-                                RenderState.AllocatedResources res;
-                                if(!rs.allocatedResources.TryGetValue(m.Geometry.GetOwnerGuid(), out res)) {
-                                    res = new RenderState.AllocatedResources();
-                                    rs.allocatedResources.Add(m.Geometry.GetOwnerGuid(), res);
+                                OpenTKPlatform.AllocatedResources res;
+                                var ar = RenderState.currentPlatform as OpenTKPlatform;
+                                if(!ar.allocatedResources.TryGetValue(m.Geometry.GetOwnerGuid(), out res)) {
+                                    res = new OpenTKPlatform.AllocatedResources();
+                                    ar.allocatedResources.Add(m.Geometry.GetOwnerGuid(), res);
                                 }
                                 res.buffers.Add(vbo); res.buffers.Add(ebo);
                                 res.vaos.Add(vao);
@@ -386,7 +390,7 @@ namespace AnimLib {
             var smat = M4x4.Ortho(0.0f, pb.Size.Item1, 0.0f, pb.Size.Item2, -1.0f, 1.0f);
             var query = GL.GenQuery();
 
-            var _programs = rs.Programs;
+            var _programs = platform.Programs;
 
             for(int p = 0; p < 16; p++) {
                 drawId = 0;

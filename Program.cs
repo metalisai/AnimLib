@@ -116,7 +116,8 @@ namespace AnimLib
 
         static void Main(string[] args)
         {
-            var game = new RenderState(1024, 1024);
+            var platform = new OpenTKPlatform(1024, 1024);
+            var game = new RenderState(platform);
             sound = new Sound();
 
             pctrl = new PlayerControls(game);
@@ -134,11 +135,12 @@ namespace AnimLib
             //var cam = game.CreateCamera(90.0f, 0.1f, 1000.0f);
             int i = 0;
 
-            game.FileDrop += (object sender, OpenTK.Input.FileDropEventArgs args) => {
+            platform.PFileDrop += (object sender, OpenTK.Input.FileDropEventArgs args) => {
+                Debug.Log($"DROP FILE {args.FileName}");
                 player.FileDrop(args.FileName);
             };
 
-            game.KeyUp += (object sender, OpenTK.Input.KeyboardKeyEventArgs args) => {
+            platform.PKeyUp += (object sender, OpenTK.Input.KeyboardKeyEventArgs args) => {
                 if(args.Key == OpenTK.Input.Key.Delete) {
                     pctrl.Delete();
                 }
@@ -154,7 +156,7 @@ namespace AnimLib
             };
 
             double refreshRate = 60.0;
-            game.OnDisplayChange += (int w, int h, double rate) => {
+            platform.OnDisplayChanged += (int w, int h, double rate) => {
                 Debug.Log($"Resolution changed to {w}x{h}@{rate}");
                 refreshRate = rate;
             };
@@ -204,7 +206,7 @@ namespace AnimLib
 
             game.OnEndRenderScene += player.OnEndRenderScene;
 
-            game.Run();
+            platform.Run();
             player.Close();
             Console.WriteLine("Application closing");
             if(watcher != null) watcher.Dispose();

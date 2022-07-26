@@ -27,7 +27,7 @@ namespace AnimLib {
             public float MaxY;
         }
 
-        TypeSetting ts;
+        ITypeSetter ts;
 
         Dictionary<GlyphKey, CachedGlyph> _cachedGlyphs = new Dictionary<GlyphKey, CachedGlyph>();
 
@@ -86,7 +86,7 @@ namespace AnimLib {
             cacheDirty = true;
         }
 
-        internal FontCache(TypeSetting ts) {
+        internal FontCache(ITypeSetter ts) {
             /*for(int i = 33; i < 127; i++) {
                 var surface = RenderSurface((char)i, font);
                 textures[i] = surface;

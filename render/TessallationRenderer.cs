@@ -12,6 +12,7 @@ namespace AnimLib {
         }
 
         private EntityStateResolver entRes;
+        private OpenTKPlatform platform;
         private RenderState rs;
 
         private int _circleVao = -1;
@@ -24,10 +25,11 @@ namespace AnimLib {
 
         RenderContext ctx = new RenderContext();
 
-        public TessallationRenderer(RenderState rs) {
+        public TessallationRenderer(OpenTKPlatform platform, RenderState rs) {
+            this.platform = platform;
             this.rs = rs;
-            _standardProgram = rs.AddShader(vertShader, fragShader, null);
-            _circleProgram = rs.AddShader(tessVS, fragShader, null, tessTCS, tessTES);
+            _standardProgram = platform.AddShader(vertShader, fragShader, null);
+            _circleProgram = platform.AddShader(tessVS, fragShader, null, tessTCS, tessTES);
             CreateMeshes();
         }
 
@@ -147,7 +149,7 @@ namespace AnimLib {
                 var colLoc = GL.GetUniformLocation(_standardProgram, "_Color");
                 var entLoc = GL.GetUniformLocation(_standardProgram, "_EntityId");
                 GL.VertexAttrib4(1, 1.0f, 1.0f, 1.0f, 1.0f);
-                GL.BindVertexArray(rs.rectVao);
+                GL.BindVertexArray(platform.rectVao);
                 foreach(var r in rectangles) {
                     M4x4 modelToWorld, modelToClip;
                     modelToWorld = r.ModelToWorld(entRes) * M4x4.Scale(new Vector3(r.width, r.height, 1.0f));
@@ -204,7 +206,7 @@ namespace AnimLib {
             GL.Enable(EnableCap.Blend);
 
             var smat = M4x4.Ortho(0.0f, pb.Size.Item1, 0.0f, pb.Size.Item2, -1.0f, 1.0f);
-            var _programs = rs.Programs;
+            var _programs = platform.Programs;
 
             // begin rendering
             GL.ColorMask(true, true, true, true);

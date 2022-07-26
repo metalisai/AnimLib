@@ -67,8 +67,8 @@ namespace AnimLib {
 
         public bool CreateProject(string directoryPath)
         {
+            ms = new MemoryStream();
             lock(rlock) {
-                ms = new MemoryStream();
                 // create zip archive
                 resourceArchive = new ZipArchive(ms, ZipArchiveMode.Create, true);
                 var name = Path.GetFileName(directoryPath);
@@ -112,6 +112,7 @@ namespace AnimLib {
 
         public bool SetProject(string projectFile)
         {
+            ms = new MemoryStream();
             lock(rlock) {
                 var projectDir = Path.GetDirectoryName(projectFile);
                 currentProjectPath = projectFile;

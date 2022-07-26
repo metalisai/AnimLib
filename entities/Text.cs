@@ -6,7 +6,7 @@ namespace AnimLib {
 
     public class Text2D : Visual2DEntity, IColored {
         public List<Glyph> Glyphs = new List<Glyph>();
-        public TypeSetting Ts;
+        public ITypeSetter Ts;
 
         protected void CreateGlyphs() {
             foreach(var g in Glyphs) {

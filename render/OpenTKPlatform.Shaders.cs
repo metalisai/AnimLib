@@ -1,6 +1,6 @@
 
 namespace AnimLib {
-    public partial class RenderState {
+    public partial class OpenTKPlatform {
 string blitVert = @"#version 330 core
 layout(location = 0) in vec4 position;
 void main() {

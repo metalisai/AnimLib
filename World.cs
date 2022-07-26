@@ -50,7 +50,7 @@ namespace AnimLib
             Textures = null;
             MeshBackedGeometries = null;
             // make sure renderer knows that everything we allocated is no longer needed
-            RenderState.destroyedOwners.Add(hash);
+            RenderState.currentPlatform.DestroyOwner(hash);
             Debug.Log("World resources destroyed " + GetGuid());
         }
     }
@@ -134,7 +134,7 @@ namespace AnimLib
 
         private Dictionary<int, VisualEntity> _entities = new Dictionary<int, VisualEntity>();
 
-        public TypeSetting ts = new TypeSetting();
+        public ITypeSetter ts = new FreetypeSetting();
         object currentEditor = null; // who edits things right now (e.g. scene or animationbehaviour)
 
         public EntityResolver EntityResolver;
