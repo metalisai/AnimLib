@@ -1,6 +1,5 @@
 using System;
 using OpenTK.Graphics.OpenGL4;
-using System.Collections.Generic;
 
 namespace AnimLib {
     partial class TessallationRenderer : IRenderer, IDisposable {
@@ -177,6 +176,7 @@ namespace AnimLib {
             var w = sv.BufferWidth;
             var h = sv.BufferHeight;
             if(!(sv.Buffer is MultisampleRenderBuffer) || sv.Buffer == null) {
+                Debug.Warning("Using triangle rendering, but renderbuffer is not multisampled, allocating new buffer");
                 var buf = new MultisampleRenderBuffer();
                 buf.Resize(w, h);
                 sv.Buffer = buf;
@@ -184,7 +184,7 @@ namespace AnimLib {
             pb = sv.Buffer as MultisampleRenderBuffer;
             GL.Viewport(0, 0, pb.Size.Item1, pb.Size.Item2);
             if (pb == null) {
-                Debug.Error("TessallationRenderer needs MultisampleRenderBuffer");
+                Debug.Error("TessallationRenderer needs MultisampleRenderBuffer, but it wasn't created.");
                 return;
             }
 

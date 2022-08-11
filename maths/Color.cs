@@ -30,6 +30,10 @@ namespace AnimLib
             this.a = (byte)Math.Clamp(v.w * 255, 0.0, 255.0);
         }
 
+        public static Color operator*(float l, Color r) {
+            return new Color((float)r.r/255.0f * l, (float)r.g/255.0f * l, (float)r.b/255.0f * l, r.a);
+        }
+
         public uint ToU32() {
             return (uint)r<<24 | (uint)g<<16 | (uint)b<<8 | (uint)a;
         }
@@ -40,6 +44,22 @@ namespace AnimLib
 
         public Vector4 ToVector4() {
             return new Vector4(((float)r)/255.0f, ((float)g)/255.0f, ((float)b)/255.0f, ((float)a)/255.0f);
+        }
+
+        static Vector4 HSV2RGB(Vector4 c) {
+          var K = new Vector4(1.0f, 2.0f / 3.0f, 1.0f / 3.0f, 3.0f);
+          
+          var p = ((new Vector3(c.x, c.x, c.x) + new Vector3(K.x, K.y, K.z)).Fract * 6.0f - new Vector3(K.w, K.w, K.w)).Abs;
+          return new Vector4(c.z * Vector3.Lerp(new Vector3(K.x, K.x, K.x), ((p - new Vector3(K.x, K.x, K.x)).Clamped(0.0f, 1.0f)), c.y), c.w);
+        }
+
+        static Vector4 RGB2HSV(Vector4 c) {
+          var K = new Vector4(0.0f, -1.0f / 3.0f, 2.0f / 3.0f, -1.0f);
+          var p = c.y < c.z ? new Vector4(c.z, c.y, K.w, K.z) : new Vector4(c.y, c.z, K.x, K.y);
+          var q = c.x < p.x ? new Vector4(p.x, p.y, p.w, c.x) : new Vector4(c.x, p.y, p.z, p.x);
+          float d = q.x - MathF.Min(q.w, q.y);
+          float e = 1.0e-10f;
+          return new Vector4(MathF.Abs(q.z + (q.w - q.y) / (6.0f * d + e)), d / (q.x + e), q.x, c.w);
         }
 
         public override string ToString() {
@@ -96,6 +116,14 @@ namespace AnimLib
             var c1v = c1.ToVector4();
             var c2v = c2.ToVector4();
             var r = (c1v + x*(c2v-c1v));
+            return new Color(r.x, r.y, r.z, r.w);
+        }
+
+        public static Color LerpHSV(Color c1, Color c2, float x)
+        {
+            var c1v = Color.RGB2HSV(c1.ToVector4());
+            var c2v = Color.RGB2HSV(c2.ToVector4());
+            var r = Color.HSV2RGB(c1v + x*(c2v-c1v));
             return new Color(r.x, r.y, r.z, r.w);
         }
     };

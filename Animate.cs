@@ -100,7 +100,7 @@ namespace AnimLib {
                 double progress = 1.0 - (endTime - AnimLib.Time.T)/ duration;
                 var t = (float)Math.Clamp(progress, 0.0f, 1.0f);
                 t = EvtCurve(t, curve);
-                entity.Color = AnimLib.Color.Lerp(startColor, targetColor, (float)t);
+                entity.Color = AnimLib.Color.LerpHSV(startColor, targetColor, (float)t);
                 await AnimLib.Time.WaitFrame();
             }
             entity.Color = targetColor;

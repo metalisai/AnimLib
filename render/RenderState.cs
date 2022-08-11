@@ -44,7 +44,7 @@ namespace AnimLib
 
         public delegate void OnUpdateDelegate(double dt);
         public OnUpdateDelegate OnUpdate;
-        public delegate WorldSnapshot OnRenderSceneDelegate();
+        public delegate void OnRenderSceneDelegate();
         public delegate void OnEndRenderSceneDelegate();
 
 
@@ -82,9 +82,9 @@ namespace AnimLib
             CreateMeshes();
 
             renderer = new DistanceFieldRenderer(platform as OpenTKPlatform, this);
+            //renderer = new TessallationRenderer(platform as OpenTKPlatform, this);
             Console.WriteLine(renderer);
             _fr = new FontCache(ts);
-            //renderer = new TessallationRenderer(this);
             uiRenderBuffer.Resize(1024, 1024);
             Console.WriteLine(renderer);
 
@@ -269,6 +269,11 @@ namespace AnimLib
             };
         }
 
+        WorldSnapshot currentScene;
+        public void SetScene(WorldSnapshot ss) {
+            currentScene = ss;
+        }
+
         private void RenderFrame(object sender, FrameEventArgs args) {
             UserInterface.MouseState mouseState = new UserInterface.MouseState {
                 position = mousePos,
@@ -294,15 +299,14 @@ namespace AnimLib
                 OnUpdate(args.Time);
             }
             
-            WorldSnapshot worldSnapshot = null;
             if(OnBeginRenderScene != null) {
-                worldSnapshot = OnBeginRenderScene();
+                OnBeginRenderScene();
             }
             // Render scene
-            if(worldSnapshot != null)
+            if(currentScene != null)
             {
                 foreach(var sv in views) {
-                    renderer.RenderScene(worldSnapshot, sv);
+                    renderer.RenderScene(currentScene, sv);
                 }
             }
 

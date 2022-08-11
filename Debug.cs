@@ -3,16 +3,16 @@ using System.IO;
 using System.Runtime.CompilerServices;
 
 namespace AnimLib {
-    static internal class Debug {
+    static public class Debug {
 
-        internal static void Log(string t, [CallerFilePath] string callerfile = "", [CallerLineNumber] int lineNumber = 0) {
+        public static void Log(string t, [CallerFilePath] string callerfile = "", [CallerLineNumber] int lineNumber = 0) {
 #if DEBUG
             var file = Path.GetFileName(callerfile);
             Console.WriteLine($"{file}:{lineNumber} {t}");
 #endif
         }
 
-        internal static void Warning(string t, [CallerFilePath] string callerfile = "", [CallerLineNumber] int lineNumber = 0) {
+        public static void Warning(string t, [CallerFilePath] string callerfile = "", [CallerLineNumber] int lineNumber = 0) {
 #if DEBUG
             var file = Path.GetFileName(callerfile);
             Console.ForegroundColor = ConsoleColor.Yellow;
@@ -21,7 +21,7 @@ namespace AnimLib {
 #endif
         }
 
-        internal static void Error(string t, [CallerFilePath] string callerfile = "", [CallerLineNumber] int lineNumber = 0) {
+        public static void Error(string t, [CallerFilePath] string callerfile = "", [CallerLineNumber] int lineNumber = 0) {
 #if DEBUG
             var file = Path.GetFileName(callerfile);
             Console.ForegroundColor = ConsoleColor.Red;
@@ -32,7 +32,7 @@ namespace AnimLib {
         }
 
         // development time debugging log (colored because it is intended to be removed)
-        internal static void TLog(string t, [CallerFilePath] string callerfile = "", [CallerLineNumber] int lineNumber = 0) {
+        public static void TLog(string t, [CallerFilePath] string callerfile = "", [CallerLineNumber] int lineNumber = 0) {
 #if DEBUG
             var file = Path.GetFileName(callerfile);
             Console.ForegroundColor = ConsoleColor.Blue;

@@ -54,7 +54,7 @@ namespace AnimLib {
 
         private string GetAssemblyPath(string projectDirectory, string projectname)
         {
-            return Path.Join(projectDirectory, $"src/bin/Debug/netcoreapp3.1/{projectname}.dll");
+            return Path.Join(projectDirectory, $"src/bin/Debug/net6.0/{projectname}.dll");
         }
 
         public bool haveProject {

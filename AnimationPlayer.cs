@@ -98,12 +98,6 @@ namespace AnimLib {
             }
         }
 
-        public bool RenderUI {
-            get {
-                return export == null;
-            }
-        }
-
         public void SetBehaviour(AnimationBehaviour behaviour) {
             var settings = new AnimationSettings();
             behaviour.Init(settings);

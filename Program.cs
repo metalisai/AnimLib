@@ -161,39 +161,40 @@ namespace AnimLib
                 refreshRate = rate;
             };
 
-            //Console.WriteLine("animation frames " + anim.Snapshots.Length);
             game.OnBeginRenderScene += () => {
                 WorldSnapshot ret;
                 mainCtx.InvokeAllPosted();
-                if(player.RenderUI) {
-                    foreach(var h in player.GetAnimationHandles()) {
-                        if(h.StartTime <= Time.T) {
+
+                // render animation handle UI
+                foreach(var h in player.GetAnimationHandles()) {
+                    if(h.StartTime <= Time.T) {
+                        bool update;
+                        h.Position = pctrl.Show2DHandle(h.Identifier, h.Position, h.Anchor, out update);
+                        if(update) {
+                            player.Update2DHandle(h.Identifier, h.Position);
+                            player.SetAnimationDirty(true);
+                            break;
+                        }
+                    }
+                }
+                int i = 0;
+                foreach(var h in player.GetAnimationHandles3D()) {
+                    if(h.StartTime <= Time.T) {
+                        if((UserInterface.WorldCamera.position - h.Position).Length > 1.0f) {
                             bool update;
-                            h.Position = pctrl.Show2DHandle(h.Identifier, h.Position, h.Anchor, out update);
+                            h.Position = pctrl.Show3DHandle(h.Identifier, h.Position, out update);
                             if(update) {
-                                player.Update2DHandle(h.Identifier, h.Position);
+                                player.Update3DHandle(h.Identifier, h.Position);
                                 player.SetAnimationDirty(true);
                                 break;
                             }
                         }
                     }
-                    int i = 0;
-                    foreach(var h in player.GetAnimationHandles3D()) {
-                        if(h.StartTime <= Time.T) {
-                            if((UserInterface.WorldCamera.position - h.Position).Length > 1.0f) {
-                                bool update;
-                                h.Position = pctrl.Show3DHandle(h.Identifier, h.Position, out update);
-                                if(update) {
-                                    player.Update3DHandle(h.Identifier, h.Position);
-                                    player.SetAnimationDirty(true);
-                                    break;
-                                }
-                            }
-                        }
-                        i++;
-                    }
-                    pctrl.DoInterface();
+                    i++;
                 }
+
+                // render editor UI
+                pctrl.DoInterface();
                 ret = player.NextFrame(1.0/refreshRate);
                 if(ret != null) {
                     UserInterface.WorldCamera = ret.Camera;
@@ -201,7 +202,7 @@ namespace AnimLib
                     Debug.Log("No scene to render!");
                 }
                i++;
-               return ret;
+               game.SetScene(ret);
             };
 
             game.OnEndRenderScene += player.OnEndRenderScene;

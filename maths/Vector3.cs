@@ -131,6 +131,37 @@ namespace AnimLib
             return Lerp(a, b, nt);
         }
 
+        public void Floor() {
+            x = MathF.Floor(this.x);
+            y = MathF.Floor(this.y);
+            z = MathF.Floor(this.z);
+        }
+
+        [JsonIgnore]
+        public Vector3 Floored {
+            get {
+                return new Vector3(MathF.Floor(this.x), MathF.Floor(this.y), MathF.Floor(this.z));
+            }
+        }
+
+        [JsonIgnore]
+        public Vector3 Fract {
+            get {
+                return this - this.Floored;
+            }
+        }
+
+        [JsonIgnore]
+        public Vector3 Abs {
+            get {
+                return new Vector3(MathF.Abs(x), MathF.Abs(y), MathF.Abs(z));
+            }
+        }
+
+        public Vector3 Clamped(float min, float max) {
+            return new Vector3(x < min ? min : x > max ? max : x, y < min ? min : y > max ? max : y, z < min ? min : z > max ? max : z);
+        }
+
         public override string ToString() {
             return $"({x},{y},{z})";
         }
