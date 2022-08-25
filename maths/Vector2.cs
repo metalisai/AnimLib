@@ -92,6 +92,10 @@ namespace AnimLib
             return new Vector2(a.x - b.x, a.y - b.y);
         }
 
+        public static Vector2 operator- (Vector2 a) {
+            return new Vector2(-a.x, -a.y);
+        }
+
         public static Vector2 operator* (float a, Vector2 b) {
             return new Vector2(a*b.x, a*b.y);
         }

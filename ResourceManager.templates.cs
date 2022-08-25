@@ -55,7 +55,7 @@ public class ");
 
         await world.CreateFadeIn(hw, 1.0f);
         // create sine animation and change text color on every update (2hz sine black->red)
-        await AnimationTransform.Sine(x => {
+        await Animate.Sine(x => {
                 x = (x+1.0f)*0.5f;
                 hw.Color = new Color(x, 0.0f, 0.0f, 1.0f);
             }, 2.0);

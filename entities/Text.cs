@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
@@ -7,6 +8,15 @@ namespace AnimLib {
     public class Text2D : Visual2DEntity, IColored {
         public List<Glyph> Glyphs = new List<Glyph>();
         public ITypeSetter Ts;
+
+        public Text2D() : base(new Text2DState()) {
+        }
+
+        public Text2D(Text2D t) : base(t) {
+            Glyphs = t.Glyphs.Select(x => (Glyph)x.Clone()).ToList();
+        }
+
+
 
         protected void CreateGlyphs() {
             foreach(var g in Glyphs) {
@@ -33,6 +43,7 @@ namespace AnimLib {
                     World.current.Destroy(g);
                 }
                 Glyphs.Clear();
+                // placed characters
                 var pcs = World.current.ts.TypesetString(Vector3.ZERO, value, Size);
                 foreach(var pc in pcs) {
                     var g = new Glyph() {
@@ -41,7 +52,7 @@ namespace AnimLib {
                         Character = pc.character,
                     };
                     g.Transform.Pos = (Vector3)pc.position;
-                    ((EntityState2D)g.state).sizeRect = pc.size;
+                    //((EntityState2D)g.state).sizeRect = pc.size;
                     g.state.selectable = false;
 
                     g.Transform.parent = this.Transform;
@@ -102,15 +113,6 @@ namespace AnimLib {
             }
         }
 
-        public Text2D() {
-            var txts = new Text2DState();
-            state = txts;
-        }
-
-        public Text2D(Text2D t) : base(t) {
-            Glyphs = t.Glyphs.Select(x => (Glyph)x.Clone()).ToList();
-        }
-
         public override object Clone() {
             return new Text2D(this);
         }
@@ -137,6 +139,12 @@ namespace AnimLib {
         public override object Clone() 
         {
             return new Text2DState(this);
+        }
+
+        public override Vector2 AABB {
+            get {
+                throw new NotImplementedException();
+            }
         }
     }
 }

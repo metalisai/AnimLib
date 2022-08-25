@@ -130,10 +130,8 @@ namespace AnimLib
             
             SynchronizationContext.SetSynchronizationContext(mainCtx);
 
-
             //var anim = player.BakeAnimation(plugin, 60.0f, 0.0f, 1000.0f);
             //var cam = game.CreateCamera(90.0f, 0.1f, 1000.0f);
-            int i = 0;
 
             platform.PFileDrop += (object sender, OpenTK.Input.FileDropEventArgs args) => {
                 Debug.Log($"DROP FILE {args.FileName}");

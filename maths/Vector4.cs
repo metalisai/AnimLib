@@ -45,6 +45,10 @@ namespace AnimLib
             w /= len;
         }
 
+        public override string ToString() {
+            return $"({x},{y},{z},{w})";
+        }
+
         public static Vector4 FromInt32(uint val) {
             return new Vector4((float)((val>>24)&0xFF)/255.0f, (float)((val>>16)&0xFF)/255.0f, (float)((val>>8)&0xFF)/255.0f, (float)((val)&0xFF)/255.0f);
         }

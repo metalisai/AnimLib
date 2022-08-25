@@ -15,6 +15,8 @@ namespace AnimLib {
         List<EntityState> _cameras =  new List<EntityState>();
         List<LabelState> _labels = new List<LabelState>();
         List<BezierState> _beziers = new List<BezierState>();
+        List<CanvasState> _canvases = new List<CanvasState>();
+        List<ShapeState> _shapes = new List<ShapeState>();
         //Dictionary<VisualEntity, EntityState> _entities = new Dictionary<VisualEntity, EntityState>();
         Dictionary<int, EntityState> _entities = new Dictionary<int, EntityState>();
         Dictionary<int, AbsorbDestruction> _absorbs = new Dictionary<int, AbsorbDestruction>();
@@ -60,6 +62,8 @@ namespace AnimLib {
             _currentPlaybackTime = 0.0;
             _entities.Clear();
             _beziers.Clear();
+            _canvases.Clear();
+            _shapes.Clear();
             //var cam = new PerspectiveCamera();
             //cam.Position = new Vector3(0.0f, 0.0f, -13.0f);
             //_activeCamera = cam;
@@ -134,11 +138,31 @@ namespace AnimLib {
             ret.MeshBackedGeometries = _mbgeoms.Where(x => x.active).ToArray();
             ret.Cubes = _cubes.Where(x => x.active).ToArray();
             ret.Beziers = _beziers.Where(x => x.active).ToArray();
+            ret.Canvases = _canvases.Where(x => x.active).ToArray();
+            ret.Shapes = _shapes.Where(x => x.active).ToArray();
             ret.resolver = new EntityStateResolver {
                 GetEntityState = entid => {
                     return _entities.ContainsKey(entid) ? _entities[entid] : null;
                 }
             };
+
+            // TODO: better way to do this?
+            foreach(var rect in ret.Rectangles) {
+                EntityState ca = null;
+                if(_entities.TryGetValue(rect.canvasId, out ca) && ca is CanvasState) {
+                    rect.canvas = ca as CanvasState;
+                } else {
+                    Debug.Error($"Visual2DEntity's canvas {rect.canvasId} could not be found!");
+                }
+            }
+            foreach(var shape in ret.Shapes) {
+                EntityState ca = null;
+                if(_entities.TryGetValue(shape.canvasId, out ca) && ca is CanvasState) {
+                    shape.canvas = ca as CanvasState;
+                } else {
+                    Debug.Error($"Visual2DEntity's canvas {shape.canvasId} could not be found!");
+                }
+            }
             /*foreach(var label in ret.Labels) {
                 label.Item1.entity.state.entity.
             }*/
@@ -195,6 +219,18 @@ namespace AnimLib {
                 state = (EntityState)p1.Clone();
                 _cameras.Add((PerspectiveCameraState)state);
                 break;
+                case OrthoCameraState oc1:
+                state = (EntityState)oc1.Clone();
+                _cameras.Add((OrthoCameraState)state);
+                break;
+                case CanvasState ca1:
+                state = (EntityState)ca1.Clone();
+                _canvases.Add((CanvasState)state);
+                break;
+                case ShapeState ss1:
+                state = (EntityState)ss1.Clone();
+                _shapes.Add((ShapeState)state);
+                break; 
                 default:
                 throw new NotImplementedException();
             }
@@ -237,6 +273,12 @@ namespace AnimLib {
                 break;
                 case CameraState c3:
                 _cameras.RemoveAll(x => x.entityId == entityId);
+                break;
+                case CanvasState ca1:
+                _canvases.RemoveAll(x => x.entityId == entityId);
+                break;
+                case ShapeState ss1:
+                _shapes.RemoveAll(x => x.entityId == entityId);
                 break;
                 default:
                 throw new Exception("Destroying unknown entity!");

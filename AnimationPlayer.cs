@@ -106,6 +106,7 @@ namespace AnimLib {
             Scene = ResourceManager.GetScene();
             DeserializeHandles();
             SetAnimationDirty(true);
+            Debug.TLog($"Behaviour reload {settings.Width}x{settings.Height} FPS: {settings.FPS} MaxLength: {settings.MaxLength}");
         }
 
         public void BakeProc() {
@@ -328,6 +329,7 @@ namespace AnimLib {
                 machine.Seek(progress);
 
                 if((controls.MainView.BufferWidth != settings.Width || controls.MainView.BufferHeight != settings.Height) && controls.MainView.Buffer != null) {
+                    Debug.TLog($"Resize backbuffer from {controls.MainView.BufferWidth}x{controls.MainView.BufferHeight} to {settings.Width}x{settings.Height}");
                     controls.MainView.ResizeBuffer(settings.Width, settings.Height);
                 }
             }

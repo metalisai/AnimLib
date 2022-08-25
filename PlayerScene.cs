@@ -179,7 +179,7 @@ namespace AnimLib {
                         world.StartEditing(e.obj);
                         switch(e.obj) {
                             case PlayerCircle pc:
-                            var c = new Circle(false);
+                            var c = new Circle();
                             c.Radius = pc.radius;
                             c.Color = pc.color;
                             c.Transform.Pos = pc.transform.Pos;

@@ -72,7 +72,7 @@ namespace AnimLib
         // resize buffers, UI etc
         public void UpdateSize(int width, int height) {
             if(uiRenderBuffer.Size.Item1 != width || uiRenderBuffer.Size.Item2 != height) {
-                Console.WriteLine($"Resize to {width}x{height}");
+                Debug.TLog($"Resize window to {width}x{height}");
                 uiRenderBuffer.Resize(width, height);
                 RectTransform.RootTransform.Size = new Vector2(uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2);
             }
@@ -83,10 +83,9 @@ namespace AnimLib
 
             renderer = new DistanceFieldRenderer(platform as OpenTKPlatform, this);
             //renderer = new TessallationRenderer(platform as OpenTKPlatform, this);
-            Console.WriteLine(renderer);
+            Debug.TLog($"Renderer implementation: {renderer}");
             _fr = new FontCache(ts);
             uiRenderBuffer.Resize(1024, 1024);
-            Console.WriteLine(renderer);
 
             platform.PKeyDown += (object sender, KeyboardKeyEventArgs args) => {
                 if(args.Key == Key.F && !args.IsRepeat) {

@@ -11,6 +11,7 @@ namespace AnimLib {
         int Texture();
         void Clear();
         (int, int) Size { get; }
+        int FBO { get; }
         void ReadPixels(ref byte data);
     }
 }

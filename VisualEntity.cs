@@ -88,21 +88,79 @@ namespace AnimLib {
         public abstract object Clone();
     }
 
+    public enum Entity2DCoordinateSystem {
+        CanvasOrientedWorld,
+        CanvasNormalized,
+    };
+
     public abstract class EntityState2D : EntityState {
-        public Vector2 sizeRect;
+        public int canvasId = -1; // entity Id of canvas
+        public Vector2 pivot;
         public float rot;
+        // NOTE: pivot and anchor always use CanvasNormalized coordinates
+        public Entity2DCoordinateSystem csystem = Entity2DCoordinateSystem.CanvasOrientedWorld;
+
+        internal CanvasState canvas; // resolved by WorldMachine before redering
 
         public EntityState2D() {}
 
         public EntityState2D(EntityState2D e2d) : base(e2d) {
-            this.sizeRect = e2d.sizeRect;
             this.rot = e2d.rot;
+            this.pivot = e2d.pivot;
+            this.canvasId = e2d.canvasId;
+            this.csystem = e2d.csystem;
         }
+
+        // normalized coordinates -0.5..0.5
+        internal M4x4 NormalizedCanvasToWorld {
+            get {
+                // TODO: cache
+                var anchorWorld = canvas.NormalizedCanvasToWorld*new Vector4(anchor.x, anchor.y, 0.0f, 1.0f);
+                var c1 = new Vector4(canvas.width*Vector3.Cross(canvas.normal, canvas.up), 0.0f);
+                var c2 = new Vector4(canvas.height*canvas.up, 0.0f);
+                var c3 = new Vector4(-canvas.normal, 0.0f);
+                var mat = M4x4.FromColumns(c1, c2, c3, anchorWorld);
+                return mat;
+            }
+        }
+
+        // oriented world coordinates (x - left, y - up, z - forward)
+        internal M4x4 CanvasToWorld {
+            get {
+                // TODO: cache
+                var anchorWorld = canvas.NormalizedCanvasToWorld*new Vector4(anchor.x, anchor.y, 0.0f, 1.0f);
+                var c1 = new Vector4(Vector3.Cross(canvas.normal, canvas.up), 0.0f);
+                var c2 = new Vector4(canvas.up, 0.0f);
+                var c3 = new Vector4(-canvas.normal, 0.0f);
+                return M4x4.FromColumns(c1, c2, c3, anchorWorld);
+            }
+        }
+
+        // axis aligned bounding box required for normalized coordinates
+        public abstract Vector2 AABB { get; }
     }
 
     public abstract class Visual2DEntity : VisualEntity {
-        public Visual2DEntity() {}
-        public Visual2DEntity(Visual2DEntity e) : base(e) {}
+        private Canvas _canvas;
+        public Visual2DEntity(EntityState2D state) {
+            this.state = state;
+            Canvas = Canvas.Default;
+        }
+        public Visual2DEntity(Visual2DEntity e) : base(e) {
+            Canvas = e.Canvas;
+        }
+
+        public Canvas Canvas 
+        {
+            get {
+                return _canvas ?? Canvas.Default;
+            }
+            set {
+                World.current.SetProperty(this, "canvasId", value.EntityId, Canvas.EntityId);
+                ((EntityState2D)state).canvasId = value.EntityId;
+                _canvas = value;
+            }
+        }
         public Vector2 Anchor
         {
             get {
@@ -113,16 +171,17 @@ namespace AnimLib {
                 ((EntityState2D)state).anchor = value;
             }
         }
-        public Vector2 SizeRect
+        public Vector2 Pivot
         {
             get {
-                return ((EntityState2D)state).sizeRect;
+                return ((EntityState2D)state).pivot;
             }
             set {
-                World.current.SetProperty(this, "SizeRect", value, ((EntityState2D)state).sizeRect);
-                ((EntityState2D)state).sizeRect= value;
+                World.current.SetProperty(this, "Pivot", value, ((EntityState2D)state).pivot);
+                ((EntityState2D)state).pivot = value;
             }
         }
+
         public float Rot
         {
             get {
@@ -131,6 +190,16 @@ namespace AnimLib {
             set {
                 World.current.SetProperty(this, "Rot", value, ((EntityState2D)state).rot);
                 ((EntityState2D)state).rot = value;
+            }
+        }
+
+        public Entity2DCoordinateSystem CSystem {
+            get {
+                return ((EntityState2D)state).csystem;
+            }
+            set {
+                World.current.SetProperty(this, "CSystem", value, ((EntityState2D)state).csystem);
+                ((EntityState2D)state).csystem = value;
             }
         }
     }

@@ -169,17 +169,29 @@ namespace AnimLib {
 
         ResourceManager resourceManager;
 
+        bool haveError;
+        string error;
+        string stackTrace;
+        System.Threading.Tasks.Task anim = null;
+
+        private void BakeError(Exception e, World world, Animator animator) {
+            haveError = true;
+            error = $"{e.ToString()} {e.Message}";
+            stackTrace = e.StackTrace;
+            anim = (new ErrorBehaviour()).Animation(world, animator);
+        }
+
         public AnimationBaker(ResourceManager resourceManager) {
             this.resourceManager = resourceManager;
         }
 
         public BakedAnimation BakeAnimation(AnimationBehaviour behaviour1, AnimationSettings settings, AnimationPlayer.PlayerProperties props, PlayerScene scene) {
-            var world = new World();
+            var world = new World(settings);
             var animator = new Animator(resourceManager, world, scene, settings, props);
 
-            bool haveError = false;
-            string error = "";
-            string stackTrace = "";
+            haveError = false;
+            error = "";
+            stackTrace = "";
 
             bool dummy = scene == null;
 
@@ -197,37 +209,34 @@ namespace AnimLib {
                 }
             }
 
+            var terminator = "default";
+
             world.StartEditing(behaviour1);
-            System.Threading.Tasks.Task anim = null;
+            anim = null;
             try {
                 anim = behaviour1.Animation(world, animator);
             } catch (Exception e) {
                 // TODO: print error to user
-                anim = (new ErrorBehaviour()).Animation(world, animator);
-                haveError = true;
-                error = e.Message;
-                stackTrace = e.StackTrace;
+                Debug.Warning("Exception during baking before first yield");
+                BakeError(e, world, animator);
             }
             world.EndEditing();
 
             if(anim.Exception != null) {
-                haveError = true;
+                Debug.Warning("Exception during baking after first yield");
                 var cap = ExceptionDispatchInfo.Capture(anim.Exception.InnerException);
-                error = cap.SourceException.ToString();
-                stackTrace = cap.SourceException.StackTrace.ToString();
-                Debug.Error(cap.SourceException.StackTrace);
+                BakeError(cap.SourceException, world, animator);
             }
+            terminator = $"synchronous (state: {anim.Status} c: {anim.IsCompleted})";
 
             while(t <= end && !anim.IsCompleted) {
                 if(anim.Exception != null) {
-                    haveError = true;
+                    Debug.Warning("Exception in the middle of animation");
                     var cap = ExceptionDispatchInfo.Capture(anim.Exception.InnerException);
-                    error = cap.SourceException.ToString();
-                    stackTrace = cap.SourceException.StackTrace.ToString();
-                    Debug.Error(cap.SourceException.StackTrace);
+                    BakeError(cap.SourceException, world, animator);
+                    terminator = "exception";
                     break;
                 }
-
 
                 world.StartEditing(behaviour1);
                 Time.NewFrame(dt);
@@ -243,6 +252,17 @@ namespace AnimLib {
                 }
                 t += dt; 
             }
+            if(t > end)
+                terminator = "max length";
+            else if(anim.IsCompleted) {
+                terminator = $"completed (state: {anim.Status} c: {anim.IsCompleted})";
+                if(anim.Status == System.Threading.Tasks.TaskStatus.Faulted) {
+                    var cap = ExceptionDispatchInfo.Capture(anim.Exception.InnerException);
+                    BakeError(cap.SourceException, world, animator);
+                }
+            }
+
+            Debug.Log($"Done baking animation, t={t}, end cause: {terminator}");
 
             var cmds = world.GetCommands();
             var scmds = world.GetSoundCommands();

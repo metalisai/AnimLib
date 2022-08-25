@@ -1,12 +1,10 @@
 
 namespace AnimLib {
-    public class RectangleState : EntityState {
+    public class RectangleState : EntityState2D {
         public float width, height;
         public Color color;
         public Color outline = Color.BLACK;
         public float outlineWidth = 1.0f;
-        public Vector2 sizeRect;
-        public bool is2d = false;
 
         public RectangleState() {
         }
@@ -17,8 +15,12 @@ namespace AnimLib {
             this.color = rs.color;
             this.outline = rs.outline;
             this.outlineWidth = rs.outlineWidth;
-            this.sizeRect = rs.sizeRect;
-            this.is2d = rs.is2d;
+        }
+
+        public override Vector2 AABB {
+            get {
+                return new Vector2(width, height);
+            }
         }
 
         public override object Clone()
@@ -27,7 +29,14 @@ namespace AnimLib {
         }
     }
 
-    public class Rectangle : VisualEntity, IColored {
+    public class Rectangle : Visual2DEntity, IColored {
+
+        public Rectangle() : base(new RectangleState()) {
+        }
+
+        public Rectangle(Rectangle r) : base(r) {
+        }
+
         public float Width {
             get {
                 return ((RectangleState)state).width;
@@ -74,44 +83,9 @@ namespace AnimLib {
             }
         }
 
-        public Vector2 Anchor {
-            get {
-                return ((RectangleState)state).anchor;
-            }
-            set {
-                World.current.SetProperty(this, "Anchor", value, ((RectangleState)state).anchor);
-                ((RectangleState)state).anchor = value;
-            }
-        }
-
-        public Vector2 SizeRect {
-            get {
-                return ((RectangleState)state).sizeRect;
-            }
-            set {
-                World.current.SetProperty(this, "SizeRect", value, ((RectangleState)state).sizeRect);
-                ((RectangleState)state).sizeRect = value;
-            }
-        }
-
-        public Rectangle(bool is2d = false) {
-            state = new RectangleState();
-            if(is2d) {
-                this.Transform = new RectTransform(this);
-                ((RectangleState)state).is2d = true;
-            }
-        }
-
-        public Rectangle(Rectangle r) : base(r) {
-        }
 
         public Rectangle Pos(Vector3 pos) {
             Transform.Pos = pos;
-            return this;
-        }
-
-        public Rectangle Rot(Quaternion rot) {
-            Transform.Rot = rot;
             return this;
         }
 
@@ -133,5 +107,6 @@ namespace AnimLib {
         public override object Clone() {
             return new Rectangle(this);
         }
+
     }
 }

@@ -146,6 +146,12 @@ namespace AnimLib {
             return _blitTex;
         }
 
+        public int FBO {
+            get {
+                return _fbo;
+            }
+        }
+
         public void Clear()
         {
             int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);

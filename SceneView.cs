@@ -56,6 +56,8 @@ namespace AnimLib {
 
         public void ResizeBuffer(int w, int h) {
             renderBuffer?.Resize(w, h);
+            this.bufferWidth = w;
+            this.bufferHeight = h;
         }
 
         public int TextureHandle {

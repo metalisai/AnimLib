@@ -162,12 +162,14 @@ namespace AnimLib
         }
 
         public static M4x4 RT(Quaternion r, Vector3 t) {
+            // TODO: optimize
             var tm = M4x4.Translate(t);
             var rm = M4x4.Rotate(r);
             return rm*tm;
         }
 
         public static M4x4 TS(Vector3 t, Vector3 s) {
+            // TODO: optimize
             var tm = M4x4.Translate(t);
             var sm = M4x4.Scale(s);
             return tm*sm;
@@ -193,6 +195,15 @@ namespace AnimLib
                 m43 = 0.0f,
                 m44 = 1.0f,
             };
+        }
+
+        public static M4x4 FromColumns(Vector4 c1, Vector4 c2, Vector4 c3, Vector4 c4) {
+            M4x4 ret;
+            ret.m11 = c1.x; ret.m21 = c1.y; ret.m31 = c1.z; ret.m41 = c1.w;
+            ret.m12 = c2.x; ret.m22 = c2.y; ret.m32 = c2.z; ret.m42 = c2.w;
+            ret.m13 = c3.x; ret.m23 = c3.y; ret.m33 = c3.z; ret.m43 = c3.w;
+            ret.m14 = c4.x; ret.m24 = c4.y; ret.m34 = c4.z; ret.m44 = c4.w;
+            return ret;
         }
 
         public static Vector4 operator* (M4x4 m, Vector4 v) {

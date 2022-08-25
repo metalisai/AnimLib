@@ -113,6 +113,8 @@ namespace AnimLib
         public MeshBackedGeometry[] MeshBackedGeometries;
         public (LabelState, EntityState)[] Labels;
         public BezierState[] Beziers;
+        public CanvasState[] Canvases;
+        public ShapeState[] Shapes;
         public double Time;
     }
 
@@ -127,6 +129,8 @@ namespace AnimLib
         static int entityId = 1;
         [ThreadStatic]
         public static World current;
+
+        AnimationSettings settings;
 
         List<WorldCommand> _commands = new List<WorldCommand>();
         List<WorldSoundCommand> _soundCommands = new List<WorldSoundCommand>();
@@ -173,7 +177,8 @@ namespace AnimLib
             this.currentEditor = null;
         }
 
-        public World() {
+        public World(AnimationSettings settings) {
+            this.settings = settings.Clone();
             current = this;
             EntityResolver = new EntityResolver {
                 GetEntity = entid => {
@@ -226,6 +231,16 @@ namespace AnimLib
             cam.ZNear = 0.1f;
             cam.ZFar = 1000.0f;
             cam.Transform.Pos = new Vector3(0.0f, 0.0f, -13.0f);
+
+            var screenCam = new OrthoCamera();
+            screenCam.Width = settings.Width;
+            screenCam.Height= settings.Height;
+            CreateInstantly(screenCam);
+
+            var defaultCanvas = new Canvas(screenCam);
+            CreateInstantly(defaultCanvas);
+            Canvas.Default = defaultCanvas;
+
             CreateInstantly(cam);
             ActiveCamera = cam;
             EndEditing();
@@ -298,12 +313,6 @@ namespace AnimLib
                 }, 0.0f, 1.0f, duration);
         }
 
-        /*public VisualEntity CloneInstantly(VisualEntity ent) {
-            var ret = (VisualEntity)ent.Clone();
-            CreateInstantly(ret);
-            return ret;
-        }*/
-        
          public T Clone<T>(T e) where T : VisualEntity, new() {
             var ret = (T)e.Clone();
             return ret;

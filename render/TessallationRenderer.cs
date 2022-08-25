@@ -152,7 +152,7 @@ namespace AnimLib {
                 foreach(var r in rectangles) {
                     M4x4 modelToWorld, modelToClip;
                     modelToWorld = r.ModelToWorld(entRes) * M4x4.Scale(new Vector3(r.width, r.height, 1.0f));
-                    modelToClip = (r.is2d ? orthoMat : mat)*modelToWorld;
+                    modelToClip = mat*modelToWorld;
                     GL.UniformMatrix4(loc, 1, false, ref modelToClip.m11);
                     var col4 = Vector4.FromInt32(r.color.ToU32());
                     GL.Uniform4(colLoc, col4.x, col4.y, col4.z, col4.w);

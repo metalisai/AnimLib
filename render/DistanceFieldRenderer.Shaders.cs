@@ -252,7 +252,7 @@ string rectangleFrag = @"#version 330 core
 layout(location = 0) out vec4 outColor;
 layout(location = 1) out int outEntityId;
 in vec4 v_color;
-in vec3 v_modelPos;
+in vec2 v_texCoord;
 uniform vec4 _Color;
 uniform vec4 _Outline;
 uniform int _EntityId;
@@ -265,9 +265,10 @@ void main() {
 
     const float r = 0.5;
     const float smoothAmount = 3.0;
-    vec2 dist = abs(v_modelPos.xy);
-    vec2 xdxy = dFdx(v_modelPos.xy);
-    vec2 ydxy = dFdy(v_modelPos.xy);
+    vec2 cpos = v_texCoord - vec2(0.5);
+    vec2 dist = abs(cpos);
+    vec2 xdxy = dFdx(cpos);
+    vec2 ydxy = dFdy(cpos);
     float ldx = length(vec2(xdxy.x, ydxy.x));
     float ldy = length(vec2(xdxy.y, ydxy.y));
     float bx = 1.0 - smoothAmount*ldx;

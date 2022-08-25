@@ -1,3 +1,4 @@
+using System;
 
 namespace AnimLib {
     public class Glyph : Visual2DEntity, IColored {
@@ -30,8 +31,7 @@ namespace AnimLib {
                 ((GlyphState)state).size = value;
             }
         }
-        public Glyph() {
-            state = new GlyphState();
+        public Glyph() : base(new GlyphState()) {
         }
         public Glyph(Glyph g) : base(g) {
         }
@@ -57,6 +57,12 @@ namespace AnimLib {
         public override object Clone()
         {
             return new GlyphState(this);
+        }
+
+        public override Vector2 AABB {
+            get {
+                throw new NotImplementedException();
+            }
         }
     }
 }

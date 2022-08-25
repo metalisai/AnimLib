@@ -41,7 +41,7 @@ namespace AnimLib {
 
         public void RenderCircles(CircleState[] circles, M4x4 mat, M4x4 orthoMat) {
             if(circles.Length > 0) {
-                GL.PolygonOffset(0.4f, 1.0f);
+                GL.PolygonOffset(1.0f, 1.0f);
                 GL.Disable(EnableCap.CullFace);
                 GL.Enable(EnableCap.DepthTest);
                 GL.UseProgram(_circleProgram);
@@ -53,17 +53,8 @@ namespace AnimLib {
                 GL.VertexAttrib4(1, 1.0f, 1.0f, 1.0f, 1.0f);
                 foreach(var c in circles) {
                     M4x4 modelToWorld, modelToClip;
-                    // handle anchors etc for 2d canvas objects
-                    /*if(c.is2d) {
-                        float x,y;
-                        x = RectTransform.RootTransform.Size.x*c.anchor.x;
-                        y = RectTransform.RootTransform.Size.y*c.anchor.y;
-                        var p = new Vector3(x, y, 0.0f);
-                        pos += p;
-                    }*/
-
                     modelToWorld = c.ModelToWorld(entRes) * M4x4.Scale(new Vector3(c.radius*2.0f, c.radius*2.0f, c.radius*2.0f));
-                    modelToClip = c.is2d ? orthoMat * modelToWorld : mat * modelToWorld;
+                    modelToClip = mat * modelToWorld;
                     GL.UniformMatrix4(loc, 1, false, ref modelToClip.m11);
                     var col4 = Vector4.FromInt32(c.color.ToU32());
                     GL.Uniform4(colLoc, col4.x, col4.y, col4.z, col4.w);
@@ -76,6 +67,14 @@ namespace AnimLib {
             }        
         }
 
+        public void RenderShapes(ShapeState[] shapes, M4x4 mat) {
+            if(shapes.Length > 0) {
+                foreach(var shape in shapes) {
+                    platform.Skia.RenderShape(shape, ref mat);
+                }
+            }
+        }
+
         public void RenderRectangles(RectangleState[] rectangles, M4x4 mat, M4x4 smat) {
             if(rectangles.Length > 0) {
                 GL.PolygonOffset(0.4f, 1.0f);
@@ -86,21 +85,33 @@ namespace AnimLib {
                 var outlineLoc = GL.GetUniformLocation(_rectangleProgram, "_Outline");
                 var colLoc = GL.GetUniformLocation(_rectangleProgram, "_Color");
                 var entLoc = GL.GetUniformLocation(_rectangleProgram, "_EntityId");
-                GL.BindVertexArray(platform.rectVao);
                 GL.VertexAttrib4(1, 1.0f, 1.0f, 1.0f, 1.0f);
                 foreach(var r in rectangles) {
-                    M4x4 modelToWorld, modelToClip;
-                    /*if(r.is2d) {
-                        float x,y;
-                        x = RectTransform.RootTransform.Size.x*r.anchor.x;
-                        y = RectTransform.RootTransform.Size.y*r.anchor.y;
-                        var p = new Vector3(x, y, 0.0f);
-                        pos += p;
-                    }*/
+                    M4x4 mvp, canvasToWorld;
+                    if(!(r.canvas is CanvasState)) {
+                        Debug.Error("Can't render rectangle, because no canvas");
+                        continue;
+                    }
+                    var c = r.canvas;
+                    var rot = Quaternion.AngleAxis(r.rot, Vector3.FORWARD);
+                    var modelToWorld = M4x4.TRS(r.position, rot, r.scale);
+                    Vector2 rsize, pivot;
+                    if(r.csystem == Entity2DCoordinateSystem.CanvasNormalized) {
+                        canvasToWorld = r.NormalizedCanvasToWorld*modelToWorld;
+                        rsize = r.AABB;
+                        pivot = r.pivot*rsize;
+                    } else if (r.csystem == Entity2DCoordinateSystem.CanvasOrientedWorld) {
+                        canvasToWorld = r.CanvasToWorld*modelToWorld;
+                        rsize = new Vector2(r.width, r.height);
+                        pivot = r.pivot * rsize;
+                    } else {
+                        throw new NotImplementedException();
+                    }
+                    platform.DynRect(-0.5f*rsize - pivot, 0.5f*rsize - pivot);
+                    mvp = mat * canvasToWorld;
+                    GL.BindVertexArray(platform.dynVao);
 
-                    modelToWorld = r.ModelToWorld(entRes) * M4x4.Scale(new Vector3(r.width, r.height, 1.0f));
-                    modelToClip = (r.is2d ? smat : mat)*modelToWorld;
-                    GL.UniformMatrix4(loc, 1, false, ref modelToClip.m11);
+                    GL.UniformMatrix4(loc, 1, false, ref mvp.m11);
                     var bb = new Vector4(r.outline.r/255.0f, r.outline.g/255.0f, r.outline.b/255.0f, r.outlineWidth);
                     GL.Uniform4(outlineLoc, bb.x, bb.y, bb.z, bb.w);
                     var col4 = Vector4.FromInt32(r.color.ToU32());
@@ -343,6 +354,125 @@ namespace AnimLib {
             }
         }
 
+        struct SavedState {
+            public bool blend;
+            public bool programPointSize;
+            public int boundVao;
+            public bool cullFace;
+            public int cullMode;
+            public bool fbSrgb;
+            public int textureUnit;
+            public int unpackAlignment;
+            public int boundFb;
+            public int boundReadFb;
+            public int boundDrawFb;
+            public int drawBuffer;
+            public bool dither;
+            public bool depthMask;
+            public bool multisample;
+            public bool depthTest;
+            public bool stencilTest;
+            public int vpX;
+            public int vpY;
+            public int vpW;
+            public int vpH;
+        }
+
+        SavedState state;
+
+        public void PushState() {
+            var state = new SavedState();
+            state.blend = GL.GetBoolean(GetPName.Blend); // GL.Enable(EnableCap.Blend);
+            state.programPointSize = GL.GetBoolean(GetPName.ProgramPointSize); // GL.Enable(EnableCap.ProgramPointSize)
+            state.boundVao = GL.GetInteger(GetPName.VertexArrayBinding); // GL.BindVertexArray
+            state.cullFace = GL.GetBoolean(GetPName.CullFace); // GL.Enable
+            state.cullMode = GL.GetInteger(GetPName.CullFaceMode); // GL.CullFace
+            state.fbSrgb = GL.GetBoolean(GetPName.FramebufferSrgb); // GL.Enable
+            state.textureUnit = GL.GetInteger(GetPName.ActiveTexture); // GL.ActiveTexture
+            state.unpackAlignment = GL.GetInteger(GetPName.UnpackAlignment); // GL.PixelStore
+            state.boundReadFb = GL.GetInteger(GetPName.ReadFramebufferBinding); // GL.BindFramebuffer
+            state.boundDrawFb = GL.GetInteger(GetPName.DrawFramebufferBinding);
+            state.boundFb = GL.GetInteger(GetPName.FramebufferBinding); // GL.BindFramebuffer
+            state.drawBuffer = GL.GetInteger(GetPName.DrawBuffer); // GL.DrawBuffer
+            state.dither = GL.GetBoolean(GetPName.Dither); // GL.Enable
+            state.depthMask = GL.GetBoolean(GetPName.DepthWritemask); // GL.DepthMask
+            state.multisample = GL.GetBoolean(GetPName.Multisample);
+            state.depthTest = GL.GetBoolean(GetPName.DepthTest);
+            state.stencilTest = GL.GetBoolean(GetPName.StencilTest);
+            var data = new int[4];
+            GL.GetInteger(GetPName.Viewport, data);
+            state.vpX = data[0]; state.vpY = data[1]; state.vpW = data[2]; state.vpH = data[3];
+            GL.BindVertexArray(0);
+            this.state = state;
+        }
+
+        public void RestoreState() {
+            if(state.blend) {
+                GL.Enable(EnableCap.Blend);
+            } else {
+                GL.Disable(EnableCap.Blend);
+            }
+            if(state.programPointSize) {
+                GL.Enable(EnableCap.ProgramPointSize);
+            } else {
+                GL.Disable(EnableCap.ProgramPointSize);
+            }
+            GL.BindVertexArray(state.boundVao);
+            if(state.cullFace) {
+                GL.Enable(EnableCap.CullFace);
+            } else {
+                GL.Disable(EnableCap.CullFace);
+            }
+            GL.CullFace((CullFaceMode)state.cullMode);
+            if(state.fbSrgb) {
+                GL.Enable(EnableCap.FramebufferSrgb);
+            } else {
+                GL.Disable(EnableCap.FramebufferSrgb);
+            }
+            if(state.stencilTest) {
+                GL.Enable(EnableCap.StencilTest);
+            } else {
+                GL.Disable(EnableCap.StencilTest);
+            }
+            GL.ActiveTexture((TextureUnit)state.textureUnit);
+            //GL.PixelStore(PixelStoreParameter.UnpackAlignment, state.unpackAlignment);
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, state.boundFb);
+            GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, state.boundReadFb);
+            GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, state.boundDrawFb);
+            GL.DrawBuffer((DrawBufferMode)state.drawBuffer);
+            if(state.dither) {
+                GL.Enable(EnableCap.Dither);
+            } else {
+                GL.Disable(EnableCap.Dither);
+            }
+            GL.DepthMask(state.depthMask);
+            if(state.multisample) {
+                GL.Enable(EnableCap.Multisample);
+            } else {
+                GL.Disable(EnableCap.Multisample);
+            }
+            if(state.depthTest) {
+                GL.Enable(EnableCap.DepthTest);
+            } else {
+                GL.Disable(EnableCap.DepthTest);
+            }
+
+            GL.FrontFace(FrontFaceDirection.Ccw);
+            GL.UseProgram(0);
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+            GL.Disable(EnableCap.ScissorTest);
+            GL.DepthFunc(DepthFunction.Lequal);
+            GL.BlendEquation(BlendEquationMode.FuncAdd);
+            GL.BlendFunc(BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
+            GL.Enable(EnableCap.PolygonOffsetFill);
+            GL.PixelStore(PixelStoreParameter.UnpackAlignment, 4);
+            GL.PixelStore(PixelStoreParameter.PackAlignment, 4);
+            GL.PixelStore(PixelStoreParameter.PackRowLength, 0);
+            GL.PixelStore(PixelStoreParameter.UnpackRowLength, 0);
+            GL.Viewport(state.vpX, state.vpY, state.vpW, state.vpH);
+        }
+
         public void RenderScene(WorldSnapshot ss, SceneView sv) {
             entRes = ss.resolver;
 
@@ -353,6 +483,7 @@ namespace AnimLib {
                 var buf = new DepthPeelRenderBuffer();
                 buf.Resize(w, h);
                 sv.Buffer = buf;
+                platform.Skia.SetBuffer(buf);
             }
             pb = sv.Buffer as DepthPeelRenderBuffer;
             GL.Viewport(0, 0, pb.Size.Item1, pb.Size.Item2);
@@ -360,7 +491,6 @@ namespace AnimLib {
                 Console.WriteLine("Can't render scene because renderbuffer isn't DepthPeelRenderBuffer");
                 return;
             }
-
             GL.Enable(EnableCap.PolygonOffsetFill);
 
             pb.Bind();
@@ -392,7 +522,22 @@ namespace AnimLib {
 
             var _programs = platform.Programs;
 
-            for(int p = 0; p < 16; p++) {
+            // TODO: bind framebuffer when we have render targets
+            var sceneCamera = ss.Camera;
+            var pbSize = pb.Size;
+
+            if(sceneCamera is OrthoCameraState) {
+                var cam = sceneCamera as OrthoCameraState;
+                cam.width = pbSize.Item1;
+                cam.height = pbSize.Item2;
+            }
+            M4x4 worldToClip = sceneCamera.CreateWorldToClipMatrix((float)pbSize.Item1/(float)pbSize.Item2);
+            if(rs.overrideCamera && sceneCamera is PerspectiveCameraState) {
+                worldToClip = rs.debugCamera.CreateWorldToClipMatrix((float)pbSize.Item1/(float)pbSize.Item2);
+            }
+
+            int p = 0;
+            for(p = 0; p < 16; p++) {
                 drawId = 0;
                 GL.ColorMask(true, true, true, true);
                 GL.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -406,19 +551,6 @@ namespace AnimLib {
                 GL.BeginQuery(QueryTarget.SamplesPassed, query);
                 //GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
 
-                // TODO: bind framebuffer when we have render targets
-                var sceneCamera = ss.Camera;
-                var pbSize = pb.Size;
-
-                if(sceneCamera is OrthoCameraState) {
-                    var cam = sceneCamera as OrthoCameraState;
-                    cam.width = pbSize.Item1;
-                    cam.height = pbSize.Item2;
-                }
-                M4x4 worldToClip = sceneCamera.CreateWorldToClipMatrix((float)pbSize.Item1/(float)pbSize.Item2);
-                if(rs.overrideCamera && sceneCamera is PerspectiveCameraState) {
-                    worldToClip = rs.debugCamera.CreateWorldToClipMatrix((float)pbSize.Item1/(float)pbSize.Item2);
-                }
 
                 RectTransform.RootTransform = new RectTransform(new Dummy());
                 RectTransform.RootTransform.Size = new Vector2(pbSize.Item1, pbSize.Item2);
@@ -498,13 +630,15 @@ namespace AnimLib {
                     RenderBeziers(ss.Beziers, worldToClip, smat, sv.Buffer);
                 }
 
+                GL.EndQuery(QueryTarget.SamplesPassed);
+
+
                 //TODO:
                 //RenderTriangleMeshes();
                 //RenderLinestrips();
 
                 // TODO: OnRender delegate!
 
-                GL.EndQuery(QueryTarget.SamplesPassed);
                 long passedcount = 0;
                 GL.GetQueryObject(query, GetQueryObjectParam.QueryResult, out passedcount);
                 if(passedcount <= 0) {
@@ -514,6 +648,21 @@ namespace AnimLib {
                 pb.NextLayer();
             }
             GL.DeleteQuery(query);
+            if(p >= 10) {
+                Debug.Warning($"Rendering frame took {p} depth peels");
+            }
+
+            // skia
+
+            //platform.Skia.Clear();
+            if(ss.Shapes != null)
+                RenderShapes(ss.Shapes, worldToClip);
+            // render skia (all skia GL commands get executed here)
+            PushState();
+            // render skia (all skia GL commands get executed here)
+            platform.Skia.Flush();
+            // render skia (all skia GL commands get executed here)
+            RestoreState();
         }
     }
 }

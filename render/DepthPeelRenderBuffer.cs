@@ -31,6 +31,10 @@ namespace AnimLib {
             return _colorTex;
         }
 
+        public int FBO {
+            get { return _fbo; }
+        }
+
         public int GetEntityAtPixel(int x, int y) 
         {
             int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);
@@ -62,7 +66,7 @@ namespace AnimLib {
                 if(_depthTex1 != -1) {
                     if(_boundDepthTexture == _depthTex1) {
                         _boundDepthTexture = -1;
-                        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, TextureTarget.Texture2D, 0, 0);
+                        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, TextureTarget.Texture2D, 0, 0);
                     }
                     GL.DeleteTexture(_depthTex1);
 
@@ -70,7 +74,7 @@ namespace AnimLib {
                 if(_depthTex2 != -1) {
                     if(_boundDepthTexture == _depthTex2) {
                         _boundDepthTexture = -1;
-                        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, TextureTarget.Texture2D, 0, 0);
+                        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, TextureTarget.Texture2D, 0, 0);
                     }
                     GL.DeleteTexture(_depthTex2);
                 }
@@ -137,15 +141,15 @@ namespace AnimLib {
             
             _depthTex1 = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, _depthTex1);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent32f, width, height, 0, PixelFormat.DepthComponent, PixelType.Float, IntPtr.Zero);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Depth24Stencil8, width, height, 0, PixelFormat.DepthStencil, PixelType.UnsignedInt248, IntPtr.Zero);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, TextureTarget.Texture2D, _depthTex1, 0);
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, TextureTarget.Texture2D, _depthTex1, 0);
             _boundDepthTexture = _depthTex1;
 
             _depthTex2 = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, _depthTex2);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent32f, width, height, 0, PixelFormat.DepthComponent, PixelType.Float, IntPtr.Zero);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Depth24Stencil8, width, height, 0, PixelFormat.DepthStencil, PixelType.UnsignedInt248, IntPtr.Zero);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
             //GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, TextureTarget.Texture2D, _depthTex2, 0);
@@ -208,10 +212,10 @@ namespace AnimLib {
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fbo);
             if(_boundDepthTexture == _depthTex1) {
                 _boundDepthTexture = _depthTex2;
-                GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, TextureTarget.Texture2D, _depthTex2, 0);
+                GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, TextureTarget.Texture2D, _depthTex2, 0);
             } else if(_boundDepthTexture == _depthTex2) {
                 _boundDepthTexture = _depthTex1;
-                GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, TextureTarget.Texture2D, _depthTex1, 0);
+                GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, TextureTarget.Texture2D, _depthTex1, 0);
             }
             GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, dbuf);
             GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, rbuf);

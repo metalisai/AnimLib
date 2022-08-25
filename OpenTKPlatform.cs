@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using ImGuiNET;
+using SkiaSharp;
 
 namespace AnimLib {
     public partial class OpenTKPlatform : GameWindow, IPlatform
@@ -35,7 +36,10 @@ namespace AnimLib {
 
         private int imguiVao, imguiVbo, imguiEbo;
 
+        public SkiaRenderer Skia;
+
         public int rectVao;
+        public int dynVao, dynVbo;
 
         private int _defaultProgram;
         private int _blitProgram, _imguiProgram;
@@ -129,8 +133,7 @@ namespace AnimLib {
             string version = GL.GetString(StringName.Version);
             string shadingLang = GL.GetString(StringName.ShadingLanguageVersion);
             string rendererStr = GL.GetString(StringName.Renderer);
-            Console.WriteLine(version);
-            Console.WriteLine(shadingLang);
+            Debug.Log($"OpenGL context info\n\tGL version: {version}\n\tShading language version: {shadingLang}\n\tRenderer: {rendererStr}");
 
             this.KeyDown += (object sender, KeyboardKeyEventArgs args) => {
                 if(PKeyDown != null) {
@@ -168,6 +171,11 @@ namespace AnimLib {
                     mouseScroll(this, args);
                 }
             };            
+
+            // skia
+            Skia = new SkiaRenderer();
+            Skia.Create();
+
             if(OnLoaded != null) {
                 OnLoaded(this, null);
             }
@@ -383,7 +391,6 @@ namespace AnimLib {
         }
 
         public int AddShader(string v, string f, string g, string tcs = null, string tes = null) {
-            Console.WriteLine("Compile shader!");
             int[] ps = new int[1];
             var vs = GL.CreateShader(ShaderType.VertexShader);
             GL.ShaderSource(vs, v);
@@ -393,8 +400,7 @@ namespace AnimLib {
                 int slen;
                 string slog = new string('*', 256);
                 GL.GetShaderInfoLog(vs, 256, out slen, out slog);
-                Console.WriteLine("Failed to compile vertex shader!");
-                Console.WriteLine("LOG: " + slog);
+                Debug.Error($"Failed to compile vertex shader!\n LOG: {slog}");
                 throw new Exception();
             }
 
@@ -406,8 +412,7 @@ namespace AnimLib {
                 int slen;
                 string slog = new string('*', 256);
                 GL.GetShaderInfoLog(fs, 256, out slen, out slog);
-                Console.WriteLine("Failed to compile fragment shader!");
-                Console.WriteLine("LOG: " + slog);
+                Debug.Error($"Failed to compile fragment shader!\n LOG: {slog}");
                 throw new Exception();
             }
 
@@ -426,8 +431,7 @@ namespace AnimLib {
                     int slen;
                     string slog = "";
                     GL.GetShaderInfoLog(gs, 256, out slen, out slog);
-                    Console.WriteLine("Failed to compile geometry shader!");
-                    Console.WriteLine(slog);
+                    Debug.Error($"Failed to compile geometry shader!\n LOG: {slog}");
                 }
                 GL.AttachShader(ret, gs);
                 GL.DeleteShader(gs);
@@ -469,14 +473,34 @@ namespace AnimLib {
                 int slen;
                 string slog = "";
                 GL.GetProgramInfoLog(ret, 256, out slen, out slog);
-                Console.WriteLine("Failed to link program!");
-                Console.WriteLine(slog);
+                Debug.Error($"Failed to link program! LOG: {slog}");
             } else {
                 Debug.Log("Program linked!");
             }
             _programs.Add(ret);
             // TODO: delete shaders?
             return ret;
+        }
+
+        public void DynRect(Vector2 bl, Vector2 tr) {
+            //Debug.Log($"{bl.ToString()} {tr.ToString()}");
+            var vData = new float[] {
+                bl.x, bl.y, 0.0f, 1.0f,
+                tr.x, bl.y, 0.0f, 1.0f,
+                bl.x, tr.y, 0.0f, 1.0f,
+                tr.x, bl.y, 0.0f, 1.0f,
+                tr.x, tr.y, 0.0f, 1.0f,
+                bl.x, tr.y, 0.0f, 1.0f,
+
+                0.0f,  0.0f,
+                1.0f,  0.0f,
+                0.0f,  1.0f,
+                1.0f,  0.0f,
+                1.0f,  1.0f,
+                0.0f,  1.0f,
+            };
+            GL.BindBuffer(BufferTarget.ArrayBuffer, dynVbo);
+            GL.BufferData(BufferTarget.ArrayBuffer, vData.Length * sizeof(float), vData, BufferUsageHint.DynamicDraw);
         }
 
         private void CreateMeshes() {
@@ -506,6 +530,16 @@ namespace AnimLib {
             GL.VertexAttribPointer(0, 4, VertexAttribPointerType.Float, false, 0, 0);
             GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, 0, 6*4*4);
             GL.BindVertexArray(0);
+
+            dynVao = GL.GenVertexArray();
+            GL.BindVertexArray(dynVao);
+            dynVbo = GL.GenBuffer();
+            GL.BindBuffer(BufferTarget.ArrayBuffer, dynVbo);
+            GL.EnableVertexAttribArray(0);
+            GL.EnableVertexAttribArray(2);
+            GL.VertexAttribPointer(0, 4, VertexAttribPointerType.Float, false, 0, 0);
+            GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, 0, 6*4*4);
+            GL.BindVertexArray(0);
         }
         
         private void CompileShaders() {
@@ -517,7 +551,7 @@ namespace AnimLib {
         static void debugCallback(DebugSource source, DebugType type, int id, DebugSeverity severity, int length, IntPtr message, IntPtr userParam) {
             if(type == DebugType.DebugTypeOther)
                 return;
-            Console.WriteLine($"OpenGL debug ({type}) src:{source} message: {Marshal.PtrToStringAnsi(message)}");
+            Debug.Warning($"OpenGL debug ({type}) src:{source} message: {Marshal.PtrToStringAnsi(message)}");
         }
     }
 

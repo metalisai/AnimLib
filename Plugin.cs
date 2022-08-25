@@ -8,6 +8,16 @@ namespace AnimLib {
         public int Width = 1920;
         public int Height = 1080;
         public double MaxLength = 600.0;
+
+        public AnimationSettings Clone() {
+            return new AnimationSettings() {
+                Name = this.Name,
+                FPS = this.FPS,
+                Width = this.Width,
+                Height = this.Height,
+                MaxLength = this.MaxLength
+            };
+        }
     }
     public interface AnimationBehaviour {
         Task Animation(World world, Animator animator);

@@ -5,7 +5,6 @@ namespace AnimLib {
         public Color color;
         public Color outline = Color.BLACK;
         public float outlineWidth = 1.0f;
-        public bool is2d = false;
         public Vector2 sizeRect;
 
         public CircleState() {}
@@ -15,7 +14,6 @@ namespace AnimLib {
             this.color = cs.color;
             this.outline = cs.outline;
             this.outlineWidth = cs.outlineWidth;
-            this.is2d = cs.is2d;
             this.sizeRect = cs.sizeRect;
         }
 
@@ -28,13 +26,6 @@ namespace AnimLib {
         public Circle() {
             state = new CircleState();
             Transform = new Transform(this);
-        }
-        public Circle(bool is2d) {
-            state = new CircleState();
-            if(is2d) {
-                Transform = new RectTransform(this);
-                ((CircleState)state).is2d = true;
-            }
         }
         public Circle(Circle c) : base(c) {
         }

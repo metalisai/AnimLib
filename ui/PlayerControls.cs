@@ -358,6 +358,7 @@ namespace AnimLib {
             ImGui.SetCursorPos(pos);
             var spos = ImGui.GetCursorScreenPos();
             ImGui.Image((IntPtr)view.TextureHandle, size, new Vector2(0.0f, 1.0f), new Vector2(1.0f, 0.0f));
+            //ImGui.Image((IntPtr)OpenTKPlatform.handle, size, new Vector2(0.0f, 1.0f), new Vector2(1.0f, 0.0f));
             view.SetArea((int)spos.X, (int)spos.Y, (int)size.X, (int)size.Y);
             ImGui.End();
         }
@@ -500,6 +501,7 @@ namespace AnimLib {
                 ImGuiWindowFlags wf = ImGuiWindowFlags.AlwaysAutoResize;
                 ImGui.Begin("Animation error", wf);
                 ImGui.Text(currentError);
+                ImGui.Text(currentStackTrace);
                 ImGui.End();
             }
             
