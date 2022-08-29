@@ -100,6 +100,11 @@ namespace AnimLib
         public float progress;
     }
 
+    public class CanvasSnapshot {
+        public CanvasState Canvas;
+        public ShapeState[] Shapes;
+    }
+
     public class WorldSnapshot {
         public EntityStateResolver resolver;
         public CameraState Camera;
@@ -113,8 +118,7 @@ namespace AnimLib
         public MeshBackedGeometry[] MeshBackedGeometries;
         public (LabelState, EntityState)[] Labels;
         public BezierState[] Beziers;
-        public CanvasState[] Canvases;
-        public ShapeState[] Shapes;
+        public CanvasSnapshot[] Canvases;
         public double Time;
     }
 

@@ -5,6 +5,10 @@ using System.Linq;
 namespace AnimLib {
     internal class WorldMachine {
 
+        public class CanvasEntities {
+            public List<ShapeState> Shapes = new List<ShapeState>();
+        }
+
         List<CircleState> _circles = new List<CircleState>();
         List<Text2DState> _texts = new List<Text2DState>();
         List<GlyphState> _glyphs = new List<GlyphState>();
@@ -15,8 +19,7 @@ namespace AnimLib {
         List<EntityState> _cameras =  new List<EntityState>();
         List<LabelState> _labels = new List<LabelState>();
         List<BezierState> _beziers = new List<BezierState>();
-        List<CanvasState> _canvases = new List<CanvasState>();
-        List<ShapeState> _shapes = new List<ShapeState>();
+        Dictionary<int, CanvasEntities> _canvases = new Dictionary<int, CanvasEntities>();
         //Dictionary<VisualEntity, EntityState> _entities = new Dictionary<VisualEntity, EntityState>();
         Dictionary<int, EntityState> _entities = new Dictionary<int, EntityState>();
         Dictionary<int, AbsorbDestruction> _absorbs = new Dictionary<int, AbsorbDestruction>();
@@ -63,7 +66,6 @@ namespace AnimLib {
             _entities.Clear();
             _beziers.Clear();
             _canvases.Clear();
-            _shapes.Clear();
             //var cam = new PerspectiveCamera();
             //cam.Position = new Vector3(0.0f, 0.0f, -13.0f);
             //_activeCamera = cam;
@@ -138,13 +140,22 @@ namespace AnimLib {
             ret.MeshBackedGeometries = _mbgeoms.Where(x => x.active).ToArray();
             ret.Cubes = _cubes.Where(x => x.active).ToArray();
             ret.Beziers = _beziers.Where(x => x.active).ToArray();
-            ret.Canvases = _canvases.Where(x => x.active).ToArray();
-            ret.Shapes = _shapes.Where(x => x.active).ToArray();
             ret.resolver = new EntityStateResolver {
                 GetEntityState = entid => {
                     return _entities.ContainsKey(entid) ? _entities[entid] : null;
                 }
             };
+            var l = new List<CanvasSnapshot>();
+            foreach(var c in _canvases) {
+                var canvas = _entities[c.Key] as CanvasState;
+                var css = new CanvasSnapshot() {
+                        Shapes = c.Value.Shapes.ToArray(),
+                        Canvas = canvas
+                    };
+                l.Add(css);
+                foreach(var s in css.Shapes) s.canvas = canvas;
+            }
+            ret.Canvases = l.ToArray();
 
             // TODO: better way to do this?
             foreach(var rect in ret.Rectangles) {
@@ -153,14 +164,6 @@ namespace AnimLib {
                     rect.canvas = ca as CanvasState;
                 } else {
                     Debug.Error($"Visual2DEntity's canvas {rect.canvasId} could not be found!");
-                }
-            }
-            foreach(var shape in ret.Shapes) {
-                EntityState ca = null;
-                if(_entities.TryGetValue(shape.canvasId, out ca) && ca is CanvasState) {
-                    shape.canvas = ca as CanvasState;
-                } else {
-                    Debug.Error($"Visual2DEntity's canvas {shape.canvasId} could not be found!");
                 }
             }
             /*foreach(var label in ret.Labels) {
@@ -225,11 +228,13 @@ namespace AnimLib {
                 break;
                 case CanvasState ca1:
                 state = (EntityState)ca1.Clone();
-                _canvases.Add((CanvasState)state);
+                _canvases.Add(state.entityId, new CanvasEntities());
                 break;
                 case ShapeState ss1:
+                var canvas = _entities[ss1.canvasId] as CanvasState;
                 state = (EntityState)ss1.Clone();
-                _shapes.Add((ShapeState)state);
+                var shape = state as ShapeState;
+                _canvases[canvas.entityId].Shapes.Add((ShapeState)state);
                 break; 
                 default:
                 throw new NotImplementedException();
@@ -275,10 +280,10 @@ namespace AnimLib {
                 _cameras.RemoveAll(x => x.entityId == entityId);
                 break;
                 case CanvasState ca1:
-                _canvases.RemoveAll(x => x.entityId == entityId);
+                _canvases.Remove(entityId);
                 break;
                 case ShapeState ss1:
-                _shapes.RemoveAll(x => x.entityId == entityId);
+                foreach(var s in _canvases) s.Value.Shapes.RemoveAll(x => x.entityId == entityId);
                 break;
                 default:
                 throw new Exception("Destroying unknown entity!");
@@ -309,6 +314,17 @@ namespace AnimLib {
                 }
 
                 var state = _entities[worldProperty.entityId];
+                // move 2D entity from 1 canvas to another if its changed
+                if(state is EntityState2D && worldProperty.property.ToLower() == "canvasid") {
+                    var oldCanvas = _canvases[(int)worldProperty.oldvalue];
+                    var newCanvas = _canvases[(int)worldProperty.newvalue];
+                    switch(state) {
+                        case ShapeState ss1:
+                        oldCanvas.Shapes.RemoveAll(x => x.entityId == worldProperty.entityId);
+                        newCanvas.Shapes.Add(ss1);
+                        break;
+                    }
+                }
                 var field = state.GetType().GetField(lower);
                 field.SetValue(state, worldProperty.newvalue);
                 break;
@@ -352,6 +368,16 @@ namespace AnimLib {
                 case WorldPropertyCommand worldProperty:
                 var lower = char.ToLower(worldProperty.property[0]) + worldProperty.property.Substring(1);
                 var state = _entities[worldProperty.entityId];
+                if(state is EntityState2D && worldProperty.property.ToLower() == "canvasid") {
+                    var newCanvas = _canvases[(int)worldProperty.oldvalue];
+                    var oldCanvas = _canvases[(int)worldProperty.newvalue];
+                    switch(state) {
+                        case ShapeState ss1:
+                        oldCanvas.Shapes.RemoveAll(x => x.entityId == worldProperty.entityId);
+                        newCanvas.Shapes.Add(ss1);
+                        break;
+                    }
+                }
                 var field = state.GetType().GetField(lower);
                 field.SetValue(state, worldProperty.oldvalue);
                 break;

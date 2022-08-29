@@ -67,10 +67,10 @@ namespace AnimLib {
             }        
         }
 
-        public void RenderShapes(ShapeState[] shapes, M4x4 mat) {
-            if(shapes.Length > 0) {
-                foreach(var shape in shapes) {
-                    platform.Skia.RenderShape(shape, ref mat);
+        public void RenderCanvases(CanvasSnapshot[] canvases, M4x4 mat) {
+            if(canvases.Length > 0) {
+                foreach(var canvas in canvases) {
+                    platform.Skia.RenderCanvas(canvas, ref mat);
                 }
             }
         }
@@ -655,8 +655,8 @@ namespace AnimLib {
             // skia
 
             //platform.Skia.Clear();
-            if(ss.Shapes != null)
-                RenderShapes(ss.Shapes, worldToClip);
+            if(ss.Canvases != null)
+                RenderCanvases(ss.Canvases, worldToClip);
             // render skia (all skia GL commands get executed here)
             PushState();
             // render skia (all skia GL commands get executed here)
