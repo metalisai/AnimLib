@@ -26,6 +26,7 @@ namespace AnimLib
         public RenderState(IPlatform platform) {
             currentPlatform = platform;
             this.platform = platform;
+            uiRenderBuffer = new DepthPeelRenderBuffer(platform);
 
             platform.OnSizeChanged += UpdateSize;
             platform.OnLoaded += Load;
@@ -55,7 +56,7 @@ namespace AnimLib
 
         public ColoredTriangleMeshGeometry cubeGeometry;
 
-        IRenderBuffer uiRenderBuffer = new DepthPeelRenderBuffer();
+        IRenderBuffer uiRenderBuffer;
 
         FontCache _fr;
         ITypeSetter ts = new FreetypeSetting();

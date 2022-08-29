@@ -177,7 +177,7 @@ namespace AnimLib {
             var h = sv.BufferHeight;
             if(!(sv.Buffer is MultisampleRenderBuffer) || sv.Buffer == null) {
                 Debug.Warning("Using triangle rendering, but renderbuffer is not multisampled, allocating new buffer");
-                var buf = new MultisampleRenderBuffer();
+                var buf = new MultisampleRenderBuffer(platform);
                 buf.Resize(w, h);
                 sv.Buffer = buf;
             }

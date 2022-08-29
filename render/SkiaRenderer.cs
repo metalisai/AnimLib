@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using SkiaSharp;
 using OpenTK.Graphics.OpenGL4;
 
@@ -16,12 +17,26 @@ namespace AnimLib {
 
     public class SkiaRenderer
     {
+        public enum RenderMode {
+            None,
+            OpenGL,
+            Software,
+        }
+
+        public RenderMode Mode {
+            get { return mode; }
+        }
+
+        RenderMode mode;
+
         GRContext ctx;
         GRBackendRenderTarget renderTarget;
         SKSurface surface;
         SKCanvas canvas;
         IRenderBuffer glBuffer;
         GRGlInterface glInterface;
+
+        Texture2D tex;
 
         /*public int TextureId {
             get {
@@ -30,15 +45,35 @@ namespace AnimLib {
         }*/
 
         public void SetBuffer(IRenderBuffer buf) {
-            ctx.ResetContext();
-            var fbInfo = new GRGlFramebufferInfo((uint)buf.FBO, SKColorType.Rgba8888.ToGlSizedFormat());
-            renderTarget = new GRBackendRenderTarget(buf.Size.Item1, buf.Size.Item2, 0, 8, fbInfo);
-            surface = SKSurface.Create(ctx, renderTarget, GRSurfaceOrigin.TopLeft, SKColorType.Rgba8888);
-            canvas = surface.Canvas;
-            glBuffer = buf;
+            if(mode == RenderMode.OpenGL) {
+                // in OpenGL render directly to framebuffer
+                ctx.ResetContext();
+                var fbInfo = new GRGlFramebufferInfo((uint)buf.FBO, SKColorType.Rgba8888.ToGlSizedFormat());
+                renderTarget = new GRBackendRenderTarget(buf.Size.Item1, buf.Size.Item2, 0, 8, fbInfo);
+                surface = SKSurface.Create(ctx, renderTarget, GRSurfaceOrigin.TopLeft, SKColorType.Rgba8888);
+                canvas = surface.Canvas;
+                glBuffer = buf;
+            } else if(mode == RenderMode.Software) {
+                // in software mode render to image then blit to renderbuffer
+                var imageInfo = new SKImageInfo(
+                    width: buf.Size.Item1,
+                    height: buf.Size.Item2,
+                    colorType: SKColorType.Rgba8888,
+                    alphaType: SKAlphaType.Premul);
+                surface = SKSurface.Create(imageInfo);
+                canvas = surface.Canvas;
+                glBuffer = buf;
+                renderTarget = null;
+            }
         }
 
-        public void Create() {
+        // OpenGL rendering
+        public void CreateGL() {
+            if(mode != RenderMode.None) {
+                Debug.Error($"CreateGL() called after already initialized, mode: {mode}");
+                return;
+            }
+            mode = RenderMode.OpenGL;
             glInterface = GRGlInterface.Create();
             if(!glInterface.Validate()) {
                 Debug.Error("Gl interface not valid for skia");
@@ -50,8 +85,21 @@ namespace AnimLib {
             canvas = surface.Canvas;*/
         }
 
+        // Software rendering
+        public void CreateSW() {
+            if(mode != RenderMode.None) {
+                Debug.Error($"CreateGL() called after already initialized, mode: {mode}");
+                return;
+            }
+            mode = RenderMode.Software;
+            glInterface = null;
+            ctx = null;
+        }
+
         public void Clear() {
-            ctx.ResetContext();
+            if(mode == RenderMode.OpenGL) {
+                ctx.ResetContext();
+            }
             canvas.Clear();
         }
 
@@ -119,7 +167,9 @@ namespace AnimLib {
             if(mat == null && !rc.is2d)
                 return;
             foreach(var shape in css.Shapes) {
-                ctx.ResetContext();
+                if(mode == RenderMode.OpenGL) {
+                    ctx.ResetContext();
+                }
                 float bw = glBuffer.Size.Item1;
                 float bh = glBuffer.Size.Item2;
                 SKMatrix localTransform;
@@ -150,6 +200,9 @@ namespace AnimLib {
                                 break;
                             case PathVerb.Cubic:
                                 path.CubicTo(verb.Item2.points[1].ToSKPoint(), verb.Item2.points[2].ToSKPoint(), verb.Item2.points[3].ToSKPoint());
+                                break;
+                            case PathVerb.Conic:
+                                path.ConicTo(verb.Item2.points[1].ToSKPoint(), verb.Item2.points[2].ToSKPoint(), verb.Item2.conicWeight);
                                 break;
                             case PathVerb.Close:
                                 path.Close();
@@ -193,8 +246,33 @@ namespace AnimLib {
         }
 
         public void Flush() {
-            ctx.ResetContext();
+            if(mode == RenderMode.OpenGL) {
+                ctx.ResetContext();
+            }
             canvas.Flush();
+            // blit software buffer to scren
+            if(mode == RenderMode.Software) {
+                using(var img = surface.Snapshot()) {
+                    if(tex == null) {
+                        tex = new Texture2D("SkiaRenderer"); 
+                    }
+                    tex.Width = img.Width;
+                    tex.Height = img.Height;
+                    tex.Format = Texture2D.TextureFormat.RGBA8;
+                    // allocate new buffer if needed
+                    if(tex.RawData == null || tex.RawData.Length != tex.Width * tex.Height * 4) {
+                        tex.RawData = new byte[tex.Width * tex.Height * 4];
+                    }
+                    var pinned = GCHandle.Alloc(tex.RawData, GCHandleType.Pinned);
+                    System.IntPtr dst = pinned.AddrOfPinnedObject();
+                    if(img.ReadPixels(img.Info, dst)) {
+                        var dprb = glBuffer as DepthPeelRenderBuffer;
+                        dprb.BlitTexture(tex);
+                    } else {
+                        Debug.Error("Failed to read Skia surface pixels");
+                    }
+                }
+            }
         }
 
         void temp() {

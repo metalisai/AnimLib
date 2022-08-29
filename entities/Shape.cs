@@ -73,6 +73,33 @@ namespace AnimLib {
             lastPos = p3;
         }
 
+        public void ConicTo(Vector2 p1, Vector2 p2, float weight) {
+            var vd = new VerbData() {
+                points = new Vector2[3] { lastPos, p1, p2},
+                conicWeight = weight
+            };
+            path.Add((PathVerb.Conic, vd));
+            lastPos = p2;
+        }
+
+        public void Circle(Vector2 center, float radius) {
+            var start = center + new Vector2(radius, 0.0f);
+            var end1 = center + new Vector2(0.0f, radius);
+            var end2 = center + new Vector2(-radius, 0.0f);
+            var end3 = center + new Vector2(0.0f, -radius);
+            var cp1 = center + new Vector2(radius, radius);
+            var cp2 = center + new Vector2(-radius, radius);
+            var cp3 = center + new Vector2(-radius, -radius);
+            var cp4 = center + new Vector2(radius, -radius);
+            MoveTo(start);
+            float w = (float)(Math.Sqrt(2) / 2.0);
+            ConicTo(cp1, end1, w);
+            ConicTo(cp2, end2, w);
+            ConicTo(cp3, end3, w);
+            ConicTo(cp4, start, w);
+            Close();
+        }
+
         public void Close() {
             var vd = new VerbData() {
                 points = new Vector2[] { lastPos },

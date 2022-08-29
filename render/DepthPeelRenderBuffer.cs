@@ -10,6 +10,7 @@ namespace AnimLib {
         int _boundDepthTexture;
 
         int _blitvao = -1, _blitvbo = -1;
+        IPlatform platform;
 
         public (int,int) Size {
             get {
@@ -23,8 +24,8 @@ namespace AnimLib {
             }
         }
 
-        public DepthPeelRenderBuffer() {
-            
+        public DepthPeelRenderBuffer(IPlatform platform) {
+            this.platform = platform;            
         }
 
         public int Texture() {
@@ -169,7 +170,28 @@ namespace AnimLib {
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fbo);
         }
 
-        public void BlendToScreen(int sw, int sh, int _blitProgram) {
+        public void BlitTexture(Texture2D tex) {
+            int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);
+            int rbuf = GL.GetInteger(GetPName.ReadFramebufferBinding);
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fbo);
+            GL.BindVertexArray(_blitvao);
+            var loc = GL.GetUniformLocation(platform.BlitProgram, "_MainTex");
+            GL.UseProgram(platform.BlitProgram);
+            GL.Uniform1(loc, 0);
+            GL.Disable(EnableCap.DepthTest);
+            GL.Disable(EnableCap.CullFace);
+            GL.Enable(EnableCap.Blend);
+            GL.BlendEquation(BlendEquationMode.FuncAdd);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            platform.LoadTexture(tex);
+            GL.BindTextureUnit(0, tex.GLHandle);
+            GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
+            GL.BindVertexArray(0);
+            GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, dbuf);
+            GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, rbuf);
+        }
+
+        public void BlendToScreen(int sw, int sh) {
             int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);
             int rbuf = GL.GetInteger(GetPName.ReadFramebufferBinding);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
@@ -180,8 +202,8 @@ namespace AnimLib {
             //GL.BlitFramebuffer(0, 0, Width, Height, 0, 0, Width, Height, ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Linear);
 
             GL.BindVertexArray(_blitvao);
-            var loc = GL.GetUniformLocation(_blitProgram, "_MainTex");
-            GL.UseProgram(_blitProgram);
+            var loc = GL.GetUniformLocation(platform.BlitProgram, "_MainTex");
+            GL.UseProgram(platform.BlitProgram);
             GL.Uniform1(loc, 0);
             GL.Disable(EnableCap.DepthTest);
             GL.Disable(EnableCap.CullFace);

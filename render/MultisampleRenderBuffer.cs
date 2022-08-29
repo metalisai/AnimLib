@@ -11,6 +11,11 @@ namespace AnimLib {
         int _entityIdTex = -1;
         int _width, _height;
         int _blitvao = -1, _blitvbo = -1;
+        IPlatform platform;
+
+        public MultisampleRenderBuffer(IPlatform platform) {
+            this.platform = platform;
+        }
 
         public void Bind()
         {
@@ -34,15 +39,15 @@ namespace AnimLib {
             return pixs[0];
         }
 
-        public void BlendToScreen(int screenWidth, int screenHeight, int _blitProgram)
+        public void BlendToScreen(int screenWidth, int screenHeight)
         {
             int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);
             int rbuf = GL.GetInteger(GetPName.ReadFramebufferBinding);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.DrawBuffer(DrawBufferMode.Back);
             GL.BindVertexArray(_blitvao);
-            var loc = GL.GetUniformLocation(_blitProgram, "_MainTex");
-            GL.UseProgram(_blitProgram);
+            var loc = GL.GetUniformLocation(platform.BlitProgram, "_MainTex");
+            GL.UseProgram(platform.BlitProgram);
             GL.Uniform1(loc, 0);
             GL.Disable(EnableCap.DepthTest);
             GL.Disable(EnableCap.CullFace);

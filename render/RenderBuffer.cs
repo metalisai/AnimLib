@@ -5,7 +5,7 @@ namespace AnimLib {
         void OnPreRender();
         void OnPostRender();
         void Bind();
-        void BlendToScreen(int screenWidth, int screenHeight, int program);
+        void BlendToScreen(int screenWidth, int screenHeight);
         void Resize(int width, int height);
         int GetEntityAtPixel(int x, int y);
         int Texture();

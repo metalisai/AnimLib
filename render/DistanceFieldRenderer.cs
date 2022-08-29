@@ -68,6 +68,11 @@ namespace AnimLib {
         }
 
         public void RenderCanvases(CanvasSnapshot[] canvases, M4x4 mat) {
+            // with software rendering the canvas has to be cleared manually
+            // with OpenGL the renderbuffer is cleared by our renderer
+            if(platform.Skia.Mode == SkiaRenderer.RenderMode.Software) {
+                platform.Skia.Clear();
+            }
             if(canvases.Length > 0) {
                 foreach(var canvas in canvases) {
                     platform.Skia.RenderCanvas(canvas, ref mat);
@@ -480,7 +485,7 @@ namespace AnimLib {
             var w = sv.BufferWidth;
             var h = sv.BufferHeight;
             if(!(sv.Buffer is DepthPeelRenderBuffer) || sv.Buffer == null) {
-                var buf = new DepthPeelRenderBuffer();
+                var buf = new DepthPeelRenderBuffer(platform);
                 buf.Resize(w, h);
                 sv.Buffer = buf;
                 platform.Skia.SetBuffer(buf);

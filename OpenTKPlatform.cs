@@ -46,6 +46,10 @@ namespace AnimLib {
 
         List<int> _programs = new List<int>();
 
+        public int BlitProgram {
+            get { return _blitProgram; }
+        }
+
         public int[] Programs {
             get {
                 return _programs.ToArray();
@@ -174,7 +178,8 @@ namespace AnimLib {
 
             // skia
             Skia = new SkiaRenderer();
-            Skia.Create();
+            //Skia.CreateGL();
+            Skia.CreateSW();
 
             if(OnLoaded != null) {
                 OnLoaded(this, null);
@@ -210,8 +215,11 @@ namespace AnimLib {
                 default:
                     throw new NotImplementedException();
             }
-            var tex = GL.GenTexture();
-            tex2d.GLHandle = tex;
+            int tex = tex2d.GLHandle;
+            if(tex < 0) {
+                tex = GL.GenTexture();
+                tex2d.GLHandle = tex;
+            }
 
             if(tex2d.ownerGuid != "") {
                 AllocatedResources res;
@@ -377,7 +385,7 @@ namespace AnimLib {
             }
             RenderImGui(data.Value.Item1, data.Value.Item2, views, rb);
             pb.NextLayer();
-            if (data != null) pb.BlendToScreen(Width, Height, _blitProgram);
+            if (data != null) pb.BlendToScreen(Width, Height);
         }
 
         public void ClearBackbuffer(int x, int y, int w, int h) {

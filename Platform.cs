@@ -35,6 +35,8 @@ namespace AnimLib
         // TODO: this isn't good (could have multiple windows etc..)
         int WinWidth { get; }
         int WinHeight { get; }
+
+        int BlitProgram { get; }
     }
 
 }
