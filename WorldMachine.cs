@@ -8,13 +8,11 @@ namespace AnimLib {
         public class CanvasEntities {
             public List<ShapeState> Shapes = new List<ShapeState>();
         }
-
-        List<CircleState> _circles = new List<CircleState>();
         List<Text2DState> _texts = new List<Text2DState>();
         List<GlyphState> _glyphs = new List<GlyphState>();
         List<MeshBackedGeometry> _mbgeoms = new List<MeshBackedGeometry>();
-        List<RectangleState> _rectangles = new List<RectangleState>();
-        List<TexRectState> _trects = new List<TexRectState>();
+        //List<RectangleState> _rectangles = new List<RectangleState>();
+        //List<TexRectState> _trects = new List<TexRectState>();
         List<CubeState> _cubes = new List<CubeState>();
         List<EntityState> _cameras =  new List<EntityState>();
         List<LabelState> _labels = new List<LabelState>();
@@ -52,12 +50,11 @@ namespace AnimLib {
 
 
         public void Reset() {
-            _circles.Clear();
             _texts.Clear();
             _glyphs.Clear();
             _mbgeoms.Clear();
-            _rectangles.Clear();
-            _trects.Clear();
+            //_rectangles.Clear();
+            //_trects.Clear();
             _cubes.Clear();
             _cameras.Clear();
             _labels.Clear();
@@ -134,9 +131,8 @@ namespace AnimLib {
             var ret = new WorldSnapshot();
             //ret.Texts = _texts.Where(x => x.active).ToArray();
             ret.Glyphs = _glyphs.Where(x => x.active).ToArray();
-            ret.Circles = _circles.Where(x => x.active).ToArray();
-            ret.Rectangles = _rectangles.Where(x => x.active).ToArray();
-            ret.TexRects = _trects.Where(x => x.active).ToArray();
+            //ret.Rectangles = _rectangles.Where(x => x.active).ToArray();
+            //ret.TexRects = _trects.Where(x => x.active).ToArray();
             ret.MeshBackedGeometries = _mbgeoms.Where(x => x.active).ToArray();
             ret.Cubes = _cubes.Where(x => x.active).ToArray();
             ret.Beziers = _beziers.Where(x => x.active).ToArray();
@@ -158,14 +154,14 @@ namespace AnimLib {
             ret.Canvases = l.ToArray();
 
             // TODO: better way to do this?
-            foreach(var rect in ret.Rectangles) {
+            /*foreach(var rect in ret.Rectangles) {
                 EntityState ca = null;
                 if(_entities.TryGetValue(rect.canvasId, out ca) && ca is CanvasState) {
                     rect.canvas = ca as CanvasState;
                 } else {
                     Debug.Error($"Visual2DEntity's canvas {rect.canvasId} could not be found!");
                 }
-            }
+            }*/
             /*foreach(var label in ret.Labels) {
                 label.Item1.entity.state.entity.
             }*/
@@ -177,11 +173,6 @@ namespace AnimLib {
         private void CreateEntity(object entity) {
             EntityState state;
             switch(entity) {
-                case CircleState c1:
-                state = (EntityState)c1.Clone();
-                //state = c1;
-                _circles.Add((CircleState)state);
-                break;
                 case Text2DState t1:
                 state = (EntityState)t1.Clone();
                 //state = t1;
@@ -196,15 +187,15 @@ namespace AnimLib {
                 //state = a1;
                 _mbgeoms.Add((MeshBackedGeometry)state);
                 break;
-                case RectangleState r1:
+                /*case RectangleState r1:
                 state = (EntityState)r1.Clone();
                 //state = r1;
-                if(r1 is TexRectState) {
-                    _trects.Add((TexRectState)state);
-                } else {
+                //if(r1 is TexRectState) {
+                    //_trects.Add((TexRectState)state);
+                //} else {
                     _rectangles.Add((RectangleState)state);
-                }
-                break;
+                //}
+                break;*/
                 case CubeState c2:
                 state = (EntityState)c2.Clone();
                 //state = c2;
@@ -248,16 +239,13 @@ namespace AnimLib {
                 case ArrowState a1:
                 _mbgeoms.RemoveAll(x => x.entityId == entityId);
                 break;
-                case CircleState c1:
-                _circles.RemoveAll(x => x.entityId == entityId);
-                break;
-                case RectangleState r1:
-                if(r1 is TexRectState) {
-                    _trects.RemoveAll(x => x.entityId == entityId);
-                } else {
+                /*case RectangleState r1:
+                //if(r1 is TexRectState) {
+                    //_trects.RemoveAll(x => x.entityId == entityId);
+                //} else {
                     _rectangles.RemoveAll(x => x.entityId == entityId);
-                }
-                break;
+                //}
+                break;*/
                 case Text2DState t1:
                 _texts.RemoveAll(x => x.entityId == entityId);
                 break;

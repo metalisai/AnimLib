@@ -1,4 +1,4 @@
-
+/*
 namespace AnimLib {
     public class TexRectState : RectangleState {
         public Texture2D texture;
@@ -29,4 +29,4 @@ namespace AnimLib {
             state = new TexRectState();
         }
     }
-}
+}*/

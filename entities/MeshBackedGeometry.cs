@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 
 namespace AnimLib {
-    public abstract class MeshBackedGeometry : EntityState/*, ICloneable*/, RendererResource {
+    public abstract class MeshBackedGeometry : EntityState3D/*, ICloneable*/, RendererResource {
         //public Transform2 Transform;
         //public Color Outline = Color.BLACK;
         //public float OutlineWidth = 0.0f;

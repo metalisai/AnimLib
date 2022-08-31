@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace AnimLib {
 
-    public class Text2D : Visual2DEntity, IColored {
+    public class Text2D : VisualEntity2D, IColored {
         public List<Glyph> Glyphs = new List<Glyph>();
         public ITypeSetter Ts;
 

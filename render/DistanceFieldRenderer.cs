@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using OpenTK.Graphics.OpenGL4;
 using System.Collections.Generic;
 
@@ -22,6 +23,8 @@ namespace AnimLib {
         private OpenTKPlatform platform;
         private RenderState rs;
 
+        bool gizmo = true;
+
         public DistanceFieldRenderer(OpenTKPlatform platform, RenderState rs) {
             this.platform = platform;
             this.rs = rs;
@@ -39,7 +42,7 @@ namespace AnimLib {
 
         }
 
-        public void RenderCircles(CircleState[] circles, M4x4 mat, M4x4 orthoMat) {
+        /*public void RenderCircles(CircleState[] circles, M4x4 mat, M4x4 orthoMat) {
             if(circles.Length > 0) {
                 GL.PolygonOffset(1.0f, 1.0f);
                 GL.Disable(EnableCap.CullFace);
@@ -65,7 +68,7 @@ namespace AnimLib {
                     drawId++;
                 }
             }        
-        }
+        }*/
 
         public void RenderCanvases(CanvasSnapshot[] canvases, M4x4 mat) {
             // with software rendering the canvas has to be cleared manually
@@ -73,14 +76,14 @@ namespace AnimLib {
             if(platform.Skia.Mode == SkiaRenderer.RenderMode.Software) {
                 platform.Skia.Clear();
             }
-            if(canvases.Length > 0) {
-                foreach(var canvas in canvases) {
-                    platform.Skia.RenderCanvas(canvas, ref mat);
-                }
+            // draw 2D first so that they are always in front
+            var sorted = canvases.OrderBy(x => x.Canvas.is2d ? 1 : 0);
+            foreach(var canvas in sorted) {
+                platform.Skia.RenderCanvas(canvas, ref mat, this.gizmo);
             }
         }
 
-        public void RenderRectangles(RectangleState[] rectangles, M4x4 mat, M4x4 smat) {
+        /*public void RenderRectangles(RectangleState[] rectangles, M4x4 mat, M4x4 smat) {
             if(rectangles.Length > 0) {
                 GL.PolygonOffset(0.4f, 1.0f);
                 GL.Disable(EnableCap.CullFace);
@@ -126,7 +129,7 @@ namespace AnimLib {
                     drawId++;
                 }
             }
-        }
+        }*/
 
         public void RenderBeziers(BezierState[] beziers, M4x4 mat, M4x4 orthoMat, IRenderBuffer buf) {
             if(beziers.Length > 0) {
@@ -168,7 +171,7 @@ namespace AnimLib {
             }
         }
 
-        public void RenderTextureRectangles(TexRectState[] rectangles, M4x4 mat) {
+        /*public void RenderTextureRectangles(TexRectState[] rectangles, M4x4 mat) {
             if(rectangles.Length > 0) {
                 GL.Disable(EnableCap.CullFace);
                 GL.Enable(EnableCap.DepthTest);
@@ -198,7 +201,7 @@ namespace AnimLib {
                     drawId++;
                 }
             }
-        }
+        }*/
 
         public void RenderMeshes(ColoredTriangleMesh[] meshes, M4x4 camMat, M4x4 screenMat) {
             if(meshes.Length > 0) {
@@ -478,8 +481,10 @@ namespace AnimLib {
             GL.Viewport(state.vpX, state.vpY, state.vpW, state.vpH);
         }
 
-        public void RenderScene(WorldSnapshot ss, SceneView sv) {
+        public void RenderScene(WorldSnapshot ss, SceneView sv, bool gizmo) {
+            this.gizmo = gizmo;
             entRes = ss.resolver;
+            long passedcount = 0;
 
             DepthPeelRenderBuffer pb;
             var w = sv.BufferWidth;
@@ -613,20 +618,16 @@ namespace AnimLib {
                     }
                     RenderMeshes(meshes, worldToClip, smat);
                 }
+                /*if(ss.TexRects != null) {
+                    RenderTextureRectangles(ss.TexRects, worldToClip);
+                }*/
+                /*if(ss.Circles != null)
+                    RenderCircles(ss.Circles, worldToClip, smat);*/
 
-                if(ss.Circles != null)
-                    RenderCircles(ss.Circles, worldToClip, smat);
-
-                if(ss.Rectangles != null)
-                    RenderRectangles(ss.Rectangles, worldToClip, smat);
+                /*if(ss.Rectangles != null)
+                    RenderRectangles(ss.Rectangles, worldToClip, smat);*/
                 if(ss.Meshes != null) {
                     RenderMeshes(ss.Meshes, worldToClip, smat);
-                }
-                if(ss.TexRects != null) {
-                    RenderTextureRectangles(ss.TexRects, worldToClip);
-                }
-                if(ss.Glyphs != null) {
-                    RenderGlyphs(new Vector2(pbSize.Item1, pbSize.Item2), ss.Glyphs, sceneCamera as PerspectiveCameraState);
                 }
                 if(ss.Labels != null) {
                     RenderLabels(new Vector2(pbSize.Item1, pbSize.Item2), ss.Labels, UserInterface.WorldCamera);
@@ -644,7 +645,7 @@ namespace AnimLib {
 
                 // TODO: OnRender delegate!
 
-                long passedcount = 0;
+                passedcount = 0;
                 GL.GetQueryObject(query, GetQueryObjectParam.QueryResult, out passedcount);
                 if(passedcount <= 0) {
                     break;
@@ -652,9 +653,14 @@ namespace AnimLib {
 
                 pb.NextLayer();
             }
+
+            if(ss.Glyphs != null) {
+                RenderGlyphs(new Vector2(pbSize.Item1, pbSize.Item2), ss.Glyphs, sceneCamera as PerspectiveCameraState);
+            }
+
             GL.DeleteQuery(query);
             if(p >= 10) {
-                Debug.Warning($"Rendering frame took {p} depth peels");
+                Debug.Warning($"Rendering frame took {p} depth peels. Samples passed: {passedcount}");
             }
 
             // skia

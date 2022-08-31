@@ -27,7 +27,7 @@ namespace AnimLib {
                 position = newpos,
             });
             await Animate.InterpF((x) => {
-                text.Transform.Pos = new Vector3(Vector2.Lerp(startpos, newpos, x), text.state.position.z);
+                text.Transform.Pos = Vector2.Lerp(startpos, newpos, x);
             }, 0.0f, 1.0f, 1.0);
         }
 
@@ -45,9 +45,9 @@ namespace AnimLib {
             };
             items.Insert(idx, newitem);
             await Animate.InterpF((x) => {
-                text.Transform.Pos = new Vector3(Vector2.Lerp(startpos, newpos, x), text.state.position.z);
+                text.Transform.Pos = Vector2.Lerp(startpos, newpos, x);
                 for(int i = idx+1; i < items.Count; i++) {
-                    items[i].text.Transform.Pos = new Vector3(Vector2.Lerp(items[i].position, items[i].position+new Vector2(0.0f, heightOffset),x), items[i].text.state.position.z);
+                    items[i].text.Transform.Pos = Vector2.Lerp(items[i].position, items[i].position+new Vector2(0.0f, heightOffset),x);
                 }
             }, 0.0f, 1.0f, 1.0);
             int i = 0;
@@ -65,7 +65,7 @@ namespace AnimLib {
             int count = items.Count;
             await Animate.InterpF((x) => {
                 for(int i = idx+1; i < count; i++) {
-                    items[i].text.Transform.Pos = new Vector3(Vector2.Lerp(items[i].position, items[i].position-new Vector2(0.0f, heightOffset),x), items[i].text.state.position.z);
+                    items[i].text.Transform.Pos = Vector2.Lerp(items[i].position, items[i].position-new Vector2(0.0f, heightOffset),x);
                     //text.Transform.Pos = new Vector3(Vector2.Lerp(startpos, newpos, x), text.state.position.z);
                 }
             }, 0.0f, 1.0f, 1.0);

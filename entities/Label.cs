@@ -1,6 +1,6 @@
 
 namespace AnimLib {
-    public class LabelState : EntityState
+    public class LabelState : EntityState3D
     {
         public string text;
         public float size;
@@ -24,7 +24,7 @@ namespace AnimLib {
         }
     }
 
-    public class Label : VisualEntity {
+    public class Label : VisualEntity3D {
         public string Text {
             get {
                 return ((LabelState)state).text;
@@ -51,8 +51,7 @@ namespace AnimLib {
             }
         }
 
-        public Label() {
-            this.state = new LabelState();
+        public Label() : base(new LabelState()) {
         }
 
         public Label(Label l) : base(l) {

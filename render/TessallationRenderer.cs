@@ -79,7 +79,7 @@ namespace AnimLib {
             GL.BindVertexArray(0);
         }
 
-        public void RenderCircles(CircleState[] circles)
+        /*public void RenderCircles(CircleState[] circles)
         {
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
             if(circles.Length > 0) {
@@ -112,7 +112,7 @@ namespace AnimLib {
                 }
             }
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
-        }
+        }*/
 
         public void RenderCubes(CubeState[] cubes, M4x4 mat)
         {
@@ -164,14 +164,16 @@ namespace AnimLib {
         public void RenderBeziers(BezierState[] beziers, M4x4 mat, M4x4 orthoMat, IRenderBuffer rb)
         {
         }
-        public void RenderTextureRectangles(TexRectState[] rectangles, M4x4 mat)
+        /*public void RenderTextureRectangles(TexRectState[] rectangles, M4x4 mat)
         {
-        }
+        }*/
         public void RenderMeshes(ColoredTriangleMesh[] meshes, M4x4 camMat, M4x4 orthoMat)
         {
         }
-        public void RenderScene(WorldSnapshot ss, SceneView sv)
+        public void RenderScene(WorldSnapshot ss, SceneView sv, bool gizmo)
         {
+            entRes = ss.resolver;
+
             MultisampleRenderBuffer pb; 
             var w = sv.BufferWidth;
             var h = sv.BufferHeight;
@@ -248,9 +250,9 @@ namespace AnimLib {
                 RenderCubes(ss.Cubes, worldToClip);
             }
             // render circles
-            if(ss.Circles != null) {
+            /*if(ss.Circles != null) {
                 RenderCircles(ss.Circles);
-            }
+            }*/
             // render meshes
             // render texrects
             // render glyphs

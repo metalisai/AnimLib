@@ -1,7 +1,7 @@
 
 namespace AnimLib 
 {
-    public class CubeState : EntityState
+    public class CubeState : EntityState3D
     {
         public Color color = Color.WHITE;
 
@@ -17,7 +17,7 @@ namespace AnimLib
             return new CubeState(this);
         }
     }
-    public class Cube : VisualEntity/*, ICloneable*/ {
+    public class Cube : VisualEntity3D/*, ICloneable*/ {
         public Color Color { 
             get {
                 return ((CubeState)state).color;
@@ -28,8 +28,7 @@ namespace AnimLib
             }
         }
 
-        public Cube() {
-            state = new CubeState();
+        public Cube() : base(new CubeState()) {
         }
 
         public Cube(Cube cube) : base(cube) {

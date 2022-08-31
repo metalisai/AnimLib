@@ -8,7 +8,7 @@ namespace AnimLib
 {
 
     public interface IRenderer {
-        void RenderScene(WorldSnapshot ss, SceneView sv);
+        void RenderScene(WorldSnapshot ss, SceneView sv, bool gizmo);
     }
 
     public class RenderState 
@@ -48,6 +48,12 @@ namespace AnimLib
         public delegate void OnRenderSceneDelegate();
         public delegate void OnEndRenderSceneDelegate();
 
+        bool _renderGizmos = true;
+        public bool RenderGizmos {
+            set {
+                _renderGizmos = value;
+            }
+        }
 
         public OnRenderSceneDelegate OnBeginRenderScene;
         public OnEndRenderSceneDelegate OnEndRenderScene;
@@ -102,19 +108,19 @@ namespace AnimLib
                         this.debugCamRot = Vector2.ZERO;
                     }
                 }
-                if(ImGui.GetCurrentContext() != null) {
+                if(ImGui.GetCurrentContext() != IntPtr.Zero) {
                     var io = ImGui.GetIO();
                     io.KeysDown[(int)args.Key] = true;
                 }
             };
             platform.PKeyUp += (object sender, KeyboardKeyEventArgs args) => {
-                if(ImGui.GetCurrentContext() != null) {
+                if(ImGui.GetCurrentContext() != IntPtr.Zero) {
                     var io = ImGui.GetIO();
                     io.KeysDown[(int)args.Key] = false;
                 }
             };
             platform.PKeyPress += (object sender, KeyPressEventArgs args) => {
-                if(ImGui.GetCurrentContext() != null) {
+                if(ImGui.GetCurrentContext() != IntPtr.Zero) {
                     var io = ImGui.GetIO();
                     io.AddInputCharacter(args.KeyChar);
                 }
@@ -306,7 +312,7 @@ namespace AnimLib
             if(currentScene != null)
             {
                 foreach(var sv in views) {
-                    renderer.RenderScene(currentScene, sv);
+                    renderer.RenderScene(currentScene, sv, _renderGizmos);
                 }
             }
 

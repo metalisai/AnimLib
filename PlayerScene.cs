@@ -179,11 +179,11 @@ namespace AnimLib {
                         world.StartEditing(e.obj);
                         switch(e.obj) {
                             case PlayerCircle pc:
-                            var c = new Circle();
-                            c.Radius = pc.radius;
+                            var c = new Circle(pc.radius);
                             c.Color = pc.color;
                             c.Transform.Pos = pc.transform.Pos;
-                            c.Transform.Rot = pc.transform.Rot;
+                            //c.Transform.Rot = pc.transform.Rot;
+                            c.Transform.Rot = 0.0f;
                             world.CreateInstantly(c);
                             ent = c;
                             break;
@@ -224,9 +224,7 @@ namespace AnimLib {
                             ent = qs;
                             break;
                             case PlayerRect pr1:
-                            var pr = new Rectangle();
-                            pr.Width = pr1.size.x;
-                            pr.Height = pr1.size.y;
+                            var pr = new Rectangle(pr1.size.x, pr1.size.y);
                             pr.Color = pr1.color;
                             pr.Transform.Pos = pr1.transform.Pos;
                             world.CreateInstantly(pr);

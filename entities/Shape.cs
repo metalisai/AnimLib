@@ -82,6 +82,14 @@ namespace AnimLib {
             lastPos = p2;
         }
 
+        public void Rectangle(Vector2 min, Vector2 max) {
+            MoveTo(min);
+            LineTo(new Vector2(max.x, min.y));
+            LineTo(max);
+            LineTo(new Vector2(min.x, max.y));
+            Close();
+        }
+
         public void Circle(Vector2 center, float radius) {
             var start = center + new Vector2(radius, 0.0f);
             var end1 = center + new Vector2(0.0f, radius);
@@ -149,7 +157,10 @@ namespace AnimLib {
         }
     }
 
-    public class Shape : Visual2DEntity, IColored {
+    public class Shape : VisualEntity2D, IColored {
+        internal Shape(ShapeState state) : base(state) {
+        }
+
         public Shape(ShapePath path) : base(new ShapeState(path)) {
         }
 

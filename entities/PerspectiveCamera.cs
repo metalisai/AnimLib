@@ -6,7 +6,7 @@ namespace AnimLib {
         public float zNear = 0.1f;
         public float zFar = 1000.0f;
 
-        public PerspectiveCameraState() {}
+        public PerspectiveCameraState() : base() {}
 
         public PerspectiveCameraState(PerspectiveCameraState pcs) : base(pcs) {
             this.fov = pcs.fov;
@@ -79,8 +79,7 @@ namespace AnimLib {
     }
 
     public class PerspectiveCamera : Camera {
-        public PerspectiveCamera() {
-            this.state = new PerspectiveCameraState();
+        public PerspectiveCamera() : base(new PerspectiveCameraState()) {
         }
         public PerspectiveCamera(PerspectiveCamera pc) : base(pc) {}
         public float Fov {

@@ -92,7 +92,7 @@ namespace AnimLib {
             }
         }
 
-        public bool CaptureFrame {
+        public bool Exporting {
             get {
                 return export != null;
             }
@@ -173,7 +173,7 @@ namespace AnimLib {
         }*/
 
         public void OnEndRenderScene() {
-            if(CaptureFrame) {
+            if(Exporting) {
                 var tex = controls.MainView.CaptureScene();
                 FrameCaptured(tex);
             }

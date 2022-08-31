@@ -40,7 +40,7 @@ namespace AnimLib {
         }
     }
 
-    public class SolidLine : VisualEntity, Labelable {
+    public class SolidLine : VisualEntity3D, Labelable {
         public Vector3[] Points { 
             get {
                 return ((SolidLineState)state).points;
@@ -76,8 +76,7 @@ namespace AnimLib {
             }
         }
 
-        public SolidLine(string owner) {
-            state = new SolidLineState(owner);
+        public SolidLine(string owner) : base(new SolidLineState(owner)) {
         }
 
         public SolidLine() : this(World.current.Resources.GetGuid()) {

@@ -117,10 +117,10 @@ namespace AnimLib
         static void Main(string[] args)
         {
             var platform = new OpenTKPlatform(1024, 1024);
-            var game = new RenderState(platform);
+            var renderState = new RenderState(platform);
             sound = new Sound();
 
-            pctrl = new PlayerControls(game);
+            pctrl = new PlayerControls(renderState);
             //player = new AnimationPlayer(plugin, pctrl, world);
             player = new AnimationPlayer(null, pctrl);
             player.ResourceManager.OnAssemblyChanged += AssemblyPathChanged;
@@ -159,7 +159,7 @@ namespace AnimLib
                 refreshRate = rate;
             };
 
-            game.OnBeginRenderScene += () => {
+            renderState.OnBeginRenderScene += () => {
                 WorldSnapshot ret;
                 mainCtx.InvokeAllPosted();
 
@@ -200,10 +200,11 @@ namespace AnimLib
                     Debug.Log("No scene to render!");
                 }
                i++;
-               game.SetScene(ret);
+               renderState.SetScene(ret);
+               renderState.RenderGizmos = !player.Exporting;
             };
 
-            game.OnEndRenderScene += player.OnEndRenderScene;
+            renderState.OnEndRenderScene += player.OnEndRenderScene;
 
             platform.Run();
             player.Close();

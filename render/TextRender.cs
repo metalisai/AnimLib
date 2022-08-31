@@ -164,7 +164,7 @@ namespace AnimLib {
             FontGlyph fg = ts.GetGlyph(key.c, key.size);
             Vector2 min = pos;
             Vector2 max = (Vector2)pos + new Vector2(fg.w, fg.h);
-            float z = ch.position.z;
+            float z = 0.0f;
             Vector4 colorf = ch.color.ToVector4();
 
             vbuf.Add(min.x); vbuf.Add(min.y); vbuf.Add(z);

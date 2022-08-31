@@ -1,20 +1,14 @@
 
 namespace AnimLib {
-    public class RectangleState : EntityState2D {
+    public class RectangleState : ShapeState {
         public float width, height;
-        public Color color;
-        public Color outline = Color.BLACK;
-        public float outlineWidth = 1.0f;
 
-        public RectangleState() {
+        public RectangleState(ShapePath path) : base(path) {
         }
 
         public RectangleState(RectangleState rs) : base(rs) {
             this.width = rs.width;
             this.height = rs.height;
-            this.color = rs.color;
-            this.outline = rs.outline;
-            this.outlineWidth = rs.outlineWidth;
         }
 
         public override Vector2 AABB {
@@ -29,9 +23,15 @@ namespace AnimLib {
         }
     }
 
-    public class Rectangle : Visual2DEntity, IColored {
+    public class Rectangle : Shape, IColored {
 
-        public Rectangle() : base(new RectangleState()) {
+        private static ShapePath CreateRectanglePath(float w, float h) {
+            var pb = new PathBuilder();
+            pb.Rectangle(new Vector2(-0.5f*w, -0.5f*h), new Vector2(0.5f*w, 0.5f*h));
+            return pb;
+        }
+
+        public Rectangle(float w, float h) : base(new RectangleState(CreateRectanglePath(w, h))) {
         }
 
         public Rectangle(Rectangle r) : base(r) {
@@ -46,6 +46,7 @@ namespace AnimLib {
                 ((RectangleState)state).width = value;
             }
         }
+
         public float Height {
             get {
                 return ((RectangleState)state).height;
@@ -55,34 +56,6 @@ namespace AnimLib {
                 ((RectangleState)state).height = value;
             }
         }
-        public Color Color {
-            get {
-                return ((RectangleState)state).color;
-            }
-            set {
-                World.current.SetProperty(this, "Color", value, ((RectangleState)state).color);
-                ((RectangleState)state).color = value;
-            }
-        }
-        public Color Outline {
-            get {
-                return ((RectangleState)state).outline;
-            }
-            set {
-                World.current.SetProperty(this, "Outline", value, ((RectangleState)state).outline);
-                ((RectangleState)state).outline = value;
-            }
-        }
-        public float OutlineWidth {
-            get {
-                return ((RectangleState)state).outlineWidth;
-            }
-            set {
-                World.current.SetProperty(this, "OutlineWidth", value, ((RectangleState)state).outlineWidth);
-                ((RectangleState)state).outlineWidth = value;
-            }
-        }
-
 
         public Rectangle Pos(Vector3 pos) {
             Transform.Pos = pos;

@@ -1,7 +1,7 @@
 using System.Linq;
 
 namespace AnimLib {
-    public class BezierState : EntityState {
+    public class BezierState : EntityState3D {
         public float width = 1.0f;
         public Color color = Color.BLACK;
         public Vector3[] points;
@@ -20,7 +20,7 @@ namespace AnimLib {
         }
     }
 
-    public class BezierSpline : VisualEntity {
+    public class BezierSpline : VisualEntity3D {
         public float Width {
             get {
                 return ((BezierState)state).width;
@@ -68,8 +68,7 @@ namespace AnimLib {
             Points = ps; // force update command
         }
 
-        public BezierSpline() {
-            state = new BezierState();
+        public BezierSpline() : base(new BezierState()) {
         }
 
         public BezierSpline(BezierSpline bs) : base(bs) {

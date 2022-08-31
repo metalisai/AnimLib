@@ -1,20 +1,13 @@
 
 namespace AnimLib {
-    public class CircleState : EntityState {
+    public class CircleState : ShapeState {
         public float radius;
-        public Color color;
-        public Color outline = Color.BLACK;
-        public float outlineWidth = 1.0f;
-        public Vector2 sizeRect;
 
-        public CircleState() {}
+        public CircleState(ShapePath path) : base(path) {
+        }
 
         public CircleState(CircleState cs) : base(cs) {
             this.radius = cs.radius;
-            this.color = cs.color;
-            this.outline = cs.outline;
-            this.outlineWidth = cs.outlineWidth;
-            this.sizeRect = cs.sizeRect;
         }
 
         public override object Clone() {
@@ -22,13 +15,20 @@ namespace AnimLib {
         }
     }
 
-    public class Circle : VisualEntity, IColored {
-        public Circle() {
-            state = new CircleState();
-            Transform = new Transform(this);
+    public class Circle : Shape, IColored {
+
+        private static ShapePath CreateCirclePath(float radius) {
+            var pb = new PathBuilder();
+            pb.Circle(Vector2.ZERO, radius);
+            return pb;
         }
+
+        public Circle(float radius) : base(new CircleState(CreateCirclePath(radius))) {
+        }
+
         public Circle(Circle c) : base(c) {
         }
+
         public float Radius { 
             get {
                 return ((CircleState)state).radius;
@@ -38,42 +38,9 @@ namespace AnimLib {
                 ((CircleState)state).radius = value;
             }
         }
-        public Color Color {
-            get {
-                return ((CircleState)state).color;
-            } 
-            set {
-                World.current.SetProperty(this, "Color", value, ((CircleState)state).color);
-                ((CircleState)state).color = value;
-            }
-        }
-        public Color Outline {
-            get {
-                return ((CircleState)state).outline;
-            }
-            set {
-                World.current.SetProperty(this, "Outline", value, ((CircleState)state).outline);
-                ((CircleState)state).outline = value;
-            }
-        }
-
-        public float OutlineWidth {
-            get {
-                return ((CircleState)state).outlineWidth;
-            }
-            set {
-                World.current.SetProperty(this, "OutlineWidth", value, ((CircleState)state).outlineWidth);
-                ((CircleState)state).outlineWidth = value;
-            }
-        }
 
         public Circle Pos(Vector3 p) {
             this.Transform.Pos = p;
-            return this;
-        }
-
-        public Circle Rot(Quaternion quaternion) {
-            Transform.Rot = quaternion;
             return this;
         }
 

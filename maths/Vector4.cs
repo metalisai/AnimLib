@@ -69,6 +69,10 @@ namespace AnimLib
             return new Vector4(s*a.x, s*a.y, s*a.z, s*a.w);
         }
 
+        public static Vector4 operator/ (Vector4 a, float s) {
+            return new Vector4(a.x/s, a.y/s, a.z/s, a.w/s);
+        }
+
         public static float Dot(Vector4 a, Vector4 b) {
             return a.x*b.x + a.y*b.y + a.z*b.z + a.w*b.w;
         }

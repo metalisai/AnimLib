@@ -2,15 +2,11 @@ namespace AnimLib
 {
     public class Transform
     {
-        public enum CoordinateSpace {
-            Camera,
-            Screen,
-        }
-        protected VisualEntity entity;
+        protected VisualEntity3D entity;
 
         public Transform parent {
             get {
-                return entity.state.parentId == 0 ? null : World.current.EntityResolver.GetEntity(entity.state.parentId).Transform;
+                return entity.state.parentId == 0 ? null : ((VisualEntity3D)World.current.EntityResolver.GetEntity(entity.state.parentId)).Transform;
             } set {
                 World.current.SetProperty(entity, "parentId", value.entity.state.entityId, entity.state.parentId);
                 entity.state.parentId = value.entity.state.entityId;
@@ -48,13 +44,13 @@ namespace AnimLib
                 entity.state.scale = value;
             }
         }
-        public Transform(VisualEntity entity, Vector3 pos, Quaternion rot) {
+        public Transform(VisualEntity3D entity, Vector3 pos, Quaternion rot) {
             this.entity = entity;
             this.Pos = pos;
             this.Rot = rot;
             this.Scale = Vector3.ONE;
         }
-        public Transform(VisualEntity entity, Vector3 pos, Quaternion rot, Vector3 scale) {
+        public Transform(VisualEntity3D entity, Vector3 pos, Quaternion rot, Vector3 scale) {
             this.entity = entity;
             this.Pos = pos;
             this.Rot = rot;
@@ -66,7 +62,7 @@ namespace AnimLib
             this.Rot = t.Rot;
             this.Scale = t.Scale;
         }
-        public Transform(VisualEntity entity) {
+        public Transform(VisualEntity3D entity) {
             this.entity = entity;
         }
     }
@@ -83,7 +79,7 @@ namespace AnimLib
             this.Anchor = rect.Anchor;
             this.parent = rect.parent;
         }
-        public RectTransform(VisualEntity ent) : base(ent) {
+        public RectTransform(VisualEntity3D ent) : base(ent) {
         }
         public override Vector3 WorldPos {
             get {

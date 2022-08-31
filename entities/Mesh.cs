@@ -59,7 +59,7 @@ namespace AnimLib {
             }
         }
     }
-    public class Mesh : VisualEntity
+    public class Mesh : VisualEntity3D
     {
         public Color Color {
             get {
@@ -91,8 +91,7 @@ namespace AnimLib {
             }
         }
 
-        public Mesh(string owner) : base() {
-            this.state = new MeshState(owner);
+        public Mesh(string owner) : base(new MeshState(owner)) {
         }
 
         public Mesh() : this(World.current.Resources.GetGuid()) {

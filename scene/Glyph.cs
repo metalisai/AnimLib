@@ -1,7 +1,7 @@
 using System;
 
 namespace AnimLib {
-    public class Glyph : Visual2DEntity, IColored {
+    public class Glyph : VisualEntity2D, IColored {
         public char Character {
             get {
                 return ((GlyphState)state).glyph;

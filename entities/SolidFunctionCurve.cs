@@ -49,7 +49,7 @@ namespace AnimLib {
         }
     }
 
-    public class SolidFunctionCurve : VisualEntity {
+    public class SolidFunctionCurve : VisualEntity3D {
         public Vector2[] Handles {
             get {
                 return ((SolidFunctionCurveState)state).handles;
@@ -107,8 +107,7 @@ namespace AnimLib {
             }
         }
         
-        public SolidFunctionCurve(Func<float,float> f, string owner) {
-            state = new SolidFunctionCurveState(f, owner);
+        public SolidFunctionCurve(Func<float,float> f, string owner) : base(new SolidFunctionCurveState(f, owner)){
         }
 
         public SolidFunctionCurve(SolidFunctionCurve sfc) : base(sfc) {

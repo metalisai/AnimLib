@@ -82,7 +82,7 @@ namespace AnimLib {
         }
     }
 
-    public class Arrow2D : VisualEntity
+    public class Arrow2D : VisualEntity3D
     {
         public Vector3 StartPoint {
             get {
@@ -139,8 +139,7 @@ namespace AnimLib {
             }
         }
 
-        public Arrow2D(string owner) : base() {
-            this.state = new ArrowState(owner);
+        public Arrow2D(string owner) : base(new ArrowState(owner)) {
         }
 
         public Arrow2D() : this(World.current.Resources.GetGuid()) {

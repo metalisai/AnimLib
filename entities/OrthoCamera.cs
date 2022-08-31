@@ -24,8 +24,7 @@ namespace AnimLib {
     }
 
     public class OrthoCamera : Camera {
-        public OrthoCamera() {
-            this.state = new OrthoCameraState();
+        public OrthoCamera() : base(new OrthoCameraState()) {
         }
 
         public OrthoCamera(OrthoCamera oc) : base(oc) {}

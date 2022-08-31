@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using SkiaSharp;
 using OpenTK.Graphics.OpenGL4;
@@ -12,6 +13,10 @@ namespace AnimLib {
 
         public static SKColor ToSKColor(this Color c) {
             return new SKColor(c.r, c.g, c.b, c.a);
+        }
+
+        public static SKMatrix ToSKMatrix(this M3x3 m) {
+            return new SKMatrix(m.m11, m.m12, m.m13, m.m21, m.m22, m.m23, m.m31, m.m32, m.m33);
         }
     }
 
@@ -103,10 +108,9 @@ namespace AnimLib {
             canvas.Clear();
         }
 
-        SKMatrix? GetCanvasMatrix2D(ref M4x4 worldToClip, CanvasState canvas) {
+        SKMatrix? GetCanvasMatrix2D(ref M4x4 canvasToClip, CanvasState canvas) {
             float bw = glBuffer.Size.Item1;
             float bh = glBuffer.Size.Item2;
-            var canvasToClip = worldToClip * canvas.NormalizedCanvasToWorld;
             var bl = canvasToClip * new Vector4(-0.5f, -0.5f, 0.0f, 1.0f);
             bl.x /= bl.w; bl.y /= bl.w; bl.z /= bl.w;
             var br = canvasToClip * new Vector4(0.5f, -0.5f, 0.0f, 1.0f);
@@ -120,7 +124,7 @@ namespace AnimLib {
             // NOTE: perspective clipping isn't handled, so we have to get rid of the image if the canvas is behind the camera
             // this solution is far from perfect but gets rid of ghost images for most part
             // perspective clipping is tough
-            if(bl.w < 0)
+            if(bl.w < 0 || br.w < 0 || tl.w < 0 || tr.w < 0)
                 return null;
             float x1 = (0.5f * tl.x + 0.5f) * bw;
             float y1 = (0.5f * tl.y + 0.5f) * bh;
@@ -160,30 +164,49 @@ namespace AnimLib {
             return mat;
         }
 
-        public void RenderCanvas(CanvasSnapshot css, ref M4x4 worldToClip) {
+        public void RenderCanvas(CanvasSnapshot css, ref M4x4 worldToClip, bool gizmo) {
             var rc = css.Canvas;
-            var mat = rc.is2d ? null : GetCanvasMatrix2D(ref worldToClip, rc);
+            var canvasToClip = worldToClip * rc.NormalizedCanvasToWorld;
+            var mat = rc.is2d ? null : GetCanvasMatrix2D(ref canvasToClip, rc);
             // can't create transform (canvas off screen, clipping with near plane etc)
             if(mat == null && !rc.is2d)
                 return;
+
+            var bottomLeft = new Vector4(-0.5f, -0.5f, 0.0f, 1.0f);
+            var topRight = new Vector4(0.5f, 0.5f, 0.0f, 1.0f);
+            var bottomLeftClip = canvasToClip * bottomLeft;
+            bottomLeftClip /= bottomLeftClip.w;
+            var topRightClip = canvasToClip * topRight;
+            topRightClip /= topRightClip.w;
+
+            if(MathF.Abs(topRightClip.x - bottomLeftClip.x) < 0.001f
+                    || MathF.Abs(topRightClip.y - bottomLeftClip.y) < 0.001f)
+                return;
+
+            // gizmo
+            if(gizmo && mat != null) {
+                canvas.SetMatrix(mat.Value);
+                // draw canvas outline
+                using(SKPaint paint = new SKPaint()) {
+                    var path = new SKPath();
+                    path.MoveTo(new SKPoint(0.0f, 0.0f));
+                    path.LineTo(new SKPoint(rc.width, 0.0f));
+                    path.LineTo(new SKPoint(rc.width, rc.height));
+                    path.LineTo(new SKPoint(0.0f, rc.height));
+                    path.Close();
+                    paint.Style = SKPaintStyle.Stroke;
+                    paint.StrokeWidth = 0.0f;
+                    paint.Color = SKColors.Black;
+                    canvas.DrawPath(path, paint);
+                }
+            }
+            
             foreach(var shape in css.Shapes) {
                 if(mode == RenderMode.OpenGL) {
                     ctx.ResetContext();
                 }
                 float bw = glBuffer.Size.Item1;
                 float bh = glBuffer.Size.Item2;
-                SKMatrix localTransform;
-                if(!rc.is2d) {
-                    // bootom left
-                    canvas.SetMatrix(mat.Value);
-                    localTransform = new SKMatrix(1.0f, 0.0f, (0.5f+shape.anchor.x)*rc.width, 0.0f, -1.0f, (0.5f+shape.anchor.y)*rc.height, 0.0f, 0.0f, 1.0f);
-                } else {
-                    float tx = rc.width*(0.5f + shape.anchor.x);
-                    float ty = rc.height*(0.5f + shape.anchor.y);
-                    var mat2d = new SKMatrix(1.0f, 0.0f, tx, 0.0f, 1.0f, ty, 0.0f, 0.0f, 1.0f);
-                    canvas.SetMatrix(mat2d);
-                    localTransform = new SKMatrix(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-                }
                 
                 using(SKPaint paint = new SKPaint()) {
                     var path = new SKPath();
@@ -211,6 +234,33 @@ namespace AnimLib {
                                 break;
                         }
                     }
+                    var bounds = path.TightBounds;
+                    var pathSize = new Vector2(bounds.Width, bounds.Height);
+
+                    // calculate transform
+                    SKMatrix localTransform;
+                    if(!rc.is2d) {
+                        // bootom left
+                        canvas.SetMatrix(mat.Value);
+                        var origin = (new Vector2(0.5f, 0.5f)+shape.anchor)*new Vector2(rc.width, rc.height);
+                        var translation = origin + shape.position;
+
+                        var changePivot = M3x3.Translate_2D(-(pathSize*shape.pivot));
+
+                        var trs = M3x3.TRS_2D(translation, shape.rot, shape.scale);
+                        var lt = trs * changePivot;
+                        //lt.m22 *= -1.0f;
+                        localTransform = lt.ToSKMatrix();
+
+                        //localTransform = new SKMatrix(1.0f, 0.0f, origin.x, 0.0f, -1.0f, origin.y, 0.0f, 0.0f, 1.0f);
+                    } else {
+                        float tx = rc.width*(0.5f + shape.anchor.x);
+                        float ty = rc.height*(0.5f + shape.anchor.y);
+                        var mat2d = new SKMatrix(1.0f, 0.0f, tx, 0.0f, 1.0f, ty, 0.0f, 0.0f, 1.0f);
+                        canvas.SetMatrix(mat2d);
+                        localTransform = new SKMatrix(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+                    }
+
                     path.Transform(localTransform);
 
                     // draw fill
