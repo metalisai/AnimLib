@@ -6,13 +6,11 @@ namespace AnimLib {
     internal class WorldMachine {
 
         public class CanvasEntities {
-            public List<ShapeState> Shapes = new List<ShapeState>();
+            public List<EntityState2D> Entities = new List<EntityState2D>();
         }
         List<Text2DState> _texts = new List<Text2DState>();
         List<GlyphState> _glyphs = new List<GlyphState>();
         List<MeshBackedGeometry> _mbgeoms = new List<MeshBackedGeometry>();
-        //List<RectangleState> _rectangles = new List<RectangleState>();
-        //List<TexRectState> _trects = new List<TexRectState>();
         List<CubeState> _cubes = new List<CubeState>();
         List<EntityState> _cameras =  new List<EntityState>();
         List<LabelState> _labels = new List<LabelState>();
@@ -54,7 +52,6 @@ namespace AnimLib {
             _glyphs.Clear();
             _mbgeoms.Clear();
             //_rectangles.Clear();
-            //_trects.Clear();
             _cubes.Clear();
             _cameras.Clear();
             _labels.Clear();
@@ -129,10 +126,7 @@ namespace AnimLib {
 
         public WorldSnapshot GetWorldSnapshot() {
             var ret = new WorldSnapshot();
-            //ret.Texts = _texts.Where(x => x.active).ToArray();
             ret.Glyphs = _glyphs.Where(x => x.active).ToArray();
-            //ret.Rectangles = _rectangles.Where(x => x.active).ToArray();
-            //ret.TexRects = _trects.Where(x => x.active).ToArray();
             ret.MeshBackedGeometries = _mbgeoms.Where(x => x.active).ToArray();
             ret.Cubes = _cubes.Where(x => x.active).ToArray();
             ret.Beziers = _beziers.Where(x => x.active).ToArray();
@@ -145,11 +139,11 @@ namespace AnimLib {
             foreach(var c in _canvases) {
                 var canvas = _entities[c.Key] as CanvasState;
                 var css = new CanvasSnapshot() {
-                        Shapes = c.Value.Shapes.ToArray(),
+                        Entities = c.Value.Entities.Where(x => x.active).ToArray(),
                         Canvas = canvas
                     };
                 l.Add(css);
-                foreach(var s in css.Shapes) s.canvas = canvas;
+                foreach(var s in css.Entities) s.canvas = canvas;
             }
             ret.Canvases = l.ToArray();
 
@@ -187,15 +181,6 @@ namespace AnimLib {
                 //state = a1;
                 _mbgeoms.Add((MeshBackedGeometry)state);
                 break;
-                /*case RectangleState r1:
-                state = (EntityState)r1.Clone();
-                //state = r1;
-                //if(r1 is TexRectState) {
-                    //_trects.Add((TexRectState)state);
-                //} else {
-                    _rectangles.Add((RectangleState)state);
-                //}
-                break;*/
                 case CubeState c2:
                 state = (EntityState)c2.Clone();
                 //state = c2;
@@ -221,12 +206,11 @@ namespace AnimLib {
                 state = (EntityState)ca1.Clone();
                 _canvases.Add(state.entityId, new CanvasEntities());
                 break;
-                case ShapeState ss1:
-                var canvas = _entities[ss1.canvasId] as CanvasState;
-                state = (EntityState)ss1.Clone();
-                var shape = state as ShapeState;
-                _canvases[canvas.entityId].Shapes.Add((ShapeState)state);
-                break; 
+                case EntityState2D ent2d:
+                var canvas = _entities[ent2d.canvasId] as CanvasState;
+                state = (EntityState)ent2d.Clone();
+                _canvases[canvas.entityId].Entities.Add((EntityState2D)state);
+                break;
                 default:
                 throw new NotImplementedException();
             }
@@ -239,13 +223,6 @@ namespace AnimLib {
                 case ArrowState a1:
                 _mbgeoms.RemoveAll(x => x.entityId == entityId);
                 break;
-                /*case RectangleState r1:
-                //if(r1 is TexRectState) {
-                    //_trects.RemoveAll(x => x.entityId == entityId);
-                //} else {
-                    _rectangles.RemoveAll(x => x.entityId == entityId);
-                //}
-                break;*/
                 case Text2DState t1:
                 _texts.RemoveAll(x => x.entityId == entityId);
                 break;
@@ -270,8 +247,8 @@ namespace AnimLib {
                 case CanvasState ca1:
                 _canvases.Remove(entityId);
                 break;
-                case ShapeState ss1:
-                foreach(var s in _canvases) s.Value.Shapes.RemoveAll(x => x.entityId == entityId);
+                case EntityState2D ss1:
+                foreach(var s in _canvases) s.Value.Entities.RemoveAll(x => x.entityId == entityId);
                 break;
                 default:
                 throw new Exception("Destroying unknown entity!");
@@ -308,8 +285,8 @@ namespace AnimLib {
                     var newCanvas = _canvases[(int)worldProperty.newvalue];
                     switch(state) {
                         case ShapeState ss1:
-                        oldCanvas.Shapes.RemoveAll(x => x.entityId == worldProperty.entityId);
-                        newCanvas.Shapes.Add(ss1);
+                        oldCanvas.Entities.RemoveAll(x => x.entityId == worldProperty.entityId);
+                        newCanvas.Entities.Add(ss1);
                         break;
                     }
                 }
@@ -361,8 +338,8 @@ namespace AnimLib {
                     var oldCanvas = _canvases[(int)worldProperty.newvalue];
                     switch(state) {
                         case ShapeState ss1:
-                        oldCanvas.Shapes.RemoveAll(x => x.entityId == worldProperty.entityId);
-                        newCanvas.Shapes.Add(ss1);
+                        oldCanvas.Entities.RemoveAll(x => x.entityId == worldProperty.entityId);
+                        newCanvas.Entities.Add(ss1);
                         break;
                     }
                 }

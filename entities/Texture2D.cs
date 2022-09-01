@@ -4,6 +4,7 @@ namespace AnimLib {
     public class Texture2D : RendererResource {
         public enum TextureFormat {
             None,
+            RGBx8, // same as RGBA8 but alpha channel invalid
             RGBA8,
             RGB8,
             ARGB8,
@@ -50,6 +51,32 @@ namespace AnimLib {
                 throw new NotImplementedException();
             }
             return new Color(red, green, blue, alpha);
+        }
+
+        public void ConvertColor(TextureFormat newFormat) {
+            // someone has already loaded the texture, can't pull the rug under their feet
+            System.Diagnostics.Debug.Assert(GLHandle < 0);
+            // need this for Skia (they only support 8, 16, 32, 64bit formats)
+            if(Format == TextureFormat.BGR8 && newFormat == TextureFormat.RGBx8) {
+                var newData = new byte[Width*Height*4];
+                int newIdx = 0;
+                int oldIdx = 0;
+                for(int row = 0; row < Height; row++) {
+                    for(int col = 0; col < Width; col++) {
+                        newData[newIdx] = RawData[oldIdx+2];
+                        newData[newIdx+1] = RawData[oldIdx+1];
+                        newData[newIdx+2] = RawData[oldIdx+0];
+                        newData[newIdx+3] = 255;
+                        newIdx += 4;
+                        oldIdx += 3;
+                    }
+                    // skip alignment bytes
+                    oldIdx += (4 - (oldIdx%Alignment)) % 4;
+                }
+                RawData = newData;
+                Format = TextureFormat.RGBA8;
+            }
+            else throw new NotImplementedException();
         }
     }
 

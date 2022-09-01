@@ -142,14 +142,17 @@ namespace AnimLib {
         public AnimationPlayer(string projectPath, PlayerControls ctrl) {
             trackPlayer = new TrackPlayer();
             ctrl.OnPlay += () => {
+                if(Exporting) return;
                 Play();
                 trackPlayer.Play();
             };
             ctrl.OnStop += () => {
+                if(Exporting) return;
                 Stop();
                 trackPlayer.Pause();
             };
             ctrl.OnSeek += (double p) => {
+                if(Exporting) return;
                 Seek(p);
                 trackPlayer.Seek(p);
             };
@@ -348,7 +351,7 @@ namespace AnimLib {
             } else {
                 machine.Step(1.0 / (double)settings.FPS);
                 var endTime = Math.Min(export.endTime, machine.GetEndTime());
-                Debug.Log($"Time {machine.GetPlaybackTime()}/{endTime}");
+                Debug.Log($"Exporting time {machine.GetPlaybackTime()}/{endTime}");
                 var frame = machine.GetWorldSnapshot();
                 if(machine.GetPlaybackTime() >= endTime) {
                     export.exporter.Stop();

@@ -102,17 +102,14 @@ namespace AnimLib
 
     public class CanvasSnapshot {
         public CanvasState Canvas;
-        public ShapeState[] Shapes;
+        public EntityState2D[] Entities;
     }
 
     public class WorldSnapshot {
         public EntityStateResolver resolver;
         public CameraState Camera;
-        //public CircleState[] Circles;
         public RectangleState[] Rectangles;
         public CubeState[] Cubes;
-        //public TexRectState[] TexRects;
-        //public Text2DState[] Texts;
         public GlyphState[] Glyphs;
         public ColoredTriangleMesh[] Meshes;
         public MeshBackedGeometry[] MeshBackedGeometries;
