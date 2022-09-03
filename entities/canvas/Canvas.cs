@@ -25,6 +25,13 @@ namespace AnimLib {
             return new CanvasState(this);
         }
 
+        public M4x4 WorldToNormalizedCanvas {
+            get {
+                var mat = NormalizedCanvasToWorld.InvertedHomogenous;
+                return mat;
+            }
+        }
+
         // normalized coordinates -0.5..0.5
         public M4x4 NormalizedCanvasToWorld {
             get {

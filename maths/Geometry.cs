@@ -22,5 +22,14 @@ namespace AnimLib {
     public struct Plane {
         public Vector3 n; // normal
         public float o; // offset
+
+        public Plane(Vector3 normal, Vector3 pointOnPlane) {
+            n = normal.Normalized;
+            o = Vector3.Dot(n, pointOnPlane);
+        }
+
+        public override string ToString() {
+            return $"{n.x} {n.y} {n.z} {o}";
+        }
     }
 }

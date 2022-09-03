@@ -342,7 +342,7 @@ namespace AnimLib
                     var sceneCamera = currentScene.Camera;
                     if(overrideCamera) sceneCamera = debugCamera;
                     renderer.RenderScene(currentScene, sv, sceneCamera, _renderGizmos);
-                    sv.PostRender(sceneCamera);
+                    sv.PostRender(sceneCamera, currentScene);
                 }
             }
 

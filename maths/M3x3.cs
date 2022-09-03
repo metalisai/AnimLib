@@ -7,6 +7,25 @@ namespace AnimLib
         public float m12, m22, m32;
         public float m13, m23, m33;
 
+        public M3x3 Inverted {
+            // TODO: unit test?
+            get {
+                float det = m11*(m22*m33 - m32*m23) - m12*(m21*m33 - m23*m31) + m13*(m21*m32 - m22*m31);
+                float invDet = 1.0f / det;
+                M3x3 ret;
+                ret.m11 = (m22*m33 - m32*m23) * invDet;
+                ret.m12 = (m13*m32 - m12*m33) * invDet;
+                ret.m13 = (m12*m23 - m13*m22) * invDet;
+                ret.m21 = (m23*m31 - m21*m33) * invDet;
+                ret.m22 = (m11*m33 - m13*m31) * invDet;
+                ret.m23 = (m21*m13 - m11*m23) * invDet;
+                ret.m31 = (m21*m32 - m31*m22) * invDet;
+                ret.m32 = (m31*m12 - m11*m32) * invDet;
+                ret.m33 = (m11*m22 - m21*m12) * invDet;
+                return ret;
+            }
+        }
+
         public M3x3 FromColumns(Vector3 c1, Vector3 c2, Vector3 c3) {
             M3x3 ret;
             ret.m11 = c1.x; ret.m21 = c1.y; ret.m31 = c1.z;
@@ -68,5 +87,43 @@ namespace AnimLib
                 m33 = l.m31 * r.m13 + l.m32 * r.m23 + l.m33 * r.m33,
             };
         }
+
+        public static Vector3 operator* (M3x3 m, Vector3 v) {
+            var ret = new Vector3() {
+                x = v.x*m.m11 + v.y*m.m12 + v.z*m.m13,
+                y = v.x*m.m21 + v.y*m.m22 + v.z*m.m23,
+                z = v.x*m.m31 + v.y*m.m32 + v.z*m.m33,
+            };
+            return ret;
+        }
+
+        public static M3x3 operator* (M3x3 l, float r) {
+            return new M3x3() {
+                m11 = l.m11*r,
+                m21 = l.m21*r,
+                m31 = l.m31*r,
+                m12 = l.m12*r,
+                m22 = l.m22*r,
+                m32 = l.m32*r,
+                m13 = l.m13*r,
+                m23 = l.m23*r,
+                m33 = l.m33*r,
+            };
+        }
+
+        public static M3x3 operator- (M3x3 l) {
+            return new M3x3() {
+                m11 = -l.m11,
+                m21 = -l.m21,
+                m31 = -l.m31,
+                m12 = -l.m12,
+                m22 = -l.m22,
+                m32 = -l.m32,
+                m13 = -l.m13,
+                m23 = -l.m23,
+                m33 = -l.m33,
+            };
+        }
+
     }
 }

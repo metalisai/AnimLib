@@ -8,6 +8,47 @@ namespace AnimLib
         public float m13, m23, m33, m43;
         public float m14, m24, m34, m44;
 
+        public M3x3 M33 {
+            get {
+                var mat =  new M3x3() {
+                    m11 = this.m11, 
+                    m21 = this.m21,
+                    m31 = this.m31,
+                    m12 = this.m12,
+                    m22 = this.m22,
+                    m32 = this.m32,
+                    m13 = this.m13,
+                    m23 = this.m23,
+                    m33 = this.m33,
+                };
+                return mat;
+            }
+        }
+
+        public M4x4 InvertedHomogenous {
+            get {
+                // transpose rotation (inner 3x3)
+                // multiply translation by negative transposed rotation
+                var ret = new M4x4();
+                var inner = this.M33.Inverted;
+                ret.m11 = inner.m11;
+                ret.m21 = inner.m21;
+                ret.m31 = inner.m31;
+                ret.m12 = inner.m12;
+                ret.m22 = inner.m22;
+                ret.m32 = inner.m32;
+                ret.m13 = inner.m13;
+                ret.m23 = inner.m23;
+                ret.m33 = inner.m33;
+                var t = -inner*new Vector3(this.m14, this.m24, this.m34);
+                ret.m14 = t.x;
+                ret.m24 = t.y;
+                ret.m34 = t.z;
+                ret.m44 = 1.0f;
+                return ret;
+            }
+        }
+
         public M4x4(ref M4x4 m) {
             m11 = m.m11; m12 = m.m12; m13 = m.m13; m14 = m.m14;
             m21 = m.m21; m22 = m.m22; m23 = m.m23; m24 = m.m24;

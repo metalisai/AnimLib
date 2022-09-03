@@ -10,6 +10,19 @@ namespace AnimLib {
 
         string guid = Guid.NewGuid().ToString();
 
+        int _width = 1920;
+        int _height = 1080;
+        public int Width { 
+            get {
+                return _width;
+            }
+        }
+        public int Height { 
+            get {
+                return _height;
+            }
+        }
+
         IntPtr nativeCtx;
         Dictionary<int, Texture2D> textures = new Dictionary<int, Texture2D>();
         public ImguiContext(int width, int height) {
@@ -73,6 +86,9 @@ namespace AnimLib {
         }
 
         public void Update(int width, int height, float dt, Vector2 mousePos, bool left, bool right, bool middle, float scrollDelta) {
+            _width = width;
+            _height = height;
+
             var io = ImGui.GetIO();
 
             io.DisplaySize = new System.Numerics.Vector2(width, height);

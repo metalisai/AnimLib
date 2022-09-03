@@ -33,6 +33,7 @@ namespace AnimLib {
         int bufferWidth, bufferHeight;
         (int,int,int,int)? lastArea;
         CameraState lastCam = new PerspectiveCameraState();
+        List<CanvasState> lastCanvases = new List<CanvasState>();
 
         public CameraState LastCamera {
             get {
@@ -107,10 +108,15 @@ namespace AnimLib {
 
         }
 
-        public void PostRender(CameraState cam) {
+        public void PostRender(CameraState cam, WorldSnapshot ss) {
             this.lastCam = cam.Clone() as CameraState;
+            lastCanvases.Clear();
+            foreach(var canvas in ss.Canvases) {
+                lastCanvases.Add(canvas.Canvas.Clone() as CanvasState);
+            }
         }
 
+        // calculate target area for renderbuffer, preserving aspect ratio
         public (int,int,int,int) CalculateArea(int x, int y, int width, int height)
         {
             // calculate scene view "bars" (aspect ratio correction)
@@ -223,6 +229,54 @@ namespace AnimLib {
             return r;
         }
 
+        // get world space ray from screen coordinates
+        public Ray? ScreenRay(Vector2 screenPosition) {
+            if(lastArea == null) return null;
+            if(renderBuffer == null) return null;
+            var area = lastArea.Value;
+            bool onBuffer = screenPosition.x > area.Item1
+                && screenPosition.y > area.Item2
+                && screenPosition.x < area.Item1 + area.Item3 
+                && screenPosition.y < area.Item2 + area.Item4;
+            // mouse not in render buffer
+            if(!onBuffer) return null;
+            var bufCoord = screenToBuffer(screenPosition);
+            return RaycastBuffer(bufCoord);
+        }
+
+        public Vector2? TryIntersectCanvases(Vector2 screenPos, out int canvasId) {
+            foreach(var canvas in lastCanvases) {
+                // skip 2D for now (required using orthographic camera)
+                if(canvas.is2d)
+                    continue;
+                var pcam = lastCam as PerspectiveCameraState;
+                var bufPos = screenToBuffer(screenPos);
+                float w = renderBuffer.Size.Item1;
+                float h = renderBuffer.Size.Item2;
+                bufPos.x = ((bufPos.x/w) * 2.0f) - 1.0f;
+                bufPos.y = (((h-bufPos.y)/h) * 2.0f) - 1.0f;
+                var worldRay = pcam.RayFromClip(bufPos, w/h);
+                var plane = new Plane(canvas.normal, canvas.center);
+                var intersection = worldRay.Intersect(plane);
+                // intersected with any canvas? (infinite plane)
+                if(intersection != null) {
+                    var mat1 = canvas.NormalizedCanvasToWorld;
+                    var mat = canvas.WorldToNormalizedCanvas;
+                    var v = mat*new Vector4(intersection.Value, 1.0f);
+                    var intr = intersection.Value;
+                    // on canvas? (canvas bounds -0.5 to 0.5
+                    if(v.x > -0.5f && v.x < 0.5f
+                            && v.y > -0.5f && v.y < 0.5f) {
+                        canvasId = canvas.entityId;
+                        return new Vector2(v.x, v.y);
+                    }
+                }
+            }
+            canvasId = -1;
+            return null;
+        }
+
+        // buffer position to screen (UI) position
         protected Vector2 bufferToScreen(Vector2 bufP) {
             var rect = lastArea.Value;
             var viewOrigin = new Vector2(rect.Item1, rect.Item2);
@@ -233,7 +287,9 @@ namespace AnimLib {
             return screenP;
         }
 
+        // screen (UI) position to buffer position
         protected Vector2 screenToBuffer(Vector2 screenP) {
+            var io = ImGui.GetIO();
             var rect = lastArea.Value;
             var viewOrigin = new Vector2(rect.Item1, rect.Item2);
             var mposView = screenP - viewOrigin;
@@ -299,6 +355,7 @@ namespace AnimLib {
             }
         }
 
+        // raycast screen ray in world space
         protected Vector2? worldToBuffer(CameraState cam, Vector3 pos) {
             var s = renderBuffer.Size;
             var w2c = cam.CreateWorldToClipMatrix((float)s.Item1/s.Item2);

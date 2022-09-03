@@ -165,6 +165,79 @@ namespace AnimLib {
         double exportStartTime = 0.0;
         double exportEndTime = 10.0;
 
+        private void DropEntity(int idx, Vector3 pos3, Vector2 dropPos) {
+            switch(idx) {
+                case 0:
+                lock(player.Scene.sceneLock) {
+                    player.Scene.Circles.Add(new PlayerCircle() {
+                        radius = 1.0f,
+                        transform = new SceneTransform(pos3, Quaternion.IDENTITY),
+                        timeslice = (0.0, 99999.0),
+                    });
+                }
+                break;
+                case 1:
+                lock(player.Scene.sceneLock) {
+                    player.Scene.Lines.Add(new PlayerLine() {
+                        start = Vector3.ZERO,
+                        end = Vector3.RIGHT,
+                        width = 0.1f,
+                        transform = new SceneTransform(pos3, Quaternion.IDENTITY),
+                        timeslice = (0.0, 99999.0),
+                        color = Color.BLACK,
+                    });
+                }
+                break;
+                case 2:
+                lock(player.Scene.sceneLock) {
+                    player.Scene.Arrows.Add(new PlayerArrow() {
+                        start = Vector3.ZERO,
+                        end = Vector3.RIGHT,
+                        width = 0.1f,
+                        transform = new SceneTransform(pos3, Quaternion.IDENTITY),
+                        timeslice = (0.0, 99999.0),
+                    });
+                }
+                break;
+                case 3:
+                var text = new Player2DText() {
+                    text = "New text",
+                    size = 14.0f,
+                    color = Color.BLACK,
+                    transform = new SceneTransform(new Vector3(dropPos.x, dropPos.y, 0.0f), Quaternion.IDENTITY),
+                    timeslice = (0.0, 99999.0),
+                };
+                lock(player.Scene.sceneLock) {
+                    player.Scene.Add(text);
+                }
+                break;
+                case 4:
+                var qs = new PlayerQSpline() {
+                    width = 1.0f,
+                    color = Color.BLACK,
+                    transform = new SceneTransform(pos3, Quaternion.IDENTITY),
+                    timeslice = (0.0, 9999999.0),
+                    points = new Vector3[] { Vector3.ZERO, new Vector3(1.0f, 0.0f, 0.0f), new Vector3(2.0f, 1.0f, 0.0f) },
+                };
+                lock(player.Scene.sceneLock) {
+                    player.Scene.Add(qs);
+                }
+                break;
+                case 5:
+                var rr = new PlayerRect() {
+                    size = new Vector2(1.0f, 1.0f),
+                    color = Color.WHITE,
+                    transform = new SceneTransform(pos3, Quaternion.IDENTITY),
+                    timeslice = (0.0, 9999999.0),
+                };
+                lock(player.Scene.sceneLock) {
+                    player.Scene.Add(rr);
+                }
+                break;
+            }
+
+        }
+
         private void SceneDropTarget() {
             //ImGuiDragDropFlags target_flags = 0;
             var cam = view.LastCamera as PerspectiveCameraState;
@@ -174,87 +247,25 @@ namespace AnimLib {
             };
             if (cam == null)
                 return;
-            if(ImGui.BeginDragDropTarget()) {
+            Vector2 dropPos = ImGui.GetMousePos();
+            var maybeRay = view.ScreenRay(dropPos);
+            if(maybeRay != null && ImGui.BeginDragDropTarget()) {
+                var ray = maybeRay.Value;
                 ImGuiPayloadPtr payloadPtr = ImGui.AcceptDragDropPayload("DND_CREATE_ITEM");
                 unsafe {
                     if(payloadPtr.NativePtr != null)
                     {
-                        int w = renderer.WindowWidth;
-                        int h = renderer.WindowHeight;
+                        // intersect canvases
+                        int canvasId;
+                        var canvasPos = view.TryIntersectCanvases(dropPos, out canvasId);
+                        if(canvasPos != null) {
+                            Debug.TLog($"Dropped object on canvas, canvasId: {canvasId}");
+                        }
+                        // drop
                         int idx = Marshal.ReadInt32(payloadPtr.Data);
-                        Vector2 dropPos = ImGui.GetMousePos();
-                        var ray = cam.RayFromClip(new Vector2((dropPos.x/w)*2.0f-1.0f, (dropPos.y/h)*-2.0f+1.0f), w/h);
                         var pos3 = ray.Intersect(plane); 
                         if(pos3 != null) {
-                            switch(idx) {
-                                case 0:
-                                lock(player.Scene.sceneLock) {
-                                    player.Scene.Circles.Add(new PlayerCircle() {
-                                        radius = 1.0f,
-                                        transform = new SceneTransform(pos3.Value, Quaternion.IDENTITY),
-                                        timeslice = (0.0, 99999.0),
-                                    });
-                                }
-                                break;
-                                case 1:
-                                lock(player.Scene.sceneLock) {
-                                    player.Scene.Lines.Add(new PlayerLine() {
-                                        start = Vector3.ZERO,
-                                        end = Vector3.RIGHT,
-                                        width = 0.1f,
-                                        transform = new SceneTransform(pos3.Value, Quaternion.IDENTITY),
-                                        timeslice = (0.0, 99999.0),
-                                        color = Color.BLACK,
-                                    });
-                                }
-                                break;
-                                case 2:
-                                lock(player.Scene.sceneLock) {
-                                    player.Scene.Arrows.Add(new PlayerArrow() {
-                                        start = Vector3.ZERO,
-                                        end = Vector3.RIGHT,
-                                        width = 0.1f,
-                                        transform = new SceneTransform(pos3.Value, Quaternion.IDENTITY),
-                                        timeslice = (0.0, 99999.0),
-                                    });
-                                }
-                                break;
-                                case 3:
-                                var text = new Player2DText() {
-                                    text = "New text",
-                                    size = 14.0f,
-                                    color = Color.BLACK,
-                                    transform = new SceneTransform(new Vector3(dropPos.x, dropPos.y, 0.0f), Quaternion.IDENTITY),
-                                    timeslice = (0.0, 99999.0),
-                                };
-                                lock(player.Scene.sceneLock) {
-                                    player.Scene.Add(text);
-                                }
-                                break;
-                                case 4:
-                                var qs = new PlayerQSpline() {
-                                    width = 1.0f,
-                                    color = Color.BLACK,
-                                    transform = new SceneTransform(pos3.Value, Quaternion.IDENTITY),
-                                    timeslice = (0.0, 9999999.0),
-                                    points = new Vector3[] { Vector3.ZERO, new Vector3(1.0f, 0.0f, 0.0f), new Vector3(2.0f, 1.0f, 0.0f) },
-                                };
-                                lock(player.Scene.sceneLock) {
-                                    player.Scene.Add(qs);
-                                }
-                                break;
-                                case 5:
-                                var rr = new PlayerRect() {
-                                    size = new Vector2(1.0f, 1.0f),
-                                    color = Color.WHITE,
-                                    transform = new SceneTransform(pos3.Value, Quaternion.IDENTITY),
-                                    timeslice = (0.0, 9999999.0),
-                                };
-                                lock(player.Scene.sceneLock) {
-                                    player.Scene.Add(rr);
-                                }
-                                break;
-                            }
+                            DropEntity(idx, pos3.Value, dropPos);
                             lock(player.Scene.sceneLock) {
                                 player.Scene.UpdateEvents();
                             }
@@ -301,8 +312,6 @@ namespace AnimLib {
             ImGui.Begin("Scene", windowFlags);
 
 
-            ImGui.Dummy(ImGui.GetWindowSize()); // needed for ImGui.BeginDragDropTarget
-            SceneDropTarget();
 
             var size = ImGui.GetWindowContentRegionMax() - ImGui.GetWindowContentRegionMin();
 
@@ -360,6 +369,8 @@ namespace AnimLib {
             ImGui.SetCursorPos(pos);
             var spos = ImGui.GetCursorScreenPos();
             ImGui.Image((IntPtr)view.TextureHandle, size, new Vector2(0.0f, 1.0f), new Vector2(1.0f, 0.0f));
+            SceneDropTarget();
+
             //ImGui.Image((IntPtr)OpenTKPlatform.handle, size, new Vector2(0.0f, 1.0f), new Vector2(1.0f, 0.0f));
             view.SetArea((int)spos.X, (int)spos.Y, (int)size.X, (int)size.Y);
             ImGui.End();

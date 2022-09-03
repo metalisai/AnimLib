@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using ImGuiNET;
-
 namespace AnimLib {
     public class UserInterface {
 
