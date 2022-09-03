@@ -326,7 +326,7 @@ namespace AnimLib
 
             // Render UI
             var uiData = UserInterface.EndFrame();
-            platform.RenderGUI(uiData.Item2, views, uiRenderBuffer);
+            platform.RenderGUI(uiData, views, uiRenderBuffer);
 
             int sceneEntity = -2;
             if (views.Count > 0) {
