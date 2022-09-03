@@ -178,7 +178,7 @@ namespace AnimLib
                 int i = 0;
                 foreach(var h in player.GetAnimationHandles3D()) {
                     if(h.StartTime <= Time.T) {
-                        if((UserInterface.WorldCamera.position - h.Position).Length > 1.0f) {
+                        //if((UserInterface.WorldCamera.position - h.Position).Length > 1.0f) {
                             bool update;
                             h.Position = pctrl.Show3DHandle(h.Identifier, h.Position, out update);
                             if(update) {
@@ -186,7 +186,7 @@ namespace AnimLib
                                 player.SetAnimationDirty(true);
                                 break;
                             }
-                        }
+                        //}
                     }
                     i++;
                 }
@@ -194,10 +194,8 @@ namespace AnimLib
                 // render editor UI
                 pctrl.DoInterface();
                 ret = player.NextFrame(1.0/refreshRate);
-                if(ret != null) {
-                    UserInterface.WorldCamera = ret.Camera;
-                } else {
-                    Debug.Log("No scene to render!");
+                if(ret == null) {
+                    Debug.Warning("Animation player did not return a scene. Rendering nothing.");
                 }
                i++;
                renderState.SetScene(ret);

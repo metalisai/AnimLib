@@ -8,7 +8,9 @@ namespace AnimLib
 {
 
     public interface IRenderer {
-        void RenderScene(WorldSnapshot ss, SceneView sv, bool gizmo);
+        void RenderScene(WorldSnapshot ss, SceneView sv, CameraState cam, bool gizmo);
+        bool BufferValid(IRenderBuffer buf);
+        public IRenderBuffer CreateBuffer(int w, int h);
     }
 
     public class RenderState 
@@ -71,10 +73,25 @@ namespace AnimLib
         bool mouseRight;
         Vector2 mousePos;
         float scrollValue;
+        float scrollDelta;
 
         public bool overrideCamera = false;
         public PerspectiveCameraState debugCamera;
         Vector2 debugCamRot;
+
+        static ImguiContext imgui = null;
+
+        public int WindowWidth {
+            get {
+                return uiRenderBuffer.Size.Item1;
+            }
+        }
+
+        public int WindowHeight {
+            get {
+                return uiRenderBuffer.Size.Item2;
+            }
+        }
 
         // resize buffers, UI etc
         public void UpdateSize(int width, int height) {
@@ -100,10 +117,7 @@ namespace AnimLib
                     if(overrideCamera) {
                         debugCamera = new PerspectiveCameraState();
                         debugCamera.position.z = -13.0f;
-                        UserInterface.DebugCamera = debugCamera;
-                        UserInterface.UseDebugCamera = true;
                     } else {
-                        UserInterface.UseDebugCamera = false;
                         debugCamera.position = Vector3.ZERO;
                         this.debugCamRot = Vector2.ZERO;
                     }
@@ -162,6 +176,8 @@ namespace AnimLib
                 }
             };
 
+            imgui = new ImguiContext((int)uiRenderBuffer.Size.Item1, (int)uiRenderBuffer.Size.Item2);
+
         }
 
         public FontCache FontCache {
@@ -208,6 +224,7 @@ namespace AnimLib
 
         private void mouseScroll(object sender, MouseWheelEventArgs args) {
             scrollValue = args.ValuePrecise;
+            scrollDelta = args.DeltaPrecise;
         }
 
         public int GetSceneEntityAtPixel(SceneView sv, Vector2 pixel) {
@@ -296,8 +313,8 @@ namespace AnimLib
 
             platform.ClearBackbuffer(0, 0, uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2);
             
-            UserInterface.Size = new Vector2(uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2);
-            UserInterface.BeginFrame(mouseState, uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2);
+            imgui.Update(uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2, 1.0f/60.0f, mousePos, mouseLeft, mouseRight, false, scrollDelta);
+
             foreach(var view in views) {
                 view.BeginFrame();
             }
@@ -312,7 +329,20 @@ namespace AnimLib
             if(currentScene != null)
             {
                 foreach(var sv in views) {
-                    renderer.RenderScene(currentScene, sv, _renderGizmos);
+                    // different renderer can use diffent types of buffers
+                    // create the buffer if its wrong type or not created yet
+                    bool valid = renderer.BufferValid(sv.Buffer);
+                    if(sv.Buffer == null || !valid) {
+                        if(sv.Buffer != null && !valid) {
+                            sv.Buffer.Dispose();
+                        }
+                        sv.Buffer = renderer.CreateBuffer(sv.BufferWidth, sv.BufferHeight);
+                    }
+                    var pbSize = sv.Buffer.Size;
+                    var sceneCamera = currentScene.Camera;
+                    if(overrideCamera) sceneCamera = debugCamera;
+                    renderer.RenderScene(currentScene, sv, sceneCamera, _renderGizmos);
+                    sv.PostRender(sceneCamera);
                 }
             }
 
@@ -325,7 +355,8 @@ namespace AnimLib
             }
 
             // Render UI
-            var uiData = UserInterface.EndFrame();
+            //var uiData = UserInterface.EndFrame();
+            var uiData = imgui.Render();
             platform.RenderGUI(uiData, views, uiRenderBuffer);
 
             int sceneEntity = -2;

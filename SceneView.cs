@@ -32,6 +32,13 @@ namespace AnimLib {
         int x, y, width, height; // coordnates inside window 
         int bufferWidth, bufferHeight;
         (int,int,int,int)? lastArea;
+        CameraState lastCam = new PerspectiveCameraState();
+
+        public CameraState LastCamera {
+            get {
+                return lastCam;
+            }
+        }
 
         public SceneView(IRenderBuffer rb, int x, int y, int width, int height)
         {
@@ -100,6 +107,10 @@ namespace AnimLib {
 
         }
 
+        public void PostRender(CameraState cam) {
+            this.lastCam = cam.Clone() as CameraState;
+        }
+
         public (int,int,int,int) CalculateArea(int x, int y, int width, int height)
         {
             // calculate scene view "bars" (aspect ratio correction)
@@ -142,7 +153,7 @@ namespace AnimLib {
             ImGuizmo.SetRect(a.Item1, a.Item2, a.Item3, a.Item4);
             ImGuizmo.Enable(true);
             ImGuizmo.SetOrthographic(false);
-            var cam = UserInterface.WorldCamera as PerspectiveCameraState;
+            var cam = lastCam as PerspectiveCameraState;
             if (cam != null) {
                 var viewM = cam.CreateWorldToViewMatrix();
                 var projM = cam.CreateViewToClipMatrix((float)renderBuffer.Size.Item1/(float)renderBuffer.Size.Item2);
@@ -205,7 +216,7 @@ namespace AnimLib {
         }
 
         public Ray RaycastBuffer(Vector2 coord) {
-            var cam = UserInterface.WorldCamera as PerspectiveCameraState;
+            var cam = lastCam as PerspectiveCameraState;
             float w = renderBuffer.Size.Item1;
             float h = renderBuffer.Size.Item2;
             var r = cam.RayFromClip(new Vector2((coord.x/w)*2.0f - 1.0f, ((h-coord.y)/h)*2.0f - 1.0f), w/h);
@@ -306,7 +317,7 @@ namespace AnimLib {
             if(lastArea == null)
                 return null;
             // TODO: have camera in view
-            var cam = UserInterface.WorldCamera as PerspectiveCameraState;
+            var cam = lastCam as PerspectiveCameraState;
             if(cam == null)
                 return null;
             var screenP = worldToBuffer(cam, pos);
@@ -328,7 +339,7 @@ namespace AnimLib {
             if(lastArea == null)
                 return false;
             // TODO: have camera in view
-            var cam = UserInterface.WorldCamera as PerspectiveCameraState;
+            var cam = lastCam as PerspectiveCameraState;
             if(cam == null)
                 return false;
             var screenP = worldToBuffer(cam, pos);

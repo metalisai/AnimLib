@@ -122,7 +122,7 @@ namespace AnimLib {
 
         public void Paste() {
             if(Clipboard.Object != null) {
-                var cam = UserInterface.WorldCamera as PerspectiveCameraState;
+                var cam = view.LastCamera as PerspectiveCameraState;
                 var plane = new Plane() {
                     n = new Vector3(0.0f, 0.0f, -1.0f),
                     o = 0.0f,
@@ -167,7 +167,7 @@ namespace AnimLib {
 
         private void SceneDropTarget() {
             //ImGuiDragDropFlags target_flags = 0;
-            var cam = UserInterface.WorldCamera as PerspectiveCameraState;
+            var cam = view.LastCamera as PerspectiveCameraState;
             var plane = new Plane() {
                 n = new Vector3(0.0f, 0.0f, -1.0f),
                 o = 0.0f,
@@ -179,9 +179,11 @@ namespace AnimLib {
                 unsafe {
                     if(payloadPtr.NativePtr != null)
                     {
+                        int w = renderer.WindowWidth;
+                        int h = renderer.WindowHeight;
                         int idx = Marshal.ReadInt32(payloadPtr.Data);
                         Vector2 dropPos = ImGui.GetMousePos();
-                        var ray = cam.RayFromClip(new Vector2((dropPos.x/UserInterface.Width)*2.0f-1.0f, (dropPos.y/UserInterface.Height)*-2.0f+1.0f), UserInterface.Width/UserInterface.Height);
+                        var ray = cam.RayFromClip(new Vector2((dropPos.x/w)*2.0f-1.0f, (dropPos.y/h)*-2.0f+1.0f), w/h);
                         var pos3 = ray.Intersect(plane); 
                         if(pos3 != null) {
                             switch(idx) {
@@ -427,7 +429,7 @@ namespace AnimLib {
                 ImGui.EndMenu();
             }
             if(ImGui.BeginMenu("Create")) {
-                var cam = UserInterface.WorldCamera as PerspectiveCameraState;
+                var cam = view.LastCamera as PerspectiveCameraState;
                 if(cam != null) 
                 {
                     ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.5f, 0.5f, 0.5f, 1.0f));

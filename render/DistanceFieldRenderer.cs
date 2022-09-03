@@ -481,7 +481,19 @@ namespace AnimLib {
             GL.Viewport(state.vpX, state.vpY, state.vpW, state.vpH);
         }
 
-        public void RenderScene(WorldSnapshot ss, SceneView sv, bool gizmo) {
+        public bool BufferValid(IRenderBuffer buf) {
+            return buf is DepthPeelRenderBuffer;
+        }
+
+        public IRenderBuffer CreateBuffer(int w, int h) {
+            var buf = new DepthPeelRenderBuffer(platform);
+            buf.Resize(w, h);
+            // TODO: this is wrong!
+            platform.Skia.SetBuffer(buf);
+            return buf;
+        }
+
+        public void RenderScene(WorldSnapshot ss, SceneView sv, CameraState cam, bool gizmo) {
             this.gizmo = gizmo;
             entRes = ss.resolver;
             long passedcount = 0;
@@ -533,19 +545,14 @@ namespace AnimLib {
             var _programs = platform.Programs;
 
             // TODO: bind framebuffer when we have render targets
-            var sceneCamera = ss.Camera;
             var pbSize = pb.Size;
-
-            if(sceneCamera is OrthoCameraState) {
-                var cam = sceneCamera as OrthoCameraState;
-                cam.width = pbSize.Item1;
-                cam.height = pbSize.Item2;
-            }
-            M4x4 worldToClip = sceneCamera.CreateWorldToClipMatrix((float)pbSize.Item1/(float)pbSize.Item2);
-            if(rs.overrideCamera && sceneCamera is PerspectiveCameraState) {
-                worldToClip = rs.debugCamera.CreateWorldToClipMatrix((float)pbSize.Item1/(float)pbSize.Item2);
+            if(cam is OrthoCameraState) {
+                var ocam = cam as OrthoCameraState;
+                ocam.width = pbSize.Item1;
+                ocam.height = pbSize.Item2;
             }
 
+            M4x4 worldToClip = cam.CreateWorldToClipMatrix((float)pbSize.Item1/(float)pbSize.Item2);
             int p = 0;
             for(p = 0; p < 16; p++) {
                 drawId = 0;
@@ -618,19 +625,11 @@ namespace AnimLib {
                     }
                     RenderMeshes(meshes, worldToClip, smat);
                 }
-                /*if(ss.TexRects != null) {
-                    RenderTextureRectangles(ss.TexRects, worldToClip);
-                }*/
-                /*if(ss.Circles != null)
-                    RenderCircles(ss.Circles, worldToClip, smat);*/
-
-                /*if(ss.Rectangles != null)
-                    RenderRectangles(ss.Rectangles, worldToClip, smat);*/
                 if(ss.Meshes != null) {
                     RenderMeshes(ss.Meshes, worldToClip, smat);
                 }
                 if(ss.Labels != null) {
-                    RenderLabels(new Vector2(pbSize.Item1, pbSize.Item2), ss.Labels, UserInterface.WorldCamera);
+                    RenderLabels(new Vector2(pbSize.Item1, pbSize.Item2), ss.Labels, cam);
                 }
                 if(ss.Beziers != null) {
                     RenderBeziers(ss.Beziers, worldToClip, smat, sv.Buffer);
@@ -655,7 +654,7 @@ namespace AnimLib {
             }
 
             if(ss.Glyphs != null) {
-                RenderGlyphs(new Vector2(pbSize.Item1, pbSize.Item2), ss.Glyphs, sceneCamera as PerspectiveCameraState);
+                RenderGlyphs(new Vector2(pbSize.Item1, pbSize.Item2), ss.Glyphs, cam as PerspectiveCameraState);
             }
 
             GL.DeleteQuery(query);

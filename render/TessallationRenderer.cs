@@ -170,7 +170,7 @@ namespace AnimLib {
         public void RenderMeshes(ColoredTriangleMesh[] meshes, M4x4 camMat, M4x4 orthoMat)
         {
         }
-        public void RenderScene(WorldSnapshot ss, SceneView sv, bool gizmo)
+        public void RenderScene(WorldSnapshot ss, SceneView sv, CameraState cam, bool gizmo)
         {
             entRes = ss.resolver;
 
@@ -216,29 +216,22 @@ namespace AnimLib {
             GL.Clear(ClearBufferMask.DepthBufferBit);
 
             // TODO: reuse this between renderers
-            var sceneCamera = ss.Camera;
             var pbSize = pb.Size;
 
-            var activecam = sceneCamera;
-
-            if(sceneCamera is OrthoCameraState) {
-                var cam = sceneCamera as OrthoCameraState;
-                cam.width = pbSize.Item1;
-                cam.height = pbSize.Item2;
+            if(cam is OrthoCameraState) {
+                var ocam = cam as OrthoCameraState;
+                ocam.width = pbSize.Item1;
+                ocam.height = pbSize.Item2;
             }
 
-            M4x4 worldToClip = sceneCamera.CreateWorldToClipMatrix((float)pbSize.Item1/(float)pbSize.Item2);
-            if(rs.overrideCamera && sceneCamera is PerspectiveCameraState) {
-                worldToClip = rs.debugCamera.CreateWorldToClipMatrix((float)pbSize.Item1/(float)pbSize.Item2);
-                activecam = rs.debugCamera;
-            }
+            M4x4 worldToClip = cam.CreateWorldToClipMatrix((float)pbSize.Item1/(float)pbSize.Item2);
 
             RectTransform.RootTransform = new RectTransform(new Dummy());
             RectTransform.RootTransform.Size = new Vector2(pbSize.Item1, pbSize.Item2);
 
             ctx.worldToClip = worldToClip;
             ctx.screenToClip = smat;
-            ctx.camPosWorld = activecam.position;
+            ctx.camPosWorld = cam.position;
 
             // render rectangles
             if(ss.Rectangles != null) {
@@ -259,6 +252,18 @@ namespace AnimLib {
             // render labels
             // render beziers
 
+        }
+
+        public bool BufferValid(IRenderBuffer buf) {
+            return buf is MultisampleRenderBuffer;
+        }
+
+        public IRenderBuffer CreateBuffer(int w, int h) {
+            var buf = new MultisampleRenderBuffer(platform);
+            buf.Resize(w, h);
+            // TODO: this is wrong!
+            platform.Skia.SetBuffer(buf);
+            return buf;
         }
 
         public void Dispose() {
