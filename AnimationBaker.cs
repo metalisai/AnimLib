@@ -123,7 +123,7 @@ namespace AnimLib {
                                     break;
                                 case 32:
                                     outFmt = System.Drawing.Imaging.PixelFormat.Format32bppArgb;
-                                    outFmtGl = Texture2D.TextureFormat.ARGB8;
+                                    outFmtGl = Texture2D.TextureFormat.BGRA8;
                                     break;
                                 default:
                                     System.Console.WriteLine("Unsupported pixel format " + image.PixelFormat);

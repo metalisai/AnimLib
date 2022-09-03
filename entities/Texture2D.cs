@@ -9,6 +9,7 @@ namespace AnimLib {
             RGB8,
             ARGB8,
             BGR8,
+            BGRA8,
             R8,
         }
         public byte[] RawData;
@@ -75,6 +76,24 @@ namespace AnimLib {
                 }
                 RawData = newData;
                 Format = TextureFormat.RGBA8;
+            }
+            if(Format == TextureFormat.BGRA8 && newFormat == TextureFormat.RGBA8) {
+                int newIdx = 0;
+                for(int row = 0; row < Height; row++) {
+                    for(int col = 0; col < Width; col++) {
+                        byte c0 = RawData[newIdx];
+                        byte c1 = RawData[newIdx+1];
+                        byte c2 = RawData[newIdx+2];
+                        byte c3 = RawData[newIdx+3];
+                        RawData[newIdx] = c2;
+                        RawData[newIdx+1] = c1;
+                        RawData[newIdx+2] = c0;
+                        RawData[newIdx+3] = c3;
+                        newIdx += 4;
+                    }
+                }
+                Format = TextureFormat.RGBA8;
+
             }
             else throw new NotImplementedException();
         }

@@ -58,10 +58,17 @@ namespace AnimLib {
             switch(texture.Format) {
                 case Texture2D.TextureFormat.RGBA8:
                     info = new SKImageInfo(texture.Width, texture.Height, SKColorType.Rgba8888);
+                    info.AlphaType = SKAlphaType.Unpremul;
+                    break;
+                case Texture2D.TextureFormat.BGRA8:
+                    texture.ConvertColor(Texture2D.TextureFormat.RGBA8);
+                    info = new SKImageInfo(texture.Width, texture.Height, SKColorType.Rgba8888);
+                    info.AlphaType = SKAlphaType.Unpremul;
                     break;
                 case Texture2D.TextureFormat.BGR8:
                     texture.ConvertColor(Texture2D.TextureFormat.RGBx8);
                     info = new SKImageInfo(texture.Width, texture.Height, SKColorType.Rgb888x);
+                    info.AlphaType = SKAlphaType.Opaque;
                     break;
                 default:
                     Debug.Error($"Can't load texture, unsupported format {texture.Format}");
@@ -336,6 +343,7 @@ namespace AnimLib {
                         var rect = new SKRect(-sprite.width/2.0f, -sprite.height/2.0f, sprite.width/2.0f, sprite.height/2.0f);
                         using(var paint = new SKPaint()) {
                             paint.FilterQuality = SKFilterQuality.High;
+                            paint.BlendMode = SKBlendMode.SrcOver;
                             canvas.DrawBitmap(bitmap, rect, paint);
                         }
                         canvas.SetMatrix(curMat);

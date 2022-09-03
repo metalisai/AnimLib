@@ -6,7 +6,7 @@ namespace AnimLib {
 
         public enum InterpCurve {
             Linear,
-            Smooth,
+            EaseInOut,
             Bouncy,
         }
 
@@ -23,7 +23,7 @@ namespace AnimLib {
                     return bouncy1.Evaluate(t);
                     case InterpCurve.Linear:
                     return t;
-                    case InterpCurve.Smooth:
+                    case InterpCurve.EaseInOut:
                     return Interp.EaseInOut(t);
                     default:
                     throw new NotImplementedException();
@@ -53,20 +53,20 @@ namespace AnimLib {
             }
         }
 
-        public static async Task Offset(this Transform t, Vector3 offset, double duration = 1.0, InterpCurve curve = InterpCurve.Smooth) {
+        public static async Task Offset(this Transform t, Vector3 offset, double duration = 1.0, InterpCurve curve = InterpCurve.EaseInOut) {
             await InterpT(x => {
                 t.Pos = x;
             }, t.Pos, t.Pos+offset, duration, curve);
         }
 
-        public static async Task Move(this Transform t, Vector3 moveTo, double duration = 1.0, InterpCurve curve = InterpCurve.Smooth) {
+        public static async Task Move(this Transform t, Vector3 moveTo, double duration = 1.0, InterpCurve curve = InterpCurve.EaseInOut) {
             await InterpT(x => {
                 t.Pos = x;
             }, t.Pos, moveTo, duration, curve);
         }
 
         // interpolates a float with given interpolation curve
-        public static async Task InterpF(Action<float> action, float start, float end, double duration, InterpCurve curve = InterpCurve.Smooth) {
+        public static async Task InterpF(Action<float> action, float start, float end, double duration, InterpCurve curve = InterpCurve.EaseInOut) {
             double endTime = AnimLib.Time.T + duration;
             while(AnimLib.Time.T < endTime) {
                 double progress = 1.0 - (endTime - AnimLib.Time.T)/ duration;
@@ -79,7 +79,7 @@ namespace AnimLib {
         }
 
         // interpolates a dynamic type with given interpolation curve
-        public static async Task InterpT<T>(Action<T> action, T start, T end, double duration, InterpCurve curve = InterpCurve.Smooth) {
+        public static async Task InterpT<T>(Action<T> action, T start, T end, double duration, InterpCurve curve = InterpCurve.EaseInOut) {
             dynamic startD = start;
             dynamic endD = end;
             double endTime = AnimLib.Time.T + duration;
@@ -94,7 +94,7 @@ namespace AnimLib {
             action.Invoke(end);
         }
 
-        public static async Task Color(IColored entity, Color startColor, Color targetColor, double duration, InterpCurve curve = InterpCurve.Smooth) {
+        public static async Task Color(IColored entity, Color startColor, Color targetColor, double duration, InterpCurve curve = InterpCurve.EaseInOut) {
             double endTime = AnimLib.Time.T + duration;
             while(AnimLib.Time.T < endTime) {
                 double progress = 1.0 - (endTime - AnimLib.Time.T)/ duration;
@@ -106,7 +106,7 @@ namespace AnimLib {
             entity.Color = targetColor;
         }
 
-        public static Task Color(IColored entity, Color targetColor, double duration, InterpCurve curve = InterpCurve.Smooth) {
+        public static Task Color(IColored entity, Color targetColor, double duration, InterpCurve curve = InterpCurve.EaseInOut) {
             return Color(entity, entity.Color, targetColor, duration, curve);
         }
 
