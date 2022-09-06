@@ -81,12 +81,22 @@ namespace AnimLib {
             Canvas = e.Canvas;
         }
 
+        internal int CanvasId
+        {
+            get {
+                return _canvas.EntityId;
+            }
+            set {
+                World.current.SetProperty(this, "canvasId", value, Canvas.EntityId);
+                ((EntityState2D)state).canvasId = value;
+            }
+        }
+
         public new EntityState2D state {
             get {
                 return base.state as EntityState2D;
             }
         }
-
         public Canvas Canvas 
         {
             get {

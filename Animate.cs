@@ -17,17 +17,17 @@ namespace AnimLib {
 
         // Evaluate curve at t
         private static float EvtCurve(float t, InterpCurve curve) {
-                switch(curve) {
-                    case InterpCurve.Bouncy:
-                    // TODO: this is not correct ?
-                    return bouncy1.Evaluate(t);
-                    case InterpCurve.Linear:
-                    return t;
-                    case InterpCurve.EaseInOut:
-                    return Interp.EaseInOut(t);
-                    default:
-                    throw new NotImplementedException();
-                }
+            switch(curve) {
+                case InterpCurve.Bouncy:
+                // TODO: this is not correct ?
+                return bouncy1.Evaluate(t);
+                case InterpCurve.Linear:
+                return t;
+                case InterpCurve.EaseInOut:
+                return Interp.EaseInOut(t);
+                default:
+                throw new NotImplementedException();
+            }
         }
 
         // TODO: velocity ramping not instant
@@ -57,6 +57,18 @@ namespace AnimLib {
             await InterpT(x => {
                 t.Pos = x;
             }, t.Pos, t.Pos+offset, duration, curve);
+        }
+
+        public static async Task Offset(this Transform2D t, Vector2 offset, double duration = 1.0, InterpCurve curve = InterpCurve.EaseInOut) {
+            await InterpT(x => {
+                t.Pos = x;
+            }, t.Pos, t.Pos+offset, duration, curve);
+        }
+
+        public static async Task Move(this Transform2D t, Vector2 moveTo, double duration = 1.0, InterpCurve curve = InterpCurve.EaseInOut) {
+            await InterpT(x => {
+                t.Pos = x;
+            }, t.Pos, moveTo, duration, curve);
         }
 
         public static async Task Move(this Transform t, Vector3 moveTo, double duration = 1.0, InterpCurve curve = InterpCurve.EaseInOut) {

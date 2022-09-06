@@ -8,17 +8,23 @@ using System.Linq;
 
 namespace AnimLib {
 
-    public class Gizmo3DObj : SceneObject {
-        public override bool Is2D { get { return false; } }
-        public override Vector3[] GetHandles2D() { return new Vector3[] {}; }
-        public override Plane? GetSurface() { return null; }
-        public override void SetHandle(int id, Vector3 wpos) { }
+    public class Gizmo3DObj : SceneObject3D {
         public override object Clone() {
             return new Gizmo3DObj() {
-                transform = new SceneTransform(transform.Pos, transform.Rot),
+                transform = new SceneTransform3D(transform.Pos, transform.Rot),
                 timeslice = timeslice,
             };
         }
+    }
+
+    internal enum DragDropObject {
+        None,
+        Circle,
+        Rectangle,
+        Line,
+        Arrow,
+        Spline,
+        Text,
     }
 
     public class PlayerControls {
@@ -129,22 +135,23 @@ namespace AnimLib {
                 };
                 var w = view.Buffer.Size.Item1;
                 var h = view.Buffer.Size.Item2;
-                var ray = cam.RayFromClip(new Vector2((UserInterface.mousePosition.x/w)*2.0f-1.0f, (UserInterface.mousePosition.y/h)*-2.0f+1.0f), w/h);
+                Vector2 mpos = ImGui.GetMousePos();
+                var ray = cam.RayFromClip(new Vector2((mpos.x/w)*2.0f-1.0f, (mpos.y/h)*-2.0f+1.0f), w/h);
                 var pos3 = ray.Intersect(plane);
                 if(pos3 != null) {
                     switch(Clipboard.Object) {
-                        case SceneObject s1:
-                        if(!s1.Is2D) {
-                            var obj = (SceneObject) s1.Clone();
-                            obj.transform.Pos = new Vector3(pos3.Value.x, pos3.Value.y, obj.transform.Pos.z);
+                        case SceneObject2D s1:
+                        if(true) {
+                            var obj = (SceneObject2D) s1.Clone();
+                            obj.transform.Pos = new Vector2(pos3.Value.x, pos3.Value.y);
                             lock(player.Scene.sceneLock) {
                                 player.Scene.Add(obj);
                                 player.Scene.UpdateEvents();
                             }
                             player.SetAnimationDirty(true);
                         } else {
-                            var obj = (SceneObject) s1.Clone();
-                            obj.transform.Pos = new Vector3(UserInterface.mousePosition, obj.transform.Pos.z);
+                            var obj = (SceneObject2D) s1.Clone();
+                            obj.transform.Pos = mpos;
                             lock(player.Scene.sceneLock) {
                                 player.Scene.Add(obj);
                                 player.Scene.UpdateEvents();
@@ -165,73 +172,75 @@ namespace AnimLib {
         double exportStartTime = 0.0;
         double exportEndTime = 10.0;
 
-        private void DropEntity(int idx, Vector3 pos3, Vector2 dropPos) {
-            switch(idx) {
-                case 0:
+        private void DropEntity2D(DragDropObject obj, Vector2 pos, CanvasState canvas) {
+            switch(obj) {
+                case DragDropObject.Circle:
                 lock(player.Scene.sceneLock) {
-                    player.Scene.Circles.Add(new PlayerCircle() {
-                        radius = 1.0f,
-                        transform = new SceneTransform(pos3, Quaternion.IDENTITY),
-                        timeslice = (0.0, 99999.0),
-                    });
+                    var c = new PlayerCircle(0.5f, canvas.name);
+                    c.transform.Pos = pos;
+                    player.Scene.Circles.Add(c);
+                    Debug.TLog($"Dropped circle at {c.transform.Pos} canvas {canvas.name}");
                 }
                 break;
-                case 1:
+                case DragDropObject.Rectangle:
+                var rr = new PlayerRect(1.0f, 1.0f, canvas.name);
+                rr.transform.Pos = pos;
+                lock(player.Scene.sceneLock) {
+                    player.Scene.Add(rr);
+                    Debug.TLog($"Dropped rectangle at {rr.transform.Pos} canvas {canvas.name}");
+                }
+                break;
+
+            }
+        }
+
+        private void DropEntity3D(DragDropObject obj, Vector3 pos3, Vector2 dropPos) {
+            switch(obj) {
+                case DragDropObject.Line:
                 lock(player.Scene.sceneLock) {
                     player.Scene.Lines.Add(new PlayerLine() {
                         start = Vector3.ZERO,
                         end = Vector3.RIGHT,
                         width = 0.1f,
-                        transform = new SceneTransform(pos3, Quaternion.IDENTITY),
+                        transform = new SceneTransform2D(pos3.xy, 0.0f),
                         timeslice = (0.0, 99999.0),
                         color = Color.BLACK,
                     });
                 }
                 break;
-                case 2:
+                case DragDropObject.Arrow:
                 lock(player.Scene.sceneLock) {
                     player.Scene.Arrows.Add(new PlayerArrow() {
                         start = Vector3.ZERO,
                         end = Vector3.RIGHT,
                         width = 0.1f,
-                        transform = new SceneTransform(pos3, Quaternion.IDENTITY),
+                        transform = new SceneTransform2D(pos3.xy, 0.0f),
                         timeslice = (0.0, 99999.0),
                     });
                 }
                 break;
-                case 3:
+                case DragDropObject.Text:
                 var text = new Player2DText() {
                     text = "New text",
                     size = 14.0f,
                     color = Color.BLACK,
-                    transform = new SceneTransform(new Vector3(dropPos.x, dropPos.y, 0.0f), Quaternion.IDENTITY),
+                    transform = new SceneTransform2D(new Vector2(dropPos.x, dropPos.y), 0.0f),
                     timeslice = (0.0, 99999.0),
                 };
                 lock(player.Scene.sceneLock) {
                     player.Scene.Add(text);
                 }
                 break;
-                case 4:
+                case DragDropObject.Spline:
                 var qs = new PlayerQSpline() {
                     width = 1.0f,
                     color = Color.BLACK,
-                    transform = new SceneTransform(pos3, Quaternion.IDENTITY),
+                    transform = new SceneTransform2D(pos3.xy, 0.0f),
                     timeslice = (0.0, 9999999.0),
-                    points = new Vector3[] { Vector3.ZERO, new Vector3(1.0f, 0.0f, 0.0f), new Vector3(2.0f, 1.0f, 0.0f) },
+                    points = new Vector2[] { Vector2.ZERO, new Vector2(1.0f, 0.0f), new Vector2(2.0f, 1.0f) },
                 };
                 lock(player.Scene.sceneLock) {
                     player.Scene.Add(qs);
-                }
-                break;
-                case 5:
-                var rr = new PlayerRect() {
-                    size = new Vector2(1.0f, 1.0f),
-                    color = Color.WHITE,
-                    transform = new SceneTransform(pos3, Quaternion.IDENTITY),
-                    timeslice = (0.0, 9999999.0),
-                };
-                lock(player.Scene.sceneLock) {
-                    player.Scene.Add(rr);
                 }
                 break;
             }
@@ -251,27 +260,44 @@ namespace AnimLib {
             var maybeRay = view.ScreenRay(dropPos);
             if(maybeRay != null && ImGui.BeginDragDropTarget()) {
                 var ray = maybeRay.Value;
-                ImGuiPayloadPtr payloadPtr = ImGui.AcceptDragDropPayload("DND_CREATE_ITEM");
+                ImGuiPayloadPtr payloadPtr = ImGui.AcceptDragDropPayload("DND_CREATE_ITEM_2D");
                 unsafe {
                     if(payloadPtr.NativePtr != null)
                     {
+                        Debug.TLog("Attempt drop 2D object");
                         // intersect canvases
-                        int canvasId;
-                        var canvasPos = view.TryIntersectCanvases(dropPos, out canvasId);
-                        if(canvasPos != null) {
-                            Debug.TLog($"Dropped object on canvas, canvasId: {canvasId}");
-                        }
+                        CanvasState canvas = null;
+                        // normalized canvas coordinates
+                        var canvases = player.Machine.Entities.Where(x => x is CanvasState).Select(x  => (CanvasState)x).ToArray();
+                        var canvasPos = view.TryIntersectCanvases(canvases, dropPos, out canvas);
                         // drop
-                        int idx = Marshal.ReadInt32(payloadPtr.Data);
-                        var pos3 = ray.Intersect(plane); 
-                        if(pos3 != null) {
-                            DropEntity(idx, pos3.Value, dropPos);
+                        DragDropObject obj = (DragDropObject)Marshal.ReadInt32(payloadPtr.Data);
+                        if(canvasPos != null) {
+                            var canvasPosW = new Vector2(canvas.width, canvas.height)*canvasPos.Value;
+                            if(canvasPos != null) {
+                                Debug.TLog($"Dropped object on canvas, canvas: {canvas}, pos: {canvasPosW}");
+                            }
+                            DropEntity2D(obj, canvasPosW, canvas);
                             lock(player.Scene.sceneLock) {
                                 player.Scene.UpdateEvents();
                             }
                             player.SetAnimationDirty(true);
+                        } else {
+                            // TODO: just drop it on default (screen) canvas
+                            Debug.TLog("Dropped canvas object but missed canvas");
                         }
                     } 
+                }
+                payloadPtr = ImGui.AcceptDragDropPayload("DND_CREATE_ITEM_3D");
+                unsafe {
+                    if(payloadPtr.NativePtr != null) {
+                        Debug.TLog("Attempt drop 3D object");
+                        var pos3 = ray.Intersect(plane); 
+                        DragDropObject obj = (DragDropObject)Marshal.ReadInt32(payloadPtr.Data);
+                        if(pos3 != null) {
+                            DropEntity3D(obj, pos3.Value, dropPos);
+                        }
+                    }
                 }
                 ImGui.EndDragDropTarget();
             }        
@@ -446,7 +472,7 @@ namespace AnimLib {
                     ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.5f, 0.5f, 0.5f, 1.0f));
                     ImGui.Text("(Drag and drop)");
                     ImGui.PopStyleColor();
-                    Action<string, int> createItem = (string name, int idx) => {
+                    Action<string, int, bool> createItem = (string name, int idx, bool is2d) => {
                         ImGui.Selectable(name);
 
                         ImGuiDragDropFlags src_flags = 0;
@@ -459,17 +485,17 @@ namespace AnimLib {
                                 ImGui.Text("Creating " + name.ToLower());
                             var mem = Marshal.AllocHGlobal(4);
                             Marshal.WriteInt32(mem, idx);
-                            ImGui.SetDragDropPayload("DND_CREATE_ITEM", mem, sizeof(int));
+                            ImGui.SetDragDropPayload(is2d ? "DND_CREATE_ITEM_2D" : "DND_CREATE_ITEM_3D", mem, sizeof(int));
                             Marshal.FreeHGlobal(mem);
                             ImGui.EndDragDropSource();
                         }
                     };
-                    createItem("Circle", 0);
-                    createItem("Rectangle", 5);
-                    createItem("Line", 1);
-                    createItem("Arrow", 2);
-                    createItem("Text", 3);
-                    createItem("Quadratic spline", 4);
+                    createItem("Circle", (int)DragDropObject.Circle, true);
+                    createItem("Rectangle", (int)DragDropObject.Rectangle, true);
+                    createItem("Line", (int)DragDropObject.Line, false);
+                    createItem("Arrow", (int)DragDropObject.Arrow, false);
+                    createItem("Text", (int)DragDropObject.Text, false);
+                    createItem("Quadratic spline", (int)DragDropObject.Spline, false);
                 }
                 ImGui.EndMenu();
             }
@@ -573,41 +599,61 @@ namespace AnimLib {
             var values = player.GetValues();
             lock(player.Scene.sceneLock) {
                 // 3D translation handle
-                if(!Selection.Is2D) { // world space (3D) selection
-                    var mt = view.DoSelectionGizmo(Selection.transform.Pos, Quaternion.IDENTITY, Vector3.ONE);
-                    if (mt != null) {
-                        var t = mt.Value;
-                        if (t.posChanged) {
-                            Selection.transform.Pos = t.newPosition;
-                            changePending = true;
+                if(true) { // world space (3D) selection
+                    switch(Selection) {
+                        case SceneObject2D s2:
+#warning Need to do coordinate transformation here!
+                        var mt = view.DoSelectionGizmo(s2.transform.Pos, Quaternion.IDENTITY, Vector3.ONE);
+                        if (mt != null) {
+                            var t = mt.Value;
+                            if (t.posChanged) {
+                                s2.transform.Pos = t.newPosition.xy;
+                                changePending = true;
+                            }
                         }
+                        break;
+                        case SceneObject3D s3:
+                        var mt3 = view.DoSelectionGizmo(s3.transform.Pos, Quaternion.IDENTITY, Vector3.ONE);
+                        if (mt3 != null) {
+                            var t = mt3.Value;
+                            if (t.posChanged) {
+                                s3.transform.Pos = t.newPosition.xy;
+                                changePending = true;
+                            }
+                        }
+                        break;
                     }
                 } else { // screen space selection (text etc)
-                    var mt = view.DoOrthoGizmo(Selection.transform.Pos, 0.0f);
+                    /*var mt = view.DoOrthoGizmo(Selection.transform.Pos, 0.0f);
                     if (mt != null) {
                         var t = mt.Value;
                         if (t.posChanged) {
                             Selection.transform.Pos = (Vector3)t.newPosition;
                             changePending = true;
                         }
-                    }
+                    }*/
                 }
                 // Object specific 2D handles (resizing etc)
-                var h2 = Selection.GetHandles2D();
-                if(h2 != null) {
-                    int i = 0;
-                    foreach(var hnd in h2) {
-                        var uid = "obj"+Selection.GetHashCode()+"-"+i;
-                        bool endupdate;
-                        var newp = view.DoWorldSurfPointGizmo(uid, hnd, Selection.GetSurface().Value, out endupdate);
-                        if(newp != null && newp.Value != hnd) {
-                            Selection.SetHandle(i, newp.Value);
+                switch(Selection) {
+                    case SceneObject2D s2:
+                    var h2 = s2.GetHandles2D();
+                    if(h2 != null) {
+                        int i = 0;
+                        foreach(var hnd in h2) {
+                            var uid = "obj"+Selection.GetHashCode()+"-"+i;
+                            bool endupdate;
+#warning Need to do coordinate transformation here
+                            var newp = view.DoWorldSurfPointGizmo(uid, hnd, s2.GetSurface().Value, out endupdate);
+                            if(newp != null && newp.Value.xy != hnd) {
+                                s2.SetHandle(i, newp.Value);
+                            }
+                            if(endupdate) {
+                                player.SetAnimationDirty(true);
+                            }
+                            i++;
                         }
-                        if(endupdate) {
-                            player.SetAnimationDirty(true);
-                        }
-                        i++;
                     }
+                    break;
                 }
                 // Imgui proprty window
 
@@ -696,7 +742,7 @@ namespace AnimLib {
             Gizmo3DObj state;
             if(!gizmoStates.TryGetValue(uid, out state)) {
                 state = new Gizmo3DObj() {
-                    transform = new SceneTransform(pos, Quaternion.IDENTITY),
+                    transform = new SceneTransform3D(pos, Quaternion.IDENTITY),
                     timeslice = (0.0, 99999.0),
                 };
                 state.position = pos;
@@ -708,8 +754,9 @@ namespace AnimLib {
             }
             updateDone = false;
             if(Selection is Gizmo3DObj && Selection.name == uid) {
-                updateDone = Selection.position != pos && !ImGuizmo.IsUsing();
-                return Selection.position;
+                var g3d = Selection as Gizmo3DObj;
+                updateDone = g3d.position != pos && !ImGuizmo.IsUsing();
+                return g3d.position;
             }
             return pos;
         }
@@ -732,9 +779,10 @@ namespace AnimLib {
                     && player.Scene != null) 
             {
                 SceneObject obj = null;
+                EntityState ent;
                 lock(player.Scene.sceneLock) {
                     var entId = UserInterface.MouseEntityId;
-                    var ent = player.Machine.GetEntityState(entId);
+                    ent = player.Machine.GetEntityState(entId);
                     if(ent != null) {
                         if(ent.selectable) {
                             obj = player.Scene?.GetSceneObjectById(entId);
@@ -747,7 +795,25 @@ namespace AnimLib {
                 }
                 if(obj != null) {
                     Selection = obj;
-                } else {
+                } else if(ent is CanvasState) {
+                    var c = ent as CanvasState;
+                    var mat = c.WorldToNormalizedCanvas;
+                    Vector2 normPos;
+                    if(view.TryIntersectCanvas(c, ImGui.GetMousePos(), out normPos)) {
+                        Vector2 canvasPos = (normPos)*new Vector2(c.width, c.height);
+                        Debug.TLog($"Found canvas {c.name} {normPos} {canvasPos}");
+                        lock(player.Scene.sceneLock) {
+                            obj = player.Scene.GetCanvasObject(c.name, canvasPos);
+                            if(obj != null) {
+                                Selection = obj;
+                                Debug.TLog($"Found canvas object {obj.name}");
+                            } else {
+                                Debug.Warning($"Canvas has pained the pixel under mouse, but the object was not found!");
+                            }
+                        }
+                    }
+                }
+                else {
                     Debug.Warning($"Mouse over entity, but no entity with id {UserInterface.MouseEntityId} in scene");
                 }
             } else if(ImGui.IsMouseClicked(0) && UserInterface.MouseEntityId == -1 && !ImGuizmo.IsOver()) {

@@ -25,6 +25,7 @@ namespace AnimLib
         event EventHandler<FrameEventArgs> PRenderFrame;
 
         void LoadTexture(Texture2D tex2d);
+        int AddShader(string v, string f, string g, string tcs = null, string tes = null);
         void DestroyOwner(string owner);
 
         void RenderGUI((ImDrawDataPtr, Texture2D)? data, IList<SceneView> views, IRenderBuffer rb);

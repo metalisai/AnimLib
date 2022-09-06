@@ -227,26 +227,7 @@ namespace AnimLib
             scrollDelta = args.DeltaPrecise;
         }
 
-        public int GetSceneEntityAtPixel(SceneView sv, Vector2 pixel) {
-            if(sv.Buffer == null)
-                return 0;
-            var area = sv.LastArea;
-            if (area == null) return -2;
-            var a = area.Value;
-            var offset = pixel - new Vector2(a.Item1, a.Item2);
-            var normalizedInViewport = offset / new Vector2(a.Item3, a.Item4);
-            var bufW = sv.BufferWidth;
-            var bufH = sv.BufferHeight;
-            pixel = normalizedInViewport * new Vector2(bufW, bufH);
-            if(pixel.x >= 0.0f && pixel.x < bufW && pixel.y >= 0.0f && pixel.y < bufH) {
-                return sv.Buffer.GetEntityAtPixel((int)pixel.x, bufH-(int)pixel.y-1);
-            } else {
-                return -2;
-            }
-        }
-
         public int GetGuiEntityAtPixel(IRenderBuffer pb, Vector2 pixel) {
-            //System.Console.WriteLine(pixs[0]);
             if(pixel.x >= 0.0f && pixel.x < pb.Size.Item1 && pixel.y >= 0.0f && pixel.y < pb.Size.Item2) {
                 return pb.GetEntityAtPixel((int)pixel.x, pb.Size.Item2-(int)pixel.y-1);
             } else {
@@ -298,13 +279,6 @@ namespace AnimLib
         }
 
         private void RenderFrame(object sender, FrameEventArgs args) {
-            UserInterface.MouseState mouseState = new UserInterface.MouseState {
-                position = mousePos,
-                left = mouseLeft,
-                right = mouseRight,
-                scroll = scrollValue,
-            };
-
             foreach(var view in views) {
                 view.Buffer?.Clear();
                 view.Buffer?.OnPreRender();
@@ -361,9 +335,10 @@ namespace AnimLib
 
             int sceneEntity = -2;
             if (views.Count > 0) {
-                sceneEntity = GetSceneEntityAtPixel(views[0], UserInterface.mousePosition);
+                sceneEntity = views[0].GetEntityIdAtPixel(ImGui.GetMousePos());
             }
-            var guiEntity = GetGuiEntityAtPixel(uiRenderBuffer, UserInterface.mousePosition);
+            var guiEntity = GetGuiEntityAtPixel(uiRenderBuffer, ImGui.GetMousePos());
+            Debug.TLog($"guiEntity {guiEntity}");
             if(sceneEntity == -2) { // out of scene viewport
                 UserInterface.MouseEntityId = guiEntity;
             } else {
@@ -373,6 +348,5 @@ namespace AnimLib
                     UserInterface.MouseEntityId = guiEntity;
             }
         }
-
     }
 }

@@ -20,7 +20,7 @@ namespace AnimLib {
         }
     }
 
-    public class SkiaRenderer
+    public partial class SkiaRenderer
     {
         public enum RenderMode {
             None,
@@ -45,6 +45,12 @@ namespace AnimLib {
         GRGlInterface glInterface;
 
         Texture2D tex;
+
+        IPlatform platform;
+
+        public SkiaRenderer(IPlatform platform) {
+            this.platform = platform;
+        }
 
         /*public int TextureId {
             get {
@@ -236,6 +242,8 @@ namespace AnimLib {
                     || MathF.Abs(topRightClip.y - bottomLeftClip.y) < 0.001f)
                 return;
 
+            Clear();
+
             canvas.SetMatrix(mat.Value);
             // gizmo
             if(gizmo && mat != null && !rc.is2d) {
@@ -351,9 +359,10 @@ namespace AnimLib {
                     break;
                 }
             }
+            Flush(css.Canvas.entityId);
         }
 
-        public void Flush() {
+        public void Flush(int entityId) {
             if(mode == RenderMode.OpenGL) {
                 ctx.ResetContext();
             }
@@ -375,12 +384,14 @@ namespace AnimLib {
                     System.IntPtr dst = pinned.AddrOfPinnedObject();
                     if(img.ReadPixels(img.Info, dst)) {
                         var dprb = glBuffer as DepthPeelRenderBuffer;
-                        dprb.BlitTexture(tex);
+                        //dprb.BlitTexture(tex);
+                        dprb.BlitTextureWithEntityId(tex, entityId);
                     } else {
                         Debug.Error("Failed to read Skia surface pixels");
                     }
                 }
             }
+            // TODO: blit entityId in OpenGL mode
         }
 
         void temp() {

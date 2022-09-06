@@ -3,12 +3,17 @@ using System;
 namespace AnimLib {
 
     public class CanvasState : EntityState3D {
+        
+        public static string DEFAULTNAME = "_defaultCanvas";
+
         public Vector3 center, normal, up;
         public float width, height;
         public bool is2d = false;
         public Vector2 anchor;
+        public string name;
 
-        public CanvasState() {
+        public CanvasState(string name) {
+            this.name = name;
         }
 
         public CanvasState(CanvasState cs) : base(cs) {
@@ -19,6 +24,7 @@ namespace AnimLib {
             this.height = cs.height;
             this.is2d = cs.is2d;
             this.anchor = cs.anchor;
+            this.name = cs.name;
         }
 
         public override object Clone() {
@@ -107,7 +113,7 @@ namespace AnimLib {
             }
         }
 
-        public Canvas(OrthoCamera cam) : base(new CanvasState()) {
+        public Canvas(string name, OrthoCamera cam) : base(new CanvasState(name)) {
             var cs = state as CanvasState;
             cs.width = cam.Width;
             cs.height = cam.Height;
@@ -118,7 +124,7 @@ namespace AnimLib {
         }
 
         // identity - x is width, y is height, z is flat/depth
-        public Canvas(Vector3 center, Vector3 up, Vector3 normal, Vector2 size) : base(new CanvasState()){
+        public Canvas(string name, Vector3 center, Vector3 up, Vector3 normal, Vector2 size) : base(new CanvasState(name)){
             var cs = state as CanvasState;
             cs.center = center;
             cs.up = up;

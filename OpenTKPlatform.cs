@@ -177,7 +177,7 @@ namespace AnimLib {
             };            
 
             // skia
-            Skia = new SkiaRenderer();
+            Skia = new SkiaRenderer(this);
             //Skia.CreateGL(); // messes up render state when scene has textures, arc rendering buggy
             Skia.CreateSW();
 

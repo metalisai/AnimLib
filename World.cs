@@ -238,13 +238,26 @@ namespace AnimLib
             screenCam.Height= settings.Height;
             CreateInstantly(screenCam);
 
-            var defaultCanvas = new Canvas(screenCam);
+            var defaultCanvas = new Canvas(CanvasState.DEFAULTNAME, screenCam);
             CreateInstantly(defaultCanvas);
             Canvas.Default = defaultCanvas;
 
             CreateInstantly(cam);
             ActiveCamera = cam;
             EndEditing();
+        }
+
+        internal Canvas FindCanvas(string name) {
+            foreach(var ent in _entities) {
+                if(ent.Value is Canvas) {
+                    var canvas = ent.Value as Canvas;
+                    var state = canvas.state as CanvasState;
+                    if(state.name == name) {
+                        return canvas;
+                    }
+                }
+            }
+            return null;
         }
 
         public VisualEntity FindEntityByCreator(object creator) {
@@ -298,6 +311,28 @@ namespace AnimLib
                 break;
             }
             entity.EntityCreated();
+            CheckDependantEntities(entity);
+        }
+
+        List<Func<VisualEntity, bool>> CreationListeners = new List<Func<VisualEntity, bool>>();
+
+        private void CheckDependantEntities(VisualEntity newent) {
+            for(int i = CreationListeners.Count - 1; i >= 0; i--) {
+                var wd = CreationListeners[i];
+                if(wd.Invoke(newent)) {
+                    CreationListeners.RemoveAt(i);
+                }
+            }
+        }
+
+        // when entity is created the Func is invoked, if the Func returns true it is deleted
+        // useful for listening for dependencies
+        internal T MatchCreation<T>(T ent, Func<VisualEntity, bool> match) where T : VisualEntity{
+            CreationListeners.Add(match);
+            foreach(var dent in _entities) {
+                CheckDependantEntities(dent.Value);
+            }
+            return ent;
         }
 
         public T CreateInstantly<T>(T ent) where T : VisualEntity {

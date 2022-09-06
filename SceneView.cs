@@ -33,7 +33,6 @@ namespace AnimLib {
         int bufferWidth, bufferHeight;
         (int,int,int,int)? lastArea;
         CameraState lastCam = new PerspectiveCameraState();
-        List<CanvasState> lastCanvases = new List<CanvasState>();
 
         public CameraState LastCamera {
             get {
@@ -110,10 +109,6 @@ namespace AnimLib {
 
         public void PostRender(CameraState cam, WorldSnapshot ss) {
             this.lastCam = cam.Clone() as CameraState;
-            lastCanvases.Clear();
-            foreach(var canvas in ss.Canvases) {
-                lastCanvases.Add(canvas.Canvas.Clone() as CanvasState);
-            }
         }
 
         // calculate target area for renderbuffer, preserving aspect ratio
@@ -244,35 +239,47 @@ namespace AnimLib {
             return RaycastBuffer(bufCoord);
         }
 
-        public Vector2? TryIntersectCanvases(Vector2 screenPos, out int canvasId) {
-            foreach(var canvas in lastCanvases) {
+        public bool TryIntersectCanvas(CanvasState canvas, Vector2 screenPos, out Vector2 normPos) {
+            if(canvas.is2d)
+                throw new NotImplementedException();
+            var pcam = lastCam as PerspectiveCameraState;
+            var bufPos = screenToBuffer(screenPos);
+            float w = renderBuffer.Size.Item1;
+            float h = renderBuffer.Size.Item2;
+            bufPos.x = ((bufPos.x/w) * 2.0f) - 1.0f;
+            bufPos.y = (((h-bufPos.y)/h) * 2.0f) - 1.0f;
+            var worldRay = pcam.RayFromClip(bufPos, w/h);
+            var plane = new Plane(canvas.normal, canvas.center);
+            var intersection = worldRay.Intersect(plane);
+            // intersected with any canvas? (infinite plane)
+            if(intersection != null) {
+                var mat1 = canvas.NormalizedCanvasToWorld;
+                var mat = canvas.WorldToNormalizedCanvas;
+                var v = mat*new Vector4(intersection.Value, 1.0f);
+                var intr = intersection.Value;
+                // on canvas? (canvas bounds -0.5 to 0.5
+                if(v.x > -0.5f && v.x < 0.5f
+                        && v.y > -0.5f && v.y < 0.5f) {
+                    normPos = new Vector2(v.x, v.y);
+                    return true;
+                }
+            }
+            normPos = Vector2.ZERO;
+            return false;
+        }
+
+        public Vector2? TryIntersectCanvases(CanvasState[] canvases, Vector2 screenPos, out CanvasState cout) {
+            foreach(var canvas in canvases) {
                 // skip 2D for now (required using orthographic camera)
-                if(canvas.is2d)
-                    continue;
-                var pcam = lastCam as PerspectiveCameraState;
-                var bufPos = screenToBuffer(screenPos);
-                float w = renderBuffer.Size.Item1;
-                float h = renderBuffer.Size.Item2;
-                bufPos.x = ((bufPos.x/w) * 2.0f) - 1.0f;
-                bufPos.y = (((h-bufPos.y)/h) * 2.0f) - 1.0f;
-                var worldRay = pcam.RayFromClip(bufPos, w/h);
-                var plane = new Plane(canvas.normal, canvas.center);
-                var intersection = worldRay.Intersect(plane);
-                // intersected with any canvas? (infinite plane)
-                if(intersection != null) {
-                    var mat1 = canvas.NormalizedCanvasToWorld;
-                    var mat = canvas.WorldToNormalizedCanvas;
-                    var v = mat*new Vector4(intersection.Value, 1.0f);
-                    var intr = intersection.Value;
-                    // on canvas? (canvas bounds -0.5 to 0.5
-                    if(v.x > -0.5f && v.x < 0.5f
-                            && v.y > -0.5f && v.y < 0.5f) {
-                        canvasId = canvas.entityId;
-                        return new Vector2(v.x, v.y);
+                if(!canvas.is2d) {
+                    Vector2 outV;
+                    if(TryIntersectCanvas(canvas, screenPos, out outV)) {
+                        cout = canvas;
+                        return outV;
                     }
                 }
             }
-            canvasId = -1;
+            cout = null;
             return null;
         }
 
@@ -404,6 +411,21 @@ namespace AnimLib {
                 return DoScreenCircleButton(screenP.Value, Vector2.ZERO, 0xFF00FF00, label);
             } else {
                 return false;
+            }
+        }
+
+        public int GetEntityIdAtPixel(Vector2 pixel) {
+            if(this.Buffer == null)
+                return 0;
+            var area = this.LastArea;
+            if (area == null) return -2;
+            var coord = screenToBuffer(pixel);
+            var bufW = this.BufferWidth;
+            var bufH = this.BufferHeight;
+            if(coord.x >= 0.0f && coord.x < bufW && coord.y >= 0.0f && coord.y < bufH) {
+                return this.Buffer.GetEntityAtPixel((int)coord.x, bufH-(int)coord.y-1);
+            } else {
+                return -2;
             }
         }
 

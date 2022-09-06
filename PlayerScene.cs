@@ -132,6 +132,21 @@ namespace AnimLib {
             SceneEvents = GenerateEvents();
         }
 
+        public SceneObject GetCanvasObject(string canvasName, Vector2 canvasPos) {
+            foreach(var so in sceneObjects.Values) {
+                switch(so) {
+                    case SceneObject2D s2d:
+                        if(s2d.CanvasName == canvasName) {
+                            if(s2d.Intersects(canvasPos)) {
+                                return s2d;
+                            }
+                        }
+                        break;
+                }
+            }
+            return null;
+        }
+
         public SceneObject GetSceneObjectById(int id) {
             SceneObject ret = null;
             if(sceneObjects.TryGetValue(id, out ret)) {
@@ -175,18 +190,35 @@ namespace AnimLib {
                     continue;
                 } else if(e.time >= LastTime && e.time < Time.T && e.time != 0.0 || e.time == 0.0 && Time.T == 0.0) {
                     if(e.type == SceneEventType.Create) {
-                        VisualEntity ent = null;
                         world.StartEditing(e.obj);
                         switch(e.obj) {
+                            case SceneObject2D so2d:
+                                var c = so2d.InitializeEntity();
+                                if(c == null) {
+                                    Debug.Error("SceneObject2D.InitializeEntity() return null");
+                                    break;
+                                }
+                                Func<VisualEntity, bool> canvasMatch = (VisualEntity ce) => {
+                                    switch(ce) {
+                                        case Canvas canvas:
+                                            var cs = canvas.state as CanvasState;
+                                            if(cs.name == so2d.CanvasName) {
+                                                c.Canvas = canvas;
+                                                world.CreateInstantly(c);
+                                                sceneObjects[c.state.entityId] = e.obj;
+                                                return true;
+                                            }
+                                            break;
+                                    }
+                                    return false;
+                                };
+                                world.MatchCreation(c, canvasMatch);
+                                break;
+                        }
+                        world.EndEditing();
+                    }
+                        /*switch(e.obj) {
                             case PlayerCircle pc:
-                            var c = new Circle(pc.radius);
-                            c.Color = pc.color;
-                            c.Transform.Pos = pc.transform.Pos;
-                            //c.Transform.Rot = pc.transform.Rot;
-                            c.Transform.Rot = 0.0f;
-                            world.CreateInstantly(c);
-                            ent = c;
-                            break;
                             case PlayerArrow pa:
                             var a = new Arrow2D();
                             a.StartPoint = pa.transform.Pos + pa.start;
@@ -216,7 +248,7 @@ namespace AnimLib {
                             break;
                             case PlayerQSpline q1:
                             var qs = new BezierSpline();
-                            qs.Points = q1.points.ToArray();
+                            qs.Points = q1.points.Select(x => new Vector3(x, 0.0f)).ToArray();
                             qs.Color = q1.color;
                             qs.Width = q1.width;
                             qs.Transform.Pos = q1.transform.Pos;
@@ -232,8 +264,10 @@ namespace AnimLib {
                             break;
                         }
                         world.EndEditing();
-                        sceneObjects[ent.EntityId] = e.obj;
-                    } else if(e.type == SceneEventType.Delete) {
+                        if(ent != null) {
+                            sceneObjects[ent.EntityId] = e.obj;
+                        }
+                    }*/ else if(e.type == SceneEventType.Delete) {
                         var ent = world.FindEntityByCreator(e.obj);
                         if(ent == null) {
                             Debug.Error($"Scene destroying entity that isn't created by us {e.obj.name}");

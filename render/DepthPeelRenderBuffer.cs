@@ -2,12 +2,14 @@ using System;
 using OpenTK.Graphics.OpenGL4;
 
 namespace AnimLib {
-    public class DepthPeelRenderBuffer : IRenderBuffer, IDisposable {
+    public partial class DepthPeelRenderBuffer : IRenderBuffer, IDisposable {
         public int _depthTex1 = -1, _depthTex2 = -1, _fbo = -1;
         public int _colorTex = -1;
         public int _entityIdTex = -1;
         int _width = 0, _height = 0;
         int _boundDepthTexture;
+
+        int _entBlitProgram = -1;
 
         int _blitvao = -1, _blitvbo = -1;
         IPlatform platform;
@@ -26,6 +28,7 @@ namespace AnimLib {
 
         public DepthPeelRenderBuffer(IPlatform platform) {
             this.platform = platform;            
+            _entBlitProgram = platform.AddShader(canvasBlitVert, canvasBlitFrag, null);
         }
 
         public int Texture() {
@@ -170,13 +173,23 @@ namespace AnimLib {
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fbo);
         }
 
-        public void BlitTexture(Texture2D tex) {
+        public void BlitTextureWithEntityId(Texture2D tex, int entityId) {
+            var loc = GL.GetUniformLocation(_entBlitProgram, "_EntityId");
+            if(loc < 0) {
+                //Debug.Error("_EntityId uniform not found in blit shader");
+            }
+            GL.ProgramUniform1(_entBlitProgram, loc, entityId);
+            BlitTexture(tex, _entBlitProgram);
+        }
+
+        public void BlitTexture(Texture2D tex, int? blitProgram = null) {
             int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);
             int rbuf = GL.GetInteger(GetPName.ReadFramebufferBinding);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fbo);
             GL.BindVertexArray(_blitvao);
-            var loc = GL.GetUniformLocation(platform.BlitProgram, "_MainTex");
-            GL.UseProgram(platform.BlitProgram);
+            var bp = blitProgram ?? platform.BlitProgram;
+            var loc = GL.GetUniformLocation(bp, "_MainTex");
+            GL.UseProgram(bp);
             GL.Uniform1(loc, 0);
             GL.Disable(EnableCap.DepthTest);
             GL.Disable(EnableCap.CullFace);

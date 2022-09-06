@@ -372,6 +372,12 @@ namespace AnimLib {
             }
         }
 
+        public IEnumerable<EntityState> Entities {
+            get {
+                return _entities.Values;
+            }
+        }
+
         public EntityState GetEntityState(int entityId) {
             EntityState ret = null;
             _entities.TryGetValue(entityId, out ret);

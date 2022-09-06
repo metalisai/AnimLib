@@ -73,10 +73,10 @@ namespace AnimLib {
         public void RenderCanvases(CanvasSnapshot[] canvases, M4x4 mat) {
             // with software rendering the canvas has to be cleared manually
             // with OpenGL the renderbuffer is cleared by our renderer
-            if(platform.Skia.Mode == SkiaRenderer.RenderMode.Software) {
+            /*if(platform.Skia.Mode == SkiaRenderer.RenderMode.Software) {
                 platform.Skia.Clear();
-            }
-            // draw 2D first so that they are always in front
+            }*/
+            // draw 2D last so that they are always in front
             var sorted = canvases.OrderBy(x => x.Canvas.is2d ? 1 : 0);
             foreach(var canvas in sorted) {
                 platform.Skia.RenderCanvas(canvas, ref mat, this.gizmo);
@@ -670,7 +670,7 @@ namespace AnimLib {
             // render skia (all skia GL commands get executed here)
             PushState();
             // render skia (all skia GL commands get executed here)
-            platform.Skia.Flush();
+            //platform.Skia.Flush();
             // render skia (all skia GL commands get executed here)
             RestoreState();
         }
