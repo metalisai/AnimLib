@@ -280,7 +280,10 @@ namespace AnimLib {
                 return null;
             }
 
-            if(sceneDirty) {
+            // Serialize only if nothing has changed for 15 frames
+            // *otherwise we'd be serializing every grame when picking colors etc)
+            bool settled = (frameId - setDirtyAt) > 3;
+            if(sceneDirty && settled) {
                 SerializeHandles();
                 sceneDirty = false;
             }

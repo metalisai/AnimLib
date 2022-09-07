@@ -67,10 +67,11 @@ namespace AnimLib {
             return viewToWorld * clipToView;
         }
 
-        public Ray RayFromClip(Vector2 clipPos, float aspect) {
+        public override Ray RayFromClip(Vector2 clipPos, float aspect) {
             M4x4 mat = CreateClipToWorldMatrix(aspect);
             Vector4 dirw = mat * new Vector4(clipPos.x, clipPos.y, 1.0f, 1.0f);
             Vector3 pos = new Vector3(dirw.x / dirw.w, dirw.y / dirw.w, dirw.z / dirw.w);
+            // TODO: technically the origin should be on the near plane not camera origin
             return new Ray() {
                 o = position,
                 d = (pos - position).Normalized,

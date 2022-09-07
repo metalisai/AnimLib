@@ -173,22 +173,29 @@ namespace AnimLib {
         double exportEndTime = 10.0;
 
         private void DropEntity2D(DragDropObject obj, Vector2 pos, CanvasState canvas) {
+            float size;
             switch(obj) {
                 case DragDropObject.Circle:
-                lock(player.Scene.sceneLock) {
-                    var c = new PlayerCircle(0.5f, canvas.name);
+                    size = 0.5f;
+                    // 2d canvas coordinates are in pixels, make it larger
+                    if(canvas.is2d) size *= 100.0f;
+                    var c = new PlayerCircle(size, canvas.name);
                     c.transform.Pos = pos;
+
+                lock(player.Scene.sceneLock) {
                     player.Scene.Circles.Add(c);
                     Debug.TLog($"Dropped circle at {c.transform.Pos} canvas {canvas.name}");
                 }
                 break;
                 case DragDropObject.Rectangle:
-                var rr = new PlayerRect(1.0f, 1.0f, canvas.name);
-                rr.transform.Pos = pos;
-                lock(player.Scene.sceneLock) {
-                    player.Scene.Add(rr);
-                    Debug.TLog($"Dropped rectangle at {rr.transform.Pos} canvas {canvas.name}");
-                }
+                    size = 1.0f;
+                    if(canvas.is2d) size *= 100.0f;
+                    var rr = new PlayerRect(size, size, canvas.name);
+                    rr.transform.Pos = pos;
+                    lock(player.Scene.sceneLock) {
+                        player.Scene.Add(rr);
+                        Debug.TLog($"Dropped rectangle at {rr.transform.Pos} canvas {canvas.name}");
+                    }
                 break;
 
             }

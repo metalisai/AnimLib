@@ -2,6 +2,7 @@ using ImGuizmoNET;
 using ImGuiNET;
 using System.Collections.Generic;
 using System;
+using System.Linq;
 
 namespace AnimLib {
     
@@ -240,20 +241,21 @@ namespace AnimLib {
         }
 
         public bool TryIntersectCanvas(CanvasState canvas, Vector2 screenPos, out Vector2 normPos) {
-            if(canvas.is2d)
-                throw new NotImplementedException();
-            var pcam = lastCam as PerspectiveCameraState;
-            var bufPos = screenToBuffer(screenPos);
             float w = renderBuffer.Size.Item1;
             float h = renderBuffer.Size.Item2;
+            CameraState cam;
+            if(canvas.is2d)
+                cam = new OrthoCameraState(w, h);
+            else
+                cam = lastCam;
+            var bufPos = screenToBuffer(screenPos);
             bufPos.x = ((bufPos.x/w) * 2.0f) - 1.0f;
             bufPos.y = (((h-bufPos.y)/h) * 2.0f) - 1.0f;
-            var worldRay = pcam.RayFromClip(bufPos, w/h);
+            var worldRay = cam.RayFromClip(bufPos, w/h);
             var plane = new Plane(canvas.normal, canvas.center);
             var intersection = worldRay.Intersect(plane);
             // intersected with any canvas? (infinite plane)
             if(intersection != null) {
-                var mat1 = canvas.NormalizedCanvasToWorld;
                 var mat = canvas.WorldToNormalizedCanvas;
                 var v = mat*new Vector4(intersection.Value, 1.0f);
                 var intr = intersection.Value;
@@ -275,6 +277,17 @@ namespace AnimLib {
                     Vector2 outV;
                     if(TryIntersectCanvas(canvas, screenPos, out outV)) {
                         cout = canvas;
+                        return outV;
+                    }
+                }             
+            }
+            // iterate 2d canvases after (the default canvas covers entire sceen, nothing would be found ever)
+            foreach(var canvas in canvases) {
+                if(canvas.is2d) {
+                    Vector2 outV;
+                    if(TryIntersectCanvas(canvas, screenPos, out outV)) {
+                        cout = canvas;
+                        Debug.TLog($"Intersect 2D {outV}");
                         return outV;
                     }
                 }

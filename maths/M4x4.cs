@@ -49,6 +49,17 @@ namespace AnimLib
             }
         }
 
+        public float[,] Array {
+            get {
+                var ret = new float[4,4];
+                ret[0,0] = m11; ret[1,0] = m21; ret[2,0] = m31; ret[3,0] = m41;
+                ret[0,1] = m12; ret[1,1] = m22; ret[2,1] = m32; ret[3,1] = m42;
+                ret[0,2] = m13; ret[1,2] = m23; ret[2,2] = m33; ret[3,2] = m43;
+                ret[0,3] = m14; ret[1,3] = m24; ret[2,3] = m34; ret[3,3] = m44;
+                return ret;
+            }
+        }
+
         public M4x4(ref M4x4 m) {
             m11 = m.m11; m12 = m.m12; m13 = m.m13; m14 = m.m14;
             m21 = m.m21; m22 = m.m22; m23 = m.m23; m24 = m.m24;
@@ -64,7 +75,7 @@ namespace AnimLib
         };
         
         public override string ToString() {
-            return $"[\n{m11:N3} {m12:N3} {m13:N3} {m14:N3}\n{m21:N3} {m22:N3} {m23:N3} {m24:N3}\n{m31:N3} {m32:N3} {m33:N3} {m34:N3}\n{m41:N3} {m42:N3} {m43:N3} {m44:N3}\n]";
+            return $"[\n{m11:N5} {m12:N5} {m13:N5} {m14:N5}\n{m21:N5} {m22:N5} {m23:N5} {m24:N5}\n{m31:N5} {m32:N5} {m33:N5} {m34:N5}\n{m41:N5} {m42:N5} {m43:N5} {m44:N5}\n]";
         }
 
         public float[] ToArray() {
@@ -94,6 +105,28 @@ namespace AnimLib
                 m34 = 1.0f,
                 m44 = ((zNear + zFar) / d) / (2.0f * zFar * zNear / d),
             }; 
+            return ret;
+        }
+
+        public static M4x4 InvOrtho(float l, float r, float t, float b, float f, float n) {
+            var ret = new M4x4() {
+                m11 = (r-l)/2.0f,
+                m21 = 0.0f,
+                m31 = 0.0f,
+                m41 = 0.0f,
+                m12 = 0.0f,
+                m22 = (t-b)/2.0f,
+                m32 = 0.0f,
+                m42 = 0.0f,
+                m13 = 0.0f,
+                m23 = 0.0f,
+                m33 = -(f-n)/2.0f,
+                m43 = 0.0f,
+                m14 = (r+l)/2,
+                m24 = (t+b)/2,
+                m34 = -(f+n)/2,
+                m44 = 1.0f,
+            };
             return ret;
         }
 

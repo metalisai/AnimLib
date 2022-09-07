@@ -225,6 +225,7 @@ namespace AnimLib
             StartEditing(this);
             Resources?.Dispose();
             Resources = new WorldResources();
+            _entities.Clear();
             _commands.Clear();
             _labels.Clear();
             var cam = new PerspectiveCamera();
@@ -329,8 +330,9 @@ namespace AnimLib
         // useful for listening for dependencies
         internal T MatchCreation<T>(T ent, Func<VisualEntity, bool> match) where T : VisualEntity{
             CreationListeners.Add(match);
-            foreach(var dent in _entities) {
-                CheckDependantEntities(dent.Value);
+            // check if the entity already exists
+            foreach(var dent in _entities.Values.ToList()) {
+                CheckDependantEntities(dent);
             }
             return ent;
         }

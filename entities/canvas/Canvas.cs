@@ -42,11 +42,24 @@ namespace AnimLib {
         public M4x4 NormalizedCanvasToWorld {
             get {
                 // TODO: cache
-                var c1 = new Vector4(width*Vector3.Cross(this.normal, this.up), 0.0f);
-                var c2 = new Vector4(height*this.up, 0.0f);
-                var c3 = new Vector4(-this.normal, 0.0f);
-                var c4 = new Vector4(this.center, 1.0f);
-                return M4x4.FromColumns(c1, c2, c3, c4);
+                if(!is2d) {
+                    // right vector
+                    var c1 = new Vector4(width*Vector3.Cross(this.normal, this.up), 0.0f);
+                    // up vector
+                    var c2 = new Vector4(height*this.up, 0.0f);
+                    // forward vector
+                    var c3 = new Vector4(-this.normal, 0.0f);
+                    // translation
+                    var c4 = new Vector4(this.center, 1.0f);
+                    return M4x4.FromColumns(c1, c2, c3, c4);
+                } else {
+                    var c1 = new Vector4(width*Vector3.Cross(this.normal, this.up), 0.0f);
+                    var c2 = new Vector4(height*this.up, 0.0f);
+                    var c3 = new Vector4(-this.normal, 0.0f);
+                    var c4 = new Vector4(this.center, 1.0f);
+                    var mat = M4x4.FromColumns(c1, c2, c3, c4);
+                    return mat;
+                }
             }
         }
 
@@ -117,7 +130,7 @@ namespace AnimLib {
             var cs = state as CanvasState;
             cs.width = cam.Width;
             cs.height = cam.Height;
-            cs.center = new Vector3(cam.Width/2.0f, cam.Height/2.0f, 0.0f);
+            cs.center = Vector3.ZERO;
             cs.up = Vector3.UP;
             cs.normal = -Vector3.FORWARD;
             cs.is2d = true;

@@ -41,6 +41,16 @@ namespace AnimLib {
 #endif
         }
 
+        // development time debugging log (colored because it is intended to be removed)
+        public static void TLogWithTrace(string t, [CallerFilePath] string callerfile = "", [CallerLineNumber] int lineNumber = 0) {
+#if DEBUG
+            var file = Path.GetFileName(callerfile);
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.WriteLine($"{file}:{lineNumber} {t}");
+            Console.WriteLine($"{Environment.StackTrace}");
+            Console.ResetColor();
+#endif
+        }
 
     }
 }

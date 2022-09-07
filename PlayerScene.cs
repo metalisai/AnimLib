@@ -203,6 +203,7 @@ namespace AnimLib {
                                         case Canvas canvas:
                                             var cs = canvas.state as CanvasState;
                                             if(cs.name == so2d.CanvasName) {
+                                                System.Diagnostics.Debug.Assert(ce.created);
                                                 c.Canvas = canvas;
                                                 world.CreateInstantly(c);
                                                 sceneObjects[c.state.entityId] = e.obj;

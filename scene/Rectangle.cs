@@ -32,8 +32,17 @@ namespace AnimLib {
         }
 
         public override bool Intersects(Vector2 point) {
-#warning PlayerRect.Intersects is not implemented
-            return false;
+            var pivot = transform.Pos;
+            var pivotToPoint = point - pivot;
+            // undo rotation, so the rectangle is axis aligned
+            // use mathematical modulus (c# % operator is a remainder)
+            var withoutRotation = pivotToPoint.Rotated(-transform.Rot);
+            // put back to world space
+            var halfSize = 0.5f*size;
+            var min = -halfSize;
+            var max = halfSize;
+            return (withoutRotation.x >= min.x && withoutRotation.x <= max.x 
+                    && withoutRotation.y >= min.y && withoutRotation.y <= max.y);
         }
 
         public override void SetHandle(int id, Vector2 wpos) {

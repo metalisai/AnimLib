@@ -301,7 +301,8 @@ namespace AnimLib {
                         var pathSize = new Vector2(bounds.Width, bounds.Height);
 
                         // calculate transform
-                        SKMatrix localTransform = GetLocalTransform(shape, rc, new Rect(0.0f, 0.0f, bounds.Width, bounds.Height));
+                        // NOTE: Skia's top is bottom in our renderer
+                        SKMatrix localTransform = GetLocalTransform(shape, rc, new Rect(bounds.Left, bounds.Top, bounds.Width, bounds.Height));
 
                         path.Transform(localTransform);
 
@@ -352,6 +353,7 @@ namespace AnimLib {
                         using(var paint = new SKPaint()) {
                             paint.FilterQuality = SKFilterQuality.High;
                             paint.BlendMode = SKBlendMode.SrcOver;
+                            paint.Color = sprite.color.ToSKColor();
                             canvas.DrawBitmap(bitmap, rect, paint);
                         }
                         canvas.SetMatrix(curMat);

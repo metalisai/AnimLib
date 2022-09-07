@@ -9,6 +9,7 @@ namespace AnimLib {
         }
 
         public abstract M4x4 CreateWorldToClipMatrix(float aspect);
+        public abstract Ray RayFromClip(Vector2 clipPos, float aspect);
     }
 
     public abstract class Camera : VisualEntity3D {

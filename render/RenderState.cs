@@ -338,7 +338,6 @@ namespace AnimLib
                 sceneEntity = views[0].GetEntityIdAtPixel(ImGui.GetMousePos());
             }
             var guiEntity = GetGuiEntityAtPixel(uiRenderBuffer, ImGui.GetMousePos());
-            Debug.TLog($"guiEntity {guiEntity}");
             if(sceneEntity == -2) { // out of scene viewport
                 UserInterface.MouseEntityId = guiEntity;
             } else {
