@@ -25,6 +25,7 @@ namespace AnimLib {
         Arrow,
         Spline,
         Text,
+        Shape,
     }
 
     public class PlayerControls {
@@ -183,8 +184,8 @@ namespace AnimLib {
                     c.transform.Pos = pos;
 
                 lock(player.Scene.sceneLock) {
-                    player.Scene.Circles.Add(c);
-                    Debug.TLog($"Dropped circle at {c.transform.Pos} canvas {canvas.name}");
+                    player.Scene.Add(c);
+                    Debug.TLog($"Dropped circle at {c.transform.Pos} on canvas {canvas.name}");
                 }
                 break;
                 case DragDropObject.Rectangle:
@@ -194,7 +195,15 @@ namespace AnimLib {
                     rr.transform.Pos = pos;
                     lock(player.Scene.sceneLock) {
                         player.Scene.Add(rr);
-                        Debug.TLog($"Dropped rectangle at {rr.transform.Pos} canvas {canvas.name}");
+                        Debug.TLog($"Dropped rectangle at {rr.transform.Pos} on canvas {canvas.name}");
+                    }
+                break;
+                case DragDropObject.Shape:
+                    var ps = new PlayerShape(canvas.name);
+                    ps.transform.Pos = pos;
+                    lock(player.Scene.sceneLock) {
+                        player.Scene.Add(ps);
+                        Debug.TLog($"Dropped shape at {ps.transform.Pos} on canvas {canvas.name}");
                     }
                 break;
 
@@ -205,7 +214,7 @@ namespace AnimLib {
             switch(obj) {
                 case DragDropObject.Line:
                 lock(player.Scene.sceneLock) {
-                    player.Scene.Lines.Add(new PlayerLine() {
+                    player.Scene.Add(new PlayerLine() {
                         start = Vector3.ZERO,
                         end = Vector3.RIGHT,
                         width = 0.1f,
@@ -217,7 +226,7 @@ namespace AnimLib {
                 break;
                 case DragDropObject.Arrow:
                 lock(player.Scene.sceneLock) {
-                    player.Scene.Arrows.Add(new PlayerArrow() {
+                    player.Scene.Add(new PlayerArrow() {
                         start = Vector3.ZERO,
                         end = Vector3.RIGHT,
                         width = 0.1f,
@@ -499,6 +508,7 @@ namespace AnimLib {
                     };
                     createItem("Circle", (int)DragDropObject.Circle, true);
                     createItem("Rectangle", (int)DragDropObject.Rectangle, true);
+                    createItem("Shape", (int)DragDropObject.Shape, true);
                     createItem("Line", (int)DragDropObject.Line, false);
                     createItem("Arrow", (int)DragDropObject.Arrow, false);
                     createItem("Text", (int)DragDropObject.Text, false);

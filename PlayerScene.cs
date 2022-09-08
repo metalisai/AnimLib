@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text.RegularExpressions;
+using System.Text.Json.Serialization;
 
 namespace AnimLib {
     public class PlayerScene {
@@ -31,36 +31,52 @@ namespace AnimLib {
             }
         }
 
+        internal PlayerScene() {
+        }
+
+        [JsonConstructor]
+        public PlayerScene(IList<PlayerCircle> circles, IList<PlayerRect> rectangles, IList<PlayerShape> shapes) {
+            this.Circles = circles;
+            foreach(var c in circles) Objects2D.Add(c);
+            this.Rectangles = rectangles;
+            foreach(var c in rectangles) Objects2D.Add(c);
+            this.Shapes = shapes;
+            foreach(var c in shapes) Objects2D.Add(c);
+            Debug.TLog($"SceneObjects contains {sceneObjects.Count} objects, while objects2d contains {Objects2D.Count} objects");
+        }
+
+        [NonSerialized] // this list is only used for optimization (to get all 2d objects at once)
+        public IList<SceneObject2D> Objects2D = new List<SceneObject2D>();
         public IList<PlayerCircle> Circles { get; set; } = new List<PlayerCircle>();
-        public IList<PlayerRect> Rects { get; set; } = new List<PlayerRect>();
-        public IList<PlayerArrow> Arrows { get; set; } = new List<PlayerArrow>();
+        public IList<PlayerRect> Rectangles { get; set; } = new List<PlayerRect>();
+        public IList<PlayerShape> Shapes { get; set; } = new List<PlayerShape>();
+
+        /*public IList<PlayerArrow> Arrows { get; set; } = new List<PlayerArrow>();
         public IList<PlayerLine> Lines {get ; set; } = new List<PlayerLine>();
         public IList<PlayerQSpline> QSplines { get; set; } = new List<PlayerQSpline>();
-        public IList<Player2DText> Texts2D {get ; set ;} = new List<Player2DText>();
+        public IList<Player2DText> Texts2D {get ; set ;} = new List<Player2DText>();*/
 
         [NonSerialized]
         public Dictionary<int, SceneObject> sceneObjects = new Dictionary<int, SceneObject>();
 
         public void Add(SceneObject obj) {
             switch(obj) {
-                case PlayerCircle c1:
-                Circles.Add(c1);
-                break;
-                case PlayerRect pr1:
-                Rects.Add(pr1);
-                break;
-                case PlayerArrow a1:
-                Arrows.Add(a1);
-                break;
-                case PlayerLine l1:
-                Lines.Add(l1);
-                break;
-                case PlayerQSpline q1:
-                QSplines.Add(q1);
-                break;
-                case Player2DText t1:
-                Texts2D.Add(t1);
-                break;
+                case SceneObject2D o2d:
+                    Objects2D.Add(o2d);
+                    switch(o2d) {
+                        case PlayerCircle pc:
+                            Circles.Add(pc);
+                            break;
+                        case PlayerRect pr:
+                            Rectangles.Add(pr);
+                            break;
+                        case PlayerShape ps:
+                            Shapes.Add(ps);
+                            break;
+                        default: 
+                            throw new ArgumentException("Unknown 2D sceneobject");
+                    }
+                    break;
                 default:
                 throw new ArgumentException("Unhandled scene object");
             }
@@ -73,12 +89,13 @@ namespace AnimLib {
         private List<SceneEvent> SceneEvents;
         public double LastTime = 0.0; // AnimationTime.T scene is currently set up for
         SceneObject[] GetObjects() {
-            return Circles.Select(x => (SceneObject)x)
+            /*return Circles.Select(x => (SceneObject)x)
                 .Concat(Arrows.Select(x => (SceneObject)x))
                 .Concat(Lines.Select(x => (SceneObject)x))
                 .Concat(Texts2D.Select(x => (SceneObject)x)).ToArray()
                 .Concat(QSplines.Select(x => (SceneObject)x)).ToArray()
-                .Concat(Rects.Select(x => (SceneObject)x)).ToArray();
+                .Concat(Rects.Select(x => (SceneObject)x)).ToArray();*/
+            return Objects2D.Select(x => (SceneObject)x).ToArray();
         }
 
         public List<SceneEvent> GenerateEvents() {
@@ -106,7 +123,21 @@ namespace AnimLib {
 
         public void DestroyObject(SceneObject obj) {
             switch(obj) {
-                case PlayerCircle c1:
+                case SceneObject2D o2d:
+                Objects2D.Remove(o2d);
+                switch(o2d) {
+                    case PlayerCircle pc:
+                        Circles.Remove(pc);
+                        break;
+                    case PlayerRect pr:
+                        Rectangles.Remove(pr);
+                        break;
+                    case PlayerShape ps:
+                        Shapes.Remove(ps);
+                        break;
+                }
+                break;
+                /*case PlayerCircle c1:
                 Circles.Remove(c1);
                 break;
                 case PlayerRect pr1:
@@ -123,7 +154,7 @@ namespace AnimLib {
                 break;
                 case Player2DText t1:
                 Texts2D.Remove(t1);
-                break;
+                break;*/
             }
             UpdateEvents();
         }
@@ -193,6 +224,9 @@ namespace AnimLib {
                         world.StartEditing(e.obj);
                         switch(e.obj) {
                             case SceneObject2D so2d:
+                                if(so2d is PlayerShape) {
+                                    Debug.TLog($"Shape transform {so2d.transform.Pos.x} {so2d.transform.Pos.y}");
+                                }
                                 var c = so2d.InitializeEntity();
                                 if(c == null) {
                                     Debug.Error("SceneObject2D.InitializeEntity() return null");

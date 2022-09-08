@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace AnimLib {
     public enum ShapeMode {
@@ -19,9 +20,18 @@ namespace AnimLib {
         Close, // close contour
     }
 
+    [Serializable]
     public struct VerbData {
+        [JsonInclude]
         public Vector2[] points;
+        [JsonInclude]
         public float conicWeight;
+
+        [JsonConstructor]
+        public VerbData(Vector2[] points, float conicWeight) {
+            this.points = points;
+            this.conicWeight = conicWeight;
+        }
     }
 
     public class ShapePath {
