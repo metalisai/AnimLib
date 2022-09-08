@@ -730,6 +730,20 @@ namespace AnimLib {
                             player.SetAnimationDirty();
                         }
                         break;
+                        default:
+                            if(prop.GetType().IsEnum) {
+                                if(ImGui.BeginCombo(propF.Item1, prop.ToString())) {
+                                    var enumValues = Enum.GetValues(prop.GetType());
+                                    foreach(var val in enumValues) {
+                                        if(ImGui.Selectable(val.ToString(), false)) {
+                                            propF.Item3(val);
+                                            player.SetAnimationDirty();
+                                        }
+                                    }
+                                    ImGui.EndCombo();
+                                }
+                            }
+                        break;
                     }
                 }
 

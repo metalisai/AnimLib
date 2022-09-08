@@ -17,6 +17,17 @@ namespace AnimLib {
         }
 
         [ShowInEditor]
+        [JsonIgnore]
+        public float rot {
+            get {
+                return transform.Rot;
+            }
+            set {
+                transform.Rot = value;
+            }
+        }
+
+        [ShowInEditor]
         public string CanvasName {
             get; set;
         }

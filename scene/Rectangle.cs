@@ -8,6 +8,12 @@ namespace AnimLib {
         public Vector2 size { get; set; }
         [ShowInEditor]
         public Color color { get; set; } = Color.BLUE;
+        [ShowInEditor]
+        public Color outline { get; set; } = Color.BLACK;
+        [ShowInEditor]
+        public float outlineWidth { get; set; } = 0.0f;
+        [ShowInEditor]
+        public ShapeMode mode { get; set; } = ShapeMode.FilledContour;
 
         protected PlayerRect(PlayerRect r) : base(r) {
             this.size = r.size;
@@ -58,6 +64,9 @@ namespace AnimLib {
         public override VisualEntity2D InitializeEntity() {
             var ent = new Rectangle(this.size.x, this.size.y);
             ent.Color = this.color;
+            ent.ContourColor = this.outline;
+            ent.ContourSize = this.outlineWidth;
+            ent.Mode = this.mode;
             ent.Transform.Pos = transform.Pos;
             ent.Transform.Rot = transform.Rot;
             return ent;

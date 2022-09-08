@@ -25,7 +25,7 @@ namespace AnimLib {
 
         public Plane(Vector3 normal, Vector3 pointOnPlane) {
             n = normal.Normalized;
-            o = Vector3.Dot(n, pointOnPlane);
+            o = -Vector3.Dot(n, pointOnPlane);
         }
 
         public override string ToString() {
