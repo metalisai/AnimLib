@@ -41,6 +41,8 @@ namespace AnimLib {
         public int rectVao;
         public int dynVao, dynVbo;
 
+        int blitSampler, mipmapSampler, linearSampler;
+
         private int _defaultProgram;
         private int _blitProgram, _imguiProgram;
 
@@ -70,6 +72,18 @@ namespace AnimLib {
                     PFileDrop(this, args);
                 }
             };
+        }
+
+        public int GetSampler(PlatformTextureSampler sampler) {
+            switch(sampler) {
+                case PlatformTextureSampler.Mipmap:
+                    return mipmapSampler;
+                case PlatformTextureSampler.Blit:
+                    return blitSampler;
+                case PlatformTextureSampler.Linear:
+                    return linearSampler;
+            }
+            return -1;
         }
 
         public void DestroyOwner(string hash) {
@@ -127,6 +141,22 @@ namespace AnimLib {
             GL.DepthFunc(DepthFunction.Lequal);
             GL.Enable(EnableCap.DepthTest);
 
+            mipmapSampler = GL.GenSampler();
+            GL.SamplerParameter(mipmapSampler, SamplerParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
+            GL.SamplerParameter(mipmapSampler, SamplerParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
+            GL.SamplerParameter(mipmapSampler, SamplerParameterName.TextureMinFilter, (int)TextureMinFilter.LinearMipmapLinear);
+            GL.SamplerParameter(mipmapSampler, SamplerParameterName.TextureMagFilter, (int)TextureMinFilter.Linear);
+            blitSampler = GL.GenSampler();
+            GL.SamplerParameter(blitSampler, SamplerParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
+            GL.SamplerParameter(blitSampler, SamplerParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
+            GL.SamplerParameter(blitSampler, SamplerParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.SamplerParameter(blitSampler, SamplerParameterName.TextureMagFilter, (int)TextureMinFilter.Nearest);
+            linearSampler = GL.GenSampler();
+            GL.SamplerParameter(linearSampler, SamplerParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
+            GL.SamplerParameter(linearSampler, SamplerParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
+            GL.SamplerParameter(linearSampler, SamplerParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.SamplerParameter(linearSampler, SamplerParameterName.TextureMagFilter, (int)TextureMinFilter.Linear);
+
             CompileShaders();
             Debug.Log("Shader compilation complete");
             CreateMeshes();
@@ -178,8 +208,8 @@ namespace AnimLib {
 
             // skia
             Skia = new SkiaRenderer(this);
-            //Skia.CreateGL(); // messes up render state when scene has textures, arc rendering buggy
-            Skia.CreateSW();
+            Skia.CreateGL(); // messes up render state when scene has textures, arc rendering buggy
+            //Skia.CreateSW();
 
             if(OnLoaded != null) {
                 OnLoaded(this, null);
@@ -238,13 +268,12 @@ namespace AnimLib {
                 fmt, typ, 
                 ref tex2d.RawData[0]
             );
-            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.LinearMipmapLinear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, (TextureParameterName)ArbTextureFilterAnisotropic.TextureMaxAnisotropy, 4.0f);
+            if(tex2d.GenerateMipmap) {
+                Debug.TLog($"Generate mipmap for {tex}");
+                GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+            }
             GL.PixelStore(PixelStoreParameter.UnpackAlignment, 4);
+            Debug.TLog($"Load texture {tex2d.Width}x{tex2d.Height} {Environment.StackTrace}");
         }
         
         protected override void OnRenderFrame(FrameEventArgs e) {
@@ -311,6 +340,7 @@ namespace AnimLib {
 
             GL.ActiveTexture(TextureUnit.Texture0);
             if(atlas.GLHandle == -1) {
+                Debug.Log("Load UI font atlas");
                 LoadTexture(atlas);
                 ImGui.GetIO().Fonts.SetTexID((IntPtr)atlas.GLHandle);
             }
@@ -324,6 +354,12 @@ namespace AnimLib {
                         throw new NotImplementedException();
                     } else {
                         GL.BindTexture(TextureTarget.Texture2D, (int)pcmd.TextureId);
+                        int haveMipmap = 0;
+                        if(haveMipmap > 0 && (int)pcmd.TextureId >= 0) {
+                            GL.BindSampler(0, mipmapSampler);
+                        } else {
+                            GL.BindSampler(0, linearSampler);
+                        }
                         if(views.Any(x => x.TextureHandle == (int)pcmd.TextureId)) {
                             GL.Uniform1(entIdLoc, -1);
                         } else {
@@ -336,6 +372,7 @@ namespace AnimLib {
                 }
                 vofst += (uint)cmdList.VtxBuffer.Size;
             }
+            GL.BindSampler(0, 0);
 
             GL.Disable(EnableCap.ScissorTest);
             //GL.Enable(EnableCap.CullFace);

@@ -35,7 +35,6 @@ public class PlayerShape : SceneObject2D
         pb.LineTo(new Vector2(0.0f, 1.0f));
         pb.CubicTo(new Vector2(2.0f, 0.0f), new Vector2(2.0f, 2.0f), new Vector2(3.0f, 3.0f));
         pb.CubicTo(new Vector2(2.0f, 2.0f), new Vector2(1.0f, 2.0f), new Vector2(1.0f, 1.0f));
-        pb.Close();
         this.path = pb.GetPath().path.Select(x => new PlayerPathVerb() { verb = x.Item1, data = x.Item2}).ToArray();
     }
 
@@ -82,6 +81,9 @@ public class PlayerShape : SceneObject2D
     public override bool Intersects(Vector2 point)
     {
 #warning scene/Shape Intersects not implemented
+        if((point - transform.Pos).Length < 1.0f) {
+            return true;
+        }
         return false;
     }
 

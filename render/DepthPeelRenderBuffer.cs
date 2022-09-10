@@ -131,9 +131,9 @@ namespace AnimLib {
 
             _colorTex = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, _colorTex);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, _colorTex, 0);
 
             _entityIdTex = GL.GenTexture();
@@ -182,7 +182,19 @@ namespace AnimLib {
             BlitTexture(tex, _entBlitProgram);
         }
 
-        public void BlitTexture(Texture2D tex, int? blitProgram = null) {
+        public void BlitTextureWithEntityId(int tex, int entityId) {
+            var loc = GL.GetUniformLocation(_entBlitProgram, "_EntityId");
+            if(loc < 0) {
+                //Debug.Error("_EntityId uniform not found in blit shader");
+            }
+            GL.ProgramUniform1(_entBlitProgram, loc, entityId);
+            BlitTexture(tex, _entBlitProgram);
+        }
+
+        public void BlitTexture(int handle, int? blitProgram = null) {
+            if(handle < 0) {
+                return;
+            }
             int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);
             int rbuf = GL.GetInteger(GetPName.ReadFramebufferBinding);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fbo);
@@ -196,12 +208,17 @@ namespace AnimLib {
             GL.Enable(EnableCap.Blend);
             GL.BlendEquation(BlendEquationMode.FuncAdd);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            platform.LoadTexture(tex);
-            GL.BindTextureUnit(0, tex.GLHandle);
+            GL.BindTextureUnit(0, handle);
+            GL.BindSampler(0, platform.GetSampler(PlatformTextureSampler.Blit));
             GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
             GL.BindVertexArray(0);
             GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, dbuf);
             GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, rbuf);
+        }
+
+        public void BlitTexture(Texture2D tex, int? blitProgram = null) {
+            platform.LoadTexture(tex);
+            BlitTexture(tex.GLHandle, blitProgram);
         }
 
         public void BlendToScreen(int sw, int sh) {

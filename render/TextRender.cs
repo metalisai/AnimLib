@@ -49,6 +49,8 @@ namespace AnimLib {
 
         bool cacheDirty = false;
 
+        IPlatform platform;
+
         internal void RenderGlyph(char c, float size, FontGlyph fg) {
             int gend = curX + fg.w + 1;
             if(gend >= TEXTURE_WIDTH) {
@@ -86,18 +88,19 @@ namespace AnimLib {
             cacheDirty = true;
         }
 
-        internal FontCache(ITypeSetter ts) {
+        internal FontCache(ITypeSetter ts, IPlatform platform) {
             /*for(int i = 33; i < 127; i++) {
                 var surface = RenderSurface((char)i, font);
                 textures[i] = surface;
             }*/
+            this.platform = platform;
             SetupVAO();
             tex = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, tex);
             GL.PixelStore(PixelStoreParameter.UnpackAlignment, 1);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, PixelFormat.Red, PixelType.UnsignedByte, ref cache[0,0]);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
             GL.BindTexture(TextureTarget.Texture2D, 0);
             this.ts = ts;
         }
@@ -341,6 +344,7 @@ namespace AnimLib {
             loc = GL.GetUniformLocation(program, "_MainTex");
             GL.Uniform1(loc, 0);
             GL.ActiveTexture(TextureUnit.Texture0);
+            //GL.BindSampler(0, platform.GetSampler(PlatformTextureSampler.Linear));
             GL.BindTexture(TextureTarget.Texture2D, tex);
             GL.Disable(EnableCap.CullFace);
             GL.Enable(EnableCap.DepthTest);

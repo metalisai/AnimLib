@@ -6,6 +6,12 @@ using System.Collections.Generic;
 
 namespace AnimLib
 {
+    public enum PlatformTextureSampler {
+        Mipmap,
+        Blit,
+        Linear,
+    }
+
     public interface IPlatform {
         delegate void OnSizeChangedDelegate(int width, int height);
         event OnSizeChangedDelegate OnSizeChanged;
@@ -31,6 +37,8 @@ namespace AnimLib
         void RenderGUI((ImDrawDataPtr, Texture2D)? data, IList<SceneView> views, IRenderBuffer rb);
         void ClearBackbuffer(int x, int y, int w, int h); 
         //void RenderImGui(ImDrawDataPtr data, Texture2D atlas);
+
+        int GetSampler(PlatformTextureSampler sampler);
 
 
         // TODO: this isn't good (could have multiple windows etc..)

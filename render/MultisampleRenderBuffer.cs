@@ -55,6 +55,7 @@ namespace AnimLib {
             GL.BlendEquation(BlendEquationMode.FuncAdd);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             GL.BindTextureUnit(0, _blitTex);
+            GL.BindSampler(0, platform.GetSampler(PlatformTextureSampler.Blit));
             GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
 
             GL.BindVertexArray(0);
@@ -126,15 +127,11 @@ namespace AnimLib {
             _blitTex = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, _blitTex);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, _blitTex, 0);
 
             _blitEntTex = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, _blitEntTex);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.R32i, width, height, 0, PixelFormat.RedInteger, PixelType.Int, IntPtr.Zero);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2D, _blitEntTex, 0);
 
             err = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);

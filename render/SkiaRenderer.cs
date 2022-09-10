@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using SkiaSharp;
 using System.Collections.Generic;
+using OpenTK.Graphics.OpenGL4;
 
 namespace AnimLib {
 
@@ -37,11 +38,14 @@ namespace AnimLib {
 
         RenderMode mode;
 
+        int width;
+        int height;
+
         GRContext ctx;
         GRBackendRenderTarget renderTarget;
         SKSurface surface;
         SKCanvas canvas;
-        IRenderBuffer glBuffer;
+        IRenderBuffer glBuffer; // intermediate buffer for hw rendering
         GRGlInterface glInterface;
 
         Texture2D tex;
@@ -51,12 +55,6 @@ namespace AnimLib {
         public SkiaRenderer(IPlatform platform) {
             this.platform = platform;
         }
-
-        /*public int TextureId {
-            get {
-                return glBuffer.Texture();
-            }
-        }*/
 
         private SKBitmap LoadTexture(Texture2D texture) {
             int handle = textureId++;
@@ -91,14 +89,23 @@ namespace AnimLib {
         }
 
         public void SetBuffer(IRenderBuffer buf) {
+            width = buf.Size.Item1;
+            height = buf.Size.Item2;
             if(mode == RenderMode.OpenGL) {
-                // in OpenGL render directly to framebuffer
+                // TODO: don't need a buffer this complex (only need color and stencil)
+                if(glBuffer == null) {
+                    glBuffer = new DepthPeelRenderBuffer(platform);
+                }
+                if(buf.Size.Item1 != glBuffer.Size.Item1 || buf.Size.Item2 != glBuffer.Size.Item2) {
+                    glBuffer.Resize(buf.Size.Item1, buf.Size.Item2);
+                    Debug.Log($"Resize Skia GL buffer to {buf.Size.Item1}x{buf.Size.Item2}");
+                }
+                // tell skia that gl context was modified
                 ctx.ResetContext();
-                var fbInfo = new GRGlFramebufferInfo((uint)buf.FBO, SKColorType.Rgba8888.ToGlSizedFormat());
+                var fbInfo = new GRGlFramebufferInfo((uint)glBuffer.FBO, SKColorType.Rgba8888.ToGlSizedFormat());
                 renderTarget = new GRBackendRenderTarget(buf.Size.Item1, buf.Size.Item2, 0, 8, fbInfo);
                 surface = SKSurface.Create(ctx, renderTarget, GRSurfaceOrigin.TopLeft, SKColorType.Rgba8888);
                 canvas = surface.Canvas;
-                glBuffer = buf;
             } else if(mode == RenderMode.Software) {
                 // in software mode render to image then blit to renderbuffer
                 var imageInfo = new SKImageInfo(
@@ -108,8 +115,9 @@ namespace AnimLib {
                     alphaType: SKAlphaType.Premul);
                 surface = SKSurface.Create(imageInfo);
                 canvas = surface.Canvas;
-                glBuffer = buf;
                 renderTarget = null;
+            } else {
+                Debug.Error($"Unknown mode {mode}");
             }
         }
 
@@ -143,16 +151,14 @@ namespace AnimLib {
         }
 
         public void Clear() {
-            if(mode == RenderMode.OpenGL) {
-                ctx.ResetContext();
-            }
-            canvas.Clear();
+            ctx?.ResetContext();
+            canvas.Clear(SKColors.Transparent);
         }
 
         SKMatrix? GetCanvasMatrix2D(ref M4x4 canvasToClip, CanvasState canvas) {
             if(!canvas.is2d) {
-                float bw = glBuffer.Size.Item1;
-                float bh = glBuffer.Size.Item2;
+                float bw = this.width;
+                float bh = this.height;
                 var bl = canvasToClip * new Vector4(-0.5f, -0.5f, 0.0f, 1.0f);
                 bl.x /= bl.w; bl.y /= bl.w; bl.z /= bl.w;
                 var br = canvasToClip * new Vector4(0.5f, -0.5f, 0.0f, 1.0f);
@@ -242,6 +248,7 @@ namespace AnimLib {
                     || MathF.Abs(topRightClip.y - bottomLeftClip.y) < 0.001f)
                 return;
 
+            // NOTE: ctx.ResetContext() will be called here
             Clear();
 
             canvas.SetMatrix(mat.Value);
@@ -265,11 +272,8 @@ namespace AnimLib {
             foreach(var entitiy in css.Entities) {
                 switch(entitiy) {
                 case ShapeState shape:
-                    if(mode == RenderMode.OpenGL) {
-                        ctx.ResetContext();
-                    }
-                    float bw = glBuffer.Size.Item1;
-                    float bh = glBuffer.Size.Item2;
+                    float bw = this.width;
+                    float bh = this.height;
                     
                     using(SKPaint paint = new SKPaint()) {
                         var path = new SKPath();
@@ -324,16 +328,6 @@ namespace AnimLib {
                             canvas.DrawPath(path, paint);
                         }
                         path.Dispose();
-
-
-                        /*paint.Typeface = SKTypeface.Default;
-                        paint.Style = SKPaintStyle.Fill;
-                        paint.StrokeWidth = 0.01f;
-                        paint.TextSize = 0.5f;
-                        path = paint.GetTextPath("HELLO", 0, 0.0f);
-                        path.Transform(localMat);
-                        canvas.DrawPath(path, paint);
-                        path.Dispose();*/
                     }
                     break;
                 case SpriteState sprite:
@@ -364,17 +358,27 @@ namespace AnimLib {
             Flush(css.Canvas.entityId);
         }
 
-        public void Flush(int entityId) {
-            if(mode == RenderMode.OpenGL) {
-                ctx.ResetContext();
+        int _texture = -1;
+        public int Texture{
+            get {
+                return _texture;
             }
+            set {
+                _texture = value;
+            }
+        }
+
+        public void Flush(int entityId) {
+            ctx?.ResetContext();
             canvas.Flush();
+
             // blit software buffer to scren
             if(mode == RenderMode.Software) {
                 using(var img = surface.Snapshot()) {
                     if(tex == null) {
                         tex = new Texture2D("SkiaRenderer"); 
                     }
+                    tex.GenerateMipmap = false;
                     tex.Width = img.Width;
                     tex.Height = img.Height;
                     tex.Format = Texture2D.TextureFormat.RGBA8;
@@ -385,29 +389,18 @@ namespace AnimLib {
                     var pinned = GCHandle.Alloc(tex.RawData, GCHandleType.Pinned);
                     System.IntPtr dst = pinned.AddrOfPinnedObject();
                     if(img.ReadPixels(img.Info, dst)) {
-                        var dprb = glBuffer as DepthPeelRenderBuffer;
-                        //dprb.BlitTexture(tex);
-                        dprb.BlitTextureWithEntityId(tex, entityId);
+                        platform.LoadTexture(tex);
+                        _texture = tex.GLHandle;
                     } else {
                         Debug.Error("Failed to read Skia surface pixels");
                     }
                 }
             }
             // TODO: blit entityId in OpenGL mode
-        }
-
-        void temp() {
-            canvas.DrawColor(SKColors.Red);
-            canvas.Clear(SKColors.Red);
-            using(SKPaint paint = new SKPaint()) {
-                paint.Color = SKColors.Blue;
-                paint.IsAntialias = true;
-                paint.StrokeWidth = 15;
-                paint.Style = SKPaintStyle.Stroke;
-                canvas.DrawCircle(100.0f, 100.0f, 50.0f, paint);
+            else if(mode == RenderMode.OpenGL) {
+                var src = glBuffer as DepthPeelRenderBuffer;
+                _texture = src.Texture();
             }
-            var mat = new SKMatrix44();
-            canvas.Flush();
         }
     }
 }

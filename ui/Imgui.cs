@@ -77,6 +77,7 @@ namespace AnimLib {
                 Width = tWidth,
                 Height = tHeight,
                 RawData = dstPixels,
+                GenerateMipmap = true,
             };
 
             textures.Add(1, tex);

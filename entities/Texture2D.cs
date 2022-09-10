@@ -19,6 +19,7 @@ namespace AnimLib {
         public int GLHandle = -1;
         public int Alignment = 4;
         public string ownerGuid = null;
+        public bool GenerateMipmap = true;
 
         public Texture2D(string guid) {
             this.ownerGuid = guid;

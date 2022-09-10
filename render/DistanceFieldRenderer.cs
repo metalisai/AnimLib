@@ -70,16 +70,21 @@ namespace AnimLib {
             }        
         }*/
 
-        public void RenderCanvases(CanvasSnapshot[] canvases, M4x4 mat) {
+        public void RenderCanvases(SceneView view, CanvasSnapshot[] canvases, M4x4 mat) {
             // with software rendering the canvas has to be cleared manually
             // with OpenGL the renderbuffer is cleared by our renderer
             /*if(platform.Skia.Mode == SkiaRenderer.RenderMode.Software) {
                 platform.Skia.Clear();
             }*/
+            // save OpenGL state (Skia might modify it in HW rendering mode)
+            PushState();
             // draw 2D last so that they are always in front
             var sorted = canvases.OrderBy(x => x.Canvas.is2d ? 1 : 0);
             foreach(var canvas in sorted) {
                 platform.Skia.RenderCanvas(canvas, ref mat, this.gizmo);
+                var buf = view.Buffer as DepthPeelRenderBuffer;
+                RestoreState();
+                buf.BlitTextureWithEntityId(platform.Skia.Texture, canvas.Canvas.entityId);
             }
         }
 
@@ -564,6 +569,7 @@ namespace AnimLib {
                     GL.UseProgram(prog);
                     GL.ProgramUniform1(prog, loc, 1);
                     GL.BindTextureUnit(1, pb.PeelTex);
+                    GL.BindSampler(1, platform.GetSampler(PlatformTextureSampler.Blit));
                 }
                 GL.BeginQuery(QueryTarget.SamplesPassed, query);
                 //GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
@@ -664,15 +670,17 @@ namespace AnimLib {
 
             // skia
 
-            //platform.Skia.Clear();
-            if(ss.Canvases != null)
-                RenderCanvases(ss.Canvases, worldToClip);
             // render skia (all skia GL commands get executed here)
-            PushState();
+            //platform.Skia.Clear();
+            var sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+            if(ss.Canvases != null)
+                RenderCanvases(sv, ss.Canvases, worldToClip);
+            sw.Stop();
+            Performance.TimeToRenderCanvases = sw.Elapsed.TotalSeconds;
             // render skia (all skia GL commands get executed here)
             //platform.Skia.Flush();
             // render skia (all skia GL commands get executed here)
-            RestoreState();
         }
     }
 }

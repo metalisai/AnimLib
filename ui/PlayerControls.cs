@@ -42,6 +42,7 @@ namespace AnimLib {
         bool changePending = false;
 
         private bool _showExport = false;
+        private bool _showPerformance = false;
         private bool _showResources = false;
         private bool _showProperties = false;
         int selectedResource = 0;
@@ -479,6 +480,9 @@ namespace AnimLib {
                 }
                 if(ImGui.MenuItem("Preferences")) {
                 }
+                if(ImGui.MenuItem("Debug")) {
+                    _showPerformance = true;
+                }
                 ImGui.EndMenu();
             }
             if(ImGui.BeginMenu("Create")) {
@@ -792,7 +796,22 @@ namespace AnimLib {
             return pos;
         }
 
+        public void ShowPerf() {
+            ImGui.SetNextWindowSize(new System.Numerics.Vector2(300, 150), ImGuiCond.FirstUseEver);
+            ImGuiWindowFlags wflags = ImGuiWindowFlags.NoDocking;
+            if(!ImGui.Begin("Developer debug", ref _showPerformance, wflags)) {
+                ImGui.End();
+                return;
+            }
+            ImGui.Text($"Canvas rendering: {Performance.TimeToRenderCanvases*1000.0:N3}ms");
+            ImGui.End();
+        }
+
         public void DoInterface() {
+
+            if(_showPerformance) {
+                ShowPerf();
+            }
 
             ShowDock();
             if(_showExport) {

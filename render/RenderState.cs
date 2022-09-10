@@ -108,7 +108,7 @@ namespace AnimLib
             renderer = new DistanceFieldRenderer(platform as OpenTKPlatform, this);
             //renderer = new TessallationRenderer(platform as OpenTKPlatform, this);
             Debug.TLog($"Renderer implementation: {renderer}");
-            _fr = new FontCache(ts);
+            _fr = new FontCache(ts, platform);
             uiRenderBuffer.Resize(1024, 1024);
 
             platform.PKeyDown += (object sender, KeyboardKeyEventArgs args) => {
