@@ -268,12 +268,15 @@ namespace AnimLib {
                 fmt, typ, 
                 ref tex2d.RawData[0]
             );
+
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
             if(tex2d.GenerateMipmap) {
                 Debug.TLog($"Generate mipmap for {tex}");
                 GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
             }
             GL.PixelStore(PixelStoreParameter.UnpackAlignment, 4);
-            Debug.TLog($"Load texture {tex2d.Width}x{tex2d.Height} {Environment.StackTrace}");
+            //Debug.TLog($"Load texture {tex2d.Width}x{tex2d.Height} {Environment.StackTrace}");
         }
         
         protected override void OnRenderFrame(FrameEventArgs e) {

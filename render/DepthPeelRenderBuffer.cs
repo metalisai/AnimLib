@@ -171,6 +171,7 @@ namespace AnimLib {
 
         public void Bind() {
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fbo);
+            GL.DrawBuffers(2, new DrawBuffersEnum[] {DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1});
         }
 
         public void BlitTextureWithEntityId(Texture2D tex, int entityId) {
@@ -185,7 +186,7 @@ namespace AnimLib {
         public void BlitTextureWithEntityId(int tex, int entityId) {
             var loc = GL.GetUniformLocation(_entBlitProgram, "_EntityId");
             if(loc < 0) {
-                //Debug.Error("_EntityId uniform not found in blit shader");
+                Debug.Error("_EntityId uniform not found in blit shader");
             }
             GL.ProgramUniform1(_entBlitProgram, loc, entityId);
             BlitTexture(tex, _entBlitProgram);
@@ -197,7 +198,7 @@ namespace AnimLib {
             }
             int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);
             int rbuf = GL.GetInteger(GetPName.ReadFramebufferBinding);
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fbo);
+            Bind();
             GL.BindVertexArray(_blitvao);
             var bp = blitProgram ?? platform.BlitProgram;
             var loc = GL.GetUniformLocation(bp, "_MainTex");
@@ -209,7 +210,8 @@ namespace AnimLib {
             GL.BlendEquation(BlendEquationMode.FuncAdd);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             GL.BindTextureUnit(0, handle);
-            GL.BindSampler(0, platform.GetSampler(PlatformTextureSampler.Blit));
+            //GL.BindSampler(0, platform.GetSampler(PlatformTextureSampler.Blit));
+            GL.BindSampler(0, 0);
             GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
             GL.BindVertexArray(0);
             GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, dbuf);
