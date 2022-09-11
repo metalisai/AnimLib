@@ -11,6 +11,13 @@ namespace AnimLib
             this.w = w;
         }
 
+        public Vector4(Vector3 xy, float z, float w) {
+            this.x = xy.x;
+            this.y = xy.y;
+            this.z = z;
+            this.w = w;
+        }
+
         public Vector4(Vector3 v, float w) {
             this.x = v.x;
             this.y = v.y;
@@ -28,6 +35,12 @@ namespace AnimLib
         public Vector3 xyz {
             get {
                 return new Vector3(x, y, z);
+            }
+        }
+
+        public Vector2 xy {
+            get {
+                return new Vector2(x, y);
             }
         }
 

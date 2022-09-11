@@ -302,6 +302,9 @@ namespace AnimLib
             // Render scene
             if(currentScene != null)
             {
+                Performance.views = views.Count;
+                var sw = new System.Diagnostics.Stopwatch();
+                sw.Start();
                 foreach(var sv in views) {
                     // different renderer can use diffent types of buffers
                     // create the buffer if its wrong type or not created yet
@@ -318,6 +321,8 @@ namespace AnimLib
                     renderer.RenderScene(currentScene, sv, sceneCamera, _renderGizmos);
                     sv.PostRender(sceneCamera, currentScene);
                 }
+                sw.Stop();
+                Performance.TimeToRenderViews = sw.Elapsed.TotalSeconds;
             }
 
             if(OnEndRenderScene != null) {

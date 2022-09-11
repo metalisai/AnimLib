@@ -27,13 +27,13 @@ namespace AnimLib {
         }
 
         public override Vector2[] GetHandles2D() {
-            var handle = transform.Pos + (radius*Vector2.RIGHT).Rotated(transform.Rot);
+            var handle = (radius*Vector2.RIGHT).Rotated(transform.Rot);
             return new Vector2[] {handle};
         }
 
         public override void SetHandle(int id, Vector2 wpos) {
             System.Diagnostics.Debug.Assert(id == 0); // circle only has one handle for radius
-            float r = (wpos - transform.Pos).Length;
+            float r = wpos.Length;
             this.radius = r;
         }
 

@@ -22,7 +22,6 @@ namespace AnimLib {
         private static float EvtCurve(float t, InterpCurve curve) {
             switch(curve) {
                 case InterpCurve.Bouncy:
-                // TODO: this is not correct ?
                 return bouncy1.Evaluate(t);
                 case InterpCurve.Linear:
                 return t;

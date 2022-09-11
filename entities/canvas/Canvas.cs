@@ -38,6 +38,12 @@ namespace AnimLib {
             }
         }
 
+        public Plane Surface {
+            get {
+                return new Plane(normal, center);
+            }
+        }
+
         // normalized coordinates -0.5..0.5
         public M4x4 NormalizedCanvasToWorld {
             get {
@@ -71,7 +77,6 @@ namespace AnimLib {
                 var c1 = new Vector4(Vector3.Cross(this.normal, this.up), 0.0f);
                 var c2 = new Vector4(this.up, 0.0f);
                 var c3 = new Vector4(-this.normal, 0.0f);
-                Debug.Log($"{anchorWorld} {anchor}");
                 return M4x4.FromColumns(c1, c2, c3, anchorWorld);
             }
         }

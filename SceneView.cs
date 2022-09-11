@@ -35,6 +35,8 @@ namespace AnimLib {
         (int,int,int,int)? lastArea;
         CameraState lastCam = new PerspectiveCameraState();
 
+        private bool usingGizmo = true;
+
         public CameraState LastCamera {
             get {
                 return lastCam;
@@ -105,7 +107,7 @@ namespace AnimLib {
         }
 
         public void BeginFrame() {
-
+            usingGizmo = false;
         }
 
         public void PostRender(CameraState cam, WorldSnapshot ss) {
@@ -143,6 +145,45 @@ namespace AnimLib {
             lastArea = (x,y,width,height);
         }
 
+
+        public TransformResult? DoSelectionGizmo2D(CanvasState canvas, Vector2 pos, float rot, Vector2 scale) {
+            if (lastArea == null)
+                return null;
+            var ret = new TransformResult {
+                newPosition = pos,
+                newRotation = new Quaternion() {x = rot},
+                newScale = scale,
+            };
+            var a = lastArea.Value;
+            ImGuizmo.SetRect(a.Item1, a.Item2, a.Item3, a.Item4);
+            ImGuizmo.Enable(!usingGizmo);
+            ImGuizmo.SetOrthographic(false);
+            if(ImGuizmo.IsOver(OPERATION.TRANSLATE)) {
+                usingGizmo = true;
+            }
+            var cam = lastCam as PerspectiveCameraState;
+            if(cam != null) {
+                var viewM = cam.CreateWorldToViewMatrix();
+                var projM = cam.CreateViewToClipMatrix((float)renderBuffer.Size.Item1/(float)renderBuffer.Size.Item2);
+                var trans = M4x4.Translate(pos);
+                var canvasM = canvas.CanvasToWorld*trans;
+                var op = OPERATION.TRANSLATE;
+                var mode = MODE.LOCAL;
+                if(ImGuizmo.Manipulate(ref viewM.m11, ref projM.m11, op, mode, ref canvasM.m11))
+                {
+                    var worldToCanvas = canvas.WorldToNormalizedCanvas;
+                    Vector3 translation = new Vector3(), s = new Vector3();
+                    M3x3 r = new M3x3();
+                    ImGuizmo.DecomposeMatrixToComponents(ref canvasM.m11, ref translation.x, ref r.m11, ref s.x);
+                    ret.newPosition = (worldToCanvas * new Vector4(translation, 1.0f)).xyz;
+                    ret.newPosition.x *= canvas.width;
+                    ret.newPosition.y *= canvas.height;
+                    ret.posChanged = true;
+                }
+            }
+            return ret;
+        }
+
         public TransformResult? DoSelectionGizmo(Vector3 pos, Quaternion rot, Vector3 scale) {
             if (lastArea == null)
                 return null;
@@ -153,7 +194,7 @@ namespace AnimLib {
             };
             var a = lastArea.Value;
             ImGuizmo.SetRect(a.Item1, a.Item2, a.Item3, a.Item4);
-            ImGuizmo.Enable(true);
+            ImGuizmo.Enable(!usingGizmo);
             ImGuizmo.SetOrthographic(false);
             var cam = lastCam as PerspectiveCameraState;
             if (cam != null) {
@@ -183,37 +224,6 @@ namespace AnimLib {
                     }
                 }
             }
-            return ret;
-        }
-
-        public OrthoResult? DoOrthoGizmo(Vector2 pos, float rotation) {
-            if(lastArea == null)
-                return null;
-            var ret = new OrthoResult {
-                newPosition = pos,
-                newRotation = rotation,
-            };
-            var a = lastArea.Value;
-            ImGuizmo.SetRect(a.Item1, a.Item2, a.Item3, a.Item4);
-            ImGuizmo.Enable(true);
-            ImGuizmo.SetOrthographic(true);
-
-            var projM = M4x4.Ortho(0.0f, renderBuffer.Size.Item1, 0.0f, renderBuffer.Size.Item2, -1.0f, 1.0f);
-            var viewM = M4x4.IDENTITY;
-            M4x4 mat = M4x4.TRS((Vector3)pos, Quaternion.IDENTITY, Vector3.ONE);
-            if(ImGuizmo.Manipulate(ref viewM.m11, ref projM.m11, OPERATION.TRANSLATE, MODE.WORLD, ref mat.m11)) {
-                Vector3 translation = new Vector3(), s = new Vector3();
-                M3x3 r = new M3x3();
-                ImGuizmo.DecomposeMatrixToComponents(ref mat.m11, ref translation.x, ref r.m11, ref s.x);
-                var op = OPERATION.TRANSLATE;
-                switch(op) {
-                case OPERATION.TRANSLATE:
-                    ret.newPosition = translation;
-                    ret.posChanged = true;
-                break;
-                }
-            }
-
             return ret;
         }
 
@@ -343,7 +353,7 @@ namespace AnimLib {
 
             var newp = pos;
             var screenP = bufferToScreen(pos);
-            var inGizmo = ((Vector2)ImGui.GetMousePos() - screenP).Length < 5.0f;
+            var inGizmo = !usingGizmo && ((Vector2)ImGui.GetMousePos() - screenP).Length < 5.0f;
             PointGizmoState state = new PointGizmoState { dragging = false };
             if(!pointGizmos.TryGetValue(uid, out state)) {
                 if(ImGui.IsMouseClicked(0) && inGizmo) {
@@ -356,6 +366,9 @@ namespace AnimLib {
                     pointGizmos.Remove(uid);
                     endupdate = true;
                 }
+            }
+            if(inGizmo || state.dragging) {
+                usingGizmo = true;
             }
 
             if(state.dragging) {

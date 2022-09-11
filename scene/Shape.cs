@@ -53,23 +53,23 @@ public class PlayerShape : SceneObject2D
             var vtype = verb.verb;
             switch(vtype) {
                 case PathVerb.Move:
-                    points.Add(transform.Pos + verb.data.points[0]);
+                    points.Add(verb.data.points[0]);
                     break;
                 case PathVerb.Conic:
-                    points.Add(transform.Pos + verb.data.points[1]);
-                    points.Add(transform.Pos + verb.data.points[2]);
+                    points.Add(verb.data.points[1]);
+                    points.Add(verb.data.points[2]);
                     break;
                 case PathVerb.Quad:
-                    points.Add(transform.Pos + verb.data.points[1]);
-                    points.Add(transform.Pos + verb.data.points[2]);
+                    points.Add(verb.data.points[1]);
+                    points.Add(verb.data.points[2]);
                     break;
                 case PathVerb.Cubic:
-                    points.Add(transform.Pos + verb.data.points[1]);
-                    points.Add(transform.Pos + verb.data.points[2]);
-                    points.Add(transform.Pos + verb.data.points[3]);
+                    points.Add(verb.data.points[1]);
+                    points.Add(verb.data.points[2]);
+                    points.Add(verb.data.points[3]);
                     break;
                 case PathVerb.Line:
-                    points.Add(transform.Pos + verb.data.points[1]);
+                    points.Add(verb.data.points[1]);
                     break;
             }
         }
@@ -100,39 +100,38 @@ public class PlayerShape : SceneObject2D
 
     public override void SetHandle(int id, Vector2 wpos)
     {
-#warning scene/Shape SetHandle not implemented
         int i = 0;
         foreach(var verb in this.path) {
             var vtype = verb.verb;
             switch(vtype) {
                 case PathVerb.Move:
                     if(i == id) {
-                        verb.data.points[0] = wpos - transform.Pos;
+                        verb.data.points[0] = wpos;
                     }
                     i++;
                     break;
                 case PathVerb.Line:
                     if(i == id) {
-                        verb.data.points[1] = wpos - transform.Pos;
+                        verb.data.points[1] = wpos;
                     }
                     i++;
                     break;
                 case PathVerb.Conic:
                 case PathVerb.Quad:
                     if(i == id) {
-                        verb.data.points[1] = wpos - transform.Pos;
+                        verb.data.points[1] = wpos;
                     } else if(i + 1 == id) {
-                        verb.data.points[2] = wpos - transform.Pos;
+                        verb.data.points[2] = wpos;
                     }
                     i+=2;
                     break;
                 case PathVerb.Cubic:
                     if(i == id) {
-                        verb.data.points[1] = wpos - transform.Pos;
+                        verb.data.points[1] = wpos;
                     } else if(i + 1 == id) {
-                        verb.data.points[2] = wpos - transform.Pos;
+                        verb.data.points[2] = wpos;
                     } else if(i + 2 == id) {
-                        verb.data.points[3] = wpos - transform.Pos;
+                        verb.data.points[3] = wpos;
                     }
                     i+=3;
                     break;

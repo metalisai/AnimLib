@@ -619,18 +619,60 @@ namespace AnimLib {
         private void ShowItemSelection() {
             var values = player.GetValues();
             lock(player.Scene.sceneLock) {
+
+                // Object specific 2D handles (resizing etc)
+                switch(Selection) {
+                    case SceneObject2D s2:
+                    var h2 = s2.GetHandles2D();
+                    if(h2 != null) {
+                        int i = 0;
+                        var canvas = player.Machine.Entities.Where(x => x is CanvasState).Select(x => x as CanvasState).Where(x => x.name == s2.CanvasName).FirstOrDefault();
+                        var mat = canvas.CanvasToWorld;
+                        var mat2 = canvas.WorldToNormalizedCanvas;
+                        if(canvas != null) {
+                            foreach(var hnd in h2) {
+                                var uid = "obj"+Selection.GetHashCode()+"-"+i;
+                                bool endupdate;
+                                // canvas to world
+                                var worldp = mat * new Vector4(s2.transform.Pos+hnd, 0.0f, 1.0f);
+                                // draw and handle interactive UI
+                                var updatedWorldp = view.DoWorldSurfPointGizmo(uid, worldp.xyz, canvas.Surface, out endupdate);
+                                if(updatedWorldp != null) {
+                                    // convert back to canvas coordinates
+                                    var newp = (mat2 * new Vector4(updatedWorldp.Value, 1.0f)).xy;
+                                    newp *= new Vector2(canvas.width, canvas.height);
+                                    newp = newp - s2.transform.Pos;
+                                    if(newp != hnd) {
+                                        s2.SetHandle(i, newp);
+                                    }
+                                }
+                                if(endupdate) {
+                                    player.SetAnimationDirty(true);
+                                }
+                                i++;
+                            }
+                        }
+                    }
+                    break;
+                }
+
                 // 3D translation handle
                 if(true) { // world space (3D) selection
                     switch(Selection) {
                         case SceneObject2D s2:
-#warning Need to do coordinate transformation here!
-                        var mt = view.DoSelectionGizmo(s2.transform.Pos, Quaternion.IDENTITY, Vector3.ONE);
-                        if (mt != null) {
-                            var t = mt.Value;
-                            if (t.posChanged) {
-                                s2.transform.Pos = t.newPosition.xy;
-                                changePending = true;
+                        var canvas = player.Machine.Entities.Where(x => x is CanvasState).Select(x  => (CanvasState)x).Where(x => x.name == s2.CanvasName).FirstOrDefault();
+                        if(canvas != null) {
+                            var mt = view.DoSelectionGizmo2D(canvas, s2.transform.Pos, s2.transform.Rot, Vector2.ONE);
+                            if (mt != null) {
+                                var t = mt.Value;
+                                if (t.posChanged) {
+                                    s2.transform.Pos = t.newPosition.xy;
+                                    s2.transform.Rot = t.newRotation.x;
+                                    changePending = true;
+                                }
                             }
+                        } else {
+                            Debug.Warning($"2D entity \"{s2.name}\" selected, but its canvas \"{s2.CanvasName}\" doesn't exist.");
                         }
                         break;
                         case SceneObject3D s3:
@@ -653,28 +695,6 @@ namespace AnimLib {
                             changePending = true;
                         }
                     }*/
-                }
-                // Object specific 2D handles (resizing etc)
-                switch(Selection) {
-                    case SceneObject2D s2:
-                    var h2 = s2.GetHandles2D();
-                    if(h2 != null) {
-                        int i = 0;
-                        foreach(var hnd in h2) {
-                            var uid = "obj"+Selection.GetHashCode()+"-"+i;
-                            bool endupdate;
-#warning Need to do coordinate transformation here
-                            var newp = view.DoWorldSurfPointGizmo(uid, hnd, s2.GetSurface().Value, out endupdate);
-                            if(newp != null && newp.Value.xy != hnd) {
-                                s2.SetHandle(i, newp.Value);
-                            }
-                            if(endupdate) {
-                                player.SetAnimationDirty(true);
-                            }
-                            i++;
-                        }
-                    }
-                    break;
                 }
                 // Imgui proprty window
 
@@ -803,7 +823,9 @@ namespace AnimLib {
                 ImGui.End();
                 return;
             }
-            ImGui.Text($"Canvas rendering: {Performance.TimeToRenderCanvases*1000.0:N3}ms");
+            ImGui.Text($"View rendering: {Performance.TimeToRenderViews*1000.0:N3}ms");
+            ImGui.Text($"  Canvas rendering: {Performance.TimeToRenderCanvases*1000.0:N3}ms");
+            ImGui.Text($"View count: {Performance.views}");
             ImGui.End();
         }
 
@@ -858,7 +880,7 @@ namespace AnimLib {
                                 Selection = obj;
                                 Debug.TLog($"Found canvas object {obj.name}");
                             } else {
-                                Debug.Warning($"Canvas has pained the pixel under mouse, but the object was not found!");
+                                Debug.Warning($"Canvas has painted the pixel under mouse, but the object was not found!");
                             }
                         }
                     }
