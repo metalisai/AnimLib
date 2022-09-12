@@ -27,6 +27,7 @@ namespace AnimLib {
         Dictionary<int, Texture2D> textures = new Dictionary<int, Texture2D>();
         public ImguiContext(int width, int height) {
             nativeCtx = ImGui.CreateContext();
+            ImGuizmo.SetImGuiContext(nativeCtx);
             ImGui.SetCurrentContext(nativeCtx);
             //ImGui.NewFrame();
             ImGuiIOPtr imGuiIO = ImGui.GetIO();
