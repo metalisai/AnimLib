@@ -25,7 +25,7 @@
     <PackageReference Include="SkiaSharp" Version="2.88.1" />
         <!-- <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.88.1" /> -->
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.1" />
-    <PackageReference Include="SpaceWizards.SharpFont" Version="1.0.1" />
+    <PackageReference Include="Stride.SharpFont" Version="1.0.0" />
     <PackageReference Include="System.Windows.Extensions" Version="4.6.0-preview.18571.3" />
 
     <ProjectReference Include="..\AnimLib.Libs\ImGui.NET\src\ImGui.NET\ImGui.NET.csproj" />
@@ -49,9 +49,9 @@
       <PackagePath>runtimes/linux-x64/native/libbass.so</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="..\deps\win-x64\freetype6.dll">
+    <Content Include="..\deps\win-x64\freetype.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <PackagePath>runtimes/win-x64/native/freetype6.dll</PackagePath>
+      <PackagePath>runtimes/win-x64/native/freetype.dll</PackagePath>
       <Pack>true</Pack>
     </Content>
     <Content Include="..\deps\win-x64\bass.dll">

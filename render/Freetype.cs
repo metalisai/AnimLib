@@ -1,4 +1,5 @@
 using SharpFont;
+
 using System.Collections.Generic;
 
 namespace AnimLib {
@@ -15,7 +16,9 @@ namespace AnimLib {
 #if Linux
             font = new Face(library, "/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf");
 #else
-            font = new Face(library, "C:/Windows/Fonts/courbd.ttf");
+            font = new Face(library, "C:/Windows/Fonts/tahoma.ttf");
+            font.SelectCharmap(Encoding.Unicode);
+            font.SetPixelSizes(0, 96);
 #endif
             //symbola = new Face(library, "/usr/share/fonts/truetype/ancient-scripts/Symbola_hint.ttf");
         }
