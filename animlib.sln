@@ -1,0 +1,58 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "animlib", "animlib\animlib.csproj", "{F816233A-3BC6-4DF8-9E30-C308CACEC891}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnimLib.Resources", "AnimLib.Resources\AnimLib.Resources.csproj", "{A0E7F48E-3122-482C-BC0C-4E1735F2532B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnimLib.Tests", "AnimLib.Tests\AnimLib.Tests.csproj", "{FBA27194-322F-4950-A1F6-90DCF2FB973F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libs", "libs", "{974C1CF0-69E5-4C91-9AAB-A67A04812D28}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ImGui.NET", "ImGui.NET", "{04C76D69-C8EB-4551-A690-36C9068E7758}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6BAF5025-24F3-4CC1-BC02-33CD86223127}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImGui.NET", "libs\ImGui.NET\src\ImGui.NET\ImGui.NET.csproj", "{0420E90E-13B2-4D48-BEFF-759A31B648ED}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImGuizmo.NET", "libs\ImGui.NET\src\ImGuizmo.NET\ImGuizmo.NET.csproj", "{F4C08A18-5BC9-4549-B19E-799C45E26D31}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F816233A-3BC6-4DF8-9E30-C308CACEC891}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F816233A-3BC6-4DF8-9E30-C308CACEC891}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F816233A-3BC6-4DF8-9E30-C308CACEC891}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F816233A-3BC6-4DF8-9E30-C308CACEC891}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0E7F48E-3122-482C-BC0C-4E1735F2532B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0E7F48E-3122-482C-BC0C-4E1735F2532B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0E7F48E-3122-482C-BC0C-4E1735F2532B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0E7F48E-3122-482C-BC0C-4E1735F2532B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FBA27194-322F-4950-A1F6-90DCF2FB973F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FBA27194-322F-4950-A1F6-90DCF2FB973F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FBA27194-322F-4950-A1F6-90DCF2FB973F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FBA27194-322F-4950-A1F6-90DCF2FB973F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0420E90E-13B2-4D48-BEFF-759A31B648ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0420E90E-13B2-4D48-BEFF-759A31B648ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0420E90E-13B2-4D48-BEFF-759A31B648ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0420E90E-13B2-4D48-BEFF-759A31B648ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F4C08A18-5BC9-4549-B19E-799C45E26D31}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4C08A18-5BC9-4549-B19E-799C45E26D31}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4C08A18-5BC9-4549-B19E-799C45E26D31}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4C08A18-5BC9-4549-B19E-799C45E26D31}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{04C76D69-C8EB-4551-A690-36C9068E7758} = {974C1CF0-69E5-4C91-9AAB-A67A04812D28}
+		{6BAF5025-24F3-4CC1-BC02-33CD86223127} = {04C76D69-C8EB-4551-A690-36C9068E7758}
+		{0420E90E-13B2-4D48-BEFF-759A31B648ED} = {6BAF5025-24F3-4CC1-BC02-33CD86223127}
+		{F4C08A18-5BC9-4549-B19E-799C45E26D31} = {6BAF5025-24F3-4CC1-BC02-33CD86223127}
+	EndGlobalSection
+EndGlobal
