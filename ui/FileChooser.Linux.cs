@@ -3,10 +3,7 @@ using System.Collections;
 using System.Diagnostics;
 
 namespace AnimLib {
-#if Windows
-    class FileChooser {
-    }
-#elif Linux
+#if Linux
     class FileChooser {
         static private string RunZenity(string arguments) {
             var startInfo = new ProcessStartInfo() {
@@ -62,7 +59,5 @@ namespace AnimLib {
             return RunZenity(args);
         }
     }
-#else
-#error "File chooser not implemented on this platform"
 #endif
 }

@@ -12,7 +12,11 @@ namespace AnimLib {
 
         public FreetypeSetting() {
             library = new Library();
+#if Linux
             font = new Face(library, "/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf");
+#else
+            font = new Face(library, "C:/Windows/Fonts/courbd.ttf");
+#endif
             //symbola = new Face(library, "/usr/share/fonts/truetype/ancient-scripts/Symbola_hint.ttf");
         }
 
