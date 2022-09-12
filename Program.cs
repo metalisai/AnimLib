@@ -114,6 +114,7 @@ namespace AnimLib
 
         static Sound sound;
 
+        [STAThread]
         static void Main(string[] args)
         {
             var platform = new OpenTKPlatform(1024, 1024);

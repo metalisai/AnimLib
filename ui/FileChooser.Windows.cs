@@ -14,17 +14,25 @@ namespace AnimLib {
                 ofd.Title = title;
                 ofd.InitialDirectory = path;
                 var sb = new StringBuilder();
-                sb.Append("Files |");
+                sb.Append("Files ");
+                sb.Append("(");
+                foreach(var filter in filters) {
+                    sb.Append(filter);
+                    if(filter != filters[filters.Length-1]) {
+                        sb.Append(",");
+                    }
+                }
+                sb.Append(") | ");
                 foreach(var filter in filters) {
                     sb.Append(filter);
                     if(filter != filters[filters.Length-1]) {
                         sb.Append(";");
                     }
                 }
+                ofd.ShowHelp = true;
                 ofd.Filter = sb.ToString();
                 ofd.FilterIndex = 0;
                 ofd.RestoreDirectory = true;
-                ofd.Filter = filters[0];
 
                 if(ofd.ShowDialog() == DialogResult.OK) {
                     return ofd.FileName;

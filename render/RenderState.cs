@@ -345,7 +345,7 @@ namespace AnimLib
                         }
                     }
                 } else {
-                    Debug.TLog($"Not rendering scene, no changes {test++}");
+                    //Debug.TLog($"Not rendering scene, no changes {test++}");
                 }
                 sw.Stop();
                 Performance.TimeToRenderViews = sw.Elapsed.TotalSeconds;

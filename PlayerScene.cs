@@ -36,12 +36,18 @@ namespace AnimLib {
 
         [JsonConstructor]
         public PlayerScene(IList<PlayerCircle> circles, IList<PlayerRect> rectangles, IList<PlayerShape> shapes) {
-            this.Circles = circles;
-            foreach(var c in circles) Objects2D.Add(c);
-            this.Rectangles = rectangles;
-            foreach(var c in rectangles) Objects2D.Add(c);
-            this.Shapes = shapes;
-            foreach(var c in shapes) Objects2D.Add(c);
+            if(circles != null) {
+                this.Circles = circles;
+                foreach(var c in circles) Objects2D.Add(c);
+            }
+            if(rectangles != null) {
+                this.Rectangles = rectangles;
+                foreach(var c in rectangles) Objects2D.Add(c);
+            }
+            if(shapes != null) {
+                this.Shapes = shapes;
+                foreach(var c in shapes) Objects2D.Add(c);
+            }
             Debug.TLog($"SceneObjects contains {sceneObjects.Count} objects, while objects2d contains {Objects2D.Count} objects");
         }
 
