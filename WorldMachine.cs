@@ -139,28 +139,14 @@ namespace AnimLib {
             foreach(var c in _canvases) {
                 var canvas = _entities[c.Key] as CanvasState;
                 var css = new CanvasSnapshot() {
-                        Entities = c.Value.Entities.Where(x => x.active).ToArray(),
+                        Entities = c.Value.Entities.Where(x => x.active).Select(x => x.Clone() as EntityState2D).ToArray(),
                         Canvas = canvas
                     };
                 l.Add(css);
                 foreach(var s in css.Entities) s.canvas = canvas;
             }
             ret.Canvases = l.ToArray();
-
-            // TODO: better way to do this?
-            /*foreach(var rect in ret.Rectangles) {
-                EntityState ca = null;
-                if(_entities.TryGetValue(rect.canvasId, out ca) && ca is CanvasState) {
-                    rect.canvas = ca as CanvasState;
-                } else {
-                    Debug.Error($"Visual2DEntity's canvas {rect.canvasId} could not be found!");
-                }
-            }*/
-            /*foreach(var label in ret.Labels) {
-                label.Item1.entity.state.entity.
-            }*/
-            /*ret.Labels = _labels.Where(x => x.active).Select(x => (x, _entities[x.target as VisualEntity])).ToArray();*/
-            ret.Camera = _activeCamera;
+            ret.Camera = _activeCamera.Clone() as CameraState;
             return ret;
         }
 

@@ -53,10 +53,15 @@ namespace AnimLib {
         internal event ErrorD OnError;
         internal event BakeD OnAnimationBaked;
 
+        // must rebake animation?
         volatile bool mustUpdate = false;
+        // animation out of date, might be waiting for changes to stop
         volatile bool animationDirty = true;
+        // is scene dirty (state edited from editor UI)
         volatile bool sceneDirty = true;
         volatile bool running = false;
+
+        bool frameChanged = false;
 
         WorldMachine machine = new WorldMachine();
 
@@ -165,16 +170,6 @@ namespace AnimLib {
             bakeThread.Start(); 
         }
 
-        /*public T GetSceneEntityByName<T>(string name) where T : VisualEntity {
-            var obj = Scene.GetSceneEntityByName(name);
-            return (T)obj;
-        }
-
-        public T[] GetSceneEntitiesByName<T>(string pattern) where T : VisualEntity {
-            var obj = Scene.GetSceneEntitiesByName(pattern);
-            return obj.Cast<T>().ToArray();
-        }*/
-
         public void OnEndRenderScene() {
             if(Exporting) {
                 var tex = controls.MainView.CaptureScene();
@@ -248,14 +243,9 @@ namespace AnimLib {
         }
 
         public void Seek(double progress) {
-            /*double totalFrames = this.currentAnimation.Snapshots.Length;
-            int setFrame = (int)(totalFrames*progress);
-            playbackFrame = setFrame;
-            Math.Min(currentAnimation.Snapshots.Length-1, playbackFrame);
-            playbackTime = playbackFrame * (1.0 / settings.FPS);
-            controls.SetProgress((float)playbackFrame/(float)this.currentAnimation.Snapshots.Length);*/
             machine.Seek(progress);
             controls.SetProgress((float)machine.GetProgress(), machine.GetPlaybackTime());
+            frameChanged = true;
         }
 
         // mark that animation needs update
@@ -272,12 +262,19 @@ namespace AnimLib {
             return Values;
         }
 
-        public WorldSnapshot NextFrame(double dt) {
+        public enum FrameStatus {
+            None,
+            New,
+            Still,
+        }
+
+        public FrameStatus NextFrame(double dt, out WorldSnapshot ss) {
             frameId++;
 
             if(!haveProject)
             {
-                return null;
+                ss = null;
+                return FrameStatus.None;
             }
 
             // Serialize only if nothing has changed for 15 frames
@@ -305,6 +302,7 @@ namespace AnimLib {
                     }                
                 } else {
                     currentAnimation = prep;
+                    frameChanged = true;
                 }
 
                 DeserializeHandles(); // Load stored handles
@@ -341,16 +339,24 @@ namespace AnimLib {
             }
 
             if(!machine.HasProgram) {
-                return null;
+                ss = null;
+                return FrameStatus.None;
             }
 
             if(export == null) {
+                var ret = FrameStatus.Still;
+                ss = null;
                 if(!paused) {
                     paused = machine.Step(dt);
                 }
+                if(!paused || frameChanged) {
+                    ret = FrameStatus.New;
+                    ss = machine.GetWorldSnapshot();
+                    frameChanged = false;
+                }
                 var progress = machine.GetProgress();
                 controls.SetProgress((float)progress, machine.GetPlaybackTime());
-                return machine.GetWorldSnapshot();
+                return ret;
             } else {
                 machine.Step(1.0 / (double)settings.FPS);
                 var endTime = Math.Min(export.endTime, machine.GetEndTime());
@@ -364,7 +370,8 @@ namespace AnimLib {
                     export.exporter.AddAudio(export.fileName, samples, sound.sampleRate);
                     export = null;
                 }
-                return frame;
+                ss = frame;
+                return FrameStatus.New;
             }
         }
 

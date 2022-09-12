@@ -25,6 +25,8 @@ namespace AnimLib {
 
         bool gizmo = true;
 
+        System.Diagnostics.Stopwatch sw;
+
         public DistanceFieldRenderer(OpenTKPlatform platform, RenderState rs) {
             this.platform = platform;
             this.rs = rs;
@@ -40,35 +42,8 @@ namespace AnimLib {
             //_lineProgram = AddShader(lineVert, lineFrag, lineGeom);
             _textProgram = platform.AddShader(textVert, textFrag, null);
 
+            sw = new System.Diagnostics.Stopwatch();
         }
-
-        /*public void RenderCircles(CircleState[] circles, M4x4 mat, M4x4 orthoMat) {
-            if(circles.Length > 0) {
-                GL.PolygonOffset(1.0f, 1.0f);
-                GL.Disable(EnableCap.CullFace);
-                GL.Enable(EnableCap.DepthTest);
-                GL.UseProgram(_circleProgram);
-                var loc = GL.GetUniformLocation(_circleProgram, "_ModelToClip");
-                var colLoc = GL.GetUniformLocation(_circleProgram, "_Color");
-                var outlineLoc = GL.GetUniformLocation(_circleProgram, "_Outline");
-                var idLoc = GL.GetUniformLocation(_circleProgram, "_EntityId");
-                GL.BindVertexArray(platform.rectVao);
-                GL.VertexAttrib4(1, 1.0f, 1.0f, 1.0f, 1.0f);
-                foreach(var c in circles) {
-                    M4x4 modelToWorld, modelToClip;
-                    modelToWorld = c.ModelToWorld(entRes) * M4x4.Scale(new Vector3(c.radius*2.0f, c.radius*2.0f, c.radius*2.0f));
-                    modelToClip = mat * modelToWorld;
-                    GL.UniformMatrix4(loc, 1, false, ref modelToClip.m11);
-                    var col4 = Vector4.FromInt32(c.color.ToU32());
-                    GL.Uniform4(colLoc, col4.x, col4.y, col4.z, col4.w);
-                    var b = new Vector4(c.outline.r/255.0f, c.outline.g/255.0f, c.outline.b/255.0f, c.outlineWidth);
-                    GL.Uniform4(outlineLoc, b.x, b.y, b.z, b.w);
-                    GL.Uniform1(idLoc, c.entityId);
-                    GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
-                    drawId++;
-                }
-            }        
-        }*/
 
         public void RenderCanvases(SceneView view, CanvasSnapshot[] canvases, M4x4 mat) {
             // with software rendering the canvas has to be cleared manually
@@ -87,54 +62,6 @@ namespace AnimLib {
                 buf.BlitTextureWithEntityId(platform.Skia.Texture, canvas.Canvas.entityId);
             }
         }
-
-        /*public void RenderRectangles(RectangleState[] rectangles, M4x4 mat, M4x4 smat) {
-            if(rectangles.Length > 0) {
-                GL.PolygonOffset(0.4f, 1.0f);
-                GL.Disable(EnableCap.CullFace);
-                GL.Enable(EnableCap.DepthTest);
-                GL.UseProgram(_rectangleProgram);
-                var loc = GL.GetUniformLocation(_rectangleProgram, "_ModelToClip");
-                var outlineLoc = GL.GetUniformLocation(_rectangleProgram, "_Outline");
-                var colLoc = GL.GetUniformLocation(_rectangleProgram, "_Color");
-                var entLoc = GL.GetUniformLocation(_rectangleProgram, "_EntityId");
-                GL.VertexAttrib4(1, 1.0f, 1.0f, 1.0f, 1.0f);
-                foreach(var r in rectangles) {
-                    M4x4 mvp, canvasToWorld;
-                    if(!(r.canvas is CanvasState)) {
-                        Debug.Error("Can't render rectangle, because no canvas");
-                        continue;
-                    }
-                    var c = r.canvas;
-                    var rot = Quaternion.AngleAxis(r.rot, Vector3.FORWARD);
-                    var modelToWorld = M4x4.TRS(r.position, rot, r.scale);
-                    Vector2 rsize, pivot;
-                    if(r.csystem == Entity2DCoordinateSystem.CanvasNormalized) {
-                        canvasToWorld = r.NormalizedCanvasToWorld*modelToWorld;
-                        rsize = r.AABB;
-                        pivot = r.pivot*rsize;
-                    } else if (r.csystem == Entity2DCoordinateSystem.CanvasOrientedWorld) {
-                        canvasToWorld = r.CanvasToWorld*modelToWorld;
-                        rsize = new Vector2(r.width, r.height);
-                        pivot = r.pivot * rsize;
-                    } else {
-                        throw new NotImplementedException();
-                    }
-                    platform.DynRect(-0.5f*rsize - pivot, 0.5f*rsize - pivot);
-                    mvp = mat * canvasToWorld;
-                    GL.BindVertexArray(platform.dynVao);
-
-                    GL.UniformMatrix4(loc, 1, false, ref mvp.m11);
-                    var bb = new Vector4(r.outline.r/255.0f, r.outline.g/255.0f, r.outline.b/255.0f, r.outlineWidth);
-                    GL.Uniform4(outlineLoc, bb.x, bb.y, bb.z, bb.w);
-                    var col4 = Vector4.FromInt32(r.color.ToU32());
-                    GL.Uniform4(colLoc, col4.x, col4.y, col4.z, col4.w);
-                    GL.Uniform1(entLoc, r.entityId);
-                    GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
-                    drawId++;
-                }
-            }
-        }*/
 
         public void RenderBeziers(BezierState[] beziers, M4x4 mat, M4x4 orthoMat, IRenderBuffer buf) {
             if(beziers.Length > 0) {
@@ -175,38 +102,6 @@ namespace AnimLib {
                 }
             }
         }
-
-        /*public void RenderTextureRectangles(TexRectState[] rectangles, M4x4 mat) {
-            if(rectangles.Length > 0) {
-                GL.Disable(EnableCap.CullFace);
-                GL.Enable(EnableCap.DepthTest);
-                GL.UseProgram(_texRectProgram);
-                var loc = GL.GetUniformLocation(_texRectProgram, "_ModelToClip");
-                var outlineLoc = GL.GetUniformLocation(_texRectProgram, "_Outline");
-                var colLoc = GL.GetUniformLocation(_texRectProgram, "_Color");
-                var texLoc = GL.GetUniformLocation(_texRectProgram, "_MainTex");
-                GL.BindVertexArray(platform.rectVao);
-                GL.VertexAttrib4(1, 1.0f, 1.0f, 1.0f, 1.0f);
-                foreach(var r in rectangles) {
-                    if(r.texture.GLHandle == -1) {
-                        platform.LoadTexture(r.texture);
-                    }
-                    GL.BindTextureUnit(0, r.texture.GLHandle);
-                    GL.Uniform1(texLoc, 0);
-                    M4x4 modelToWorld, modelToClip;
-
-                    modelToWorld = r.ModelToWorld(entRes) * M4x4.Scale(new Vector3(r.width, r.height, 1.0f));
-                    modelToClip = mat*modelToWorld;
-                    GL.UniformMatrix4(loc, 1, false, ref modelToClip.m11);
-                    var bb = new Vector4(r.outline.r/255.0f, r.outline.g/255.0f, r.outline.b/255.0f, r.outlineWidth);
-                    GL.Uniform4(outlineLoc, bb.x, bb.y, bb.z, bb.w);
-                    var col4 = Vector4.FromInt32(r.color.ToU32());
-                    GL.Uniform4(colLoc, col4.x, col4.y, col4.z, col4.w);
-                    GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
-                    drawId++;
-                }
-            }
-        }*/
 
         public void RenderMeshes(ColoredTriangleMesh[] meshes, M4x4 camMat, M4x4 screenMat) {
             if(meshes.Length > 0) {
@@ -672,8 +567,7 @@ namespace AnimLib {
 
             // render skia (all skia GL commands get executed here)
             //platform.Skia.Clear();
-            var sw = new System.Diagnostics.Stopwatch();
-            sw.Start();
+            sw.Restart();
             if(ss.Canvases != null)
                 RenderCanvases(sv, ss.Canvases, worldToClip);
             sw.Stop();

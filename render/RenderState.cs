@@ -57,8 +57,8 @@ namespace AnimLib
             }
         }
 
-        public OnRenderSceneDelegate OnBeginRenderScene;
-        public OnEndRenderSceneDelegate OnEndRenderScene;
+        public OnRenderSceneDelegate OnPreRender;
+        public OnEndRenderSceneDelegate OnPostRender;
 
         private List<SceneView> views = new List<SceneView>();
 
@@ -79,7 +79,19 @@ namespace AnimLib
         public PerspectiveCameraState debugCamera;
         Vector2 debugCamRot;
 
+        System.Diagnostics.Stopwatch sw;
+
         static ImguiContext imgui = null;
+
+        public AnimationPlayer.FrameStatus frameStatus;
+        public AnimationPlayer.FrameStatus SceneStatus {
+            get {
+                return frameStatus;
+            }
+            set {
+                frameStatus = value;
+            }
+        }
 
         public int WindowWidth {
             get {
@@ -104,6 +116,8 @@ namespace AnimLib
 
         public void Load(object sender, EventArgs args) {
             CreateMeshes();
+
+            sw = new System.Diagnostics.Stopwatch();
 
             renderer = new DistanceFieldRenderer(platform as OpenTKPlatform, this);
             //renderer = new TessallationRenderer(platform as OpenTKPlatform, this);
@@ -278,10 +292,16 @@ namespace AnimLib
             currentScene = ss;
         }
 
+        int test = 0;
+
         private void RenderFrame(object sender, FrameEventArgs args) {
-            foreach(var view in views) {
-                view.Buffer?.Clear();
-                view.Buffer?.OnPreRender();
+            bool sceneUpdated = overrideCamera || SceneStatus == AnimationPlayer.FrameStatus.New;
+            //bool sceneUpdated = true;
+            if(sceneUpdated) {
+                foreach(var view in views) {
+                    view.Buffer?.Clear();
+                    view.Buffer?.OnPreRender();
+                }
             }
             uiRenderBuffer.Clear();
 
@@ -289,48 +309,56 @@ namespace AnimLib
             
             imgui.Update(uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2, 1.0f/60.0f, mousePos, mouseLeft, mouseRight, false, scrollDelta);
 
-            foreach(var view in views) {
-                view.BeginFrame();
+            if(sceneUpdated) {
+                foreach(var view in views) {
+                    view.BeginFrame();
+                }
             }
             if(OnUpdate != null) {
                 OnUpdate(args.Time);
             }
             
-            if(OnBeginRenderScene != null) {
-                OnBeginRenderScene();
+            if(OnPreRender != null) {
+                OnPreRender();
             }
             // Render scene
             if(currentScene != null)
             {
                 Performance.views = views.Count;
-                var sw = new System.Diagnostics.Stopwatch();
-                sw.Start();
-                foreach(var sv in views) {
-                    // different renderer can use diffent types of buffers
-                    // create the buffer if its wrong type or not created yet
-                    bool valid = renderer.BufferValid(sv.Buffer);
-                    if(sv.Buffer == null || !valid) {
-                        if(sv.Buffer != null && !valid) {
-                            sv.Buffer.Dispose();
+                sw.Restart();
+                if(sceneUpdated) {
+                    foreach(var sv in views) {
+                        // different renderer can use diffent types of buffers
+                        // create the buffer if its wrong type or not created yet
+                        bool valid = renderer.BufferValid(sv.Buffer);
+                        if(sv.Buffer == null || !valid) {
+                            if(sv.Buffer != null && !valid) {
+                                sv.Buffer.Dispose();
+                            }
+                            sv.Buffer = renderer.CreateBuffer(sv.BufferWidth, sv.BufferHeight);
                         }
-                        sv.Buffer = renderer.CreateBuffer(sv.BufferWidth, sv.BufferHeight);
+                        var sceneCamera = currentScene.Camera;
+                        if(overrideCamera) sceneCamera = debugCamera;
+                        if(sceneUpdated) {
+                            renderer.RenderScene(currentScene, sv, sceneCamera, _renderGizmos);
+                            sv.PostRender(sceneCamera, currentScene);
+                        }
                     }
-                    var pbSize = sv.Buffer.Size;
-                    var sceneCamera = currentScene.Camera;
-                    if(overrideCamera) sceneCamera = debugCamera;
-                    renderer.RenderScene(currentScene, sv, sceneCamera, _renderGizmos);
-                    sv.PostRender(sceneCamera, currentScene);
+                } else {
+                    Debug.TLog($"Not rendering scene, no changes {test++}");
                 }
                 sw.Stop();
                 Performance.TimeToRenderViews = sw.Elapsed.TotalSeconds;
             }
 
-            if(OnEndRenderScene != null) {
-                OnEndRenderScene();
+            if(OnPostRender != null) {
+                OnPostRender();
             }
 
-            foreach(var view in views) {
-                view.Buffer?.OnPostRender();
+            if(sceneUpdated) {
+                foreach(var view in views) {
+                    view.Buffer?.OnPostRender();
+                }
             }
 
             // Render UI

@@ -60,6 +60,10 @@ namespace AnimLib {
                 return M4x4.TRS(position, Quaternion.IDENTITY, scale);
             } else { 
                 var parent = (EntityState2D)resolver.GetEntityState(parentId);
+                if(parent == null) {
+                    Debug.Error($"Entity {this} did not find parent {parentId}");
+                    return M4x4.IDENTITY;
+                }
                 return parent.ModelToWorld(resolver) * M4x4.TRS(position, Quaternion.IDENTITY, scale);
             }
         }

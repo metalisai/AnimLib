@@ -31,6 +31,8 @@ namespace AnimLib {
         public event EventHandler<OpenTK.Input.FileDropEventArgs> PFileDrop;
         public event EventHandler<FrameEventArgs> PRenderFrame;
 
+        System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+
         public int WinWidth { get { return Width; } }
         public int WinHeight { get { return Height; } }
 
@@ -67,11 +69,15 @@ namespace AnimLib {
             Width = width;
             Height = height;
 
+
             FileDrop += (object sender, OpenTK.Input.FileDropEventArgs args) => {
                 if(PFileDrop != null) {
                     PFileDrop(this, args);
                 }
             };
+
+            this.VSync = VSyncMode.On;
+            Context.SwapInterval = 1;
         }
 
         public int GetSampler(PlatformTextureSampler sampler) {
@@ -278,9 +284,12 @@ namespace AnimLib {
             GL.PixelStore(PixelStoreParameter.UnpackAlignment, 4);
             //Debug.TLog($"Load texture {tex2d.Width}x{tex2d.Height} {Environment.StackTrace}");
         }
-        
+
         protected override void OnRenderFrame(FrameEventArgs e) {
+            base.OnRenderFrame(e);
+
             // destory resources that are no longer needed
+            sw.Restart();
             if(destroyedOwners.Count > 0) {
                 string owner;
                 while(destroyedOwners.TryTake(out owner)) {
@@ -305,9 +314,14 @@ namespace AnimLib {
             if(PRenderFrame != null) {
                 PRenderFrame(this, e);
             }
+            sw.Stop();
+            Performance.TimeToProcessFrame = sw.Elapsed.TotalSeconds;
             
-            Context.SwapBuffers();
-            base.OnRenderFrame(e);
+            sw.Restart();
+            GL.Flush();
+            SwapBuffers();
+            sw.Stop();
+            Performance.TimeToWaitSync = sw.Elapsed.TotalSeconds;
         }
 
         public void RenderImGui(ImDrawDataPtr data, Texture2D atlas, IList<SceneView> views, IRenderBuffer rb) {

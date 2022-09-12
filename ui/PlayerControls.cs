@@ -413,8 +413,6 @@ namespace AnimLib {
             var spos = ImGui.GetCursorScreenPos();
             ImGui.Image((IntPtr)view.TextureHandle, size, new Vector2(0.0f, 1.0f), new Vector2(1.0f, 0.0f));
             SceneDropTarget();
-
-            //ImGui.Image((IntPtr)OpenTKPlatform.handle, size, new Vector2(0.0f, 1.0f), new Vector2(1.0f, 0.0f));
             view.SetArea((int)spos.X, (int)spos.Y, (int)size.X, (int)size.Y);
             ImGui.End();
         }
@@ -823,6 +821,8 @@ namespace AnimLib {
                 ImGui.End();
                 return;
             }
+            ImGui.Text($"Frame processing: {Performance.TimeToProcessFrame*1000.0:N3}ms");
+            ImGui.Text($"Wait sync: {Performance.TimeToWaitSync*1000.0:N3}ms");
             ImGui.Text($"View rendering: {Performance.TimeToRenderViews*1000.0:N3}ms");
             ImGui.Text($"  Canvas rendering: {Performance.TimeToRenderCanvases*1000.0:N3}ms");
             ImGui.Text($"View count: {Performance.views}");

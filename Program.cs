@@ -159,7 +159,7 @@ namespace AnimLib
                 refreshRate = rate;
             };
 
-            renderState.OnBeginRenderScene += () => {
+            renderState.OnPreRender += () => {
                 WorldSnapshot ret;
                 mainCtx.InvokeAllPosted();
 
@@ -193,18 +193,18 @@ namespace AnimLib
 
                 // render editor UI
                 pctrl.DoInterface();
-                ret = player.NextFrame(1.0/refreshRate);
-                if(ret == null) {
-                    Debug.Warning("Animation player did not return a scene. Rendering nothing.");
+                var frameStatus = player.NextFrame(1.0/refreshRate, out ret);
+                i++;
+                if(frameStatus == AnimationPlayer.FrameStatus.New) {
+                    renderState.SetScene(ret);
                 }
-               i++;
-               renderState.SetScene(ret);
-               renderState.RenderGizmos = !player.Exporting;
+                renderState.SceneStatus = frameStatus;
+                renderState.RenderGizmos = !player.Exporting;
             };
+               
+            renderState.OnPostRender += player.OnEndRenderScene;
 
-            renderState.OnEndRenderScene += player.OnEndRenderScene;
-
-            platform.Run();
+            platform.Run(144.0, 144.0);
             player.Close();
             Console.WriteLine("Application closing");
             if(watcher != null) watcher.Dispose();
