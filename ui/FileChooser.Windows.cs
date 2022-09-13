@@ -1,3 +1,4 @@
+#if Windows
 using System;
 using System.Collections;
 using System.Diagnostics;
@@ -5,7 +6,6 @@ using System.Windows.Forms;
 using System.Text;
 
 namespace AnimLib {
-#if Windows
     class FileChooser {
         static public string ChooseFile(string title, string path, string[] filters)
         {
@@ -54,5 +54,5 @@ namespace AnimLib {
             }
         }
     }
-#endif
 }
+#endif

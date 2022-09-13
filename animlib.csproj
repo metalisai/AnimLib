@@ -34,37 +34,37 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\deps\linux-x64\cimgui.so">
+    <Content Include="..\AnimLib.Native\linux-x64\cimgui.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <PackagePath>runtimes/linux-x64/native/libcimgui.so</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="..\deps\linux-x64\cimguizmo.so">
+    <Content Include="..\AnimLib.Native\linux-x64\cimguizmo.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <PackagePath>runtimes/linux-x64/native/libcimgui.so</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="..\deps\linux-x64\libbass.so">
+    <Content Include="..\AnimLib.Native\linux-x64\libbass.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <PackagePath>runtimes/linux-x64/native/libbass.so</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="..\deps\win-x64\freetype.dll">
+    <Content Include="..\AnimLib.Native\win-x64\freetype.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <PackagePath>runtimes/win-x64/native/freetype.dll</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="..\deps\win-x64\bass.dll">
+    <Content Include="..\AnimLib.Native\win-x64\bass.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <PackagePath>runtimes/win-x64/native/bass.dll</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="..\deps\win-x64\cimgui.dll">
+    <Content Include="..\AnimLib.Native\win-x64\cimgui.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <PackagePath>runtimes/win-x64/native/cimgui.dll</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="..\deps\win-x64\cimguizmo.dll">
+    <Content Include="..\AnimLib.Native\win-x64\cimguizmo.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <PackagePath>runtimes/win-x64/native/cimguizmo.dll</PackagePath>
       <Pack>true</Pack>
