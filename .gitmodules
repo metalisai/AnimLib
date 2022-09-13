@@ -1,9 +1,9 @@
 [submodule "libs/ImGui.NET"]
 	path = libs/ImGui.NET
 	url = https://github.com/ttammear/ImGui.NET.git
-[submodule "animlib"]
-	path = animlib
-	url = ssh://git@tammearu.eu:/home/git/animlib.git
+[submodule "AnimLib"]
+	path = AnimLib
+	url = ssh://git@tammearu.eu:/home/git/AnimLib.git
 [submodule "AnimLib.Resources"]
 	path = AnimLib.Resources
 	url = ssh://git@tammearu.eu:/home/git/AnimLib.Resources.git
