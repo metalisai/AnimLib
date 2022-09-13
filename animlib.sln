@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "animlib", "animlib\animlib.csproj", "{F816233A-3BC6-4DF8-9E30-C308CACEC891}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnimLib", "AnimLib\AnimLib.csproj", "{F816233A-3BC6-4DF8-9E30-C308CACEC891}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnimLib.Resources", "AnimLib.Resources\AnimLib.Resources.csproj", "{A0E7F48E-3122-482C-BC0C-4E1735F2532B}"
 EndProject
