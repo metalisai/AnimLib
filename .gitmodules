@@ -13,3 +13,6 @@
 [submodule "AnimLib.Libs"]
 	path = AnimLib.Libs
 	url = ssh://git@tammearu.eu:/home/git/AnimLib.Libs.git
+[submodule "AnimLib.Native"]
+	path = AnimLib.Native
+	url = ssh://git@tammearu.eu:/home/git/AnimLib.Native.git
