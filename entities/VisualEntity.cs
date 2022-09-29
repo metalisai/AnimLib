@@ -8,7 +8,7 @@ namespace AnimLib {
 
     public abstract class EntityState : ICloneable {
         // TODO: find way to reference state without VisualEntity
-        public int parentId;
+        public int parentId = 0;
         public object creator; // AnimationBehaviour or SceneObject
         public bool active = true;
         public bool selectable = true;

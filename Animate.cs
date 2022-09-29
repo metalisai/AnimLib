@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AnimLib {
@@ -136,6 +137,13 @@ namespace AnimLib {
                 await AnimLib.Time.WaitFrame();
             }
             action.Invoke(endT-startT);
+        }
+
+        public static async Task Update(Action action, CancellationToken token) {
+            while(!token.IsCancellationRequested) {
+                action.Invoke();
+                await AnimLib.Time.WaitFrame();
+            }
         }
 
         public static async Task Sine(Action<float> action, double frequency, double amplitude = 1.0f, double timeOffset = 0.0f, double duration = 0.0) {

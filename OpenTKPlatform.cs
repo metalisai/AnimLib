@@ -214,8 +214,8 @@ namespace AnimLib {
 
             // skia
             Skia = new SkiaRenderer(this);
-            Skia.CreateGL(); // messes up render state when scene has textures, arc rendering buggy
-            //Skia.CreateSW();
+            //Skia.CreateGL(); // messes up render state when scene has textures, arc rendering buggy
+            Skia.CreateSW();
 
             if(OnLoaded != null) {
                 OnLoaded(this, null);
@@ -283,6 +283,9 @@ namespace AnimLib {
             }
             GL.PixelStore(PixelStoreParameter.UnpackAlignment, 4);
             //Debug.TLog($"Load texture {tex2d.Width}x{tex2d.Height} {Environment.StackTrace}");
+        }
+
+        protected override void OnUpdateFrame(FrameEventArgs e) {
         }
 
         protected override void OnRenderFrame(FrameEventArgs e) {
@@ -379,11 +382,13 @@ namespace AnimLib {
                         }
                         if(views.Any(x => x.TextureHandle == (int)pcmd.TextureId)) {
                             GL.Uniform1(entIdLoc, -1);
+                            GL.Disable(EnableCap.Blend);
                         } else {
                             GL.Uniform1(entIdLoc, 0xAAAAAAA);
                         }
                         GL.Scissor((int)pcmd.ClipRect.X, Height - (int)pcmd.ClipRect.W, (int)(pcmd.ClipRect.Z-pcmd.ClipRect.X), (int)(pcmd.ClipRect.W-pcmd.ClipRect.Y));
                         GL.DrawElementsBaseVertex(PrimitiveType.Triangles, (int)pcmd.ElemCount, DrawElementsType.UnsignedShort, new IntPtr(iofst*sizeof(ushort)), (int)vofst);
+                        GL.Enable(EnableCap.Blend);
                     }
                     iofst += pcmd.ElemCount;
                 }
@@ -422,9 +427,9 @@ namespace AnimLib {
             var bufs = new DrawBuffersEnum[] {DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1};
             GL.DrawBuffers(2, bufs);
 
-            GL.BlendEquation(BlendEquationMode.FuncAdd);
+            GL.BlendEquationSeparate(BlendEquationMode.FuncAdd, BlendEquationMode.FuncAdd);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            //GL.BlendFuncSeparate(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha, BlendingFactorSrc.One, BlendingFactorDest.Zero); 
+            //GL.BlendFuncSeparate(BlendingFactorSrc.One, BlendingFactorDest.Zero, BlendingFactorSrc.One, BlendingFactorDest.Zero); 
             GL.Enable(EnableCap.Blend);
 
             var smat = M4x4.Ortho(0.0f, pb.Size.Item1, 0.0f, pb.Size.Item2, -1.0f, 1.0f);

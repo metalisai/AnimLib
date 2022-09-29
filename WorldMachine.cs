@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -124,6 +125,18 @@ namespace AnimLib {
             Step(delta);
         }
 
+        class EntComparer : IComparer<EntityState2D>
+        {
+            public int Compare(EntityState2D x, EntityState2D y)
+            {
+                if(x.sortKey < y.sortKey)
+                    return -1;
+                else if(x.sortKey == y.sortKey)
+                    return 0;
+                else return 1;
+            }
+        }
+
         public WorldSnapshot GetWorldSnapshot() {
             var ret = new WorldSnapshot();
             ret.Glyphs = _glyphs.Where(x => x.active).ToArray();
@@ -142,6 +155,7 @@ namespace AnimLib {
                         Entities = c.Value.Entities.Where(x => x.active).Select(x => x.Clone() as EntityState2D).ToArray(),
                         Canvas = canvas
                     };
+                Array.Sort(css.Entities, new EntComparer());
                 l.Add(css);
                 foreach(var s in css.Entities) s.canvas = canvas;
             }
@@ -255,29 +269,59 @@ namespace AnimLib {
                 case WorldDestroyCommand worldDestroy:
                 DestroyEntity(worldDestroy.entityId);
                 break;
-                case WorldPropertyCommand worldProperty:
-                //Console.WriteLine($"Property {worldProperty.property} set!");
-                var lower = char.ToLower(worldProperty.property[0]) + worldProperty.property.Substring(1);
-                if(!_entities.ContainsKey(worldProperty.entityId)) {
-                    Debug.Error($"Setting property of an entity that doesnt exist. Entity {worldProperty.entityId}, property {worldProperty.property}");
-                    Debug.Error($"Last worldmachine action: {_lastAction}");
-                    Debug.Error($"Command {_playCursorCmd}/{Program.Length}");
-                }
-
-                var state = _entities[worldProperty.entityId];
-                // move 2D entity from 1 canvas to another if its changed
-                if(state is EntityState2D && worldProperty.property.ToLower() == "canvasid") {
-                    var oldCanvas = _canvases[(int)worldProperty.oldvalue];
-                    var newCanvas = _canvases[(int)worldProperty.newvalue];
-                    switch(state) {
-                        case ShapeState ss1:
-                        oldCanvas.Entities.RemoveAll(x => x.entityId == worldProperty.entityId);
-                        newCanvas.Entities.Add(ss1);
-                        break;
+                case WorldPropertyMultiCommand wpm:
+                {
+                    var lower = char.ToLower(wpm.property[0]) + wpm.property.Substring(1);
+                    for(int i = 0; i < wpm.entityIds.Length; i++) {
+                        var eid = wpm.entityIds[i];
+                        var oldValue = wpm.oldvalue[i];
+                        if(!_entities.ContainsKey(eid)) {
+                            Debug.Error($"Setting property of an entity that doesnt exist. Entity {eid}, property {wpm.property}");
+                            Debug.Error($"Last worldmachine action: {_lastAction}");
+                            Debug.Error($"Command {_playCursorCmd}/{Program.Length}");
+                        }
+                        var state = _entities[eid];
+                        // move 2D entity from 1 canvas to another if its changed
+                        if(state is EntityState2D && wpm.property.ToLower() == "canvasid") {
+                            var oldCanvas = _canvases[(int)oldValue];
+                            var newCanvas = _canvases[(int)wpm.newvalue];
+                            switch(state) {
+                                case ShapeState ss1:
+                                oldCanvas.Entities.RemoveAll(x => x.entityId == eid);
+                                newCanvas.Entities.Add(ss1);
+                                break;
+                            }
+                        }
+                        var field = state.GetType().GetField(lower);
+                        field.SetValue(state, wpm.newvalue);
                     }
                 }
-                var field = state.GetType().GetField(lower);
-                field.SetValue(state, worldProperty.newvalue);
+                break;
+                case WorldPropertyCommand worldProperty:
+                {
+                    //Console.WriteLine($"Property {worldProperty.property} set!");
+                    var lower = char.ToLower(worldProperty.property[0]) + worldProperty.property.Substring(1);
+                    if(!_entities.ContainsKey(worldProperty.entityId)) {
+                        Debug.Error($"Setting property of an entity that doesnt exist. Entity {worldProperty.entityId}, property {worldProperty.property}");
+                        Debug.Error($"Last worldmachine action: {_lastAction}");
+                        Debug.Error($"Command {_playCursorCmd}/{Program.Length}");
+                    }
+
+                    var state = _entities[worldProperty.entityId];
+                    // move 2D entity from 1 canvas to another if its changed
+                    if(state is EntityState2D && worldProperty.property.ToLower() == "canvasid") {
+                        var oldCanvas = _canvases[(int)worldProperty.oldvalue];
+                        var newCanvas = _canvases[(int)worldProperty.newvalue];
+                        switch(state) {
+                            case ShapeState ss1:
+                            oldCanvas.Entities.RemoveAll(x => x.entityId == worldProperty.entityId);
+                            newCanvas.Entities.Add(ss1);
+                            break;
+                        }
+                    }
+                    var field = state.GetType().GetField(lower);
+                    field.SetValue(state, worldProperty.newvalue);
+                }
                 break;
                 case WorldSetActiveCameraCommand setActiveCameraCommand:
                 _activeCamera = (CameraState)_entities[setActiveCameraCommand.cameraEntId];
@@ -316,21 +360,45 @@ namespace AnimLib {
                 CreateEntity(_destroyedEntities[worldDestroy.entityId]);
                 _destroyedEntities.Remove(worldDestroy.entityId);
                 break;
-                case WorldPropertyCommand worldProperty:
-                var lower = char.ToLower(worldProperty.property[0]) + worldProperty.property.Substring(1);
-                var state = _entities[worldProperty.entityId];
-                if(state is EntityState2D && worldProperty.property.ToLower() == "canvasid") {
-                    var newCanvas = _canvases[(int)worldProperty.oldvalue];
-                    var oldCanvas = _canvases[(int)worldProperty.newvalue];
-                    switch(state) {
-                        case ShapeState ss1:
-                        oldCanvas.Entities.RemoveAll(x => x.entityId == worldProperty.entityId);
-                        newCanvas.Entities.Add(ss1);
-                        break;
+                case WorldPropertyMultiCommand wpm:
+                {
+                    for(int i = 0; i < wpm.entityIds.Length; i++) {
+                        var eid = wpm.entityIds[i];
+                        var oval = wpm.oldvalue[i];
+                        var lower = char.ToLower(wpm.property[0]) + wpm.property.Substring(1);
+                        var state = _entities[eid];
+                        if(state is EntityState2D && wpm.property.ToLower() == "canvasid") {
+                            var newCanvas = _canvases[(int)oval];
+                            var oldCanvas = _canvases[(int)wpm.newvalue];
+                            switch(state) {
+                                case ShapeState ss1:
+                                oldCanvas.Entities.RemoveAll(x => x.entityId == eid);
+                                newCanvas.Entities.Add(ss1);
+                                break;
+                            }
+                        }
+                        var field = state.GetType().GetField(lower);
+                        field.SetValue(state, oval);
                     }
                 }
-                var field = state.GetType().GetField(lower);
-                field.SetValue(state, worldProperty.oldvalue);
+                break;
+                case WorldPropertyCommand worldProperty:
+                {
+                    var lower = char.ToLower(worldProperty.property[0]) + worldProperty.property.Substring(1);
+                    var state = _entities[worldProperty.entityId];
+                    if(state is EntityState2D && worldProperty.property.ToLower() == "canvasid") {
+                        var newCanvas = _canvases[(int)worldProperty.oldvalue];
+                        var oldCanvas = _canvases[(int)worldProperty.newvalue];
+                        switch(state) {
+                            case ShapeState ss1:
+                            oldCanvas.Entities.RemoveAll(x => x.entityId == worldProperty.entityId);
+                            newCanvas.Entities.Add(ss1);
+                            break;
+                        }
+                    }
+                    var field = state.GetType().GetField(lower);
+                    field.SetValue(state, worldProperty.oldvalue);
+                }
                 break;
                 case WorldSetActiveCameraCommand setActiveCameraCommand:
                 _activeCamera = (setActiveCameraCommand.oldCamEntId == 0 ? null : (CameraState)_entities[setActiveCameraCommand.oldCamEntId]);

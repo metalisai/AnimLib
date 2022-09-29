@@ -278,10 +278,16 @@ namespace AnimLib
             Resources.Textures.Add(texture);
         }
 
+        public delegate void OnPropertyChangedD(VisualEntity ent, string prop, object newValue);
+        public event OnPropertyChangedD OnPropertyChanged;
+
         public void SetProperty<T>(VisualEntity entity, string propert, T value, T oldvalue) {
             if(value.Equals(oldvalue))
                 return;
             if(entity.created) {
+                if(OnPropertyChanged != null) {
+                    OnPropertyChanged(entity, propert, value);
+                }
                 var cmd = new WorldPropertyCommand {
                     entityId = entity.EntityId,
                     time = Time.T,
@@ -291,6 +297,18 @@ namespace AnimLib
                 };
                 _commands.Add(cmd);
             }
+        }
+
+        public void SetPropertyMulti<T>(IEnumerable<VisualEntity> entity, string propert, T value, T[] oldvalues) {
+            var ents = entity.Zip(oldvalues, (f, s) => (f, s)).Where(x => x.f.created);
+            var cmd = new WorldPropertyMultiCommand {
+                entityIds = ents.Select(x => x.f.EntityId).ToArray(),
+                time = Time.T,
+                property = propert,
+                newvalue = value,
+                oldvalue = ents.Select(x => (object)x.s).ToArray(),
+            };
+            _commands.Add(cmd);
         }
 
         private void EntityCreated(VisualEntity entity) {
@@ -345,13 +363,26 @@ namespace AnimLib
         public Task CreateFadeIn<T>(T entity, float duration) where T : VisualEntity,IColored {
             CreateInstantly(entity);
             var c = entity.Color;
+            var alpha = c.a;
             return Animate.InterpT<float>(x => {
-                    c.a = (byte)Math.Round(x*255.0f);
+                    c.a = (byte)Math.Round(x*((float)alpha));
                     entity.Color = c;
                 }, 0.0f, 1.0f, duration);
         }
 
-         public T Clone<T>(T e) where T : VisualEntity, new() {
+        public async Task DestroyFadeOut<T>(T entity, float duration) where T : Shape {
+            var c = entity.Color;
+            var cc = entity.ContourColor;
+            await Animate.InterpT<float>(x => {
+                    c.a = (byte)Math.Round((1.0f-x)*c.a);
+                    cc.a = (byte)Math.Round((1.0f-x)*cc.a);
+                    entity.Color = c;
+                    entity.ContourColor = cc;
+                }, 0.0f, 1.0f, duration);
+            Destroy(entity);
+        }
+
+         public T Clone<T>(T e) where T : VisualEntity {
             var ret = (T)e.Clone();
             return ret;
         }
@@ -368,6 +399,7 @@ namespace AnimLib
                 time = Time.T,
                 entityId = obj.EntityId,
             };
+            obj.created = false;
             _commands.Add(cmd);
         }
 

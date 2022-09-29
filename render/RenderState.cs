@@ -292,10 +292,11 @@ namespace AnimLib
             currentScene = ss;
         }
 
-        int test = 0;
+        bool wasOverridden = false;
 
         private void RenderFrame(object sender, FrameEventArgs args) {
-            bool sceneUpdated = overrideCamera || SceneStatus == AnimationPlayer.FrameStatus.New;
+            bool sceneUpdated = overrideCamera || wasOverridden || SceneStatus == AnimationPlayer.FrameStatus.New;
+            wasOverridden = overrideCamera;
             //bool sceneUpdated = true;
             if(sceneUpdated) {
                 foreach(var view in views) {
@@ -309,10 +310,8 @@ namespace AnimLib
             
             imgui.Update(uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2, 1.0f/60.0f, mousePos, mouseLeft, mouseRight, false, scrollDelta);
 
-            if(sceneUpdated) {
-                foreach(var view in views) {
-                    view.BeginFrame();
-                }
+            foreach(var view in views) {
+                view.BeginFrame();
             }
             if(OnUpdate != null) {
                 OnUpdate(args.Time);

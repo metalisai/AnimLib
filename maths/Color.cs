@@ -34,6 +34,25 @@ namespace AnimLib
             return new Color((float)r.r/255.0f * l, (float)r.g/255.0f * l, (float)r.b/255.0f * l, r.a);
         }
 
+        public Color WithA(byte a) {
+            return new Color(this.r, this.g, this.b, a);
+        }
+
+        public override bool Equals(object obj) {
+            if(obj is Color) {
+                var cobj = (Color)obj;
+                return this == cobj;
+            } else return base.Equals(obj);
+        }
+
+        public static bool operator== (Color a, Color b) {
+            return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
+        }
+
+        public static bool operator!= (Color a, Color b) {
+            return a.r != b.r || a.g != b.g || a.b != b.b || a.a != b.a;
+        }
+
         public uint ToU32() {
             return (uint)r<<24 | (uint)g<<16 | (uint)b<<8 | (uint)a;
         }
@@ -106,7 +125,7 @@ namespace AnimLib
         public static readonly Color YELLOW = new Color(255, 255, 0, 255);
         public static readonly Color CYAN = new Color(0, 255, 255, 255);
         public static readonly Color MAGENTA = new Color(255, 0, 255, 255);
-        public static readonly Color TRANSPARENT = new Color(0, 0, 0, 255);
+        public static readonly Color TRANSPARENT = new Color(255, 255, 255, 0);
         public static readonly Color ORANGE = new Color(240, 94, 35, 255);
         public static readonly Color BROWN = new Color(101, 67, 33, 255);
         public static readonly Color VIOLET = new Color(121, 61, 244, 255);

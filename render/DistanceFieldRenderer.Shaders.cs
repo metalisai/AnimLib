@@ -569,9 +569,7 @@ void main() {
     vec2 texCoord = vec2(v_texCoord.x, 1.0 - v_texCoord.y);
     vec3 outColorRGB = v_color.rgb;
     float alpha = v_color.a*texture2D(_MainTex, texCoord).r;
-    //outColor = vec4(outColorRGB*alpha, alpha);
     outColor = vec4(outColorRGB, alpha);
-    //outColor = vec4(0.0f, 0.0f, 0.0f, 1.0f);
     outEntityId = v_entityId;
 }";
     }

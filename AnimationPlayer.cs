@@ -299,9 +299,11 @@ namespace AnimLib {
                     }
                     if (currentAnimation == null) {
                         currentAnimation = prep;
+                        Performance.CommandCount = prep.Commands.Length;
                     }                
                 } else {
                     currentAnimation = prep;
+                    Performance.CommandCount = prep.Commands.Length;
                     frameChanged = true;
                 }
 
@@ -365,7 +367,8 @@ namespace AnimLib {
                 if(machine.GetPlaybackTime() >= endTime) {
                     export.exporter.Stop();
                     var sound = currentAnimation.SoundTrack;
-                    var count = Math.Min(sound.samples[0].Length, (int)Math.Round(export.endTime * sound.sampleRate));
+                    var lengthSeconds = machine.GetPlaybackTime();
+                    var count = Math.Min(sound.samples[0].Length, (int)Math.Round(lengthSeconds * sound.sampleRate));
                     var samples = sound.samples[0].Take(count).ToArray();
                     export.exporter.AddAudio(export.fileName, samples, sound.sampleRate);
                     export = null;

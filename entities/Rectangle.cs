@@ -32,6 +32,9 @@ namespace AnimLib {
         }
 
         public Rectangle(float w, float h) : base(new RectangleState(CreateRectanglePath(w, h))) {
+            var s = this.state as RectangleState;
+            s.width = w;
+            s.height = h;
         }
 
         public Rectangle(Rectangle r) : base(r) {
@@ -42,8 +45,10 @@ namespace AnimLib {
                 return ((RectangleState)state).width;
             }
             set {
-                World.current.SetProperty(this, "Width", value, ((RectangleState)state).width);
-                ((RectangleState)state).width = value;
+                var rs = (RectangleState)state;
+                rs.width = value;
+                var pb = CreateRectanglePath(rs.width, rs.height);
+                this.Path = pb;
             }
         }
 
@@ -52,8 +57,10 @@ namespace AnimLib {
                 return ((RectangleState)state).height;
             }
             set {
-                World.current.SetProperty(this, "Height", value, ((RectangleState)state).height);
-                ((RectangleState)state).height = value;
+                var rs = (RectangleState)state;
+                rs.height = value;
+                var pb = CreateRectanglePath(rs.width, rs.height);
+                this.Path = pb;
             }
         }
 

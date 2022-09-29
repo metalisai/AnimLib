@@ -1,11 +1,12 @@
 
 namespace AnimLib {
     public abstract class CameraState : EntityState3D {
-        public Color clearColor = Color.WHITE;
+        public Color clearColor = new Color(255, 255, 255, 255);
 
         public CameraState() {}
 
         public CameraState(CameraState cs) : base(cs) {
+            this.clearColor = cs.clearColor;
         }
 
         public abstract M4x4 CreateWorldToClipMatrix(float aspect);

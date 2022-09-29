@@ -172,7 +172,7 @@ namespace AnimLib {
 
         string exportfileName = "test.mp4";
         double exportStartTime = 0.0;
-        double exportEndTime = 10.0;
+        double exportEndTime = 99999.0;
 
         private void DropEntity2D(DragDropObject obj, Vector2 pos, CanvasState canvas) {
             float size;
@@ -825,7 +825,9 @@ namespace AnimLib {
             ImGui.Text($"Wait sync: {Performance.TimeToWaitSync*1000.0:N3}ms");
             ImGui.Text($"View rendering: {Performance.TimeToRenderViews*1000.0:N3}ms");
             ImGui.Text($"  Canvas rendering: {Performance.TimeToRenderCanvases*1000.0:N3}ms");
-            ImGui.Text($"View count: {Performance.views}");
+            ImGui.Text($"Number of scene views: {Performance.views}");
+            ImGui.Text($"Number of commands in animation: {Performance.CommandCount}");
+            ImGui.Text($"Last bake time: {Performance.TimeToBake*1000:N3}ms");
             ImGui.End();
         }
 

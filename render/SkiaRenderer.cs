@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 using SkiaSharp;
 using System.Collections.Generic;
@@ -12,12 +13,75 @@ namespace AnimLib {
             return new SKPoint(v.x, v.y);
         }
 
+        public static Vector2 ToV2(this SKPoint v) {
+            return new Vector2(v.X, v.Y);
+        }
+
         public static SKColor ToSKColor(this Color c) {
             return new SKColor(c.r, c.g, c.b, c.a);
         }
 
         public static SKMatrix ToSKMatrix(this M3x3 m) {
             return new SKMatrix(m.m11, m.m12, m.m13, m.m21, m.m22, m.m23, m.m31, m.m32, m.m33);
+        }
+
+        public static ShapePath ToShapePath(this SKPath p) {
+            var pathBuilder = new PathBuilder();
+            var points = new SKPoint[4];
+            var itr = p.CreateIterator(false); 
+            SKPathVerb verb;
+            while((verb = itr.Next(points)) != SKPathVerb.Done) {
+                switch(verb) {
+                    case SKPathVerb.Move:
+                        pathBuilder.MoveTo(points[0].ToV2());
+                        break;
+                    case SKPathVerb.Line:
+                        pathBuilder.LineTo(points[1].ToV2());
+                        break;
+                    case SKPathVerb.Cubic:
+                        pathBuilder.CubicTo(points[1].ToV2(), points[2].ToV2(), points[3].ToV2());
+                        break;
+                    case SKPathVerb.Quad:
+                        pathBuilder.QuadTo(points[1].ToV2(), points[2].ToV2());
+                        break;
+                    case SKPathVerb.Conic:
+                        pathBuilder.ConicTo(points[1].ToV2(), points[2].ToV2(), itr.ConicWeight());
+                        break;
+                    case SKPathVerb.Close:
+                        pathBuilder.Close();
+                        break;
+                }
+            }
+            return pathBuilder.GetPath();
+        }
+
+        public static SKPath ToSKPath(this ShapePath p) {
+            var path = new SKPath();
+            foreach(var verb in p.path) {
+                switch(verb.Item1) {
+                    case PathVerb.Move:
+                        path.MoveTo(verb.Item2.points[0].ToSKPoint());
+                        break;
+                    case PathVerb.Line:
+                        path.LineTo(verb.Item2.points[1].ToSKPoint());
+                        break;
+                    case PathVerb.Quad:
+                        path.QuadTo(verb.Item2.points[1].ToSKPoint(), verb.Item2.points[2].ToSKPoint());
+                        break;
+                    case PathVerb.Cubic:
+                        path.CubicTo(verb.Item2.points[1].ToSKPoint(), verb.Item2.points[2].ToSKPoint(), verb.Item2.points[3].ToSKPoint());
+                        break;
+                    case PathVerb.Conic:
+                        path.ConicTo(verb.Item2.points[1].ToSKPoint(), verb.Item2.points[2].ToSKPoint(), verb.Item2.conicWeight);
+                        break;
+                    case PathVerb.Close:
+                        path.Close();
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return path;
         }
     }
 
@@ -52,8 +116,11 @@ namespace AnimLib {
 
         IPlatform platform;
 
+        TextPlacement textPlacement;
+
         public SkiaRenderer(IPlatform platform) {
             this.platform = platform;
+            textPlacement = new TextPlacement("/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf", "Ubuntu");
         }
 
         private SKBitmap LoadTexture(Texture2D texture) {
@@ -216,17 +283,39 @@ namespace AnimLib {
             }
         }
 
-        SKMatrix GetLocalTransform(EntityState2D ent, CanvasState rc, Rect aabb) {
-            var origin = (new Vector2(0.5f, 0.5f)+ent.anchor)*new Vector2(rc.width, rc.height);
-            var translation = origin + ent.position;
+        M3x3 getModelMatrix(EntityState2D ent, CanvasState rc, EntityState2D[] entities) {
+            M3x3? parentMat = null;
+            if(ent.parentId > 0) {
+                var parent = entities.Where(x => x.entityId == ent.parentId).FirstOrDefault();
+                if(parent != null) {
+                    parentMat = getModelMatrix(parent, rc, entities);
+                } else {
+                    Debug.Warning("Paren't set but it was not part of the canvas");
+                }
+            }
 
+            Vector2 origin;
+            if(ent.parentId <= 0) {
+                origin = (new Vector2(0.5f, 0.5f)+ent.anchor)*new Vector2(rc.width, rc.height);
+            } else {
+                origin = Vector2.ZERO;
+            }
+            var translation = origin + ent.position;
+            var trs = M3x3.TRS_2D(translation, ent.rot, ent.scale);
+            if(parentMat != null) {
+                trs =parentMat.Value * trs;
+            }
+            return trs;
+        }
+
+        SKMatrix GetLocalTransform(EntityState2D ent, CanvasState rc, Rect aabb, EntityState2D[] entities) {
             // TODO: AABB center and (0,0) might be misaligned?
             var changePivot = M3x3.Translate_2D(-(new Vector2(aabb.width, aabb.height)*ent.pivot));
-
-            var trs = M3x3.TRS_2D(translation, ent.rot, ent.scale);
+            var trs = getModelMatrix(ent, rc, entities);
             var lt = trs * changePivot;
             //lt.m22 *= -1.0f;
-            return lt.ToSKMatrix();
+            var ret = lt.ToSKMatrix();
+            return ret;
         }
 
         public void RenderCanvas(CanvasSnapshot css, ref M4x4 worldToClip, bool gizmo) {
@@ -266,6 +355,7 @@ namespace AnimLib {
                     paint.StrokeWidth = 0.0f;
                     paint.Color = SKColors.Black;
                     canvas.DrawPath(path, paint);
+                    path.Dispose();
                 }
             }
             
@@ -276,37 +366,16 @@ namespace AnimLib {
                     float bh = this.height;
                     
                     using(SKPaint paint = new SKPaint()) {
-                        var path = new SKPath();
-                        foreach(var verb in shape.path.path) {
-                            switch(verb.Item1) {
-                                case PathVerb.Move:
-                                    path.MoveTo(verb.Item2.points[0].ToSKPoint());
-                                    break;
-                                case PathVerb.Line:
-                                    path.LineTo(verb.Item2.points[1].ToSKPoint());
-                                    break;
-                                case PathVerb.Quad:
-                                    path.QuadTo(verb.Item2.points[1].ToSKPoint(), verb.Item2.points[2].ToSKPoint());
-                                    break;
-                                case PathVerb.Cubic:
-                                    path.CubicTo(verb.Item2.points[1].ToSKPoint(), verb.Item2.points[2].ToSKPoint(), verb.Item2.points[3].ToSKPoint());
-                                    break;
-                                case PathVerb.Conic:
-                                    path.ConicTo(verb.Item2.points[1].ToSKPoint(), verb.Item2.points[2].ToSKPoint(), verb.Item2.conicWeight);
-                                    break;
-                                case PathVerb.Close:
-                                    path.Close();
-                                    break;
-                                default:
-                                    break;
-                            }
-                        }
+                        paint.IsAntialias = true;
+                        paint.SubpixelText = true;
+                        paint.IsAutohinted = true;
+                        var path = shape.path.ToSKPath();
                         var bounds = path.TightBounds;
                         var pathSize = new Vector2(bounds.Width, bounds.Height);
 
                         // calculate transform
                         // NOTE: Skia's top is bottom in our renderer
-                        SKMatrix localTransform = GetLocalTransform(shape, rc, new Rect(bounds.Left, bounds.Top, bounds.Width, bounds.Height));
+                        SKMatrix localTransform = GetLocalTransform(shape, rc, new Rect(bounds.Left, bounds.Top, bounds.Width, bounds.Height), css.Entities);
 
                         path.Transform(localTransform);
 
@@ -315,7 +384,6 @@ namespace AnimLib {
                             var c = shape.color.ToSKColor();
                             paint.Color = c;
                             paint.Style = SKPaintStyle.Fill;
-                            paint.IsAntialias = true;
                             canvas.DrawPath(path, paint);
                         }
                         // draw contour
@@ -324,7 +392,6 @@ namespace AnimLib {
                             paint.Color = c;
                             paint.StrokeWidth = shape.contourSize;
                             paint.Style = SKPaintStyle.Stroke;
-                            paint.IsAntialias = true;
                             canvas.DrawPath(path, paint);
                         }
                         path.Dispose();
@@ -341,7 +408,7 @@ namespace AnimLib {
 
                         //SKMatrix GetLocalTransform(EntityState2D ent, CanvasState rc, Rect aabb) {
                         var curMat = canvas.TotalMatrix;
-                        var local = GetLocalTransform(sprite, rc, new Rect(0.0f, 0.0f, sprite.width, sprite.height)).PreConcat(new SKMatrix(1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f)).PostConcat(curMat);
+                        var local = GetLocalTransform(sprite, rc, new Rect(0.0f, 0.0f, sprite.width, sprite.height), css.Entities).PreConcat(new SKMatrix(1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f)).PostConcat(curMat);
                         canvas.SetMatrix(local);
                         var rect = new SKRect(-sprite.width/2.0f, -sprite.height/2.0f, sprite.width/2.0f, sprite.height/2.0f);
                         using(var paint = new SKPaint()) {
@@ -355,6 +422,7 @@ namespace AnimLib {
                     break;
                 }
             }
+
             Flush(css.Canvas.entityId);
         }
 

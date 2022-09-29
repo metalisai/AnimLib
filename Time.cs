@@ -18,6 +18,7 @@ namespace AnimLib
         }
         public static void NewFrame(double dt) {
             _currentTime += dt;
+            _dt = dt;
 
             // NOTE: items can be added to the list when SetResult is called!
             for(int i = _waitFrameTasks.Count-1; i >= 0; i--) {
@@ -37,6 +38,7 @@ namespace AnimLib
                 }
             }
 
+            _dt = double.NaN;
             _currentFrame++;
         }
         public static Task WaitFrame() {
@@ -66,12 +68,22 @@ namespace AnimLib
             _waitFrameTasks.Clear();
             _waitTasks.Clear();
         }
+        static double _dt;
         static double _currentTime;
         static long _currentFrame;
 
         public static double T {
             get {
                 return _currentTime;
+            }
+        }
+
+        public static double deltaT {
+            get {
+                if(double.IsNaN(_dt)) {
+                    Debug.Error("Time.deltaT is not valid outside animation tasks");
+                }
+                return _dt;
             }
         }
 

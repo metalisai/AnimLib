@@ -29,6 +29,16 @@ namespace AnimLib {
             CreateGlyphs();
         }
 
+        public Glyph[] GetSubstring(string str) {
+            var mystr = new string(this.Glyphs.Select(x => x.Character).ToArray());
+            var idx = mystr.IndexOf(str);
+            if(idx >= 0) {
+                var range = Glyphs.GetRange(idx, str.Length).ToArray();
+                return range;
+            }
+            return null;
+        }
+
         public string Text {
             get {
                 var sb = new StringBuilder();
@@ -83,9 +93,12 @@ namespace AnimLib {
                 return ((Text2DState)state).color;
             }
             set {
+                var oldValues = Glyphs.Select(x => x.Color).ToArray();
                 foreach(var g in Glyphs) {
-                    g.Color = value;
+                    var gs = g.state as GlyphState;
+                    gs.color = value;
                 }
+                World.current.SetPropertyMulti(Glyphs, "Color", value, oldValues);
                 World.current.SetProperty(this, "Color", value, ((Text2DState)state).color);
                 ((Text2DState)state).color = value;
             }

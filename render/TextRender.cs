@@ -32,8 +32,8 @@ namespace AnimLib {
         Dictionary<GlyphKey, CachedGlyph> _cachedGlyphs = new Dictionary<GlyphKey, CachedGlyph>();
 
         int vertexIndex = 0;
-        float[] vertexBuffer = new float[24000];
-        int[] entityIdBuffer = new int[2700];
+        float[] vertexBuffer = new float[65535];
+        int[] entityIdBuffer = new int[8192];
 
         byte[,] cache = new byte[TEXTURE_WIDTH, TEXTURE_HEIGHT];
         int tex;
@@ -344,6 +344,8 @@ namespace AnimLib {
             loc = GL.GetUniformLocation(program, "_MainTex");
             GL.Uniform1(loc, 0);
             GL.ActiveTexture(TextureUnit.Texture0);
+            //GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GL.BlendFuncSeparate(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha, BlendingFactorSrc.One, BlendingFactorDest.One);
             //GL.BindSampler(0, platform.GetSampler(PlatformTextureSampler.Linear));
             GL.BindTexture(TextureTarget.Texture2D, tex);
             GL.Disable(EnableCap.CullFace);

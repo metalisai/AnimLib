@@ -66,6 +66,20 @@ namespace AnimLib
             return new Vector4((float)((val>>24)&0xFF)/255.0f, (float)((val>>16)&0xFF)/255.0f, (float)((val>>8)&0xFF)/255.0f, (float)((val)&0xFF)/255.0f);
         }
 
+        public static bool operator ==(Vector4 lhs, Vector4 rhs)
+        {
+            return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z && lhs.w  == rhs.w;
+        }
+
+        public static bool operator !=(Vector4 lhs, Vector4 rhs)
+        {
+            return !(lhs==rhs);
+        }
+
+        public override bool Equals(object obj) {
+            return obj is Vector4 && ((Vector4)obj).x == x && ((Vector4)obj).y == y && ((Vector4)obj).z == z;
+        }
+
         public static Vector4 operator+ (Vector4 a, Vector4 b) {
             return new Vector4(a.x+b.x, a.y+b.y, a.z+b.z, a.w+b.w);
         }

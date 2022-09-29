@@ -44,13 +44,15 @@ namespace AnimLib {
         AnimationPlayer.PlayerProperties props;
         internal List<AnimationHandle2D> VectorHandles = new List<AnimationHandle2D>();
         internal List<AnimationHandle3D> VectorHandles3D = new List<AnimationHandle3D>();
+        TextPlacement textPlacement;
 
-        internal Animator(ResourceManager resourceManager, World world, PlayerScene scene, AnimationSettings settings, AnimationPlayer.PlayerProperties props) {
+        internal Animator(ResourceManager resourceManager, World world, PlayerScene scene, AnimationSettings settings, AnimationPlayer.PlayerProperties props, TextPlacement text) {
             this.resourceManager = resourceManager;
             this.world = world;
             this.settings = settings;
             this.Scene = scene;
             this.props = props;
+            this.textPlacement = text;
         }
 
         public Color GetColor(string name) {
@@ -60,6 +62,14 @@ namespace AnimLib {
             } else { 
                 return default(Color);
             }
+        }
+
+        public void LoadFont(string filename, string fontname) {
+            textPlacement.LoadFont(filename, fontname);
+        }
+
+        public List<Shape> ShapeText(string texts, Vector2 pos, int size, string font = null) {
+            return textPlacement.PlaceTextAsShapes(texts, pos, size, font);
         }
 
         public Vector2 CreateHandle2D(string name, Vector2 pos, Vector2 anchor = default) {
@@ -93,6 +103,19 @@ namespace AnimLib {
             };
             VectorHandles3D.Add(handle);
             return pos;
+        }
+        
+        public SoundSample? GetSoundResource(string name) {
+            string fileName;
+            try {
+                using (var res = resourceManager.GetResource(name, out fileName)) {
+                    var sample = SoundSample.GetFromStream(res);
+                    return sample;
+                }
+            } catch (NullReferenceException e) {
+                Debug.Error($"Failed to load resource {name}");
+            }
+            return null;
         }
 
         public Texture2D GetTextureResource(string name) {
@@ -173,6 +196,9 @@ namespace AnimLib {
         string error;
         string stackTrace;
         System.Threading.Tasks.Task anim = null;
+        System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+
+        TextPlacement text = new TextPlacement("/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf", "Ubuntu");
 
         private void BakeError(Exception e, World world, Animator animator) {
             haveError = true;
@@ -187,13 +213,15 @@ namespace AnimLib {
 
         public BakedAnimation BakeAnimation(AnimationBehaviour behaviour1, AnimationSettings settings, AnimationPlayer.PlayerProperties props, PlayerScene scene) {
             var world = new World(settings);
-            var animator = new Animator(resourceManager, world, scene, settings, props);
+            var animator = new Animator(resourceManager, world, scene, settings, props, text);
 
             haveError = false;
             error = "";
             stackTrace = "";
 
             bool dummy = scene == null;
+
+            sw.Restart();
 
             Time.Reset();
             world.Reset();
@@ -279,6 +307,9 @@ namespace AnimLib {
             Debug.Log($"Baked animation has {cmds.Length} commands");
 
             World.current = null;
+
+            sw.Stop();
+            Performance.TimeToBake = sw.Elapsed.TotalSeconds;
 
             return new BakedAnimation() {
                 haveError = haveError,

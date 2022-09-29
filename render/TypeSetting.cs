@@ -20,6 +20,11 @@ namespace AnimLib {
         public char c;
         public float size;
 
+        public GlyphKey(char c, float size) {
+            this.c = c;
+            this.size = size;
+        }
+
         public override bool Equals(object obj) {
             if(obj is GlyphKey) {
                 var other = (GlyphKey)obj;

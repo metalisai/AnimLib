@@ -180,7 +180,7 @@ namespace AnimLib
         }
         public override bool Equals(object obj)
         {
-            return obj is Vector2 && ((Vector3)obj).x == x && ((Vector3)obj).y == y && ((Vector3)obj).z == z;
+            return obj is Vector3 && ((Vector3)obj).x == x && ((Vector3)obj).y == y && ((Vector3)obj).z == z;
         }
         public override int GetHashCode()
 		{

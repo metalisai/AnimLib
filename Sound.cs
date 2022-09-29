@@ -59,6 +59,7 @@ namespace AnimLib {
                 return;
             // last sample + 1
             int end = start + Math.Min(SamplesPerChannel, samples.Length);
+            end = Math.Min(end, this.samples[0].Length);
             for(int ch = 0; ch < Channels; ch++) {
                 for(int i = start; i < end; i++) {
                     var data = (int)(volume*(samples[i-start] + this.samples[ch][i]));
@@ -83,6 +84,9 @@ namespace AnimLib {
         }
 
         public void PushSample(SoundSample sample, double startTime, float volume = 1.0f) {
+            if(sample.sampleRate != 44100) {
+                Debug.Warning($"Sample rate {sample.sampleRate} played as 44100");
+            }
             PushSoundMono(sample.samples[0], startTime, volume);
         }
     }
@@ -209,24 +213,36 @@ namespace AnimLib {
         public int channels;
         public short[][] samples;
 
+        private static SoundSample SoundFileToSample (byte[] data) {
+            var sample = Bass.SampleLoad(data, 0, data.Length, 1, BassFlags.Default);
+            var sinfo = new SampleInfo();
+            var info = Bass.SampleGetInfo(sample, sinfo);
+            byte[] sampleData = new byte[sinfo.Length];
+            Bass.SampleGetData(sample, sampleData);
+            var sampleData16 = MemoryMarshal.Cast<byte, short>(sampleData.AsSpan()).ToArray();
+            return new SoundSample {
+                sampleRate = sinfo.Frequency,
+                channels = sinfo.Channels,
+                samples = new short[1][] {sampleData16},
+            };
+        }
+
+        public static SoundSample? GetFromStream(Stream file) {
+            if(file == null) return null;
+            var ms = new MemoryStream();
+            file.CopyTo(ms);
+            var data = ms.ToArray();
+            return SoundFileToSample(data);
+        }
+
         public static SoundSample GetBuiltin(BuiltinSound sound) {
             SoundSample ret;
             if(!cache.TryGetValue(sound, out ret)) {
                 var bs = builtins[sound];
                 var data = EmbeddedResources.GetResourceBytes(bs.Item1, bs.Item2);
-                var sample = Bass.SampleLoad(data, 0, data.Length, 1, BassFlags.Default);
-                var sinfo = new SampleInfo();
-                var info = Bass.SampleGetInfo(sample, sinfo);
-                byte[] sampleData = new byte[sinfo.Length];
-                Bass.SampleGetData(sample, sampleData);
-                var sampleData16 = MemoryMarshal.Cast<byte, short>(sampleData.AsSpan()).ToArray();
-                ret = new SoundSample {
-                    sampleRate = sinfo.Frequency,
-                    channels = sinfo.Channels,
-                    samples = new short[1][] {sampleData16},
-                };
-                cache[sound] = ret;
+                ret = SoundFileToSample(data);
             }
+            cache[sound] = ret;
             return ret;
         }
     }

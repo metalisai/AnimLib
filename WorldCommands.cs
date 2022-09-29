@@ -12,6 +12,13 @@ namespace AnimLib {
         public SoundSample sound;
     }
 
+    public class WorldPropertyMultiCommand : WorldCommand {
+        public int[] entityIds;
+        public string property;
+        public object newvalue;
+        public object[] oldvalue;
+    }
+
     public class WorldPropertyCommand : WorldCommand {
         public int entityId;
         public string property;
