@@ -160,32 +160,37 @@ internal class TextPlacement : System.IDisposable {
 
     int textSize = 64;
 
-    public void LoadFont(string fontfile, string fontname) {
+    public void LoadFont(Stream stream, string fontname) {
         LoadedFont lf;
         fontname = fontname.ToLower();
         if(LoadedFonts.TryGetValue(fontname, out lf)) {
             Debug.Warning($"Font {fontname} already loaded, ignoring");
             return;
         }
-        using (var fs = new FileStream(fontfile, FileMode.Open, FileAccess.Read)) {
-            var typeface = SKTypeface.FromStream(fs);
-            Debug.TLog($"Font {fontfile} units per em {typeface.UnitsPerEm}");
-            int index;
-            using(var blob = ToHarfBuzzBlob(typeface.OpenStream(out index))) 
-            using(var face = new Face(blob, index))
-            {
-                face.Index = index;
-                face.UnitsPerEm = typeface.UnitsPerEm;
-                var font = new Font(face);
-                font.SetScale((int)textSize, (int)textSize); // dpi?
-                var skFont = new SKFont(typeface, (float)textSize);
+        var typeface = SKTypeface.FromStream(stream);
+        int index;
+        using(var blob = ToHarfBuzzBlob(typeface.OpenStream(out index))) 
+        using(var face = new Face(blob, index))
+        {
+            face.Index = index;
+            face.UnitsPerEm = typeface.UnitsPerEm;
+            var font = new Font(face);
+            font.SetScale((int)textSize, (int)textSize); // dpi?
+            var skFont = new SKFont(typeface, (float)textSize);
 
-                lf.font = font;
-                lf.typeface = typeface;
-                lf.skFont = skFont;
-                lf.name = fontname;
-                LoadedFonts.Add(fontname, lf);
-            }
+            lf.font = font;
+            lf.typeface = typeface;
+            lf.skFont = skFont;
+            lf.name = fontname;
+            LoadedFonts.Add(fontname, lf);
+        }
+
+    }
+
+    public void LoadFont(string fontfile, string fontname) {
+        using (var fs = new FileStream(fontfile, FileMode.Open, FileAccess.Read)) {
+            //Debug.TLog($"Font {fontfile} units per em {typeface.UnitsPerEm}");
+            LoadFont(fs, fontname);
         }
     }
 

@@ -65,14 +65,14 @@ namespace AnimLib
             return new Vector4(((float)r)/255.0f, ((float)g)/255.0f, ((float)b)/255.0f, ((float)a)/255.0f);
         }
 
-        static Vector4 HSV2RGB(Vector4 c) {
+        public static Vector4 HSV2RGB(Vector4 c) {
           var K = new Vector4(1.0f, 2.0f / 3.0f, 1.0f / 3.0f, 3.0f);
           
           var p = ((new Vector3(c.x, c.x, c.x) + new Vector3(K.x, K.y, K.z)).Fract * 6.0f - new Vector3(K.w, K.w, K.w)).Abs;
           return new Vector4(c.z * Vector3.Lerp(new Vector3(K.x, K.x, K.x), ((p - new Vector3(K.x, K.x, K.x)).Clamped(0.0f, 1.0f)), c.y), c.w);
         }
 
-        static Vector4 RGB2HSV(Vector4 c) {
+        public static Vector4 RGB2HSV(Vector4 c) {
           var K = new Vector4(0.0f, -1.0f / 3.0f, 2.0f / 3.0f, -1.0f);
           var p = c.y < c.z ? new Vector4(c.z, c.y, K.w, K.z) : new Vector4(c.y, c.z, K.x, K.y);
           var q = c.x < p.x ? new Vector4(p.x, p.y, p.w, c.x) : new Vector4(c.x, p.y, p.z, p.x);

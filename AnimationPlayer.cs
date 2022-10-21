@@ -149,6 +149,7 @@ namespace AnimLib {
             ctrl.OnPlay += () => {
                 if(Exporting) return;
                 Play();
+                trackPlayer.Seek(machine.GetProgress());
                 trackPlayer.Play();
             };
             ctrl.OnStop += () => {

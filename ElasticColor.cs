@@ -24,6 +24,12 @@ namespace AnimLib {
         Action<Color> setAction = (x) => {
         };
 
+        public Action<Color> Action {
+            set {
+                this.setAction = value;
+            }
+        }
+
         private Vector4 moveTowards(Vector4 a, Vector4 b, float speed) {
             var diff = b-a;
             Vector4 ret;
@@ -45,21 +51,21 @@ namespace AnimLib {
                         case Mode.EaseOut:
                             if(this.currentColor != this.returnColor) {
                                 currentColor = moveTowards(this.currentColor, this.returnColor, speed*(float)Time.deltaT);
-                                setAction(new Color(currentColor));
+                                this.setAction(new Color(currentColor));
                             }
                             break;
                         case Mode.EaseInOut:
                             if(setting) {
                                 if(this.currentColor != this.setColor) {
                                     currentColor = moveTowards(this.currentColor, this.setColor, speed*(float)Time.deltaT);
-                                    setAction(new Color(currentColor));
+                                    this.setAction(new Color(currentColor));
                                 } else {
                                     setting = false;
                                 }
                             } else {
                                 if(this.currentColor != this.returnColor) {
                                     currentColor = moveTowards(this.currentColor, this.returnColor, speed*(float)Time.deltaT);
-                                    setAction(new Color(currentColor));
+                                    this.setAction(new Color(currentColor));
                                 }
                             }
                         break;

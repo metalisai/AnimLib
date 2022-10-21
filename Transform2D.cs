@@ -3,11 +3,13 @@ namespace AnimLib
     public class Transform2D
     {
         protected VisualEntity2D entity;
+        internal Transform2D _parent;
 
         public Transform2D parent {
             get {
                 return entity.state.parentId == 0 ? null : ((VisualEntity2D)World.current.EntityResolver.GetEntity(entity.state.parentId)).Transform;
             } set {
+                _parent = value;
                 World.current.SetProperty(entity, "parentId", value.entity.state.entityId, entity.state.parentId);
                 entity.state.parentId = value.entity.state.entityId;
             }

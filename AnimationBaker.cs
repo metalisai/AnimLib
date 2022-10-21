@@ -64,6 +64,10 @@ namespace AnimLib {
             }
         }
 
+        public void LoadFont(Stream stream, string fontname) {
+            textPlacement.LoadFont(stream, fontname);
+        }
+
         public void LoadFont(string filename, string fontname) {
             textPlacement.LoadFont(filename, fontname);
         }

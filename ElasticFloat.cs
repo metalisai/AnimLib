@@ -24,6 +24,12 @@ public class ElasticFloat {
     Action<float> setAction = (x) => {
     };
 
+    public Action<float> Action {
+        set {
+            this.setAction = value;
+        }
+    }
+
     private float moveTowards(float a, float b, float speed) {
         var diff = b-a;
         float ret = MathF.Abs(diff) > speed ? a + MathF.Sign(diff) * speed : b;
@@ -41,21 +47,21 @@ public class ElasticFloat {
                     case Mode.EaseOut:
                         if(this.currentValue != this.returnValue) {
                             currentValue = moveTowards(this.currentValue, this.returnValue, speed*(float)Time.deltaT);
-                            setAction(currentValue);
+                            this.setAction(currentValue);
                         }
                         break;
                     case Mode.EaseInOut:
                         if(setting) {
                             if(this.currentValue != this.setValue) {
                                 currentValue = moveTowards(this.currentValue, this.setValue, speed*(float)Time.deltaT);
-                                setAction(currentValue);
+                                this.setAction(currentValue);
                             } else {
                                 setting = false;
                             }
                         } else {
                             if(this.currentValue != this.returnValue) {
                                 currentValue = moveTowards(this.currentValue, this.returnValue, speed*(float)Time.deltaT);
-                                setAction(currentValue);
+                                this.setAction(currentValue);
                             }
                         }
                     break;
