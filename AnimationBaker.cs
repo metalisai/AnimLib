@@ -116,8 +116,25 @@ namespace AnimLib {
                     var sample = SoundSample.GetFromStream(res);
                     return sample;
                 }
-            } catch (NullReferenceException e) {
+            } catch (NullReferenceException) {
                 Debug.Error($"Failed to load resource {name}");
+            }
+            return null;
+        }
+
+        public SvgData GetSvgResource(string name) {
+            string fileName;
+            try {
+                using (var res = resourceManager.GetResource(name, out fileName)) {
+                    var reader = new StreamReader(res);
+                    var data = reader.ReadToEnd();
+                    return new SvgData() {
+                        handle = -1,
+                        svg = data,
+                    };
+                }
+            } catch (NullReferenceException) {
+                Debug.Error($"Failed to load SVG resource {name}");
             }
             return null;
         }

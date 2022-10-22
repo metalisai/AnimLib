@@ -28,6 +28,7 @@
         <!-- <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.88.1" /> -->
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.1" />
     <PackageReference Include="Stride.SharpFont" Version="1.0.0" />
+    <PackageReference Include="Svg.Skia" Version="0.5.16" />
     <PackageReference Include="System.Windows.Extensions" Version="4.6.0-preview.18571.3" />
 
     <ProjectReference Include="..\AnimLib.Libs\ImGui.NET\src\ImGui.NET\ImGui.NET.csproj" />

@@ -4,6 +4,8 @@ using System.Runtime.InteropServices;
 using SkiaSharp;
 using System.Collections.Generic;
 using OpenTK.Graphics.OpenGL4;
+using Svg.Skia;
+using System.IO;
 
 namespace AnimLib {
 
@@ -98,7 +100,9 @@ namespace AnimLib {
         }
 
         int textureId = 0;
+        int svgId = 0;
         Dictionary<int, SKBitmap> LoadedImages = new Dictionary<int, SKBitmap>();
+        Dictionary<int, SKSvg> LoadedSvgs = new Dictionary<int, SKSvg>();
 
         RenderMode mode;
 
@@ -153,6 +157,21 @@ namespace AnimLib {
             texture.GLHandle = handle;
             Debug.TLog($"Loaded texture {texture.Width}x{texture.Height} format {texture.Format}");
             return bitmap;
+        }
+
+        private SKSvg LoadSvg(SvgData svg) {
+            int handle = svg.GetHashCode();
+            SKSvg ret = new SKSvg();
+            var data = System.Text.Encoding.UTF8.GetBytes(svg.svg);
+            var stream = new MemoryStream();
+            stream.Write(data);
+            stream.Flush();
+            stream.Position = 0;
+            ret.Load(stream);
+            svg.handle = handle;
+            LoadedSvgs.Add(handle, ret);
+            Debug.TLog($"Loaded SVG with length {svg.svg.Length}");
+            return ret;
         }
 
         public void SetBuffer(IRenderBuffer buf) {
@@ -378,6 +397,8 @@ namespace AnimLib {
                         SKMatrix localTransform = GetLocalTransform(shape, rc, new Rect(bounds.Left, bounds.Top, bounds.Width, bounds.Height), css.Entities);
 
                         path.Transform(localTransform);
+                        var identity = new SKMatrix(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+                        canvas.SetMatrix(identity);
 
                         // draw fill
                         if(shape.mode == ShapeMode.Filled || shape.mode == ShapeMode.FilledContour) {
@@ -418,6 +439,22 @@ namespace AnimLib {
                             canvas.DrawBitmap(bitmap, rect, paint);
                         }
                         canvas.SetMatrix(curMat);
+                    }
+                    break;
+                case SvgSpriteState svgsprite:
+                    SKSvg svg = null;
+                    if(svgsprite.svg.handle > 0) {
+                        svg = LoadedSvgs[svgsprite.svg.handle];
+                    } else {
+                        svg = LoadSvg(svgsprite.svg);
+                    }
+                    if(svg != null && mat != null) {
+                        var curMat = canvas.TotalMatrix;
+                        var local = GetLocalTransform(svgsprite, rc, new Rect(0.0f, 0.0f, svgsprite.width, svgsprite.height), css.Entities).PreConcat(new SKMatrix(1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f)).PostConcat(curMat);
+                        canvas.SetMatrix(local);
+                        var rect = new SKRect(-svgsprite.width/2.0f, -svgsprite.height/2.0f, svgsprite.width/2.0f, svgsprite.height/2.0f);
+                        canvas.DrawPicture(svg.Picture);
+
                     }
                     break;
                 }
