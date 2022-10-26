@@ -397,8 +397,6 @@ namespace AnimLib {
                         SKMatrix localTransform = GetLocalTransform(shape, rc, new Rect(bounds.Left, bounds.Top, bounds.Width, bounds.Height), css.Entities);
 
                         path.Transform(localTransform);
-                        var identity = new SKMatrix(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-                        canvas.SetMatrix(identity);
 
                         // draw fill
                         if(shape.mode == ShapeMode.Filled || shape.mode == ShapeMode.FilledContour) {
@@ -453,8 +451,12 @@ namespace AnimLib {
                         var local = GetLocalTransform(svgsprite, rc, new Rect(0.0f, 0.0f, svgsprite.width, svgsprite.height), css.Entities).PreConcat(new SKMatrix(1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f)).PostConcat(curMat);
                         canvas.SetMatrix(local);
                         var rect = new SKRect(-svgsprite.width/2.0f, -svgsprite.height/2.0f, svgsprite.width/2.0f, svgsprite.height/2.0f);
-                        canvas.DrawPicture(svg.Picture);
-
+                        using(var paint = new SKPaint()) {
+                            paint.BlendMode = SKBlendMode.SrcOver;
+                            paint.Color = svgsprite.color.ToSKColor();
+                            canvas.DrawPicture(svg.Picture, paint);
+                        }
+                        canvas.SetMatrix(curMat);
                     }
                     break;
                 }

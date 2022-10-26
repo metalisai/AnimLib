@@ -370,6 +370,16 @@ namespace AnimLib
                 }, 0.0f, 1.0f, duration);
         }
 
+        public Task CreateFadeIn<T>(T entity, Color startColor, Action<Color> setColor, float duration) where T : VisualEntity,IColored {
+            CreateInstantly(entity);
+            var c = startColor;
+            var alpha = c.a;
+            return Animate.InterpT<float>(x => {
+                    c.a = (byte)Math.Round(x*((float)alpha));
+                    setColor(c);
+                }, 0.0f, 1.0f, duration);
+        }
+
         public async Task DestroyFadeOut<T>(T entity, float duration) where T : Shape {
             var c = entity.Color;
             var cc = entity.ContourColor;

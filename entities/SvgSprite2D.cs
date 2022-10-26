@@ -20,6 +20,7 @@ namespace AnimLib {
             this.width = sprite.width;
             this.height = sprite.height;
             this.svg = sprite.svg;
+            this.color = sprite.color;
         }
 
         public override object Clone() {
