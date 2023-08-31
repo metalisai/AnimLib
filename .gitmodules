@@ -1,18 +1,15 @@
-[submodule "libs/ImGui.NET"]
-	path = libs/ImGui.NET
-	url = https://github.com/ttammear/ImGui.NET.git
 [submodule "AnimLib"]
 	path = AnimLib
-	url = ssh://git@tammearu.eu:/home/git/AnimLib.git
+	url = https://github.com/metalisai/AnimLib.git
 [submodule "AnimLib.Resources"]
 	path = AnimLib.Resources
-	url = ssh://git@tammearu.eu:/home/git/AnimLib.Resources.git
+	url = https://github.com/metalisai/AnimLib.Resources.git
 [submodule "AnimLib.Tests"]
 	path = AnimLib.Tests
-	url = ssh://git@tammearu.eu:/home/git/AnimLib.Tests.git
+	url = https://github.com/metalisai/AnimLib.Tests.git
 [submodule "AnimLib.Libs"]
 	path = AnimLib.Libs
-	url = ssh://git@tammearu.eu:/home/git/AnimLib.Libs.git
+	url = https://github.com/metalisai/AnimLib.Libs.git
 [submodule "AnimLib.Native"]
 	path = AnimLib.Native
-	url = ssh://git@tammearu.eu:/home/git/AnimLib.Native.git
+	url = https://github.com/metalisai/AnimLib.Native.git
