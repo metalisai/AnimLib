@@ -258,7 +258,7 @@ namespace AnimLib {
             var text = new StreamReader(res).ReadToEnd();
             Debug.TLog($"File content: {text}");
 
-            if(!Bass.Init(-1, 44100, DeviceInitFlags.Latency))
+            if(!Bass.Init(-1, 44100, DeviceInitFlags.Default))
             {
                 Debug.Error("Failed to initialize audio device");
             }

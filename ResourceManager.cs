@@ -55,9 +55,9 @@ namespace AnimLib {
         private string GetAssemblyPath(string projectDirectory, string projectname)
         {
 #if Linux
-            return Path.Join(projectDirectory, $"src/bin/Debug/net6.0/{projectname}.dll");
+            return Path.Join(projectDirectory, $"src/bin/Debug/net7.0/{projectname}.dll");
 #else
-            return Path.Join(projectDirectory, $"src/bin/Debug/net6.0-windows/{projectname}.dll");
+            return Path.Join(projectDirectory, $"src/bin/Debug/net7.0-windows/{projectname}.dll");
 #endif
         }
 
