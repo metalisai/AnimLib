@@ -1,7 +1,6 @@
 # AnimLib
 
-<a href="url"><img src="https://blog.tammearu.eu/AnimLib.png" align="left" width="600" ></a>
-  
+<a href="url"><img src="/img/AnimLib.png" width="400" ></a> <br/>
   
 
 ## What is this?
