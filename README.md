@@ -91,7 +91,7 @@ The most similar library that I know is probably [3Blue1Brown](https://www.3blue
 AnimLib's usage code certainly isn't quite as elegant yet and is not really geared towards math animations like manim.
 I've also seen something almost identical created in javascript and HTML5 canvas, but I can't find it right now. 
 
-I'd consider the more unique features to be use of C#'s async features and real-time seekable playback. 
+I'd consider the more unique features to be use of C#'s async features and real-time seekable playback. Unlike most other similar applications there is an intermediate frame state format, which means you can seek and render individual frames without rendering the whole thing. 
 Also the animations are automatically hot reloaded when you recompile the animation .dll. This means you can instantly see the changes of entire animation as soon as you recompile.  
 The editor application is very primitive right now, but there is potential to hit a sweetspot between things like Adobe's After Effects and manim. Being able to use GUI
 for some things like placing objects and programming for animating program behaviour or whatever else. For example you can drag and drop .png or .svg file into the editor
