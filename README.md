@@ -88,10 +88,11 @@ public class Yo : AnimationBehaviour
 
 This application is by now means completely unique.
 The most similar library that I know is probably [3Blue1Brown](https://www.3blue1brown.com/)'s manim and the community fork that sprouted from it. 
+AnimLib's usage code certainly isn't quite as elegant yet and is not really geared towards math animations like manim.
 I've also seen something almost identical created in javascript and HTML5 canvas, but I can't find it right now. 
 
 I'd consider the more unique features to be use of C#'s async features and real-time seekable playback. 
-Also the animations are automatically hot reloaded when you recompile the animation .dll. This means you can instantly see your changes as soon as you recompile.  
+Also the animations are automatically hot reloaded when you recompile the animation .dll. This means you can instantly see the changes of entire animation as soon as you recompile.  
 The editor application is very primitive right now, but there is potential to hit a sweetspot between things like Adobe's After Effects and manim. Being able to use GUI
 for some things like placing objects and programming for animating program behaviour or whatever else. For example you can drag and drop .png or .svg file into the editor
 and load it from the C# code. Or create editable color presets in editor and use them in your code by name. Much more convenient than manually loading files or recompiling for every color change.
@@ -99,4 +100,4 @@ and load it from the C# code. Or create editable color presets in editor and use
 ## What's missing
 
 The UI doesn't look good, there are unfixed bugs and I wouldn't expect the application to work you of the box. There are some things I haven't quite figured out yet. 
-Sound support is very primitive and can get out of sync for complex animations that struggle to run real-time. Lots of work to do.
+Sound support is very primitive and can get out of sync for complex animations that struggle to run real-time. I'd also add more elegant helper framework so that the code would be less verbose. Lots of work to do.
