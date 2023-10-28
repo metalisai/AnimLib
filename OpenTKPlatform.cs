@@ -6,7 +6,6 @@ using OpenTK.Input;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-using ImGuiNET;
 using SkiaSharp;
 
 namespace AnimLib {
@@ -126,9 +125,9 @@ namespace AnimLib {
             GL.EnableVertexAttribArray(0);
             GL.EnableVertexAttribArray(1);
             GL.EnableVertexAttribArray(2);
-            GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, Marshal.SizeOf(typeof(ImDrawVert)), Marshal.OffsetOf<ImDrawVert>("pos"));
-            GL.VertexAttribPointer(1, 4, VertexAttribPointerType.UnsignedByte, true, Marshal.SizeOf(typeof(ImDrawVert)), Marshal.OffsetOf<ImDrawVert>("col"));
-            GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, Marshal.SizeOf(typeof(ImDrawVert)), Marshal.OffsetOf<ImDrawVert>("uv"));
+            GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, Marshal.SizeOf(typeof(ImguiContext.ImDrawVert)), Marshal.OffsetOf<ImguiContext.ImDrawVert>("pos"));
+            GL.VertexAttribPointer(1, 4, VertexAttribPointerType.UnsignedByte, true, Marshal.SizeOf(typeof(ImguiContext.ImDrawVert)), Marshal.OffsetOf<ImguiContext.ImDrawVert>("col"));
+            GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, Marshal.SizeOf(typeof(ImguiContext.ImDrawVert)), Marshal.OffsetOf<ImguiContext.ImDrawVert>("uv"));
             GL.BindVertexArray(0);
         }
 
@@ -214,8 +213,8 @@ namespace AnimLib {
 
             // skia
             Skia = new SkiaRenderer(this);
-            //Skia.CreateGL(); // messes up render state when scene has textures, arc rendering buggy
-            Skia.CreateSW();
+            Skia.CreateGL(); // messes up render state when scene has textures, arc rendering buggy
+            //Skia.CreateSW();
 
             if(OnLoaded != null) {
                 OnLoaded(this, null);
@@ -327,10 +326,68 @@ namespace AnimLib {
             Performance.TimeToWaitSync = sw.Elapsed.TotalSeconds;
         }
 
-        public void RenderImGui(ImDrawDataPtr data, Texture2D atlas, IList<SceneView> views, IRenderBuffer rb) {
+        public void RenderImGui(ImguiContext.DrawList data, IList<SceneView> views, IRenderBuffer rb) {
+            GL.BindBuffer(BufferTarget.ArrayBuffer, imguiVbo);
+            if (data.vertices.Length > 0)
+            {
+                GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, data.vertices.Length*Marshal.SizeOf(typeof(ImguiContext.ImDrawVert)), ref data.vertices[0]);
+            }
+            else
+            {
+                Debug.Warning("No vertices to render");
+            }
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, imguiEbo);
+            if (data.indices.Length > 0)
+            {
+                GL.BufferSubData(BufferTarget.ElementArrayBuffer, IntPtr.Zero, data.indices.Length*sizeof(ushort), ref data.indices[0]);
+            }
+            else
+            {
+                Debug.Warning("No indices to render");
+            } 
+
+            GL.BindVertexArray(imguiVao);
+            GL.Enable(EnableCap.ScissorTest);
+            GL.Disable(EnableCap.CullFace);
+            GL.Disable(EnableCap.DepthTest);
+            GL.UseProgram(_imguiProgram);
+            var matLoc = GL.GetUniformLocation(_imguiProgram, "_ModelToClip");
+            var mat = M4x4.Ortho(0.0f, rb.Size.Item1, 0.0f, rb.Size.Item2, -1.0f, 1.0f);
+            GL.UniformMatrix4(matLoc, 1, false, ref mat.m11);
+            var texLoc = GL.GetUniformLocation(_imguiProgram, "_AtlasTex");
+            var entIdLoc = GL.GetUniformLocation(_imguiProgram, "_entityId");
+
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.Uniform1(texLoc, 0);
+
+            foreach (var dc in data.commands)
+            {
+                GL.BindTexture(TextureTarget.Texture2D, (int)dc.texture);
+                int haveMipmap = 0;
+                if(haveMipmap > 0 && (int)dc.texture>= 0) {
+                    GL.BindSampler(0, mipmapSampler);
+                } else {
+                    GL.BindSampler(0, linearSampler);
+                }
+                // rendering a view within gui
+                if(views.Any(x => x.TextureHandle == (int)dc.texture)) {
+                    GL.Uniform1(entIdLoc, -1);
+                    GL.Disable(EnableCap.Blend);
+                } else { // rendering gui
+                    GL.Uniform1(entIdLoc, 0xAAAAAAA);
+                }
+                GL.Scissor((int)dc.clipRect.Item1, Height - (int)dc.clipRect.Item4, (int)(dc.clipRect.Item3-dc.clipRect.Item1), (int)(dc.clipRect.Item4-dc.clipRect.Item2));
+                GL.DrawElementsBaseVertex(PrimitiveType.Triangles, (int)dc.elemCount, DrawElementsType.UnsignedShort, new IntPtr(dc.idxOffset*sizeof(ushort)), (int)dc.vOffset);
+                GL.Enable(EnableCap.Blend);
+            }
+            GL.BindSampler(0, 0);
+            GL.Disable(EnableCap.ScissorTest);
+            //GL.Enable(EnableCap.CullFace);
+            GL.Enable(EnableCap.DepthTest);
+            return;
             // create vertex and index buffers
             // each command list gets drawn on a seperate drawcall
-            int vcount = 0;
+            /*int vcount = 0;
             int icount = 0;
             for(int i = 0; i < data.CmdListsCount; i++) {
                 int vertSize = Marshal.SizeOf(typeof(ImDrawVert));
@@ -398,10 +455,10 @@ namespace AnimLib {
 
             GL.Disable(EnableCap.ScissorTest);
             //GL.Enable(EnableCap.CullFace);
-            GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.DepthTest);*/
         }
 
-        public void RenderGUI((ImDrawDataPtr, Texture2D)? data, IList<SceneView> views, IRenderBuffer rb)
+        public void RenderGUI(ImguiContext.DrawList data, IList<SceneView> views, IRenderBuffer rb)
         {
             DepthPeelRenderBuffer pb;
             GL.Viewport(0, 0, rb.Size.Item1, rb.Size.Item2);
@@ -442,7 +499,7 @@ namespace AnimLib {
                 GL.ProgramUniform1(prog, loc, 1);
                 GL.BindTextureUnit(1, pb.PeelTex);
             }
-            RenderImGui(data.Value.Item1, data.Value.Item2, views, rb);
+            RenderImGui(data, views, rb);
             pb.NextLayer();
             if (data != null) pb.BlendToScreen(Width, Height);
         }

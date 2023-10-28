@@ -145,19 +145,6 @@ internal class TextPlacement : System.IDisposable {
         return blob;
     }
 
-    public void Dispose()
-    {
-        foreach(var lf in LoadedFonts.Values) {
-            lf.font.Dispose();
-            lf.typeface.Dispose();
-            lf.skFont.Dispose();
-        }
-        foreach(var val in CachedGlyphPaths.Values) {
-            val.Dispose();
-            CachedGlyphPaths.Clear();
-        }
-    }
-
     int textSize = 64;
 
     public void LoadFont(Stream stream, string fontname) {
@@ -241,4 +228,18 @@ internal class TextPlacement : System.IDisposable {
             return new List<Shape>();
         }
     }
+
+    public void Dispose()
+    {
+        foreach(var lf in LoadedFonts.Values) {
+            lf.font.Dispose();
+            lf.typeface.Dispose();
+            lf.skFont.Dispose();
+        }
+        foreach(var val in CachedGlyphPaths.Values) {
+            val.Dispose();
+            CachedGlyphPaths.Clear();
+        }
+    }
+
 }

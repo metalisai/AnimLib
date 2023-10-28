@@ -1,5 +1,3 @@
-using ImGuizmoNET;
-using ImGuiNET;
 using System.Collections.Generic;
 using System;
 using System.Linq;
@@ -155,19 +153,19 @@ namespace AnimLib {
                 newScale = scale,
             };
             var a = lastArea.Value;
-            ImGuizmo.SetRect(a.Item1, a.Item2, a.Item3, a.Item4);
+            /*ImGuizmo.SetRect(a.Item1, a.Item2, a.Item3, a.Item4);
             ImGuizmo.Enable(!usingGizmo);
             ImGuizmo.SetOrthographic(false);
             if(ImGuizmo.IsOver(OPERATION.TRANSLATE)) {
                 usingGizmo = true;
-            }
+            }*/
             var cam = lastCam as PerspectiveCameraState;
             if(cam != null) {
                 var viewM = cam.CreateWorldToViewMatrix();
                 var projM = cam.CreateViewToClipMatrix((float)renderBuffer.Size.Item1/(float)renderBuffer.Size.Item2);
                 var trans = M4x4.Translate(pos);
                 var canvasM = canvas.CanvasToWorld*trans;
-                var op = OPERATION.TRANSLATE;
+                /*var op = OPERATION.TRANSLATE;
                 var mode = MODE.LOCAL;
                 if(ImGuizmo.Manipulate(ref viewM.m11, ref projM.m11, op, mode, ref canvasM.m11))
                 {
@@ -179,7 +177,7 @@ namespace AnimLib {
                     ret.newPosition.x *= canvas.width;
                     ret.newPosition.y *= canvas.height;
                     ret.posChanged = true;
-                }
+                }*/
             }
             return ret;
         }
@@ -193,21 +191,22 @@ namespace AnimLib {
                 newScale = scale,
             };
             var a = lastArea.Value;
-            ImGuizmo.SetRect(a.Item1, a.Item2, a.Item3, a.Item4);
+            /*ImGuizmo.SetRect(a.Item1, a.Item2, a.Item3, a.Item4);
             ImGuizmo.Enable(!usingGizmo);
-            ImGuizmo.SetOrthographic(false);
+            ImGuizmo.SetOrthographic(false);*/
             var cam = lastCam as PerspectiveCameraState;
             if (cam != null) {
                 var viewM = cam.CreateWorldToViewMatrix();
                 var projM = cam.CreateViewToClipMatrix((float)renderBuffer.Size.Item1/(float)renderBuffer.Size.Item2);
                 var mat = M4x4.TRS(pos, rot, scale);
-                var op = OPERATION.TRANSLATE;
-                var mode = MODE.WORLD;
-                if(ImGuizmo.Manipulate(ref viewM.m11, ref projM.m11, op, mode, ref mat.m11))
+                //var op = OPERATION.TRANSLATE;
+                //var mode = MODE.WORLD;
+                //if(ImGuizmo.Manipulate(ref viewM.m11, ref projM.m11, op, mode, ref mat.m11))
+                if (true)
                 {
                     Vector3 translation = new Vector3(), s = new Vector3();
                     M3x3 r = new M3x3();
-                    ImGuizmo.DecomposeMatrixToComponents(ref mat.m11, ref translation.x, ref r.m11, ref s.x);
+                    /*ImGuizmo.DecomposeMatrixToComponents(ref mat.m11, ref translation.x, ref r.m11, ref s.x);
                     switch(op) {
                     case OPERATION.TRANSLATE:
                         ret.newPosition = translation;
@@ -221,7 +220,7 @@ namespace AnimLib {
                         ret.newScale = s;
                         ret.scaleChanged = true;
                     break;
-                    }
+                    }*/
                 }
             }
             return ret;
@@ -319,7 +318,6 @@ namespace AnimLib {
 
         // screen (UI) position to buffer position
         protected Vector2 screenToBuffer(Vector2 screenP) {
-            var io = ImGui.GetIO();
             var rect = lastArea.Value;
             var viewOrigin = new Vector2(rect.Item1, rect.Item2);
             var mposView = screenP - viewOrigin;
@@ -334,13 +332,13 @@ namespace AnimLib {
             if(lastArea == null)
                 return false;
             var screenP = bufferToScreen(pos);
-            var inGizmo = ((Vector2)ImGui.GetMousePos() - screenP).Length < 5.0f;
-            ImGui.GetForegroundDrawList().AddCircleFilled(screenP, 6.0f, 0xFF000000);
-            ImGui.GetForegroundDrawList().AddCircleFilled(screenP, 5.0f, inGizmo ? 0xFF5555FF : color);
+            var inGizmo = ((Vector2)ImguiContext.GetMousePos() - screenP).Length < 5.0f;
+            ImguiContext.FgCircleFilled(screenP, 6.0f, 0xFF000000);
+            ImguiContext.FgCircleFilled(screenP, 5.0f, inGizmo ? 0xFF5555FF : color);
 
             if (label != null && inGizmo)
-                ImGui.GetForegroundDrawList().AddText(screenP-new Vector2(0.0f, 20.0f), 0xFF000000, label);
-            if (inGizmo && ImGui.IsMouseClicked(0))
+                ImguiContext.FgText(screenP-new Vector2(0.0f, 20.0f), 0xFF000000, label);
+            if (inGizmo && ImguiContext.IsMouseClicked(0))
                 return true;
             else
                 return false;
@@ -353,15 +351,15 @@ namespace AnimLib {
 
             var newp = pos;
             var screenP = bufferToScreen(pos);
-            var inGizmo = !usingGizmo && ((Vector2)ImGui.GetMousePos() - screenP).Length < 5.0f;
+            var inGizmo = !usingGizmo && ((Vector2)ImguiContext.GetMousePos() - screenP).Length < 5.0f;
             PointGizmoState state = new PointGizmoState { dragging = false };
             if(!pointGizmos.TryGetValue(uid, out state)) {
-                if(ImGui.IsMouseClicked(0) && inGizmo) {
+                if(ImguiContext.IsMouseClicked(0) && inGizmo) {
                     state.dragging = true;
                     pointGizmos.Add(uid, state);
                 }
             } else {
-                if(!ImGui.IsMouseDown(0)) {
+                if(!ImguiContext.IsMouseDown(0)) {
                     state.dragging = false;
                     pointGizmos.Remove(uid);
                     endupdate = true;
@@ -372,15 +370,17 @@ namespace AnimLib {
             }
 
             if(state.dragging) {
-                newp = screenToBuffer((Vector2)ImGui.GetMousePos());
+                newp = screenToBuffer((Vector2)ImguiContext.GetMousePos());
             }
             bool active = inGizmo || state.dragging;
             // use new coordinates for drawing (if it got overriden)
             screenP = bufferToScreen(newp);
-            ImGui.GetForegroundDrawList().AddCircleFilled(screenP, 6.0f, 0xFF000000);
-            ImGui.GetForegroundDrawList().AddCircleFilled(screenP, 5.0f, active ? 0xFF5555FF : color);
+            ImguiContext.FgCircleFilled(screenP, 6.0f, 0xFF000000);
+            ImguiContext.FgCircleFilled(screenP, 5.0f, active ? 0xFF5555FF : color);
             if (active && showlabel)
-                ImGui.GetForegroundDrawList().AddText(screenP-new Vector2(0.0f, 20.0f), 0xFF000000, uid);
+            {
+                ImguiContext.FgText(screenP-new Vector2(0.0f, 20.0f), 0xFF000000, uid);
+            }
             if(!state.dragging)
                 return null;
             else {

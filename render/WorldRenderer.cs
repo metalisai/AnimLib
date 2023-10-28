@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace AnimLib {
 
-    partial class DistanceFieldRenderer : IRenderer {
+    partial class WorldRenderer : IRenderer {
         
         int _circleProgram;
         int _rectangleProgram;
@@ -27,7 +27,7 @@ namespace AnimLib {
 
         System.Diagnostics.Stopwatch sw;
 
-        public DistanceFieldRenderer(OpenTKPlatform platform, RenderState rs) {
+        public WorldRenderer(OpenTKPlatform platform, RenderState rs) {
             this.platform = platform;
             this.rs = rs;
             _circleProgram = platform.AddShader(circleVert, circleFrag, null);

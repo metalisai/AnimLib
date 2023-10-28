@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using ImGuiNET;
-using ImGuizmoNET;
 using ImVec2 = System.Numerics.Vector2;
 using System.Runtime.InteropServices;
 using System.Linq;
@@ -137,7 +135,7 @@ namespace AnimLib {
                 };
                 var w = view.Buffer.Size.Item1;
                 var h = view.Buffer.Size.Item2;
-                Vector2 mpos = ImGui.GetMousePos();
+                Vector2 mpos = ImguiContext.GetMousePos();
                 var ray = cam.RayFromClip(new Vector2((mpos.x/w)*2.0f-1.0f, (mpos.y/h)*-2.0f+1.0f), w/h);
                 var pos3 = ray.Intersect(plane);
                 if(pos3 != null) {
@@ -273,13 +271,13 @@ namespace AnimLib {
             };
             if (cam == null)
                 return;
-            Vector2 dropPos = ImGui.GetMousePos();
+            Vector2 dropPos = ImguiContext.GetMousePos();
             var maybeRay = view.ScreenRay(dropPos);
-            if(maybeRay != null && ImGui.BeginDragDropTarget()) {
+            if(maybeRay != null && ImguiContext.BeginDragDropTarget()) {
                 var ray = maybeRay.Value;
-                ImGuiPayloadPtr payloadPtr = ImGui.AcceptDragDropPayload("DND_CREATE_ITEM_2D");
+                IntPtr payloadPtr = ImguiContext.AcceptDragDropPayload("DND_CREATE_ITEM_2D");
                 unsafe {
-                    if(payloadPtr.NativePtr != null)
+                    if(payloadPtr != IntPtr.Zero)
                     {
                         Debug.TLog("Attempt drop 2D object");
                         // intersect canvases
@@ -288,7 +286,7 @@ namespace AnimLib {
                         var canvases = player.Machine.Entities.Where(x => x is CanvasState).Select(x  => (CanvasState)x).ToArray();
                         var canvasPos = view.TryIntersectCanvases(canvases, dropPos, out canvas);
                         // drop
-                        DragDropObject obj = (DragDropObject)Marshal.ReadInt32(payloadPtr.Data);
+                        DragDropObject obj = (DragDropObject)Marshal.ReadInt32(payloadPtr + 0);
                         if(canvasPos != null) {
                             var canvasPosW = new Vector2(canvas.width, canvas.height)*canvasPos.Value;
                             if(canvasPos != null) {
@@ -305,138 +303,69 @@ namespace AnimLib {
                         }
                     } 
                 }
-                payloadPtr = ImGui.AcceptDragDropPayload("DND_CREATE_ITEM_3D");
+                payloadPtr = ImguiContext.AcceptDragDropPayload("DND_CREATE_ITEM_3D");
                 unsafe {
-                    if(payloadPtr.NativePtr != null) {
+                    if(payloadPtr != IntPtr.Zero) {
                         Debug.TLog("Attempt drop 3D object");
                         var pos3 = ray.Intersect(plane); 
-                        DragDropObject obj = (DragDropObject)Marshal.ReadInt32(payloadPtr.Data);
+                        DragDropObject obj = (DragDropObject)Marshal.ReadInt32(payloadPtr + 0);
                         if(pos3 != null) {
                             DropEntity3D(obj, pos3.Value, dropPos);
                         }
                     }
                 }
-                ImGui.EndDragDropTarget();
+                ImguiContext.EndDragDropTarget();
             }        
         }
 
         private void ShowExportWindow() {
-            ImGui.SetNextWindowSize(new System.Numerics.Vector2(430, 450), ImGuiCond.FirstUseEver);
-            ImGuiWindowFlags wflags = ImGuiWindowFlags.NoDocking;
-            if(!ImGui.Begin("Export", ref _showExport, wflags)) {
-                ImGui.End();
+            ImguiContext.SetNextWindowSize(new System.Numerics.Vector2(430, 450), ImguiContext.ImGuiCond.FirstUseEver);
+            var wflags = ImguiContext.ImGuiWindowFlags.NoDocking;
+            if(!ImguiContext.Begin("Export", ref _showExport, wflags)) {
+                ImguiContext.End();
                 return;
             }
-            ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new System.Numerics.Vector2(2.0f, 2.0f));
-            ImGui.Columns(1);
-            ImGui.Separator();
+            ImguiContext.PushStyleVar(ImguiContext.ImGuiStyleVar.FramePadding, new System.Numerics.Vector2(2.0f, 2.0f));
+            ImguiContext.Columns(1);
+            ImguiContext.Separator();
 
-            ImGui.Text("Export animation");
-            ImGui.Spacing();
+            ImguiContext.Text("Export animation");
+            ImguiContext.Spacing();
 
-            ImGui.InputText("File name", ref exportfileName, 64);
-            ImGui.InputDouble("Start Time", ref exportStartTime);
-            ImGui.InputDouble("End Time", ref exportEndTime);
-            if(ImGui.Button("Export")) {
+            ImguiContext.InputText("File name", ref exportfileName, 64);
+            ImguiContext.InputDouble("Start Time", ref exportStartTime);
+            ImguiContext.InputDouble("End Time", ref exportEndTime);
+            if(ImguiContext.Button("Export")) {
                 player.ExportAnimation(exportfileName, exportStartTime, exportEndTime);
             }
 
-            ImGui.Separator();
-            ImGui.PopStyleVar();
-            ImGui.End();
+            ImguiContext.Separator();
+            ImguiContext.PopStyleVar();
+            ImguiContext.End();
         }
 
-        ImGuiDockNodeFlags dockNodeFlags = ImGuiDockNodeFlags.PassthruCentralNode;
+        //var dockNodeFlags = ImguiContext.ImGuiDockNodeFlags.PassthruCentralNode;
 
-        private void ShowSceneWindow(SceneView sview) {
-            ImGuiWindowFlags windowFlags = ImGuiWindowFlags.DockNodeHost;
-            windowFlags |= ImGuiWindowFlags.NoScrollbar;
-            windowFlags |= ImGuiWindowFlags.NoScrollWithMouse;
-            ImGui.Begin("Scene", windowFlags);
-
-
-
-            var size = ImGui.GetWindowContentRegionMax() - ImGui.GetWindowContentRegionMin();
-
-            var fpadding = ImGui.GetStyle().FramePadding;
-            var ispacing = ImGui.GetStyle().ItemInnerSpacing;
-
-            string playText = "Play";
-            string pauseText = "Pause";
-            var btnSize = ImGui.CalcTextSize(playText+pauseText);
-
-            // offset due to play etc buttons
-            float verticalOffset = btnSize.Y+4.0f*fpadding.Y+2.0f*ispacing.Y;
-            size.Y -= verticalOffset;
-
-            var area = sview.CalculateArea(0, (int)verticalOffset, (int)size.X, (int)size.Y);
-            size.X = area.Item3;
-            size.Y = area.Item4;
-
-            // play controls
-            //ImGui.SameLine((size.X - btnSize.X/2.0f - fpadding.X) / 2.0f);
-            ImGui.SameLine(area.Item1 + 2*fpadding.X);
-            if(!playing) {
-                if(ImGui.Button(playText, new ImVec2(50.0f, 20.0f))) {
-                    OnPlay();
-                }
-            }
-            else {
-                if(ImGui.Button(pauseText, new ImVec2(50.0f, 20.0f))) {
-                    OnStop();
-                }
-            }
-            ImGui.SameLine();
-            float playCur = progress;
-            //ImGui.SliderFloat("", ref playCur, 0.0f, 1.0f);
-            int hours = (int)Math.Floor(progressSeconds/360.0);
-            int minutes = (int)Math.Floor(progressSeconds / 60.0);
-            int seconds = (int)Math.Floor((progressSeconds-minutes*60)); 
-
-            float z = 0.0f, o = 1.0f;
-            GCHandle zhandle = GCHandle.Alloc(z, GCHandleType.Pinned);
-            GCHandle ohandle = GCHandle.Alloc(o, GCHandleType.Pinned);
-            GCHandle vhandle = GCHandle.Alloc(playCur, GCHandleType.Pinned);
-            ImGui.SliderScalar($"{minutes:D2}:{seconds:D2}", ImGuiDataType.Float, vhandle.AddrOfPinnedObject(), zhandle.AddrOfPinnedObject(), ohandle.AddrOfPinnedObject(), "");
-            float newValue = ((float)vhandle.Target);
-            if (newValue != progress)
-            {
-                OnSeek(newValue);
-            }
-            zhandle.Free();
-            ohandle.Free();
-            vhandle.Free();
-
-
-            var pos = (ImGui.GetWindowSize() - size) * 0.5f + new ImVec2(0.0f, verticalOffset/2.0f);
-            ImGui.SetCursorPos(pos);
-            var spos = ImGui.GetCursorScreenPos();
-            ImGui.Image((IntPtr)view.TextureHandle, size, new Vector2(0.0f, 1.0f), new Vector2(1.0f, 0.0f));
-            SceneDropTarget();
-            view.SetArea((int)spos.X, (int)spos.Y, (int)size.X, (int)size.Y);
-            ImGui.End();
-        }
-
-        private void ShowDock() {
-            var vp = ImGui.GetMainViewport();
+        /*private void ShowDock() {
+            var vp = ImguiContext.GetMainViewport();
 
             var menuSize = new ImVec2(0.0f, 0.0f);
 
             ImGuiWindowFlags wflags = ImGuiWindowFlags.MenuBar | ImGuiWindowFlags.NoDocking;
-            ImGui.SetNextWindowPos(new ImVec2(0.0f, menuSize.Y));
-            ImGui.SetNextWindowSize(vp.Size - new ImVec2(0.0f, menuSize.Y));
-            ImGui.SetNextWindowViewport(vp.ID);
-            ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 0.0f);
-            ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f);
+            ImguiContext.SetNextWindowPos(new ImVec2(0.0f, menuSize.Y));
+            ImguiContext.SetNextWindowSize(vp.Size - new ImVec2(0.0f, menuSize.Y));
+            ImguiContext.SetNextWindowViewport(vp.ID);
+            ImguiContext.PushStyleVar(ImGuiStyleVar.WindowRounding, 0.0f);
+            ImguiContext.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f);
             wflags |= ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove;
             wflags |= ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoNavFocus;
-            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new ImVec2(0.0f, 0.0f));
-            ImGui.Begin("DockSpace", wflags);
-            ImGui.PopStyleVar(3);
+            ImguiContext.PushStyleVar(ImGuiStyleVar.WindowPadding, new ImVec2(0.0f, 0.0f));
+            ImguiContext.Begin("DockSpace", wflags);
+            ImguiContext.PopStyleVar(3);
 
-            ImGui.BeginMenuBar();
-            if(ImGui.BeginMenu("File")) {
-                if(ImGui.MenuItem("New project..."))
+            ImguiContext.BeginMenuBar();
+            if(ImguiContext.BeginMenu("File")) {
+                if(ImguiContext.MenuItem("New project..."))
                 {
                     var result = FileChooser.ChooseDirectory("Choose a directory for new project...", "");
                     System.Console.WriteLine($"new project: {result}");
@@ -444,7 +373,7 @@ namespace AnimLib {
                         player.ResourceManager.CreateProject(result);
                     }
                 }
-                if(ImGui.MenuItem("Open project..."))
+                if(ImguiContext.MenuItem("Open project..."))
                 {
                     var result = FileChooser.ChooseFile("Choose a project file to open...", "", new string[] {"*.animproj"});
                     System.Console.WriteLine($"open project: {result}");
@@ -454,58 +383,58 @@ namespace AnimLib {
                         Debug.Warning("Failed to choose project file");
                     }
                 }
-                if(ImGui.MenuItem("Update"))
+                if(ImguiContext.MenuItem("Update"))
                 {
                     player.SetAnimationDirty(true);
                 }
-                if(ImGui.MenuItem("Export video..."))
+                if(ImguiContext.MenuItem("Export video..."))
                 {
                     _showExport = !_showExport;
                     if(_showExport) {
                         exportfileName = "animation-"+DateTime.Now.ToString("yyyy_MM_dd_HHmmss")+".mp4";
                     }
                 }
-                ImGui.EndMenu();
+                ImguiContext.EndMenu();
             }
-            if(ImGui.BeginMenu("Window")) {
-                if(ImGui.MenuItem("Resources..."))
+            if(ImguiContext.BeginMenu("Window")) {
+                if(ImguiContext.MenuItem("Resources..."))
                 {
                     _showResources = true;
                 }
-                if(ImGui.MenuItem("Values..."))
+                if(ImguiContext.MenuItem("Values..."))
                 {
                     _showProperties = true;
                 }
-                if(ImGui.MenuItem("Preferences")) {
+                if(ImguiContext.MenuItem("Preferences")) {
                 }
-                if(ImGui.MenuItem("Debug")) {
+                if(ImguiContext.MenuItem("Debug")) {
                     _showPerformance = true;
                 }
-                ImGui.EndMenu();
+                ImguiContext.EndMenu();
             }
-            if(ImGui.BeginMenu("Create")) {
+            if(ImguiContext.BeginMenu("Create")) {
                 var cam = view.LastCamera as PerspectiveCameraState;
                 if(cam != null) 
                 {
-                    ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.5f, 0.5f, 0.5f, 1.0f));
-                    ImGui.Text("(Drag and drop)");
-                    ImGui.PopStyleColor();
+                    ImguiContext.PushStyleColor(ImGuiCol.Text, new Vector4(0.5f, 0.5f, 0.5f, 1.0f));
+                    ImguiContext.Text("(Drag and drop)");
+                    ImguiContext.PopStyleColor();
                     Action<string, int, bool> createItem = (string name, int idx, bool is2d) => {
-                        ImGui.Selectable(name);
+                        ImguiContext.Selectable(name);
 
                         ImGuiDragDropFlags src_flags = 0;
                         src_flags |= ImGuiDragDropFlags.SourceNoDisableHover;     // Keep the source displayed as hovered
                         src_flags |= ImGuiDragDropFlags.SourceNoHoldToOpenOthers; // Because our dragging is local, we disable the feature of opening foreign treenodes/tabs while dragging
                         //src_flags |= ImGuiDragDropFlags_SourceNoPreviewTooltip; // Hide the tooltip
-                        if (ImGui.BeginDragDropSource(src_flags))
+                        if (ImguiContext.BeginDragDropSource(src_flags))
                         {
                             if((src_flags & ImGuiDragDropFlags.SourceNoPreviewTooltip) == 0)
-                                ImGui.Text("Creating " + name.ToLower());
+                                ImguiContext.Text("Creating " + name.ToLower());
                             var mem = Marshal.AllocHGlobal(4);
                             Marshal.WriteInt32(mem, idx);
-                            ImGui.SetDragDropPayload(is2d ? "DND_CREATE_ITEM_2D" : "DND_CREATE_ITEM_3D", mem, sizeof(int));
+                            ImguiContext.SetDragDropPayload(is2d ? "DND_CREATE_ITEM_2D" : "DND_CREATE_ITEM_3D", mem, sizeof(int));
                             Marshal.FreeHGlobal(mem);
-                            ImGui.EndDragDropSource();
+                            ImguiContext.EndDragDropSource();
                         }
                     };
                     createItem("Circle", (int)DragDropObject.Circle, true);
@@ -516,20 +445,20 @@ namespace AnimLib {
                     createItem("Text", (int)DragDropObject.Text, false);
                     createItem("Quadratic spline", (int)DragDropObject.Spline, false);
                 }
-                ImGui.EndMenu();
+                ImguiContext.EndMenu();
             }
     
-            menuSize = ImGui.GetWindowSize();
-            ImGui.EndMenuBar();
+            menuSize = ImguiContext.GetWindowSize();
+            ImguiContext.EndMenuBar();
 
             uint dockspaceId = 0;
 
             // DockSpace
-            var io = ImGui.GetIO();
+            var io = ImguiContext.GetIO();
             if ((io.ConfigFlags & ImGuiConfigFlags.DockingEnable) != 0)
             {
-                dockspaceId = ImGui.GetID("MyDockSpace");
-                ImGui.DockSpace(dockspaceId, new ImVec2(0.0f, 0.0f), dockNodeFlags);
+                dockspaceId = ImguiContext.GetID("MyDockSpace");
+                ImguiContext.DockSpace(dockspaceId, new ImVec2(0.0f, 0.0f), dockNodeFlags);
 
                 var firstTime = true;
                 if (firstTime)
@@ -538,80 +467,77 @@ namespace AnimLib {
                 }
             }
 
-            ImGui.End();
+            ImguiContext.End();
 
             if(currentError != null) {
                 ImGuiWindowFlags wf = ImGuiWindowFlags.AlwaysAutoResize;
-                ImGui.Begin("Animation error", wf);
-                ImGui.Text(currentError);
-                ImGui.Text(currentStackTrace);
-                ImGui.End();
+                ImguiContext.Begin("Animation error", wf);
+                ImguiContext.Text(currentError);
+                ImguiContext.Text(currentStackTrace);
+                ImguiContext.End();
             }
             
-            ImGui.SetNextWindowDockID(dockspaceId, ImGuiCond.FirstUseEver);
-            ShowSceneWindow(view);
-        }
+            ImguiContext.SetNextWindowDockID(dockspaceId, ImGuiCond.FirstUseEver);
+        }*/
 
         public void ShowResourceInterface() {
-            ImGuiWindowFlags wflags = ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.AlwaysAutoResize;
-            if(ImGui.Begin("Resources", ref _showResources, wflags)) {
+            ImguiContext.ImGuiWindowFlags wflags = ImguiContext.ImGuiWindowFlags.NoDocking | ImguiContext.ImGuiWindowFlags.AlwaysAutoResize;
+            if(ImguiContext.Begin("Resources", ref _showResources, wflags)) {
 
                 var entries = player.ResourceManager.GetStoredResources();
                 if(entries.Length > 0) {
                     var items = entries.Select(x => x.name).ToArray();
-                    ImGui.ListBox("Resource files", ref selectedResource, items, items.Length);
-                    ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(1.0f, 0.0f, 0.0f, 1.0f));
-                    if(ImGui.Button("Delete")) {
+                    ImguiContext.ListBox("Resource files", ref selectedResource, items, items.Length);
+                    ImguiContext.PushStyleColor(ImguiContext.ImGuiCol.Button, new Vector4(1.0f, 0.0f, 0.0f, 1.0f));
+                    if(ImguiContext.Button("Delete")) {
                         if(selectedResource < entries.Length) {
                             var res = entries[selectedResource].name;
                             player.ResourceManager.DeleteResource(res);
                             Console.WriteLine($"Delete resource {res}");
                         }
                     }
-                    ImGui.PopStyleColor();
+                    ImguiContext.PopStyleColor();
                 } else {
                     if(player.ResourceManager.haveProject) {
-                        ImGui.Text("No resource files in this project!\nTo add some, you can drag and drop them in the application window.");
+                        ImguiContext.Text("No resource files in this project!\nTo add some, you can drag and drop them in the application window.");
                     } else {
-                        ImGui.Text("No project loaded.");
+                        ImguiContext.Text("No project loaded.");
                     }
                 }
             }
-            ImGui.End();
+            ImguiContext.End();
         }
 
-        byte[] colorNameBuf = new byte[64];
         private void ShowProperties() {
-            if(ImGui.Begin("Values", ref _showProperties)) {
+            string colorName = "";
+            if(ImguiContext.Begin("Values", ref _showProperties)) {
                 var values = player.GetValues();
                 if(values != null) {
-                    ImGui.Text("Add values and use them in code");
+                    ImguiContext.Text("Add values and use them in code");
                     // Colors
-                    if(ImGui.CollapsingHeader("Colors")) {
+                    if(ImguiContext.CollapsingHeader("Colors")) {
                         // Show existing
                         foreach(var (key,col) in values.ColorMap.Select(x => (x.Key, x.Value)).ToArray()) {
-                            System.Numerics.Vector4 c = (System.Numerics.Vector4)col.ToVector4();
-                            if(ImGui.ColorEdit4(key, ref c)) {
+                            var c = col.ToVector4();
+                            if(ImguiContext.ColorEdit4(key, ref c)) {
                                 values.ColorMap[key] = new Color(c);
                                 player.SetAnimationDirty();
                             }
                         }
                         // Create new
-                        ImGui.InputText("Name", colorNameBuf, (uint)colorNameBuf.Length);
-                        ImGui.SameLine();
-                        if(ImGui.Button("Create")) {
-                            int len = Array.IndexOf(colorNameBuf, (byte)0);
-                            var str = System.Text.Encoding.UTF8.GetString(colorNameBuf, 0, len);
-                            if(!string.IsNullOrEmpty(str) && !values.ColorMap.ContainsKey(str)) {
-                                values.ColorMap.Add(str, Color.GREEN);
+                        ImguiContext.InputText("Name", ref colorName, 64);
+                        ImguiContext.SameLine();
+                        if(ImguiContext.Button("Create")) {
+                            if(!string.IsNullOrEmpty(colorName) && !values.ColorMap.ContainsKey(colorName)) {
+                                values.ColorMap.Add(colorName, Color.GREEN);
                             }
                         }
                     }
                 } else {
-                    ImGui.Text("No values");
+                    ImguiContext.Text("No values");
                 }
             }
-            ImGui.End();
+            ImguiContext.End();
         }
 
         private void ShowItemSelection() {
@@ -696,92 +622,93 @@ namespace AnimLib {
                 }
                 // Imgui proprty window
 
-                ImGui.SetNextWindowSize(new System.Numerics.Vector2(430, 450), ImGuiCond.FirstUseEver);
+                ImguiContext.SetNextWindowSize(new System.Numerics.Vector2(430, 450), ImguiContext.ImGuiCond.FirstUseEver);
                 
-                ImGuiWindowFlags wflags = ImGuiWindowFlags.AlwaysAutoResize;
-                if(!ImGui.Begin("Object properties", wflags)) {
-                    ImGui.End();
+                var wflags = ImguiContext.ImGuiWindowFlags.AlwaysAutoResize;
+                bool show = true;
+                if(!ImguiContext.Begin("Object properties", ref show, wflags)) {
+                    ImguiContext.End();
                     return;
                 }
-                ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new System.Numerics.Vector2(2.0f, 2.0f));
-                ImGui.Columns(1);
-                ImGui.Separator();
+                ImguiContext.PushStyleVar(ImguiContext.ImGuiStyleVar.FramePadding, new System.Numerics.Vector2(2.0f, 2.0f));
+                ImguiContext.Columns(1);
+                ImguiContext.Separator();
 
-                ImGui.Text("Object properties");
-                ImGui.Spacing();
+                ImguiContext.Text("Object properties");
+                ImguiContext.Spacing();
                 foreach(var propF in Selection.Properties) {
                     var prop = propF.Item2();
                     switch(prop) {
                         case Vector3 v1:
-                        System.Numerics.Vector3 v = v1;
-                        if(ImGui.InputFloat3(propF.Item1, ref v)) {
+                        Vector3 v = v1;
+                        if(ImguiContext.InputFloat3(propF.Item1, ref v)) {
                             propF.Item3((Vector3)v);
                             player.SetAnimationDirty();
                         }
                         break;
                         case Vector2 v2:
-                        System.Numerics.Vector2 vv = v2;
-                        if(ImGui.InputFloat2(propF.Item1, ref vv)) {
+                        Vector2 vv = v2;
+                        if(ImguiContext.InputFloat2(propF.Item1, ref vv)) {
                             propF.Item3((Vector2)vv);
                             player.SetAnimationDirty();
                         }
                         break;
                         case double d1:
-                        if(ImGui.InputDouble(propF.Item1, ref d1)) {
+                        if(ImguiContext.InputDouble(propF.Item1, ref d1)) {
                             propF.Item3(d1);
                             player.SetAnimationDirty();
                         }
                         break;
                         case float f1:
-                        if(ImGui.InputFloat(propF.Item1, ref f1)) {
+                        if(ImguiContext.InputFloat(propF.Item1, ref f1)) {
                             propF.Item3(f1);
                             player.SetAnimationDirty();
                         }
                         break;
                         case Color c1:
-                        System.Numerics.Vector4 c = (System.Numerics.Vector4)c1.ToVector4();
-                        if(ImGui.ColorEdit4(propF.Item1, ref c)) {
-                            propF.Item3(new Color(c.X, c.Y, c.Z, c.W));
+                        var c = c1.ToVector4();
+                        if(ImguiContext.ColorEdit4(propF.Item1, ref c)) {
+                            propF.Item3(new Color(c.x, c.y, c.z, c.w));
                             player.SetAnimationDirty();
                         }
-                        //ImGui.SameLine();
+                        //ImguiContext.SameLine();
                         var colNames = values.ColorMap.Select(x =>x.Key).ToArray();
-                        if(ImGui.BeginCombo(propF.Item1, "Select color")) {
+                        if(ImguiContext.BeginCombo(propF.Item1, "Select color")) {
                             for(int i = 0; i < colNames.Length; i++) {
-                                if(ImGui.Selectable(colNames[i], false)) {
+                                if(ImguiContext.Selectable(colNames[i], false)) {
                                     propF.Item3(values.ColorMap[colNames[i]]);
                                     player.SetAnimationDirty();
                                 }
                             }
-                            ImGui.EndCombo();
+                            ImguiContext.EndCombo();
                         }
                         break;
                         case string s1:
-                        if(ImGui.InputText(propF.Item1, ref s1, 128)) {
+                        if(ImguiContext.InputText(propF.Item1, ref s1, 128)) {
                             propF.Item3(s1);
                             player.SetAnimationDirty();
                         }
                         break;
                         default:
                             if(prop.GetType().IsEnum) {
-                                if(ImGui.BeginCombo(propF.Item1, prop.ToString())) {
+                                if(ImguiContext.BeginCombo(propF.Item1, prop.ToString())) {
                                     var enumValues = Enum.GetValues(prop.GetType());
                                     foreach(var val in enumValues) {
-                                        if(ImGui.Selectable(val.ToString(), false)) {
+                                        if(ImguiContext.Selectable(val.ToString(), false)) {
                                             propF.Item3(val);
                                             player.SetAnimationDirty();
                                         }
                                     }
-                                    ImGui.EndCombo();
+                                    ImguiContext.EndCombo();
                                 }
                             }
                         break;
                     }
                 }
 
-                ImGui.Separator();
-                ImGui.PopStyleVar();
-                ImGui.End();
+                ImguiContext.Separator();
+                ImguiContext.PopStyleVar();
+                ImguiContext.End();
             }
         }
 
@@ -808,36 +735,37 @@ namespace AnimLib {
             updateDone = false;
             if(Selection is Gizmo3DObj && Selection.name == uid) {
                 var g3d = Selection as Gizmo3DObj;
-                updateDone = g3d.position != pos && !ImGuizmo.IsUsing();
+                //updateDone = g3d.position != pos && !ImGuizmo.IsUsing();
                 return g3d.position;
             }
             return pos;
         }
 
         public void ShowPerf() {
-            ImGui.SetNextWindowSize(new System.Numerics.Vector2(300, 150), ImGuiCond.FirstUseEver);
-            ImGuiWindowFlags wflags = ImGuiWindowFlags.NoDocking;
-            if(!ImGui.Begin("Developer debug", ref _showPerformance, wflags)) {
-                ImGui.End();
+            ImguiContext.SetNextWindowSize(new System.Numerics.Vector2(300, 150), ImguiContext.ImGuiCond.FirstUseEver);
+            var wflags = ImguiContext.ImGuiWindowFlags.NoDocking;
+            if(!ImguiContext.Begin("Developer debug", ref _showPerformance, wflags)) {
+                ImguiContext.End();
                 return;
             }
-            ImGui.Text($"Frame processing: {Performance.TimeToProcessFrame*1000.0:N3}ms");
-            ImGui.Text($"Wait sync: {Performance.TimeToWaitSync*1000.0:N3}ms");
-            ImGui.Text($"View rendering: {Performance.TimeToRenderViews*1000.0:N3}ms");
-            ImGui.Text($"  Canvas rendering: {Performance.TimeToRenderCanvases*1000.0:N3}ms");
-            ImGui.Text($"Number of scene views: {Performance.views}");
-            ImGui.Text($"Number of commands in animation: {Performance.CommandCount}");
-            ImGui.Text($"Last bake time: {Performance.TimeToBake*1000:N3}ms");
-            ImGui.End();
+            ImguiContext.Text($"Frame processing: {Performance.TimeToProcessFrame*1000.0:N3}ms");
+            ImguiContext.Text($"Wait sync: {Performance.TimeToWaitSync*1000.0:N3}ms");
+            ImguiContext.Text($"View rendering: {Performance.TimeToRenderViews*1000.0:N3}ms");
+            ImguiContext.Text($"  Canvas rendering: {Performance.TimeToRenderCanvases*1000.0:N3}ms");
+            ImguiContext.Text($"Number of scene views: {Performance.views}");
+            ImguiContext.Text($"Number of commands in animation: {Performance.CommandCount}");
+            ImguiContext.Text($"Last bake time: {Performance.TimeToBake*1000:N3}ms");
+            ImguiContext.End();
         }
 
         public void DoInterface() {
+            this.renderer.imgui.SceneWindow((double)view.BufferWidth/view.BufferHeight, view.TextureHandle);
 
             if(_showPerformance) {
                 ShowPerf();
             }
 
-            ShowDock();
+            //ShowDock();
             if(_showExport) {
                 ShowExportWindow();
             }
@@ -848,7 +776,7 @@ namespace AnimLib {
                 ShowProperties();
 
             // select on left click
-            if(ImGui.IsMouseClicked(0)
+            if(ImguiContext.IsMouseClicked(0)
                     && UserInterface.MouseEntityId >= 0 
                     && player.Scene != null) 
             {
@@ -873,7 +801,7 @@ namespace AnimLib {
                     var c = ent as CanvasState;
                     var mat = c.WorldToNormalizedCanvas;
                     Vector2 normPos;
-                    if(view.TryIntersectCanvas(c, ImGui.GetMousePos(), out normPos)) {
+                    if(view.TryIntersectCanvas(c, ImguiContext.GetMousePos(), out normPos)) {
                         Vector2 canvasPos = (normPos)*new Vector2(c.width, c.height);
                         Debug.TLog($"Found canvas {c.name} {normPos} {canvasPos}");
                         lock(player.Scene.sceneLock) {
@@ -890,7 +818,7 @@ namespace AnimLib {
                 else {
                     Debug.Warning($"Mouse over entity, but no entity with id {UserInterface.MouseEntityId} in scene");
                 }
-            } else if(ImGui.IsMouseClicked(0) && UserInterface.MouseEntityId == -1 && !ImGuizmo.IsOver()) {
+            } else if(ImguiContext.IsMouseClicked(0) && UserInterface.MouseEntityId == -1 /*&& !ImGuizmo.IsOver()*/) {
                 Selection = null;
             }
 
@@ -900,7 +828,7 @@ namespace AnimLib {
 
             // update once nothing is being changed anymore
             // (updating animation is very expensive)
-            if (changePending && !ImGuizmo.IsUsing()) {
+            if (changePending /*&& !ImGuizmo.IsUsing()*/) {
                 player.SetAnimationDirty(true);
                 changePending = false;
             }

@@ -1,7 +1,6 @@
 using System;
 using OpenTK;
 using OpenTK.Input;
-using ImGuiNET;
 using System.Collections.Generic;
 
 namespace AnimLib
@@ -34,7 +33,7 @@ namespace AnimLib
         int AddShader(string v, string f, string g, string tcs = null, string tes = null);
         void DestroyOwner(string owner);
 
-        void RenderGUI((ImDrawDataPtr, Texture2D)? data, IList<SceneView> views, IRenderBuffer rb);
+        void RenderGUI(ImguiContext.DrawList data, IList<SceneView> views, IRenderBuffer rb);
         void ClearBackbuffer(int x, int y, int w, int h); 
         //void RenderImGui(ImDrawDataPtr data, Texture2D atlas);
 

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using OpenTK;
 using OpenTK.Input;
-using ImGuiNET;
 
 namespace AnimLib
 {
@@ -37,6 +36,8 @@ namespace AnimLib
             platform.mouseMove += mouseMove;
             platform.mouseScroll += mouseScroll;
             platform.PRenderFrame += RenderFrame;
+
+            imgui = new ImguiContext((int)uiRenderBuffer.Size.Item1, (int)uiRenderBuffer.Size.Item2, platform);
         }
 
         readonly internal IPlatform platform;
@@ -81,7 +82,7 @@ namespace AnimLib
 
         System.Diagnostics.Stopwatch sw;
 
-        static ImguiContext imgui = null;
+        public ImguiContext imgui = null;
 
         public AnimationPlayer.FrameStatus frameStatus;
         public AnimationPlayer.FrameStatus SceneStatus {
@@ -119,7 +120,7 @@ namespace AnimLib
 
             sw = new System.Diagnostics.Stopwatch();
 
-            renderer = new DistanceFieldRenderer(platform as OpenTKPlatform, this);
+            renderer = new WorldRenderer(platform as OpenTKPlatform, this);
             //renderer = new TessallationRenderer(platform as OpenTKPlatform, this);
             Debug.TLog($"Renderer implementation: {renderer}");
             _fr = new FontCache(ts, platform);
@@ -136,22 +137,22 @@ namespace AnimLib
                         this.debugCamRot = Vector2.ZERO;
                     }
                 }
-                if(ImGui.GetCurrentContext() != IntPtr.Zero) {
+                /*if(ImGui.GetCurrentContext() != IntPtr.Zero) {
                     var io = ImGui.GetIO();
                     io.KeysDown[(int)args.Key] = true;
-                }
+                }*/
             };
             platform.PKeyUp += (object sender, KeyboardKeyEventArgs args) => {
-                if(ImGui.GetCurrentContext() != IntPtr.Zero) {
+                /*if(ImGui.GetCurrentContext() != IntPtr.Zero) {
                     var io = ImGui.GetIO();
                     io.KeysDown[(int)args.Key] = false;
-                }
+                }*/
             };
             platform.PKeyPress += (object sender, KeyPressEventArgs args) => {
-                if(ImGui.GetCurrentContext() != IntPtr.Zero) {
+                /*if(ImGui.GetCurrentContext() != IntPtr.Zero) {
                     var io = ImGui.GetIO();
                     io.AddInputCharacter(args.KeyChar);
-                }
+                }*/
             };
 
             this.OnUpdate += (double dtd) => {
@@ -189,9 +190,6 @@ namespace AnimLib
                     debugCamera.rotation = qy * qx;
                 }
             };
-
-            imgui = new ImguiContext((int)uiRenderBuffer.Size.Item1, (int)uiRenderBuffer.Size.Item2);
-
         }
 
         public FontCache FontCache {
@@ -308,6 +306,7 @@ namespace AnimLib
 
             platform.ClearBackbuffer(0, 0, uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2);
             
+            // TODO: use actual frame rate
             imgui.Update(uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2, 1.0f/60.0f, mousePos, mouseLeft, mouseRight, false, scrollDelta);
 
             foreach(var view in views) {
@@ -362,14 +361,14 @@ namespace AnimLib
 
             // Render UI
             //var uiData = UserInterface.EndFrame();
-            var uiData = imgui.Render();
-            platform.RenderGUI(uiData, views, uiRenderBuffer);
+            var drawList = imgui.Render();
+            platform.RenderGUI(drawList, views, uiRenderBuffer);
 
             int sceneEntity = -2;
             if (views.Count > 0) {
-                sceneEntity = views[0].GetEntityIdAtPixel(ImGui.GetMousePos());
+                sceneEntity = views[0].GetEntityIdAtPixel(ImguiContext.GetMousePos());
             }
-            var guiEntity = GetGuiEntityAtPixel(uiRenderBuffer, ImGui.GetMousePos());
+            var guiEntity = GetGuiEntityAtPixel(uiRenderBuffer, ImguiContext.GetMousePos());
             if(sceneEntity == -2) { // out of scene viewport
                 UserInterface.MouseEntityId = guiEntity;
             } else {
