@@ -1,5 +1,7 @@
 # AnimLib
 
+![build](https://github.com/metalisai/AnimLib.Sln/actions/workflows/dotnet.yml/badge.svg)
+
 <a href="url"><img src="/img/AnimLib.png" width="400" ></a> <br/>
   
 
