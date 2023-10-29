@@ -79,6 +79,21 @@ namespace AnimLib {
             this.renderer = renderer;
             view = new SceneView(0, 0, 100, 100, 1920, 1080);
             renderer.AddSceneView(view);
+            renderer.imgui.DrawMenuEvent += DrawMainMenu;
+            renderer.imgui.PlayEvent += () => {
+                Debug.Log("Play " + playing);
+                if (!this.playing)
+                {
+                    this.player.Play();
+                }
+                else
+                {
+                    this.player.Stop();
+                }
+            };
+            renderer.imgui.SeekEvent += (float progress) => {
+                this.player.Seek(progress);
+            };
         }
 
         private void OnBaked() {
@@ -325,7 +340,8 @@ namespace AnimLib {
                 ImguiContext.End();
                 return;
             }
-            ImguiContext.PushStyleVar(ImguiContext.ImGuiStyleVar.FramePadding, new System.Numerics.Vector2(2.0f, 2.0f));
+            Vector2 v = new (2.0f, 2.0f);
+            ImguiContext.PushStyleVar(ImguiContext.ImGuiStyleVar.FramePadding, ref v);
             ImguiContext.Columns(1);
             ImguiContext.Separator();
 
@@ -488,7 +504,8 @@ namespace AnimLib {
                 if(entries.Length > 0) {
                     var items = entries.Select(x => x.name).ToArray();
                     ImguiContext.ListBox("Resource files", ref selectedResource, items, items.Length);
-                    ImguiContext.PushStyleColor(ImguiContext.ImGuiCol.Button, new Vector4(1.0f, 0.0f, 0.0f, 1.0f));
+                    Vector4 col = new (0.5f, 0.5f, 0.5f, 1.0f);
+                    ImguiContext.PushStyleColor(ImguiContext.ImGuiCol.Button, ref col);
                     if(ImguiContext.Button("Delete")) {
                         if(selectedResource < entries.Length) {
                             var res = entries[selectedResource].name;
@@ -506,6 +523,92 @@ namespace AnimLib {
                 }
             }
             ImguiContext.End();
+        }
+
+        private void DrawMainMenu() {
+            ImguiContext.BeginMenuBar();
+            if (ImguiContext.BeginMenu("File"))
+            {
+                if (ImguiContext.MenuItem("New project..."))
+                {
+                    var result = FileChooser.ChooseDirectory("Choose a directory for new project...", "");
+                    System.Console.WriteLine($"new project: {result}");
+                    if(!string.IsNullOrEmpty(result)) {
+                        player.ResourceManager.CreateProject(result);
+                    }
+                }
+                if (ImguiContext.MenuItem("Open project..."))
+                {
+                    var result = FileChooser.ChooseFile("Choose a project file to open...", "", new string[] {"*.animproj"});
+                    System.Console.WriteLine($"open project: {result}");
+                    if(!string.IsNullOrEmpty(result)) {
+                        player.ResourceManager.SetProject(result);
+                    } else {
+                        Debug.Warning("Failed to choose project file");
+                    }
+                }
+                if (ImguiContext.MenuItem("Export video..."))
+                {
+                    _showExport = !_showExport;
+                    if(_showExport) {
+                        exportfileName = "animation-"+DateTime.Now.ToString("yyyy_MM_dd_HHmmss")+".mp4";
+                    }
+                }
+                if (ImguiContext.MenuItem("Update"))
+                {
+                    player.SetAnimationDirty(true);
+                }
+                ImguiContext.EndMenu();
+            }
+
+            if (ImguiContext.BeginMenu("Window"))
+            {
+                if (ImguiContext.MenuItem("Resources..."))
+                {
+                    _showResources = true;
+                }
+                if (ImguiContext.MenuItem("Values..."))
+                {
+                    _showProperties = true;
+                }
+                if (ImguiContext.MenuItem("Preferences"))
+                {
+                }
+                if (ImguiContext.MenuItem("Debug"))
+                {
+                    _showPerformance = true;
+                }
+                ImguiContext.EndMenu();
+            }
+
+            if (ImguiContext.BeginMenu("Create"))
+            {
+                var cam = view.LastCamera as PerspectiveCameraState;
+                if(cam != null) 
+                {
+                    Vector4 col = new (0.5f, 0.5f, 0.5f, 1.0f);
+                    ImguiContext.PushStyleColor(ImguiContext.ImGuiCol.Text, ref col);
+                    ImguiContext.Text("(Drag and drop)");
+                    ImguiContext.PopStyleColor();
+                    Action<string, int, bool> createItem = (string name, int idx, bool is2d) => {
+                        ImguiContext.DragDropItem(name);
+                    };
+                    createItem("Circle", (int)DragDropObject.Circle, true);
+                    createItem("Rectangle", (int)DragDropObject.Rectangle, true);
+                    createItem("Shape", (int)DragDropObject.Shape, true);
+                    createItem("Line", (int)DragDropObject.Line, false);
+                    createItem("Arrow", (int)DragDropObject.Arrow, false);
+                    createItem("Text", (int)DragDropObject.Text, false);
+                    createItem("Quadratic spline", (int)DragDropObject.Spline, false);
+                }
+                else
+                {
+                    Debug.Warning("No camera");
+                }
+                ImguiContext.EndMenu();
+            }
+
+            ImguiContext.EndMenuBar();
         }
 
         private void ShowProperties() {
@@ -630,7 +733,8 @@ namespace AnimLib {
                     ImguiContext.End();
                     return;
                 }
-                ImguiContext.PushStyleVar(ImguiContext.ImGuiStyleVar.FramePadding, new System.Numerics.Vector2(2.0f, 2.0f));
+                Vector2 fp = new (2.0f, 2.0f);
+                ImguiContext.PushStyleVar(ImguiContext.ImGuiStyleVar.FramePadding, ref fp);
                 ImguiContext.Columns(1);
                 ImguiContext.Separator();
 
@@ -759,7 +863,7 @@ namespace AnimLib {
         }
 
         public void DoInterface() {
-            this.renderer.imgui.SceneWindow((double)view.BufferWidth/view.BufferHeight, view.TextureHandle);
+            this.renderer.imgui.SceneWindow((double)view.BufferWidth/view.BufferHeight, view.TextureHandle, this.playing, this.progress, 1.0f);
 
             if(_showPerformance) {
                 ShowPerf();

@@ -36,6 +36,9 @@ namespace AnimLib {
         enum AnimlibCallbackId : int {
             AnimlibCallbackId_None = 0,
             AnimlibCallbackId_Menuitem = 1,
+            AnimlibCallbackId_DrawMenu = 2,
+            AnimlibCallbackId_Play = 3,
+            AnimlibCallbackId_Seek = 5,
         }
 
         public enum ImGuiStyleVar : int
@@ -205,7 +208,11 @@ namespace AnimLib {
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void imgui_animlib_draw_cb_t(int i_offset, int i_count, int v_offset, int texture, float clipX1, float clipY1, float clipX2, float clipY2);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate void imgui_animlib_menuitem_cb_t([MarshalAs(UnmanagedType.LPStr)] string option_name);
+        public delegate void imgui_animlib_draw_menu_t();
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate void imgui_animlib_play_t();
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate void imgui_animlib_seek_t(float s);
 
         private const string LibraryName = "imgui_animlib";
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
@@ -226,7 +233,7 @@ namespace AnimLib {
         public static extern void imgui_animlib_set_font_texture(IntPtr ctx, int texture);
         //EXPORT IRect imgui_animlib_scene_window(ImGuiAnimlibState* state, double view_aspect, int texture_handle);
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern IRect imgui_animlib_scene_window(IntPtr ctx, double view_aspect, int texture_handle);
+        public static extern IRect imgui_animlib_scene_window(IntPtr ctx, double view_aspect, int texture_handle, bool playing, float cursor, float cursosr_max);
         //EXPORT void imgui_animlib_set_cb(ImGuiAnimlibState* state, AnimlibCallbackId cb_id, void* cb);
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         static extern void imgui_animlib_set_cb(IntPtr ctx, AnimlibCallbackId cb_id, IntPtr cb);
@@ -258,30 +265,6 @@ namespace AnimLib {
             return ret;
         }
 
-/*EXPORT ImVec2 imgui_animlib_get_mouse_pos();
-EXPORT bool imgui_animlib_begin_drag_drop_target();
-EXPORT void imgui_animlib_end_drag_drop_target();
-EXPORT void imgui_animlib_accept_drag_drop_payload(const char *name);
-EXPORT void imgui_animlib_set_next_window_size(ImVec2 size, int cond_flags);
-EXPORT void imgui_animlib_columns(int count);
-EXPORT void imgui_animlib_separator();
-EXPORT void imgui_animlib_spacing();
-EXPORT void imgui_animlib_push_style_var_float(int idx, float val);
-EXPORT void imgui_animlib_push_style_var_float2(int idx, ImVec2 val);
-EXPORT void imgui_animlib_pop_style_var(int count);
-EXPORT bool imgui_animlib_begin_menu_bar();
-EXPORT void imgui_animlib_end_menu_bar();
-EXPORT bool imgui_animlib_begin_menu(const char *label);
-EXPORT void imgui_animlib_end_menu();
-EXPORT bool imgui_animlib_menu_item(const char *item);
-EXPORT ImVec2 imgui_animlib_get_window_size();
-EXPORT void imgui_animlib_push_style_color_u32(int idx, ImU32 col);
-EXPORT void imgui_animlib_push_style_color_float4(int idx, const ImVec4& col);
-EXPORT void imgui_animlib_pop_style_color(int count);
-EXPORT bool imgui_animlib_list_box(const char *label, int *current_item, const char* const items[], int items_count, int height_in_items);
-EXPORT bool imgui_animlib_input_float(const char *label, float *v);
-EXPORT bool imgui_animlib_input_float2(const char *label, float v[]);
-EXPORT bool imgui_animlib_input_float3(const char *label, float v[]);*/
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_get_mouse_pos")]
         public extern static Vector2 GetMousePos();
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_begin_drag_drop_target")]
@@ -301,7 +284,7 @@ EXPORT bool imgui_animlib_input_float3(const char *label, float v[]);*/
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_push_style_var_float")]
         public extern static void PushStyleVar(ImGuiStyleVar idx, float val);
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_push_style_var_float2")]
-        public extern static void PushStyleVar(ImGuiStyleVar idx, Vector2 val);
+        public extern static void PushStyleVar(ImGuiStyleVar idx, ref Vector2 val);
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_pop_style_var")]
         public extern static void PopStyleVar(int count = 1);
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_begin_menu_bar")]
@@ -319,7 +302,7 @@ EXPORT bool imgui_animlib_input_float3(const char *label, float v[]);*/
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_push_style_color_u32")]
         public extern static void PushStyleColor(ImGuiCol idx, uint col);
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_push_style_color_float4")]
-        public extern static void PushStyleColor(ImGuiCol idx, Vector4 col);
+        public extern static void PushStyleColor(ImGuiCol idx, ref Vector4 col);
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_pop_style_color")]
         public extern static void PopStyleColor(int count = 1);
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_input_double")]
@@ -353,6 +336,9 @@ EXPORT bool imgui_animlib_input_float3(const char *label, float v[]);*/
         public extern static bool Selectable([MarshalAs(UnmanagedType.LPStr)] string label, ref bool p_selected, int flags = 0, Vector2? size = null);
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_selectable2")]
         public extern static bool Selectable([MarshalAs(UnmanagedType.LPStr)] string label, bool selected, int flags = 0, Vector2? size = null);
+        //EXPORT void imgui_animlib_drag_drop_item(const char* item);
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_drag_drop_item")]
+        public extern static void DragDropItem([MarshalAs(UnmanagedType.LPStr)] string item);
 
 
         //EXPORT void imgui_animlib_fg_circle_filled(ImVec2 screen_pos, float radius, ImU32 col);
@@ -380,11 +366,20 @@ EXPORT bool imgui_animlib_input_float3(const char *label, float v[]);*/
             return ret;
         }
 
-        public event Action<string> MenuItemEvent;
+        public event Action DrawMenuEvent;
+        public event Action PlayEvent;
+        public event Action<float> SeekEvent;
 
-        void MenuItemCallback(string option_name) {
-            Console.WriteLine($"MenuItemCallback {option_name}");
-            MenuItemEvent?.Invoke(option_name);
+        void DrawMenuCallback() {
+            DrawMenuEvent?.Invoke();
+        }
+
+        void PlayCallback() {
+            PlayEvent?.Invoke();
+        }
+
+        void SeekCallback(float cursor) {
+            SeekEvent?.Invoke(cursor);
         }
 
         void DrawDataCallback(IntPtr vtx_data, int vtx_count, int vtx_size, IntPtr idx_data, int idx_count, int idx_size) {
@@ -396,13 +391,6 @@ EXPORT bool imgui_animlib_input_float3(const char *label, float v[]);*/
                 var idx = Marshal.PtrToStructure<ushort>(idx_data + i*idx_size);
                 indices.Add(idx);
             }
-            /*Console.WriteLine("DrawDataCallback");
-            GL.BindBuffer(BufferTarget.ArrayBuffer, this.vbo);
-            GL.BufferSubData(BufferTarget.ArrayBuffer, new IntPtr(this.vcount*vtx_size), vtx_count*vtx_size, vtx_data);
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, this.ebo);
-            GL.BufferSubData(BufferTarget.ElementArrayBuffer, new IntPtr(this.icount*sizeof(ushort)), idx_count*sizeof(ushort), idx_data);
-            vcount += vtx_count;
-            icount += idx_count;*/
         }
 
         void DrawCallback(int i_offset, int i_count, int v_offset, int texture, float clipX1, float clipY1, float clipX2, float clipY2) {
@@ -435,7 +423,9 @@ EXPORT bool imgui_animlib_input_float3(const char *label, float v[]);*/
 
         imgui_animlib_draw_data_cb_t draw_data_cb;
         imgui_animlib_draw_cb_t draw_cb;
-        imgui_animlib_menuitem_cb_t menuitem_cb;
+        imgui_animlib_draw_menu_t draw_menu_cb;
+        imgui_animlib_play_t play_cb;
+        imgui_animlib_seek_t seek_cb;
         IntPtr myCtx;
 
         IntPtr nativeCtx;
@@ -443,12 +433,17 @@ EXPORT bool imgui_animlib_input_float3(const char *label, float v[]);*/
         public ImguiContext(int width, int height, IPlatform platform) {
             draw_data_cb = new imgui_animlib_draw_data_cb_t(DrawDataCallback);
             draw_cb = new imgui_animlib_draw_cb_t(DrawCallback);
-            menuitem_cb = new imgui_animlib_menuitem_cb_t(MenuItemCallback);
+            draw_menu_cb = new imgui_animlib_draw_menu_t(DrawMenuCallback);
+            play_cb = new imgui_animlib_play_t(PlayCallback);
+            seek_cb = new imgui_animlib_seek_t(SeekCallback);
 
             var bin_path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             Console.WriteLine($"Bin path: {bin_path}");
             myCtx = imgui_animlib_init(draw_data_cb, draw_cb, bin_path);
-            imgui_animlib_set_cb(myCtx, AnimlibCallbackId.AnimlibCallbackId_Menuitem, Marshal.GetFunctionPointerForDelegate(menuitem_cb));
+            imgui_animlib_set_cb(myCtx, AnimlibCallbackId.AnimlibCallbackId_DrawMenu, Marshal.GetFunctionPointerForDelegate(draw_menu_cb));
+            imgui_animlib_set_cb(myCtx, AnimlibCallbackId.AnimlibCallbackId_Play, Marshal.GetFunctionPointerForDelegate(play_cb));
+            imgui_animlib_set_cb(myCtx, AnimlibCallbackId.AnimlibCallbackId_Seek, Marshal.GetFunctionPointerForDelegate(seek_cb));
+
             // TODO: free
             //
 
@@ -487,8 +482,8 @@ EXPORT bool imgui_animlib_input_float3(const char *label, float v[]);*/
             imgui_animlib_begin_frame(myCtx);
         }
 
-        public IRect SceneWindow(double viewAspect, int textureHandle) {
-            return imgui_animlib_scene_window(myCtx, viewAspect, textureHandle);
+        public IRect SceneWindow(double viewAspect, int textureHandle, bool playing, float cursor, float cursor_max) {
+            return imgui_animlib_scene_window(myCtx, viewAspect, textureHandle, playing, cursor, cursor_max);
         }
 
         public ImguiContext.DrawList Render() {
