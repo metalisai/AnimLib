@@ -26,7 +26,7 @@ jobs:
       run: dotnet restore
     - name: Build native
       run: ./build.sh
-      working-directory: ./AnimLib.ImGui
+      working-directory: ./AnimLib.ImGui/src
     - name: Build
       run: dotnet build --no-restore
     - name: Test
