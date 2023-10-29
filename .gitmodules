@@ -13,3 +13,6 @@
 [submodule "AnimLib.Native"]
 	path = AnimLib.Native
 	url = https://github.com/metalisai/AnimLib.Native.git
+[submodule "AnimLib.ImGui"]
+	path = AnimLib.ImGui
+	url = https://github.com/metalisai/AnimLib.ImGui.git
