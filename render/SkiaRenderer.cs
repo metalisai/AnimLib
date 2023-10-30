@@ -305,11 +305,12 @@ namespace AnimLib {
         M3x3 getModelMatrix(EntityState2D ent, CanvasState rc, EntityState2D[] entities) {
             M3x3? parentMat = null;
             if(ent.parentId > 0) {
+                // TODO: optimize
                 var parent = entities.Where(x => x.entityId == ent.parentId).FirstOrDefault();
                 if(parent != null) {
                     parentMat = getModelMatrix(parent, rc, entities);
                 } else {
-                    Debug.Warning("Paren't set but it was not part of the canvas");
+                    Debug.Warning($"Parent set ({ent.parentId}) but it was not part of the canvas");
                 }
             }
 

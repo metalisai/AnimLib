@@ -30,17 +30,17 @@ namespace AnimLib {
             settings.MaxLength = 1.0;
         }
         public async Task Animation(World world, Animator animator) {
-            var hw = new Text2D();
-            hw.Transform.Pos = new Vector2(100.0f, 100.0f);
+            var hw = new Text2D("No project loaded!");
+            hw.Transform.Pos = new Vector2(100.0f, -200.0f);
             hw.Size = 22.0f;
             hw.Color = Color.RED;
-            hw.Anchor = new Vector2(0.5f, 0.5f);
-            hw.HAlign = TextHorizontalAlignment.Center;
-            hw.VAlign = TextVerticalAlignment.Center;
-            // TODO: this thing  is screaming for multiline text
+            hw.Anchor = new Vector2(-0.5f, 0.5f); // top left
             hw.Text = "No project loaded!";
+            //hw.HAlign = TextHorizontalAlignment.Center;
+            //hw.VAlign = TextVerticalAlignment.Center;
+            // TODO: this thing  is screaming for multiline text
             var hw2 = world.Clone(hw);
-            hw2.Transform.Pos = new Vector2(100.0f, 131.0f);
+            hw2.Transform.Pos = new Vector2(100.0f, -200.0f+31.0f);
             hw2.Text = "File->New project... or File->Open project... to continue";
             world.CreateInstantly(hw);
             world.CreateInstantly(hw2);
@@ -56,16 +56,16 @@ namespace AnimLib {
         }
         public async Task Animation(World world, Animator animator) {
             var hw = new Text2D();
-            hw.Transform.Pos = new Vector2(100.0f, 100.0f);
+            hw.Transform.Pos = new Vector2(100.0f, -200.0f);
             hw.Size = 22.0f;
             hw.Color = Color.RED;
-            hw.Anchor = new Vector2(0.5f, 0.5f);
+            hw.Anchor = new Vector2(-0.5f, 0.5f); // top left
             hw.HAlign = TextHorizontalAlignment.Center;
             hw.VAlign = TextVerticalAlignment.Center;
             // TODO: this thing  is screaming for multiline text
             hw.Text = "Error occurred during animation";
             var hw2 = world.Clone(hw);
-            hw2.Transform.Pos = new Vector2(100.0f, 131.0f);
+            hw2.Transform.Pos = new Vector2(100.0f, -200.0f+31.0f);
             hw2.Text = "Fix your animation and try again!";
             world.CreateInstantly(hw);
             world.CreateInstantly(hw2);
@@ -81,19 +81,19 @@ namespace AnimLib {
         }
         public async Task Animation(World world, Animator animator) {
             var hw = new Text2D();
-            hw.Transform.Pos = new Vector2(100.0f, 100.0f);
+            hw.Transform.Pos = new Vector2(100.0f, -200.0f);
             hw.Size = 22.0f;
             hw.Color = Color.RED;
-            hw.Anchor = new Vector2(0.5f, 0.5f);
+            hw.Anchor = new Vector2(-0.5f, 0.5f); // top left
             hw.HAlign = TextHorizontalAlignment.Center;
             hw.VAlign = TextVerticalAlignment.Center;
             // TODO: this thing  is screaming for multiline text
             hw.Text = "No project assembly (.dll) found!";
             var hw2 = world.Clone(hw);
-            hw2.Transform.Pos = new Vector2(100.0f, 131.0f);
+            hw2.Transform.Pos = new Vector2(100.0f, -200.0f+31.0f);
             hw2.Text = "Go to project directory and build it";
             var hw3 = world.Clone(hw);
-            hw3.Transform.Pos = new Vector2(100.0f, 162.0f);
+            hw3.Transform.Pos = new Vector2(100.0f, -200.0f+62.0f);
             hw3.Text = "The animation will reload automatically";
             world.CreateInstantly(hw);
             world.CreateInstantly(hw2);

@@ -27,7 +27,7 @@ namespace AnimLib {
         }
 
         public static async Task<Text2D> TypeText(Vector2 position, string text, int wordPerMinute = 80) {
-            return await TypeText(new Text2D(), position, text, wordPerMinute);
+            return await TypeText(new Text2D(""), position, text, wordPerMinute);
         }
 
     }

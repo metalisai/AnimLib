@@ -37,6 +37,8 @@ namespace AnimLib {
             public Vector3 Position;
         }
 
+        public static Animator Current { get; internal set; }
+
         ResourceManager resourceManager;
         World world;
         public PlayerScene Scene;
@@ -53,6 +55,17 @@ namespace AnimLib {
             this.Scene = scene;
             this.props = props;
             this.textPlacement = text;
+        }
+
+        public void BeginAnimate() {
+            if (Current != null) {
+                throw new Exception("Animator already in use!");
+            }
+            Current = this;
+        }
+
+        public void EndAnimate() {
+            Current = null;
         }
 
         public Color GetColor(string name) {
@@ -72,7 +85,7 @@ namespace AnimLib {
             textPlacement.LoadFont(filename, fontname);
         }
 
-        public List<Shape> ShapeText(string texts, Vector2 pos, int size, string font = null) {
+        public List<(Shape s, char c)> ShapeText(string texts, Vector2 pos, int size, string font = null) {
             return textPlacement.PlaceTextAsShapes(texts, pos, size, font);
         }
 
@@ -222,14 +235,30 @@ namespace AnimLib {
         TextPlacement text = new TextPlacement("/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf", "Ubuntu");
 
         private void BakeError(Exception e, World world, Animator animator) {
+            world.Reset();
             haveError = true;
             error = $"{e.ToString()} {e.Message}";
             stackTrace = e.StackTrace;
-            anim = (new ErrorBehaviour()).Animation(world, animator);
+            var behaviour = new ErrorBehaviour();
+            Begin(behaviour, world, animator);
+            anim = behaviour.Animation(world, animator);
+            End(world, animator);
         }
 
         public AnimationBaker(ResourceManager resourceManager) {
             this.resourceManager = resourceManager;
+        }
+
+        protected void Begin(AnimationBehaviour beh, World world, Animator animator)
+        {
+            world.StartEditing(beh);
+            animator.BeginAnimate();
+        }
+
+        protected void End(World world, Animator animator)
+        {
+            world.EndEditing();
+            animator.EndAnimate();
         }
 
         public BakedAnimation BakeAnimation(AnimationBehaviour behaviour1, AnimationSettings settings, AnimationPlayer.PlayerProperties props, PlayerScene scene) {
@@ -260,7 +289,8 @@ namespace AnimLib {
 
             var terminator = "default";
 
-            world.StartEditing(behaviour1);
+            Begin(behaviour1, world, animator);
+
             anim = null;
             try {
                 anim = behaviour1.Animation(world, animator);
@@ -269,7 +299,8 @@ namespace AnimLib {
                 Debug.Warning("Exception during baking before first yield");
                 BakeError(e, world, animator);
             }
-            world.EndEditing();
+
+            End(world, animator);
 
             if(anim.Exception != null) {
                 Debug.Warning("Exception during baking after first yield");
@@ -287,10 +318,10 @@ namespace AnimLib {
                     break;
                 }
 
-                world.StartEditing(behaviour1);
+                Begin(behaviour1, world, animator);
                 Time.NewFrame(dt);
                 world.Update(dt);
-                world.EndEditing();
+                End(world, animator);
 
                 if(t >= start) {
                     if(!dummy) {

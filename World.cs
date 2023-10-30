@@ -141,7 +141,6 @@ namespace AnimLib
 
         public ITypeSetter ts = new FreetypeSetting();
         object currentEditor = null; // who edits things right now (e.g. scene or animationbehaviour)
-
         public EntityResolver EntityResolver;
         Color background = Color.WHITE;
 
@@ -380,7 +379,16 @@ namespace AnimLib
                 }, 0.0f, 1.0f, duration);
         }
 
-        public async Task DestroyFadeOut<T>(T entity, float duration) where T : Shape {
+        public async Task DestroyFadeOut<T>(T entity, float duration) where T : VisualEntity, IColored {
+            var c = entity.Color;
+            await Animate.InterpT<float>(x => {
+                    c.a = (byte)Math.Round((1.0f-x)*c.a);
+                    entity.Color = c;
+                }, 0.0f, 1.0f, duration);
+            Destroy(entity);
+        }
+
+        /*public async Task DestroyFadeOut<T>(T entity, float duration) where T : Shape {
             var c = entity.Color;
             var cc = entity.ContourColor;
             await Animate.InterpT<float>(x => {
@@ -390,7 +398,7 @@ namespace AnimLib
                     entity.ContourColor = cc;
                 }, 0.0f, 1.0f, duration);
             Destroy(entity);
-        }
+        }*/
 
          public T Clone<T>(T e) where T : VisualEntity {
             var ret = (T)e.Clone();

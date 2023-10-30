@@ -1,108 +1,87 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 
 namespace AnimLib {
 
-    public class Text2D : VisualEntity2D, IColored {
-        public List<Glyph> Glyphs = new List<Glyph>();
-        public ITypeSetter Ts;
+    public class Text2D : VisualEntity2D, IColored
+    {
+        List<(Shape s, char c)> Glyphs = new List<(Shape s, char c)>();
 
-        public Text2D() : base(new Text2DState()) {
+        public Text2D(string text = "") : base(new Text2DState(text)) {
         }
 
-        public Text2D(Text2D t) : base(t) {
-            Glyphs = t.Glyphs.Select(x => (Glyph)x.Clone()).ToList();
+        public Text2D(Text2D state) : base(state) {
         }
 
+        protected void ShapeText() {
+            var placedShapes = Animator.Current.ShapeText(Text, Vector2.ZERO, (int)Size, Font);
+            foreach(var g in placedShapes) {
+                g.s.Transform.parent = Transform;
+            }
+            this.Glyphs = placedShapes;
+        }
 
-
-        protected void CreateGlyphs() {
+        protected void CreateText() {
             foreach(var g in Glyphs) {
-                g.Transform.parent = Transform;
-                World.current.CreateInstantly(g);
+                g.s.state.selectable = false;
+                g.s.Transform.parent = Transform;
+                g.s.Color = Color;
+                World.current.CreateInstantly(g.s);
             }
         }
 
         protected override void OnCreated() {
-            CreateGlyphs();
+            ShapeText();
+            CreateText();
+            base.OnCreated();
         }
 
-        public Glyph[] GetSubstring(string str) {
-            var mystr = new string(this.Glyphs.Select(x => x.Character).ToArray());
+        public Shape[] GetSubstring(string str) {
+            var mystr = new string(this.Glyphs.Select(x => x.c).ToArray());
             var idx = mystr.IndexOf(str);
             if(idx >= 0) {
-                var range = Glyphs.GetRange(idx, str.Length).ToArray();
+                var range = Glyphs.GetRange(idx, str.Length).Select(x => x.s).ToArray();
                 return range;
             }
             return null;
         }
 
-        public string Text {
+        public string Font {
             get {
-                var sb = new StringBuilder();
-                foreach(var c in Glyphs) {
-                    sb.Append(c.Character);
-                }
-                return sb.ToString();
+                return ((Text2DState)state).font;
             }
             set {
-                // TODO: reuse old glyphs
-                foreach(var g in Glyphs) {
-                    World.current.Destroy(g);
-                }
-                Glyphs.Clear();
-                // placed characters
-                var pcs = World.current.ts.TypesetString(Vector3.ZERO, value, Size);
-                foreach(var pc in pcs) {
-                    var g = new Glyph() {
-                        Color = Color, 
-                        Size = Size,
-                        Character = pc.character,
-                    };
-                    g.Transform.Pos = (Vector3)pc.position;
-                    //((EntityState2D)g.state).sizeRect = pc.size;
-                    g.state.selectable = false;
-
-                    g.Transform.parent = this.Transform;
-
-                    Glyphs.Add(g);
-                }
-                if(this.created) {
-                    CreateGlyphs();
-                }
+                World.current.SetProperty(this, "Font", value, ((Text2DState)state).font);
+                ((Text2DState)state).font = value;
             }
         }
+
         public float Size {
             get {
                 return ((Text2DState)state).size;
             }
             set {
-                // TODO: retypeset glyphs
-                foreach(var g in Glyphs) {
-                    g.Size = value;
-                }
                 World.current.SetProperty(this, "Size", value, ((Text2DState)state).size);
                 ((Text2DState)state).size = value;
             }
         }
-        public Color Color
-        {
+
+        public string Text {
             get {
-                return ((Text2DState)state).color;
+                return ((Text2DState)state).text;
             }
             set {
-                var oldValues = Glyphs.Select(x => x.Color).ToArray();
-                foreach(var g in Glyphs) {
-                    var gs = g.state as GlyphState;
-                    gs.color = value;
+                World.current.SetProperty(this, "Text", value, ((Text2DState)state).text);
+                ((Text2DState)state).text = value;
+
+                if (this.created) {
+                    ShapeText();
+                    CreateText();
                 }
-                World.current.SetPropertyMulti(Glyphs, "Color", value, oldValues);
-                World.current.SetProperty(this, "Color", value, ((Text2DState)state).color);
-                ((Text2DState)state).color = value;
             }
         }
+
         public TextHorizontalAlignment HAlign
         {
             get {
@@ -114,6 +93,7 @@ namespace AnimLib {
                 ((Text2DState)state).halign = value;
             }
         }
+        
         public TextVerticalAlignment VAlign
         {
             get {
@@ -123,6 +103,21 @@ namespace AnimLib {
                 // TODO: retypeset glyphs
                 World.current.SetProperty(this, "VAlign", value, ((Text2DState)state).valign);
                 ((Text2DState)state).valign = value;
+            }
+        }
+
+        public Color Color { 
+            get
+            {
+                return ((Text2DState)state).color;
+            }
+            set
+            {
+                World.current.SetProperty(this, "Color", value, ((Text2DState)state).color);
+                ((Text2DState)state).color = value;
+                foreach(var g in Glyphs) {
+                    g.s.Color = value;
+                }
             }
         }
 
@@ -138,8 +133,12 @@ namespace AnimLib {
         public bool is3d = false;
         public float size = 22.0f;
         public Color color = Color.BLACK;
+        public string text;
+        public string font = null;
 
-        public Text2DState() {}
+        public Text2DState(string text = "") {
+            this.text = text;
+        }
 
         public Text2DState(Text2DState ts) : base(ts) {
             this.halign = ts.halign;
@@ -147,6 +146,7 @@ namespace AnimLib {
             this.is3d = ts.is3d;
             this.size = ts.size;
             this.color = ts.color;
+            this.text = ts.text;
         }
 
         public override object Clone() 

@@ -17,10 +17,10 @@ internal class TextPlacement : System.IDisposable {
 
     struct TPGlyphKey {
         public int codepoint;
-        public int size;
+        public float size;
         public string font;
 
-        public TPGlyphKey(char c, int size, string font) {
+        public TPGlyphKey(char c, float size, string font) {
             this.codepoint = c;
             this.size = size;
             this.font = font;
@@ -36,7 +36,8 @@ internal class TextPlacement : System.IDisposable {
         public override int GetHashCode() {
             int hash = 17;
             hash = hash * 31 + codepoint;
-            hash = hash * 31 + (int)(size*10);
+            int sizeInt = System.BitConverter.ToInt32(System.BitConverter.GetBytes(size), 0);
+            hash = hash * 31 + sizeInt;
             hash = hash ^ font.GetHashCode();
             return hash;
         }
@@ -82,8 +83,8 @@ internal class TextPlacement : System.IDisposable {
         return ret;
     }
 
-    List<Shape> PlaceTextAsShapes(Buffer buf, Vector2 origin, int size, ref LoadedFont lf) {
-        var ret = new List<Shape>();
+    List<(Shape s, char c)> PlaceTextAsShapes(Buffer buf, string original, Vector2 origin, float size, ref LoadedFont lf) {
+        var ret = new List<(Shape, char)>();
         var len = buf.Length;
         if(len <= 0) {
             return ret;
@@ -100,8 +101,10 @@ internal class TextPlacement : System.IDisposable {
             float posy = y + pos[i].YOffset;
             x += pos[i].XAdvance;
             y += pos[i].YAdvance;
+            var cluster = info[i].Cluster;
             SKPath path;
-            var key = new TPGlyphKey((char)info[i].Codepoint, size, lf.name);
+            char cp = (char)info[i].Codepoint;
+            var key = new TPGlyphKey(cp, size, lf.name);
             if(!CachedGlyphPaths.TryGetValue(key, out path)) {
                 path = lf.skFont.GetGlyphPath((ushort)info[i].Codepoint);
                 path.Transform(mirrorMat);
@@ -112,7 +115,8 @@ internal class TextPlacement : System.IDisposable {
             var shape = new Shape(sp);
             shape.Transform.Pos = new Vector2(posx, posy);
             shape.Mode = ShapeMode.Filled;
-            ret.Add(shape);
+            char c = original[(int)cluster];
+            ret.Add((shape, c));
         }
         return ret;
     }
@@ -208,7 +212,7 @@ internal class TextPlacement : System.IDisposable {
         }
     }
 
-    public List<Shape> PlaceTextAsShapes(string text, Vector2 origin, int size, string font = null) {
+    public List<(Shape, char c)> PlaceTextAsShapes(string text, Vector2 origin, int size, string font = null) {
         var buf = new Buffer();
         buf.AddUtf8(text);
         buf.GuessSegmentProperties();
@@ -219,13 +223,13 @@ internal class TextPlacement : System.IDisposable {
         if(LoadedFonts.TryGetValue(fontname, out lf)) {
             lf.font.SetScale(size, size);
             lf.font.Shape(buf);
-            var textb = PlaceTextAsShapes(buf, origin, size, ref lf);
+            var textb = PlaceTextAsShapes(buf, text, origin, size, ref lf);
             buf.Dispose();
             return textb;
         } else {
-            Debug.Error($"No font named {fontname} loaded");
+            Debug.Error($"No font named {fontname} loaded. Text couldn't be created: {text}");
             buf.Dispose();
-            return new List<Shape>();
+            return new ();
         }
     }
 

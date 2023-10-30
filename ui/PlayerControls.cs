@@ -484,14 +484,6 @@ namespace AnimLib {
             }
 
             ImguiContext.End();
-
-            if(currentError != null) {
-                ImGuiWindowFlags wf = ImGuiWindowFlags.AlwaysAutoResize;
-                ImguiContext.Begin("Animation error", wf);
-                ImguiContext.Text(currentError);
-                ImguiContext.Text(currentStackTrace);
-                ImguiContext.End();
-            }
             
             ImguiContext.SetNextWindowDockID(dockspaceId, ImGuiCond.FirstUseEver);
         }*/
@@ -609,6 +601,15 @@ namespace AnimLib {
             }
 
             ImguiContext.EndMenuBar();
+
+            if(currentError != null) {
+                var wf = ImguiContext.ImGuiWindowFlags.AlwaysAutoResize;
+                bool open = true;
+                ImguiContext.Begin("Animation error", ref open, wf);
+                ImguiContext.Text(currentError);
+                ImguiContext.Text(currentStackTrace);
+                ImguiContext.End();
+            }
         }
 
         private void ShowProperties() {

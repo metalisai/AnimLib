@@ -9,7 +9,6 @@ namespace AnimLib {
         public class CanvasEntities {
             public List<EntityState2D> Entities = new List<EntityState2D>();
         }
-        List<Text2DState> _texts = new List<Text2DState>();
         List<GlyphState> _glyphs = new List<GlyphState>();
         List<MeshBackedGeometry> _mbgeoms = new List<MeshBackedGeometry>();
         List<CubeState> _cubes = new List<CubeState>();
@@ -49,7 +48,6 @@ namespace AnimLib {
 
 
         public void Reset() {
-            _texts.Clear();
             _glyphs.Clear();
             _mbgeoms.Clear();
             //_rectangles.Clear();
@@ -167,11 +165,6 @@ namespace AnimLib {
         private void CreateEntity(object entity) {
             EntityState state;
             switch(entity) {
-                case Text2DState t1:
-                state = (EntityState)t1.Clone();
-                //state = t1;
-                _texts.Add((Text2DState)state);
-                break;
                 case GlyphState g1:
                 state = (EntityState)g1.Clone();
                 _glyphs.Add((GlyphState)state);
@@ -222,9 +215,6 @@ namespace AnimLib {
             switch(ent) {
                 case ArrowState a1:
                 _mbgeoms.RemoveAll(x => x.entityId == entityId);
-                break;
-                case Text2DState t1:
-                _texts.RemoveAll(x => x.entityId == entityId);
                 break;
                 case GlyphState g1:
                     _glyphs.RemoveAll(x => x.entityId == entityId);

@@ -419,8 +419,6 @@ namespace AnimLib {
             }
         }
 
-        int vao, vbo, ebo;
-
         imgui_animlib_draw_data_cb_t draw_data_cb;
         imgui_animlib_draw_cb_t draw_cb;
         imgui_animlib_draw_menu_t draw_menu_cb;
