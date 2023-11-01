@@ -2,6 +2,13 @@ using System;
 
 namespace AnimLib {
 
+    [Flags]
+    public enum VisualEntityFlags {
+        None = 0,
+        Created = 1,
+        ManagedLifetime = 2,
+    }
+
     public class EntityStateResolver {
         public Func<int, EntityState> GetEntityState;
     }
@@ -30,7 +37,37 @@ namespace AnimLib {
     public abstract class VisualEntity : ICloneable {
         // NOTE: this only contains valid data during animation baking (user code)
         public EntityState state;
-        public bool created = false;
+        public VisualEntityFlags flags = VisualEntityFlags.None;
+
+        protected bool GetFlag(VisualEntityFlags flag) {
+            return (flags & flag) != 0;
+        }
+
+        protected void SetFlag(VisualEntityFlags flag, bool value) {
+            if(value) {
+                flags |= flag;
+            } else {
+                flags &= ~flag;
+            }
+        }
+
+        public bool created {
+            get {
+                return GetFlag(VisualEntityFlags.Created);
+            }
+            internal set {
+                SetFlag(VisualEntityFlags.Created, value);
+            }
+        }
+
+        public bool managedLifetime {
+            get {
+                return GetFlag(VisualEntityFlags.ManagedLifetime);
+            }
+            internal set {
+                SetFlag(VisualEntityFlags.ManagedLifetime, value);
+            }
+        }
 
         public VisualEntity(VisualEntity ent){
             this.state = (EntityState)ent.state.Clone();

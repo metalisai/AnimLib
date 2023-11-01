@@ -4,20 +4,26 @@ using System.Linq;
 
 namespace AnimLib {
 
-    public class Text2D : VisualEntity2D, IColored
+    public class Text2D : EntityCollection2D, IColored
     {
         List<(Shape s, char c)> Glyphs = new List<(Shape s, char c)>();
 
         public Text2D(string text = "") : base(new Text2DState(text)) {
+            ShapeText();
         }
 
         public Text2D(Text2D state) : base(state) {
+            ShapeText();
         }
 
         protected void ShapeText() {
+            foreach(var g in Glyphs) {
+                DestroyChild(g.s);
+            }
+
             var placedShapes = Animator.Current.ShapeText(Text, Vector2.ZERO, (int)Size, Font);
             foreach(var g in placedShapes) {
-                g.s.Transform.parent = Transform;
+                Attach(g.s);
             }
             this.Glyphs = placedShapes;
         }
@@ -25,16 +31,19 @@ namespace AnimLib {
         protected void CreateText() {
             foreach(var g in Glyphs) {
                 g.s.state.selectable = false;
-                g.s.Transform.parent = Transform;
                 g.s.Color = Color;
-                World.current.CreateInstantly(g.s);
             }
         }
 
         protected override void OnCreated() {
-            ShapeText();
             CreateText();
             base.OnCreated();
+        }
+
+        public (Shape s, char c)[] CurrentShapes {
+            get {
+                return Glyphs.ToArray();
+            }
         }
 
         public Shape[] GetSubstring(string str) {
@@ -75,8 +84,8 @@ namespace AnimLib {
                 World.current.SetProperty(this, "Text", value, ((Text2DState)state).text);
                 ((Text2DState)state).text = value;
 
+                ShapeText();
                 if (this.created) {
-                    ShapeText();
                     CreateText();
                 }
             }

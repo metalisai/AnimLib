@@ -136,6 +136,11 @@ namespace AnimLib
         List<WorldCommand> _commands = new List<WorldCommand>();
         List<WorldSoundCommand> _soundCommands = new List<WorldSoundCommand>();
         List<Label> _labels = new List<Label>();
+        List<Func<VisualEntity, bool>> CreationListeners = new List<Func<VisualEntity, bool>>();
+
+        // used by EntityCollection to keep track of children
+        private Dictionary<int, List<VisualEntity>> _children = new ();
+        private Dictionary<int, VisualEntity> _parents = new ();
 
         private Dictionary<int, VisualEntity> _entities = new Dictionary<int, VisualEntity>();
 
@@ -332,8 +337,6 @@ namespace AnimLib
             CheckDependantEntities(entity);
         }
 
-        List<Func<VisualEntity, bool>> CreationListeners = new List<Func<VisualEntity, bool>>();
-
         private void CheckDependantEntities(VisualEntity newent) {
             for(int i = CreationListeners.Count - 1; i >= 0; i--) {
                 var wd = CreationListeners[i];
@@ -341,6 +344,29 @@ namespace AnimLib
                     CreationListeners.RemoveAt(i);
                 }
             }
+        }
+
+        internal void AttachChild(VisualEntity parent, VisualEntity child)
+        {
+            if (!_children.ContainsKey(parent.EntityId))
+            {
+                _children.Add(parent.EntityId, new List<VisualEntity>());
+            }
+            child.managedLifetime = true;
+            _children[parent.EntityId].Add(child);
+            _parents.Add(child.EntityId, parent);
+        }
+
+        internal void DetachChild(VisualEntity parent, VisualEntity child)
+        {
+            if (!_children.ContainsKey(parent.EntityId))
+            {
+                Debug.Error("Parent does not have any children");
+                return;
+            }
+            child.managedLifetime = false;
+            _children[parent.EntityId].Remove(child);
+            _parents.Remove(child.EntityId);
         }
 
         // when entity is created the Func is invoked, if the Func returns true it is deleted
@@ -413,6 +439,21 @@ namespace AnimLib
 
         public void Destroy(VisualEntity obj) {
             if(!obj.created) return;
+
+            if (obj.managedLifetime)
+            {
+                Debug.Error("Attempting to destroy managed entity. Detach the entity from it's parent EntityCollection first.");
+                return;
+            }
+
+            // destroy all children
+            if(_children.ContainsKey(obj.EntityId)) {
+                var localC = _children[obj.EntityId].ToArray();
+                foreach(var child in localC) {
+                    DetachChild(obj, child);
+                    Destroy(child);
+                }
+            }
             var cmd = new WorldDestroyCommand() {
                 time = Time.T,
                 entityId = obj.EntityId,

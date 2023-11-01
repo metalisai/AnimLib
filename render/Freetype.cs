@@ -13,10 +13,8 @@ namespace AnimLib {
 
         public FreetypeSetting() {
             library = new Library();
-#if Linux
-            font = new Face(library, "/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf");
-#else
-            font = new Face(library, "C:/Windows/Fonts/tahoma.ttf");
+            font = new Face(library, TextPlacement.DefaultFontPath);
+#if !Linux
             font.SelectCharmap(Encoding.Unicode);
             font.SetPixelSizes(0, 96);
 #endif

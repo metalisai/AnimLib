@@ -8,6 +8,12 @@ namespace AnimLib;
 
 internal class TextPlacement : System.IDisposable {
 
+#if Linux
+    public static string DefaultFontPath = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
+#else
+    public static string DefaultFontPath = "C:\\Windows\\Fonts\\tahoma.ttf";
+#endif
+
     struct LoadedFont {
         public string name;
         public Font font;
