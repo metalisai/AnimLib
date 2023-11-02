@@ -6,6 +6,9 @@ using SkiaSharp;
 
 namespace AnimLib;
 
+/// <summary>
+/// Text shaping and placement using HarfBuzzSharp. Loads fonts from file and places glyphs to form text.
+/// </summary>
 internal class TextPlacement : System.IDisposable {
 
 #if Linux
