@@ -28,7 +28,6 @@ namespace AnimLib {
             foreach(var g in Glyphs) {
                 DestroyChild(g.s);
             }
-
             var placedShapes = Animator.Current.ShapeText(Text, Vector2.ZERO, (int)Size, Font);
             foreach(var g in placedShapes) {
                 Attach(g.s);
@@ -69,9 +68,9 @@ namespace AnimLib {
                 return ((Text2DState)state).font;
             }
             set {
+                var oldFont = ((Text2DState)state).font;
                 World.current.SetProperty(this, "Font", value, ((Text2DState)state).font);
                 ((Text2DState)state).font = value;
-                var oldFont = ((Text2DState)state).font;
                 if (oldFont != value) {
                     ShapeText();
                 }
@@ -83,9 +82,9 @@ namespace AnimLib {
                 return ((Text2DState)state).size;
             }
             set {
+                var oldSize = ((Text2DState)state).size;
                 World.current.SetProperty(this, "Size", value, ((Text2DState)state).size);
                 ((Text2DState)state).size = value;
-                var oldSize = ((Text2DState)state).size;
                 if (oldSize != value) {
                     ShapeText();
                 }
@@ -97,9 +96,9 @@ namespace AnimLib {
                 return ((Text2DState)state).text;
             }
             set {
+                var oldText = ((Text2DState)state).text;
                 World.current.SetProperty(this, "Text", value, ((Text2DState)state).text);
                 ((Text2DState)state).text = value;
-                var oldText = ((Text2DState)state).text;
                 if (oldText != value) {
                     ShapeText();
                     if (this.created) {

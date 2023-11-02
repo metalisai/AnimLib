@@ -35,7 +35,6 @@ namespace AnimLib {
             hw.Size = 22.0f;
             hw.Color = Color.RED;
             hw.Anchor = new Vector2(-0.5f, 0.5f); // top left
-            hw.Text = "No project loaded!";
             //hw.HAlign = TextHorizontalAlignment.Center;
             //hw.VAlign = TextVerticalAlignment.Center;
             // TODO: this thing  is screaming for multiline text
