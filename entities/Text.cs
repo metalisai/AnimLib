@@ -8,7 +8,15 @@ namespace AnimLib {
     {
         List<(Shape s, char c)> Glyphs = new List<(Shape s, char c)>();
 
-        public Text2D(string text = "") : base(new Text2DState(text)) {
+        public Text2D(string text = "", 
+            float size = 22.0f, 
+            string font = null, 
+            Color? color = null
+        ) : base(new Text2DState(text)) {
+            var state = (Text2DState)this.state;
+            state.size = size;
+            state.font = font;
+            state.color = color ?? Color.BLACK;
             ShapeText();
         }
 
@@ -63,6 +71,10 @@ namespace AnimLib {
             set {
                 World.current.SetProperty(this, "Font", value, ((Text2DState)state).font);
                 ((Text2DState)state).font = value;
+                var oldFont = ((Text2DState)state).font;
+                if (oldFont != value) {
+                    ShapeText();
+                }
             }
         }
 
@@ -73,6 +85,10 @@ namespace AnimLib {
             set {
                 World.current.SetProperty(this, "Size", value, ((Text2DState)state).size);
                 ((Text2DState)state).size = value;
+                var oldSize = ((Text2DState)state).size;
+                if (oldSize != value) {
+                    ShapeText();
+                }
             }
         }
 
@@ -83,10 +99,12 @@ namespace AnimLib {
             set {
                 World.current.SetProperty(this, "Text", value, ((Text2DState)state).text);
                 ((Text2DState)state).text = value;
-
-                ShapeText();
-                if (this.created) {
-                    CreateText();
+                var oldText = ((Text2DState)state).text;
+                if (oldText != value) {
+                    ShapeText();
+                    if (this.created) {
+                        CreateText();
+                    }
                 }
             }
         }
@@ -139,7 +157,6 @@ namespace AnimLib {
     {
         public TextHorizontalAlignment halign = TextHorizontalAlignment.Left;
         public TextVerticalAlignment valign = TextVerticalAlignment.Up;
-        public bool is3d = false;
         public float size = 22.0f;
         public Color color = Color.BLACK;
         public string text;
@@ -152,7 +169,6 @@ namespace AnimLib {
         public Text2DState(Text2DState ts) : base(ts) {
             this.halign = ts.halign;
             this.valign = ts.valign;
-            this.is3d = ts.is3d;
             this.size = ts.size;
             this.color = ts.color;
             this.text = ts.text;
