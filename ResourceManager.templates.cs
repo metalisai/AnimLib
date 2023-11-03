@@ -11,6 +11,17 @@ $@"<Project Sdk=""Microsoft.NET.Sdk"">
   <TargetFramework>net7.0</TargetFramework>
 </PropertyGroup>
 
+<PropertyGroup Condition=""'$(Configuration)|$(Platform)'=='Debug|AnyCPU'"">
+  <OutputPath Condition=""'$(OutputPath)'=='' "">..\bin</OutputPath>
+</PropertyGroup>
+<PropertyGroup Condition=""'$(Configuration)|$(Platform)'=='Release|AnyCPU'"">
+  <OutputPath Condition=""'$(OutputPath)'=='' "">..\bin</OutputPath>
+</PropertyGroup>
+<PropertyGroup>
+  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+</PropertyGroup>
+
 <ItemGroup>
     <Reference Include=""AnimLib"">
         <HintPath>{location}</HintPath>

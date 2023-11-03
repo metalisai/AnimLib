@@ -57,11 +57,7 @@ public partial class ResourceManager {
 
     private string GetAssemblyPath(string projectDirectory, string projectname)
     {
-#if Linux
-        return Path.Join(projectDirectory, $"src/bin/Debug/net7.0/{projectname}.dll");
-#else
-        return Path.Join(projectDirectory, $"src/bin/Debug/net7.0-windows/{projectname}.dll");
-#endif
+        return Path.Join(projectDirectory, $"bin/{projectname}.dll");
     }
 
     public bool haveProject {
