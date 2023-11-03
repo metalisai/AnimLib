@@ -5,7 +5,7 @@ namespace AnimLib;
 public abstract class EntityCollection2D : VisualEntity2D {
     List<VisualEntity> entities = new List<VisualEntity>();
 
-    public EntityCollection2D(EntityState2D state) : base(state) {
+    internal EntityCollection2D(EntityState2D state) : base(state) {
     }
 
     public EntityCollection2D(EntityCollection2D e) : base(e) {

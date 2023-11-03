@@ -11,10 +11,10 @@ public enum LabelStyle {
     Free, // can have any orientation
 }
 
-public interface Labelable {
+/*public interface Labelable {
     Vector2? GetLabelOffset(CameraState cam, Rect label, LabelStyle style, EntityState state, Vector2 screenSize);
     Vector3? GetLabelWorldCoordinate(LabelStyle style, EntityState state);
-}
+}*/
 
 public class AbsorbDestruction {
     public int entityId;
@@ -32,7 +32,7 @@ public interface RendererResource {
     string GetOwnerGuid();
 }
 
-public class WorldResources : IDisposable {
+internal class WorldResources : IDisposable {
     public WorldResources() {
         Debug.Log("New world resources " + GetGuid());
     }
@@ -80,7 +80,7 @@ public class ColoredTriangleMeshGeometry : RendererResource {
 }
 
 public class ColoredTriangleMesh/* : VisualEntity*/ {
-    public RenderState.BuiltinShader Shader = RenderState.BuiltinShader.LineShader;
+    public BuiltinShader Shader = BuiltinShader.LineShader;
     public Color Tint = Color.WHITE;
     /*public Color Outline = Color.BLACK;
     public float OutlineWidth = 0.0f;*/
@@ -102,7 +102,7 @@ public class RendererAnimation {
     public float progress;
 }
 
-public class CanvasSnapshot {
+internal class CanvasSnapshot {
     public CanvasState Canvas;
     public EntityState2D[] Entities;
 }
@@ -110,7 +110,7 @@ public class CanvasSnapshot {
 /// <summary>
 /// WorldSnapshot is a snapshot of the current world state. Used to render the world in a given point in time.
 /// </summary>
-public class WorldSnapshot {
+internal class WorldSnapshot {
     public EntityStateResolver resolver;
     public CameraState Camera;
     public RectangleState[] Rectangles;
@@ -124,7 +124,7 @@ public class WorldSnapshot {
     public double Time;
 }
 
-public class EntityResolver {
+internal class EntityResolver {
     public Func<int, VisualEntity> GetEntity;
 }
 
@@ -152,14 +152,17 @@ public class World
 
     private Dictionary<int, VisualEntity> _entities = new Dictionary<int, VisualEntity>();
 
-    public ITypeSetter ts = new FreetypeSetting();
+    internal ITypeSetter ts = new FreetypeSetting();
     object currentEditor = null; // who edits things right now (e.g. scene or animationbehaviour)
-    public EntityResolver EntityResolver;
+    internal EntityResolver EntityResolver;
     Color background = Color.WHITE;
 
     public readonly int Id;
 
     Camera _activeCamera;
+    /// <summary>
+    /// The currently active camera.
+    /// </summary>
     public Camera ActiveCamera {
         get {
             return _activeCamera;
@@ -174,7 +177,7 @@ public class World
         }
     }
     
-    public void StartEditing(object editor) {
+    internal void StartEditing(object editor) {
         if(editor == null) {
             Debug.Error("Use EndEditing() instead of passing null");
         }
@@ -186,7 +189,7 @@ public class World
         this.currentEditor = editor;
     }
 
-    public void EndEditing() {
+    internal void EndEditing() {
         this.currentEditor = null;
     }
 
@@ -204,22 +207,25 @@ public class World
     }
     List<AbsorbDestruction> removes = new List<AbsorbDestruction>();
 
-    public int GetUniqueId() {
+    internal int GetUniqueId() {
         return entityId++;
     }
 
     public void Update(double dt) {
-        foreach(var label in _labels) {
+        /*foreach(var label in _labels) {
             LabelState state = ((LabelState)label.state);
             var val = state.target.GetLabelWorldCoordinate(state.style, ((VisualEntity)state.target).state);
             if(val != null){
                 label.state.position = val.Value;
             }
-        }
+        }*/
         
         removes.Clear();
     }
 
+    /// <summary>
+    /// Play a specified <c>SoundSample</c>.
+    /// </summary>
     public void PlaySound(SoundSample sound, float volume = 1.0f) {
         var command = new WorldPlaySoundCommand() {
             time = Time.T,
@@ -229,11 +235,14 @@ public class World
         _soundCommands.Add(command);
     }
 
+    /// <summary>
+    /// Play a built-in sound.
+    /// </summary>
     public void PlaySound(BuiltinSound sound, float volume = 1.0f) {
         PlaySound(SoundSample.GetBuiltin(sound), volume);
     }
 
-    public void Reset() {
+    internal void Reset() {
         StartEditing(this);
         Resources?.Dispose();
         Resources = new WorldResources();
@@ -273,7 +282,7 @@ public class World
         return null;
     }
 
-    public VisualEntity FindEntityByCreator(object creator) {
+    internal VisualEntity FindEntityByCreator(object creator) {
         foreach(var ent in _entities.Values) {
             if(ent.state.creator == creator) {
                 return ent;
@@ -282,18 +291,18 @@ public class World
         return null;
     }
 
-    public void AddResource(ColoredTriangleMeshGeometry geometry) {
+    internal void AddResource(ColoredTriangleMeshGeometry geometry) {
         Resources.MeshGeometries.Add(geometry);
     }
 
-    public void AddResource(Texture2D texture) {
+    internal void AddResource(Texture2D texture) {
         Resources.Textures.Add(texture);
     }
 
-    public delegate void OnPropertyChangedD(VisualEntity ent, string prop, object newValue);
-    public event OnPropertyChangedD OnPropertyChanged;
+    internal delegate void OnPropertyChangedD(VisualEntity ent, string prop, object newValue);
+    internal event OnPropertyChangedD OnPropertyChanged;
 
-    public void SetProperty<T>(VisualEntity entity, string propert, T value, T oldvalue) {
+    internal void SetProperty<T>(VisualEntity entity, string propert, T value, T oldvalue) {
         if(value.Equals(oldvalue))
             return;
         if(entity.created) {
@@ -311,7 +320,7 @@ public class World
         }
     }
 
-    public void SetPropertyMulti<T>(IEnumerable<VisualEntity> entity, string propert, T value, T[] oldvalues) {
+    internal void SetPropertyMulti<T>(IEnumerable<VisualEntity> entity, string propert, T value, T[] oldvalues) {
         var ents = entity.Zip(oldvalues, (f, s) => (f, s)).Where(x => x.f.created);
         var cmd = new WorldPropertyMultiCommand {
             entityIds = ents.Select(x => x.f.EntityId).ToArray(),
@@ -388,11 +397,17 @@ public class World
         return ent;
     }
 
+    /// <summary>
+    /// Create an entity without any animations.
+    /// </summary>
     public T CreateInstantly<T>(T ent) where T : VisualEntity {
         EntityCreated(ent);
         return ent;
     } 
 
+    /// <summary>
+    /// Create an <c>IColored</c> entity with a fade in animation.
+    /// </summary>
     public Task CreateFadeIn<T>(T entity, float duration) where T : VisualEntity,IColored {
         CreateInstantly(entity);
         var c = entity.Color;
@@ -403,6 +418,9 @@ public class World
             }, 0.0f, 1.0f, duration);
     }
 
+    /// <summary>
+    /// Create an <c>IColored</c> entity with a fade in animation. Calls the <c>setcolor</c> function each time the color is updated.
+    /// </summary>
     public Task CreateFadeIn<T>(T entity, Color startColor, Action<Color> setColor, float duration) where T : VisualEntity,IColored {
         CreateInstantly(entity);
         var c = startColor;
@@ -413,6 +431,9 @@ public class World
             }, 0.0f, 1.0f, duration);
     }
 
+    /// <summary>
+    /// Destroy an <c>IColored</c> entity with a fade out animation.
+    /// </summary>
     public async Task DestroyFadeOut<T>(T entity, float duration) where T : VisualEntity, IColored {
         var c = entity.Color;
         await Animate.InterpT<float>(x => {
@@ -434,17 +455,26 @@ public class World
         Destroy(entity);
     }*/
 
-     public T Clone<T>(T e) where T : VisualEntity {
+    /// <summary>
+    /// Create a clone of an entity. The clone is not immediately created in the world.
+    /// </summary>
+    public T Clone<T>(T e) where T : VisualEntity {
         var ret = (T)e.Clone();
         return ret;
     }
 
+    /// <summary>
+    /// Create a clone of an entity. The clone is immediately created in the world.
+    /// </summary>
     public T CreateClone<T>(T e) where T : VisualEntity {
         var ret = (T)e.Clone();
         CreateInstantly(ret);
         return ret;
     }
 
+    /// <summary>
+    /// Remove an entity from the world.
+    /// </summary>
     public void Destroy(VisualEntity obj) {
         if(!obj.created) return;
 
@@ -470,13 +500,13 @@ public class World
         _commands.Add(cmd);
     }
 
-    public WorldCommand[] GetCommands() {
+    internal WorldCommand[] GetCommands() {
         return _commands.Concat(new WorldCommand[]{new WorldEndCommand{time = Time.T}}).ToArray();
     }
 
-    public WorldSoundCommand[] GetSoundCommands() {
+    internal WorldSoundCommand[] GetSoundCommands() {
         return _soundCommands.ToArray();
     }
 
-    public WorldResources Resources;
+    internal WorldResources Resources;
 }

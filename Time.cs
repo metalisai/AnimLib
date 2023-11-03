@@ -17,7 +17,7 @@ public class Time
         public string GUID = Guid.NewGuid().ToString();
     }
 
-    public static void NewFrame(double dt) {
+    internal static void NewFrame(double dt) {
         _currentTime += dt;
         _dt = dt;
 
@@ -43,6 +43,9 @@ public class Time
         _currentFrame++;
     }
 
+    /// <summary>
+    /// Wait for the next frame to start.
+    /// </summary>
     public static Task WaitFrame() {
         var tcs = new TaskCompletionSource<bool>();
         var task = new FrameTask() { TCS = tcs, StartFrame = _currentFrame};
@@ -51,6 +54,9 @@ public class Time
         return tcs.Task;
     }
 
+    /// <summary>
+    /// Wait for specified number of seconds.
+    /// </summary>
     public static Task WaitSeconds(double seconds) {
         var tcs = new TaskCompletionSource<bool>();
         var task = new WaitTask() {
@@ -66,7 +72,7 @@ public class Time
         return tcs.Task;
     }
 
-    public static void Reset() {
+    internal static void Reset() {
         _currentFrame = 0;
         _currentTime = 0.0;
         _waitFrameTasks.Clear();
@@ -77,12 +83,18 @@ public class Time
     static double _currentTime;
     static long _currentFrame;
 
+    /// <summary>
+    /// Current time in seconds.
+    /// </summary>
     public static double T {
         get {
             return _currentTime;
         }
     }
 
+    /// <summary>
+    /// Delta time in seconds. Used within animation tasks, invalid outside.
+    /// </summary>
     public static double deltaT {
         get {
             if(double.IsNaN(_dt)) {

@@ -4,6 +4,39 @@ using System.Linq;
 
 namespace AnimLib;
 
+internal class Text2DState : EntityState2D
+{
+    public TextHorizontalAlignment halign = TextHorizontalAlignment.Left;
+    public TextVerticalAlignment valign = TextVerticalAlignment.Up;
+    public float size = 22.0f;
+    public Color color = Color.BLACK;
+    public string text;
+    public string font = null;
+
+    public Text2DState(string text = "") {
+        this.text = text;
+    }
+
+    public Text2DState(Text2DState ts) : base(ts) {
+        this.halign = ts.halign;
+        this.valign = ts.valign;
+        this.size = ts.size;
+        this.color = ts.color;
+        this.text = ts.text;
+    }
+
+    public override object Clone() 
+    {
+        return new Text2DState(this);
+    }
+
+    public override Vector2 AABB {
+        get {
+            throw new NotImplementedException();
+        }
+    }
+}
+
 /// <summary>
 /// A 2D text entity, consisting of a collection of vector shapes
 /// </summary>
@@ -152,38 +185,5 @@ public class Text2D : EntityCollection2D, IColored
 
     public override object Clone() {
         return new Text2D(this);
-    }
-}
-
-public class Text2DState : EntityState2D
-{
-    public TextHorizontalAlignment halign = TextHorizontalAlignment.Left;
-    public TextVerticalAlignment valign = TextVerticalAlignment.Up;
-    public float size = 22.0f;
-    public Color color = Color.BLACK;
-    public string text;
-    public string font = null;
-
-    public Text2DState(string text = "") {
-        this.text = text;
-    }
-
-    public Text2DState(Text2DState ts) : base(ts) {
-        this.halign = ts.halign;
-        this.valign = ts.valign;
-        this.size = ts.size;
-        this.color = ts.color;
-        this.text = ts.text;
-    }
-
-    public override object Clone() 
-    {
-        return new Text2DState(this);
-    }
-
-    public override Vector2 AABB {
-        get {
-            throw new NotImplementedException();
-        }
     }
 }

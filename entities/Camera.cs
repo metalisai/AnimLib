@@ -1,30 +1,30 @@
 
-namespace AnimLib {
-    public abstract class CameraState : EntityState3D {
-        public Color clearColor = new Color(255, 255, 255, 255);
+namespace AnimLib;
 
-        public CameraState() {}
+internal abstract class CameraState : EntityState3D {
+    public Color clearColor = new Color(255, 255, 255, 255);
 
-        public CameraState(CameraState cs) : base(cs) {
-            this.clearColor = cs.clearColor;
-        }
+    public CameraState() {}
 
-        public abstract M4x4 CreateWorldToClipMatrix(float aspect);
-        public abstract Ray RayFromClip(Vector2 clipPos, float aspect);
+    public CameraState(CameraState cs) : base(cs) {
+        this.clearColor = cs.clearColor;
     }
 
-    public abstract class Camera : VisualEntity3D {
-        public Camera(EntityState state) : base(state) {}
-        public Camera(Camera c) : base(c) {}
+    public abstract M4x4 CreateWorldToClipMatrix(float aspect);
+    public abstract Ray RayFromClip(Vector2 clipPos, float aspect);
+}
 
-        public Color ClearColor {
-            get {
-                return ((CameraState)state).clearColor;
-            }
-            set {
-                World.current.SetProperty(this, "clearColor", value, ((CameraState)state).clearColor);
-                ((CameraState)state).clearColor = value;
-            }
+public abstract class Camera : VisualEntity3D {
+    internal Camera(EntityState state) : base(state) {}
+    public Camera(Camera c) : base(c) {}
+
+    public Color ClearColor {
+        get {
+            return ((CameraState)state).clearColor;
+        }
+        set {
+            World.current.SetProperty(this, "clearColor", value, ((CameraState)state).clearColor);
+            ((CameraState)state).clearColor = value;
         }
     }
 }

@@ -1,6 +1,6 @@
 namespace AnimLib;
 
-public class RectangleState : ShapeState {
+internal class RectangleState : ShapeState {
     public float width, height;
 
     public RectangleState(ShapePath path) : base(path) {

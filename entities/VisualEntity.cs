@@ -3,17 +3,17 @@ using System;
 namespace AnimLib {
 
     [Flags]
-    public enum VisualEntityFlags {
+    internal enum VisualEntityFlags {
         None = 0,
         Created = 1,
         ManagedLifetime = 2,
     }
 
-    public class EntityStateResolver {
+    internal class EntityStateResolver {
         public Func<int, EntityState> GetEntityState;
     }
 
-    public abstract class EntityState : ICloneable {
+    internal abstract class EntityState : ICloneable {
         // TODO: find way to reference state without VisualEntity
         public int parentId = 0;
         public object creator; // AnimationBehaviour or SceneObject
@@ -36,14 +36,14 @@ namespace AnimLib {
 
     public abstract class VisualEntity : ICloneable {
         // NOTE: this only contains valid data during animation baking (user code)
-        public EntityState state;
-        public VisualEntityFlags flags = VisualEntityFlags.None;
+        internal EntityState state;
+        internal VisualEntityFlags flags = VisualEntityFlags.None;
 
-        protected bool GetFlag(VisualEntityFlags flag) {
+        private protected bool GetFlag(VisualEntityFlags flag) {
             return (flags & flag) != 0;
         }
 
-        protected void SetFlag(VisualEntityFlags flag, bool value) {
+        private protected void SetFlag(VisualEntityFlags flag, bool value) {
             if(value) {
                 flags |= flag;
             } else {
@@ -74,7 +74,7 @@ namespace AnimLib {
             this.state.entityId = -1;
         }
 
-        public VisualEntity(EntityState state) {
+        internal VisualEntity(EntityState state) {
             this.state = state;
         }
 

@@ -14,7 +14,7 @@ public enum PlatformTextureSampler {
 /// <summary>
 /// Platform interface for AnimLib that isn't provided by the C# runtime. This is the interface that the platform-specific code must implement.
 /// </summary>
-public interface IPlatform {
+internal interface IPlatform {
     delegate void OnSizeChangedDelegate(int width, int height);
     event OnSizeChangedDelegate OnSizeChanged;
     delegate void OnDisplayChangedDelegate(int w, int h, double rate);

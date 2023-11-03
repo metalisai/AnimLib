@@ -7,7 +7,7 @@ namespace AnimLib;
 /// <summary>
 /// A baked animation that can be played back in the WorldMachine.
 /// </summary>
-public class BakedAnimation {
+internal class BakedAnimation {
     public bool haveError;
     public string error;
     public string stackTrace;

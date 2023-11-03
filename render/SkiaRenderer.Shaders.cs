@@ -1,4 +1,4 @@
 namespace AnimLib {
-    public partial class SkiaRenderer {
+    internal partial class SkiaRenderer {
     }
 }

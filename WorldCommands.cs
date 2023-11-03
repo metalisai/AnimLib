@@ -1,40 +1,40 @@
 namespace AnimLib;
 
-public class WorldCommand {
+internal class WorldCommand {
     public double time;
 }
 
-public class WorldSoundCommand : WorldCommand {
+internal class WorldSoundCommand : WorldCommand {
     public float volume;
 }
 
-public class WorldPlaySoundCommand : WorldSoundCommand {
+internal class WorldPlaySoundCommand : WorldSoundCommand {
     public SoundSample sound;
 }
 
-public class WorldPropertyMultiCommand : WorldCommand {
+internal class WorldPropertyMultiCommand : WorldCommand {
     public int[] entityIds;
     public string property;
     public object newvalue;
     public object[] oldvalue;
 }
 
-public class WorldPropertyCommand : WorldCommand {
+internal class WorldPropertyCommand : WorldCommand {
     public int entityId;
     public string property;
     public object newvalue;
     public object oldvalue;
 }
 
-public class WorldCreateCommand : WorldCommand {
+internal class WorldCreateCommand : WorldCommand {
     public object entity;
 }
 
-public class WorldDestroyCommand : WorldCommand {
+internal class WorldDestroyCommand : WorldCommand {
     public int entityId;
 }
 
-public class WorldAbsorbCommand : WorldCommand {
+internal class WorldAbsorbCommand : WorldCommand {
     public int entityId;
     public float progress;
     public float oldprogress;
@@ -42,11 +42,11 @@ public class WorldAbsorbCommand : WorldCommand {
     public Vector3? absorbScreenPoint;
 }
 
-public class WorldSetActiveCameraCommand : WorldCommand {
+internal class WorldSetActiveCameraCommand : WorldCommand {
     public int cameraEntId;
     public int oldCamEntId;
 }
 
-public class WorldEndCommand : WorldCommand {
+internal class WorldEndCommand : WorldCommand {
     
 }

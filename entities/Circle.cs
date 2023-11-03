@@ -1,6 +1,6 @@
 namespace AnimLib;
 
-public class CircleState : ShapeState {
+internal class CircleState : ShapeState {
     public float radius;
 
     public CircleState(ShapePath path) : base(path) {

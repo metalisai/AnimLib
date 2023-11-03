@@ -1,7 +1,7 @@
 using System.Linq;
 
 namespace AnimLib {
-    public class MeshState : MeshBackedGeometry
+    internal class MeshState : MeshBackedGeometry
     {
         bool dirty = true;
         Vector3[] _vertices;
@@ -36,7 +36,7 @@ namespace AnimLib {
         }
 
         public MeshState(string owner) : base(owner) {
-            this.Shader = RenderState.BuiltinShader.MeshShader;
+            this.Shader = BuiltinShader.MeshShader;
         }
 
         public MeshState(MeshState ms) : base(ms) {

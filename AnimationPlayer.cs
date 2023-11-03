@@ -9,7 +9,7 @@ namespace AnimLib;
 ///<summary>
 /// A player to play back baked animations. Manages the <c>WorldMachine</c>, <c>TrackPlayer</c> and the editor Scene. Basically the core state of the interactive animation editor.
 /// </summary>
-public class AnimationPlayer {
+internal class AnimationPlayer {
 
     public class AnimationExport {
         public string fileName;

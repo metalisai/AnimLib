@@ -12,7 +12,7 @@ namespace AnimLib;
 /// <summary>
 /// A platform implementation using OpenTK.
 /// </summary>
-public partial class OpenTKPlatform : GameWindow, IPlatform
+internal partial class OpenTKPlatform : GameWindow, IPlatform
 {
     public class AllocatedResources {
         public List<int> vaos = new List<int>();

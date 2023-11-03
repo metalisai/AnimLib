@@ -217,7 +217,7 @@ partial class WorldRenderer : IRenderer {
         drawId++;
     }
 
-    public void RenderLabels(Vector2 screenSize, (LabelState, EntityState)[] labels, CameraState gcam) {
+    /*public void RenderLabels(Vector2 screenSize, (LabelState, EntityState)[] labels, CameraState gcam) {
         var mat = M4x4.Ortho(0.0f, screenSize.x, 0.0f, screenSize.y, -1.0f, 1.0f);
         var cam = ((PerspectiveCameraState)gcam);
         foreach(var label in labels){
@@ -247,17 +247,17 @@ partial class WorldRenderer : IRenderer {
             }
         }
         rs.FontCache.RenderTest(_textProgram, mat);
-    }
+    }*/
 
-    public int GetProgram(RenderState.BuiltinShader shader) {
+    public int GetProgram(BuiltinShader shader) {
         switch(shader) {
-            case RenderState.BuiltinShader.LineShader:
+            case BuiltinShader.LineShader:
                 return _staticLineProgram;
-            case RenderState.BuiltinShader.ArrowShader:
+            case BuiltinShader.ArrowShader:
                 return _arrowProgram;
-            case RenderState.BuiltinShader.CubeShader:
+            case BuiltinShader.CubeShader:
                 return _cubeProgram;
-            case RenderState.BuiltinShader.MeshShader:
+            case BuiltinShader.MeshShader:
                 return _meshProgram;
             default:
                 return 0;
@@ -521,7 +521,7 @@ partial class WorldRenderer : IRenderer {
                         modelToWorld = cube.ModelToWorld(entRes),
                         Geometry = rs.cubeGeometry,
                         Tint = cube.color,
-                        Shader = RenderState.BuiltinShader.CubeShader,
+                        Shader = BuiltinShader.CubeShader,
                         entityId = cube.entityId,
                     };
                     i++;
@@ -532,7 +532,8 @@ partial class WorldRenderer : IRenderer {
                 RenderMeshes(ss.Meshes, worldToClip, smat);
             }
             if(ss.Labels != null) {
-                RenderLabels(new Vector2(pbSize.Item1, pbSize.Item2), ss.Labels, cam);
+                //RenderLabels(new Vector2(pbSize.Item1, pbSize.Item2), ss.Labels, cam);
+                Debug.Warning("Labels are not implemented yet!");
             }
             if(ss.Beziers != null) {
                 RenderBeziers(ss.Beziers, worldToClip, smat, sv.Buffer);

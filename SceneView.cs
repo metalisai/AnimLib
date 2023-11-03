@@ -6,7 +6,7 @@ namespace AnimLib;
 /// <summary>
 /// State for a view into the world. Holds a render buffer, camera and other view-specific state.
 /// </summary>
-public class SceneView
+internal class SceneView
 {
     public struct TransformResult {
         public bool posChanged;

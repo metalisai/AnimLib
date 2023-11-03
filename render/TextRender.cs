@@ -156,7 +156,7 @@ public class FontCache {
         return tex;
     }
 
-    public void PushCharacter(GlyphState ch, Vector3 pos) {
+    internal void PushCharacter(GlyphState ch, Vector3 pos) {
         var vbuf = new List<float>();
         var key = new GlyphKey {
             c = ch.glyph,

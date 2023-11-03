@@ -11,7 +11,7 @@ namespace AnimLib;
 /// <summary>
 /// A canvas renderer using SkiaSharp.
 /// </summary>
-public partial class SkiaRenderer
+internal partial class SkiaRenderer
 {
     public enum RenderMode {
         None,
