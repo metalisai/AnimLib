@@ -3,8 +3,7 @@ namespace AnimLib;
 /// <summary>
 /// A 2D transform for 2D entities on a canvas.
 /// </summary>
-public class Transform2D
-{
+public class Transform2D {
     protected VisualEntity2D entity;
     internal Transform2D _parent;
 
@@ -17,6 +16,7 @@ public class Transform2D
             entity.state.parentId = value.entity.state.entityId;
         }
     }
+
     public Vector2 Pos {
         get {
             return entity.state.position;
@@ -25,6 +25,7 @@ public class Transform2D
             entity.state.position = value;
         }
     }
+
     public float Rot {
         get {
             return entity.state.rot;
@@ -34,6 +35,7 @@ public class Transform2D
             entity.state.rot = value;
         }
     }
+
     public Vector2 Scale {
         get {
             return entity.state.scale;
@@ -43,24 +45,28 @@ public class Transform2D
             entity.state.scale = value;
         }
     }
+
     public Transform2D(VisualEntity2D entity, Vector2 pos, float rot) {
         this.entity = entity;
         this.Pos = pos;
         this.Rot = rot;
         this.Scale = Vector2.ONE;
     }
+
     public Transform2D(VisualEntity2D entity, Vector2 pos, float rot, Vector2 scale) {
         this.entity = entity;
         this.Pos = pos;
         this.Rot = rot;
         this.Scale = scale;
     }
+
     public Transform2D(Transform2D t) {
         this.entity = t.entity;
         this.Pos = t.Pos;
         this.Rot = t.Rot;
         this.Scale = t.Scale;
     }
+
     public Transform2D(VisualEntity2D entity) {
         this.entity = entity;
     }

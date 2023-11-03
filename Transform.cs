@@ -3,8 +3,7 @@ namespace AnimLib;
 /// <summary>
 /// A 3D transform, consisting of a position, rotation, and scale.
 /// </summary>
-public class Transform
-{
+public class Transform {
     protected VisualEntity3D entity;
 
     public Transform parent {
@@ -15,12 +14,14 @@ public class Transform
             entity.state.parentId = value.entity.state.entityId;
         }
     }
+
     public virtual Vector3 WorldPos {
         get {
             // TODO
             return Pos;
         }
     }
+
     public Vector3 Pos {
         get {
             return entity.state.position;
@@ -29,6 +30,7 @@ public class Transform
             entity.state.position = value;
         }
     }
+
     public Quaternion Rot {
         get {
             return entity.state.rotation;
@@ -38,6 +40,7 @@ public class Transform
             entity.state.rotation = value;
         }
     }
+
     public Vector3 Scale {
         get {
             return entity.state.scale;
@@ -47,24 +50,28 @@ public class Transform
             entity.state.scale = value;
         }
     }
+
     public Transform(VisualEntity3D entity, Vector3 pos, Quaternion rot) {
         this.entity = entity;
         this.Pos = pos;
         this.Rot = rot;
         this.Scale = Vector3.ONE;
     }
+
     public Transform(VisualEntity3D entity, Vector3 pos, Quaternion rot, Vector3 scale) {
         this.entity = entity;
         this.Pos = pos;
         this.Rot = rot;
         this.Scale = scale;
     }
+
     public Transform(Transform t) {
         this.entity = t.entity;
         this.Pos = t.Pos;
         this.Rot = t.Rot;
         this.Scale = t.Scale;
     }
+
     public Transform(VisualEntity3D entity) {
         this.entity = entity;
     }
@@ -74,6 +81,7 @@ public class RectTransform : Transform {
     public static RectTransform RootTransform = new RectTransform(new Dummy());
     public Vector2 Size;
     public Vector2 Anchor;
+
     public RectTransform(RectTransform rect) : base(rect.entity) {
         this.Pos = rect.Pos;
         this.Rot = rect.Rot;
@@ -82,8 +90,10 @@ public class RectTransform : Transform {
         this.Anchor = rect.Anchor;
         this.parent = rect.parent;
     }
+
     public RectTransform(VisualEntity3D ent) : base(ent) {
     }
+
     public override Vector3 WorldPos {
         get {
             float x,y;

@@ -4,14 +4,17 @@ namespace AnimLib {
     public partial class ResourceManager {
         protected string CreateCsProj() {
             var sb = new StringBuilder();
+            var location = System.Reflection.Assembly.GetExecutingAssembly().Location;
             sb.Append(
-@"<Project Sdk=""Microsoft.NET.Sdk"">
+$@"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
   <TargetFramework>net7.0</TargetFramework>
 </PropertyGroup>
 
 <ItemGroup>
-  <ProjectReference Include=""\home\ttammear\Projects\animlib\animlib\animlib.csproj"" />
+    <Reference Include=""AnimLib"">
+        <HintPath>{location}</HintPath>
+    </Reference>
 </ItemGroup>
 
 </Project>");
@@ -39,14 +42,11 @@ public class ");
     }
 
     public async Task Animation(World world, Animator animator) {
-        var hw = new Text2D();
+        var hw = new Text2D(""Hello, world!"", size: 22.0f, color: Color.RED);
         hw.Transform.Pos = new Vector2(100.0f, 100.0f);
-        hw.Size = 22.0f;
-        hw.Color = Color.RED;
-        hw.Anchor = new Vector2(0.5f, 0.5f);
+        hw.Anchor = new Vector2(-0.5f, 0.2f);
         hw.HAlign = TextHorizontalAlignment.Center;
         hw.VAlign = TextVerticalAlignment.Center;
-        hw.Text = ""Hello, world!"";
 
         var hw2 = world.Clone(hw);
         hw2.Transform.Pos = new Vector2(100.0f, 200.0f);
