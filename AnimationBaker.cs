@@ -95,13 +95,13 @@ internal class AnimationBaker {
         anim = null;
         try {
             anim = behaviour1.Animation(world, animator);
+            End(world, animator);
         } catch (Exception e) {
             // TODO: print error to user
             Debug.Warning("Exception during baking before first yield");
+            End(world, animator);
             BakeError(e, world, animator);
         }
-
-        End(world, animator);
 
         if(anim.Exception != null) {
             Debug.Warning("Exception during baking after first yield");

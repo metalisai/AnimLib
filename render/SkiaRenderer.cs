@@ -302,43 +302,55 @@ internal partial class SkiaRenderer
                 path.Dispose();
             }
         }
+
+        var confPaint = (SKPaint paint) => {
+            paint.IsAntialias = true;
+            paint.SubpixelText = true;
+            paint.IsAutohinted = true;
+        };
+
+        var renderShape = (SKPaint paint, SKPath path, EntityState2D shape, ShapeMode mode, Color color, Color contourColor, float contourSize) => {
+            var bounds = path.TightBounds;
+            SKMatrix localTransform = GetLocalTransform(shape, rc, new Rect(bounds.Left, bounds.Top, bounds.Width, bounds.Height), css.Entities);
+
+            path.Transform(localTransform);
+
+            // draw fill
+            if(mode == ShapeMode.Filled || mode == ShapeMode.FilledContour) {
+                var c = color.ToSKColor();
+                paint.Color = c;
+                paint.Style = SKPaintStyle.Fill;
+                canvas.DrawPath(path, paint);
+            }
+            // draw contour
+            if(mode == ShapeMode.Contour || mode == ShapeMode.FilledContour) {
+                var c = contourColor.ToSKColor();
+                paint.Color = c;
+                paint.StrokeWidth = contourSize;
+                paint.Style = SKPaintStyle.Stroke;
+                canvas.DrawPath(path, paint);
+            }
+            path.Dispose();
+        };
         
         foreach(var entitiy in css.Entities) {
+            float bw = this.width;
+            float bh = this.height;
             switch(entitiy) {
+            case MorphShapeState morphShape:
+                using (SKPaint paint = new SKPaint()) {
+                    var path = morphShape.MorphLinear().ToSKPath();
+                    confPaint(paint);
+                    renderShape(paint, path, morphShape, morphShape.CurrentMode, morphShape.CurrentColor, morphShape.CurrentContourColor, morphShape.CurrentContourSize);
+                }
+                break;
             case ShapeState shape:
-                float bw = this.width;
-                float bh = this.height;
-                
                 using(SKPaint paint = new SKPaint()) {
-                    paint.IsAntialias = true;
-                    paint.SubpixelText = true;
-                    paint.IsAutohinted = true;
                     var path = shape.path.ToSKPath();
-                    var bounds = path.TightBounds;
-                    var pathSize = new Vector2(bounds.Width, bounds.Height);
-
+                    confPaint(paint);
                     // calculate transform
                     // NOTE: Skia's top is bottom in our renderer
-                    SKMatrix localTransform = GetLocalTransform(shape, rc, new Rect(bounds.Left, bounds.Top, bounds.Width, bounds.Height), css.Entities);
-
-                    path.Transform(localTransform);
-
-                    // draw fill
-                    if(shape.mode == ShapeMode.Filled || shape.mode == ShapeMode.FilledContour) {
-                        var c = shape.color.ToSKColor();
-                        paint.Color = c;
-                        paint.Style = SKPaintStyle.Fill;
-                        canvas.DrawPath(path, paint);
-                    }
-                    // draw contour
-                    if(shape.mode == ShapeMode.Contour || shape.mode == ShapeMode.FilledContour) {
-                        var c = shape.contourColor.ToSKColor();
-                        paint.Color = c;
-                        paint.StrokeWidth = shape.contourSize;
-                        paint.Style = SKPaintStyle.Stroke;
-                        canvas.DrawPath(path, paint);
-                    }
-                    path.Dispose();
+                    renderShape(paint, path, shape, shape.mode, shape.color, shape.contourColor, shape.contourSize);
                 }
                 break;
             case SpriteState sprite:

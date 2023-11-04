@@ -121,6 +121,7 @@ internal class WorldSnapshot {
     public (LabelState, EntityState)[] Labels;
     public BezierState[] Beziers;
     public CanvasSnapshot[] Canvases;
+    public MorphShape[] MorphShapes;
     public double Time;
 }
 

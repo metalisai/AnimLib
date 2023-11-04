@@ -279,9 +279,10 @@ internal class WorldMachine {
                         var oldCanvas = _canvases[(int)oldValue];
                         var newCanvas = _canvases[(int)wpm.newvalue];
                         switch(state) {
-                            case ShapeState ss1:
+                            case ShapeState:
+                            case MorphShapeState:
                             oldCanvas.Entities.RemoveAll(x => x.entityId == eid);
-                            newCanvas.Entities.Add(ss1);
+                            newCanvas.Entities.Add((EntityState2D)state);
                             break;
                         }
                     }
@@ -306,9 +307,10 @@ internal class WorldMachine {
                     var oldCanvas = _canvases[(int)worldProperty.oldvalue];
                     var newCanvas = _canvases[(int)worldProperty.newvalue];
                     switch(state) {
-                        case ShapeState ss1:
+                        case ShapeState:
+                        case MorphShapeState:
                         oldCanvas.Entities.RemoveAll(x => x.entityId == worldProperty.entityId);
-                        newCanvas.Entities.Add(ss1);
+                        newCanvas.Entities.Add((EntityState2D)state);
                         break;
                     }
                 }
@@ -364,9 +366,10 @@ internal class WorldMachine {
                         var newCanvas = _canvases[(int)oval];
                         var oldCanvas = _canvases[(int)wpm.newvalue];
                         switch(state) {
-                            case ShapeState ss1:
+                            case ShapeState:
+                            case MorphShapeState:
                             oldCanvas.Entities.RemoveAll(x => x.entityId == eid);
-                            newCanvas.Entities.Add(ss1);
+                            newCanvas.Entities.Add((EntityState2D)state);
                             break;
                         }
                     }
@@ -383,9 +386,10 @@ internal class WorldMachine {
                     var newCanvas = _canvases[(int)worldProperty.oldvalue];
                     var oldCanvas = _canvases[(int)worldProperty.newvalue];
                     switch(state) {
-                        case ShapeState ss1:
+                        case ShapeState:
+                        case MorphShapeState:
                         oldCanvas.Entities.RemoveAll(x => x.entityId == worldProperty.entityId);
-                        newCanvas.Entities.Add(ss1);
+                        newCanvas.Entities.Add((EntityState2D)state);
                         break;
                     }
                 }

@@ -65,6 +65,17 @@ namespace AnimLib {
             return omt*omt*omt*p1d + 3.0f*omt*omt*t*p2d + 3.0f*omt*t*t*p3d + t*t*t*p4d;
         }
 
+        /// <summary>
+        /// Rational quadratic bezier curve.
+        /// </summary>
+        public static Vector2 Conic(Vector2 p0, Vector2 p1, Vector2 p2, float conicWeight, float t) {
+            float omt = 1.0f - t;
+            float omt2 = omt*omt;
+            float denom = omt2 + 2.0f*conicWeight*t*omt + t*t;
+            var inner = omt2*p0 + 2.0f*conicWeight*t*omt*p1 + t*t*p2;
+            return (1.0f / denom) * inner;
+        }
+
         // first and last curves are quadratic
         // middle curves are cubic, but one of the handles is mirrored from next/previous curve
         public static Vector2[] LinearizeSpline(Vector2[] spline, int segsPerCurve) {
