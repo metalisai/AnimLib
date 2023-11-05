@@ -25,7 +25,6 @@ namespace AnimLib {
             return new Vector2[0];
         }
 
-
         public override void SetHandle(int id, Vector2 wpos)
         {
         }

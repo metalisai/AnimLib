@@ -71,7 +71,6 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         Width = width;
         Height = height;
 
-
         FileDrop += (object sender, OpenTK.Input.FileDropEventArgs args) => {
             if(PFileDrop != null) {
                 PFileDrop(this, args);
@@ -135,7 +134,6 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
     }
 
     protected override void OnLoad(EventArgs e) {
-
         proc = new DebugProc(debugCallback);
         GL.DebugMessageCallback(proc, IntPtr.Zero);
         GL.Disable(EnableCap.Dither);

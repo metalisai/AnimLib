@@ -239,7 +239,6 @@ internal class ImguiContext {
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
     static extern void imgui_animlib_set_cb(IntPtr ctx, AnimlibCallbackId cb_id, IntPtr cb);
 
-
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_begin")]
     public extern static bool Begin([MarshalAs(UnmanagedType.LPStr)] string name, ref bool show, ImGuiWindowFlags wflags = 0);
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_end")]
@@ -321,10 +320,8 @@ internal class ImguiContext {
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_is_mouse_down")]
     public extern static bool IsMouseDown(int button);
 
-
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_list_box")]
     extern static bool ListBoxInternal([MarshalAs(UnmanagedType.LPStr)] string label, ref int current_item, IntPtr items, int items_count, int height_in_items = 1);
-
 
     // EXPORT bool imgui_animlib_begin_combo(const char *label, const char *preview_value, int flags);
     // EXPORT void imgui_animlib_end_combo();
@@ -340,7 +337,6 @@ internal class ImguiContext {
     //EXPORT void imgui_animlib_drag_drop_item(const char* item);
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_drag_drop_item")]
     public extern static void DragDropItem([MarshalAs(UnmanagedType.LPStr)] string item);
-
 
     //EXPORT void imgui_animlib_fg_circle_filled(ImVec2 screen_pos, float radius, ImU32 col);
     //EXPORT void imgui_animlib_fg_text(ImVec2 screen_pos, ImU32 col, const char *text_begin);

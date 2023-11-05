@@ -2,6 +2,8 @@ obj
 bin
 *.ini
 *.cap
+*.swp
+*.coverage
 .vscode
 Videos
 Properties.json

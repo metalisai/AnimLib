@@ -95,7 +95,6 @@ public class RendererHandle {
     public ColoredTriangleMeshGeometry Handle;
 }
 
-
 public class RendererAnimation {
     public Vector3? point;
     public Vector3? screenPoint;

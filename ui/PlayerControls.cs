@@ -5,15 +5,6 @@ using System.Linq;
 
 namespace AnimLib;
 
-public class Gizmo3DObj : SceneObject3D {
-    public override object Clone() {
-        return new Gizmo3DObj() {
-            transform = new SceneTransform3D(transform.Pos, transform.Rot),
-            timeslice = timeslice,
-        };
-    }
-}
-
 internal enum DragDropObject {
     None,
     Circle,
@@ -291,8 +282,7 @@ internal class PlayerControls {
             var ray = maybeRay.Value;
             IntPtr payloadPtr = ImguiContext.AcceptDragDropPayload("DND_CREATE_ITEM_2D");
             unsafe {
-                if(payloadPtr != IntPtr.Zero)
-                {
+                if(payloadPtr != IntPtr.Zero) {
                     Debug.TLog("Attempt drop 2D object");
                     // intersect canvases
                     CanvasState canvas = null;
@@ -490,7 +480,6 @@ internal class PlayerControls {
     public void ShowResourceInterface() {
         ImguiContext.ImGuiWindowFlags wflags = ImguiContext.ImGuiWindowFlags.NoDocking | ImguiContext.ImGuiWindowFlags.AlwaysAutoResize;
         if(ImguiContext.Begin("Resources", ref _showResources, wflags)) {
-
             var entries = player.ResourceManager.GetStoredResources();
             if(entries.Length > 0) {
                 var items = entries.Select(x => x.name).ToArray();
@@ -646,7 +635,6 @@ internal class PlayerControls {
     private void ShowItemSelection() {
         var values = player.GetValues();
         lock(player.Scene.sceneLock) {
-
             // Object specific 2D handles (resizing etc)
             switch(Selection) {
                 case SceneObject2D s2:

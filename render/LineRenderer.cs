@@ -118,7 +118,6 @@ public static class LineRenderer {
             indices.Add(prevEnd); indices.Add((uint)(s1Idx+4)); indices.Add((uint)(s1Idx+2));
             indices.Add(prevEnd); indices.Add((uint)(s1Idx+1)); indices.Add((uint)(s1Idx+4));
 
-
             // --prevdir--O
             //             \
             //              dir

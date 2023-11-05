@@ -182,7 +182,6 @@ internal class AnimationPlayer {
         }
     }
 
-
     internal void ExportAnimation(string filename, double start, double end)
     {
         Console.WriteLine($"Export animation {filename} from time {start} to {end}.");
@@ -241,7 +240,6 @@ internal class AnimationPlayer {
     public void Play() {
         paused = false;
     }
-
 
     public void FileDrop(string filename) {
         ResourceManager.AddResource(filename);
