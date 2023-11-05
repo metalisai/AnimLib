@@ -1,6 +1,3 @@
-[submodule "AnimLib"]
-	path = AnimLib
-	url = https://github.com/metalisai/AnimLib.git
 [submodule "AnimLib.Resources"]
 	path = AnimLib.Resources
 	url = https://github.com/metalisai/AnimLib.Resources.git
