@@ -4,9 +4,6 @@
 [submodule "AnimLib.Resources"]
 	path = AnimLib.Resources
 	url = https://github.com/metalisai/AnimLib.Resources.git
-[submodule "AnimLib.Libs"]
-	path = AnimLib.Libs
-	url = https://github.com/metalisai/AnimLib.Libs.git
 [submodule "AnimLib.Native"]
 	path = AnimLib.Native
 	url = https://github.com/metalisai/AnimLib.Native.git
