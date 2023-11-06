@@ -34,18 +34,14 @@ public class Yo : AnimationBehaviour
 
     public async Task Animation(World world, Animator animator) {
         // create text "Hello, world!"
-        var hw = new Text2D();
+        var hw = new Text2D("Hello, world!", size: 22.0f, color: Color.RED);
         hw.Transform.Pos = new Vector2(100.0f, 100.0f);
-        hw.Size = 22.0f;
-        hw.Color = Color.RED;
-        hw.Anchor = new Vector2(0.5f, 0.5f);
-        hw.HAlign = TextHorizontalAlignment.Center;
-        hw.VAlign = TextVerticalAlignment.Center;
-        hw.Text = "Hello, world!";
+        hw.Anchor = new Vector2(-0.5f, 0.0f); // screen is -0.5 ... 0.5 with origin at center
 
-        // find an existing rectangle that's created in the editor application
+        // find an existing rectangle that has been created in the editor application
         var rect = animator.Scene.GetSceneEntityByName("rect") as Rectangle;
-        _ = Animate.Move(rect.Transform, rect.Transform.Pos + new Vector2(100.0f, 100.0f), 1.0f);
+        if (rect != null)
+            _ = Animate.Move(rect.Transform, rect.Transform.Pos + new Vector2(100.0f, 100.0f), 1.0f);
 
         // create another text
         var hw2 = world.Clone(hw);
@@ -55,7 +51,7 @@ public class Yo : AnimationBehaviour
         world.CreateInstantly(hw2);
 
         // interpolate hw2 text color to green, wait until it finishes
-        await Animate.Color(hw2, hw2.Color, Color.GREEN, 1.0f);
+        await Animate.Color(hw2, Color.GREEN, 1.0f);
         // move hw2 text down 100 pixels without waiting for it to complete
         _ = Animate.Move(hw2.Transform, hw2.Transform.Pos + new Vector2(0.0f, 100.0f), 1.0f);
 
@@ -68,10 +64,11 @@ public class Yo : AnimationBehaviour
         for (int j = 0; j < 5; j++)
         {
             var c2 = world.CreateClone(circle);
-            _ = Animate.Move(c2.Transform, c2.Transform.Pos + new Vector2(i*2.0f*size, j*2.0f*size), 1.0f);
+            // equivalent to the above Animate.Move
+            _ = Animate.Offset(c2.Transform, new Vector2(i*2.0f*size, j*2.0f*size), 1.0f);
         }
 
-        // fade in the hello world text
+        // fade in the hello world text, didn't await the expanding circles so both happen at the same time
         await world.CreateFadeIn(hw, 1.0f);
         // create sine animation and change text color on every update (2hz sine black->red)
         await Animate.Sine(x => {
