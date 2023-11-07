@@ -4,30 +4,81 @@ using System.Text.Json.Serialization;
 
 namespace AnimLib;
 
+/// <summary>
+/// Mode for drawing a shape.
+/// </summary>
 public enum ShapeMode {
+    /// <summary>
+    /// Don't draw anything.
+    /// </summary>
     None,
+    /// <summary>
+    /// Draw as a line contour.
+    /// </summary>
     Contour,
+    /// <summary>
+    /// Draw a line contour and fill the shape.
+    /// </summary>
     FilledContour,
+    /// <summary>
+    /// Draw only the fill.
+    /// </summary>
     Filled,
 }
 
+/// <summary>
+/// Single element of a shape path.
+/// </summary>
 public enum PathVerb {
-    Noop, // do nothing
+    /// <summary>
+    /// No operation.
+    /// </summary>
+    Noop,
+    /// <summary>
+    /// Move without a stroke.
+    /// </summary>
     Move, // move without stroke
+    /// <summary>
+    /// Straight line.
+    /// </summary>
     Line, // straight line
+    /// <summary>
+    /// Cubic curve.
+    /// </summary>
     Cubic, // cubic curve
+    /// <summary>
+    /// Cubic curve with conic weight. Can exactly represent conic sections.
+    /// </summary>
     Conic, // circular or conic arc
+    /// <summary>
+    /// Quadratic curve.
+    /// </summary>
     Quad, // quadratic curve
+    /// <summary>
+    /// Close the contour.
+    /// </summary>
     Close, // close contour
 }
 
+/// <summary>
+/// Data for a single path verb.
+/// </summary>
 [Serializable]
 public struct VerbData {
+    /// <summary>
+    /// Points for the verb.
+    /// </summary>
     [JsonInclude]
     public Vector2[] points;
+    /// <summary>
+    /// Conic weight for the verb (only used for <see cref="PathVerb.Conic"/>).
+    /// </summary>
     [JsonInclude]
     public float conicWeight;
 
+    /// <summary>
+    /// Create a new <see cref="VerbData"/> instance.
+    /// </summary>
     [JsonConstructor]
     public VerbData(Vector2[] points, float conicWeight) {
         this.points = points;
@@ -35,13 +86,31 @@ public struct VerbData {
     }
 }
 
+/// <summary>
+/// A class that encapsulates a list of path verbs.
+/// </summary>
 public class ShapePath {
+    /// <summary>
+    /// The path verbs.
+    /// </summary>
     public (PathVerb verb, VerbData data)[] path;
 
+    /// <summary>
+    /// A (single) path that consists of only straight lines.
+    /// </summary>
     public struct LinearPath {
+        /// <summary>
+        /// Connected points.
+        /// </summary>
         public Vector2[] points;
+        /// <summary>
+        /// Whether the path is closed (are start and end connected).
+        /// </summary>
         public bool closed;
 
+        /// <summary>
+        /// Convert the path to a <see cref="ShapePath"/>.
+        /// </summary>
         public ShapePath ToPath()
         {
             var builder = new PathBuilder();
@@ -58,6 +127,9 @@ public class ShapePath {
         }
     }
 
+    /// <summary>
+    /// Evaluate a verb path at a given t (in the range [0,1]).
+    /// </summary>
     public static Vector2 EvaluateVerb(PathVerb verb, VerbData data, float t)
     {
         switch (verb)
@@ -77,6 +149,9 @@ public class ShapePath {
         }
     }
 
+    /// <summary>
+    /// Converts the path into a list of linear splines.
+    /// </summary>
     public LinearPath[] Linearize(int segments)
     {
         List<List<(PathVerb verb, VerbData data)>> shapes = new List<List<(PathVerb verb, VerbData data)>>();
@@ -155,6 +230,9 @@ public class ShapePath {
         return ret;
     }
 
+    /// <summary>
+    /// Clone the path.
+    /// </summary>
     public ShapePath Clone() {
         var cp = new (PathVerb verb, VerbData data)[path.Length];
         path.CopyTo(cp.AsSpan());
@@ -164,11 +242,17 @@ public class ShapePath {
     }
 }
 
+/// <summary>
+/// A class that can be used to build a <see cref="ShapePath"/>.
+/// </summary>
 public class PathBuilder {
     private Vector2 lastPos = Vector2.ZERO;
 
     public List<(PathVerb verb, VerbData data)> path = new ();
 
+    /// <summary>
+    /// Move without a stroke.
+    /// </summary>
     public void MoveTo(Vector2 pos) {
         var vd = new VerbData() {
             points = new Vector2[1] { pos },
@@ -177,6 +261,9 @@ public class PathBuilder {
         lastPos = pos;
     }
 
+    /// <summary>
+    /// Straight line from the last position to the given position.
+    /// </summary>
     public void LineTo(Vector2 pos) {
         var vd = new VerbData() {
             points = new Vector2[2] { lastPos, pos},
@@ -185,6 +272,9 @@ public class PathBuilder {
         lastPos = pos;
     }
 
+    /// <summary>
+    /// Quadratic curve from the last position to given control point and end point.
+    /// </summary>
     public void QuadTo(Vector2 p1, Vector2 p2) {
         var vd = new VerbData() {
             points = new Vector2[3] { lastPos, p1, p2 },
@@ -193,6 +283,9 @@ public class PathBuilder {
         lastPos = p2;
     }
 
+    /// <summary>
+    /// Cubic curve from the last position to given control points and end point.
+    /// </summary>
     public void CubicTo(Vector2 p1, Vector2 p2, Vector3 p3) {
         var vd = new VerbData() {
             points = new Vector2[4] { lastPos, p1, p2, p3 },
@@ -201,6 +294,9 @@ public class PathBuilder {
         lastPos = p3;
     }
 
+    /// <summary>
+    /// Conic curve from the last position to given control point and end point.
+    /// </summary>
     public void ConicTo(Vector2 p1, Vector2 p2, float weight) {
         var vd = new VerbData() {
             points = new Vector2[3] { lastPos, p1, p2},
@@ -210,6 +306,9 @@ public class PathBuilder {
         lastPos = p2;
     }
 
+    /// <summary>
+    /// Stroke an axis-aligned rectangle shape given two corners.
+    /// </summary>
     public void Rectangle(Vector2 min, Vector2 max) {
         MoveTo(min);
         LineTo(new Vector2(max.x, min.y));
@@ -218,6 +317,9 @@ public class PathBuilder {
         Close();
     }
 
+    /// <summary>
+    /// Stroke a circle shape using conic curves, given a center and radius.
+    /// </summary>
     public void Circle(Vector2 center, float radius) {
         var start = center + new Vector2(radius, 0.0f);
         var end1 = center + new Vector2(0.0f, radius);
@@ -236,6 +338,9 @@ public class PathBuilder {
         Close();
     }
 
+    /// <summary>
+    /// Close the contour path.
+    /// </summary>
     public void Close() {
         var vd = new VerbData() {
             points = new Vector2[] { lastPos },
@@ -243,15 +348,24 @@ public class PathBuilder {
         path.Add((PathVerb.Close, vd));
     }
 
+    /// <summary>
+    /// Clear all path data.
+    /// </summary>
     public void Clear() {
         lastPos = Vector3.ZERO;
         path.Clear();
     }
 
+    /// <summary>
+    /// Convert the path builder to a <see cref="ShapePath"/>.
+    /// </summary>
     public ShapePath GetPath() {
         return this;
     }
     
+    /// <summary>
+    /// Debug string representation of the path builder.
+    /// </summary>
     public override string ToString() {
         var sb = new System.Text.StringBuilder();
         sb.Append("PathBuilder:\n");
@@ -268,9 +382,15 @@ public class PathBuilder {
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Implicit conversion to <see cref="ShapePath"/>.
+    /// </summary>
     public static implicit operator ShapePath(PathBuilder pb) => new ShapePath() { path = pb.path.ToArray()};
 }
 
+/// <summary>
+/// Internal state of a <see cref="Shape"/>.
+/// </summary>
 internal class ShapeState : EntityState2D {
     public ShapePath path;
     public Color color = Color.RED;
@@ -301,16 +421,28 @@ internal class ShapeState : EntityState2D {
     }
 }
 
+/// <summary>
+/// A 2D shape made up of a contour and a fill.
+/// </summary>
 public class Shape : VisualEntity2D, IColored {
     internal Shape(ShapeState state) : base(state) {
     }
 
+    /// <summary>
+    /// Create a new shape from a path.
+    /// </summary>
     public Shape(ShapePath path) : base(new ShapeState(path)) {
     }
 
+    /// <summary>
+    /// Copy constructor.
+    /// </summary>
     public Shape(Shape s) : base(s) {
     }
 
+    /// <summary>
+    /// The path of the shape.
+    /// </summary>
     public ShapePath Path {
         get {
             return ((ShapeState)state).path;
@@ -320,6 +452,10 @@ public class Shape : VisualEntity2D, IColored {
             ((ShapeState)state).path = value;
         }
     }
+
+    /// <summary>
+    /// The color of the shape. Visible if <see cref="Mode"/> is <see cref="ShapeMode.Filled"/> or <see cref="ShapeMode.FilledContour"/>.
+    /// </summary>
     public Color Color {
         get {
             return ((ShapeState)state).color;
@@ -329,6 +465,10 @@ public class Shape : VisualEntity2D, IColored {
             ((ShapeState)state).color = value;
         }
     }
+
+    /// <summary>
+    /// The color of the contour. Visible if <see cref="Mode"/> is <see cref="ShapeMode.Contour"/> or <see cref="ShapeMode.FilledContour"/>.
+    /// </summary>
     public Color ContourColor {
         get {
             return ((ShapeState)state).contourColor;
@@ -338,6 +478,10 @@ public class Shape : VisualEntity2D, IColored {
             ((ShapeState)state).contourColor = value;
         }
     }
+
+    /// <summary>
+    /// The size of the contour. Visible if <see cref="Mode"/> is <see cref="ShapeMode.Contour"/> or <see cref="ShapeMode.FilledContour"/>.
+    /// </summary>
     public float ContourSize {
         get {
             return ((ShapeState)state).contourSize;
@@ -347,6 +491,10 @@ public class Shape : VisualEntity2D, IColored {
             ((ShapeState)state).contourSize = value;
         }
     }
+
+    /// <summary>
+    /// The drawing mode of the shape.
+    /// </summary>
     public ShapeMode Mode {
         get {
             return ((ShapeState)state).mode;
@@ -357,6 +505,9 @@ public class Shape : VisualEntity2D, IColored {
         }
     }
 
+    /// <summary>
+    /// Clone the shape.
+    /// </summary>
     public override object Clone() {
         return new Shape(this);
     }
