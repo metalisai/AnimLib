@@ -1,5 +1,8 @@
 namespace AnimLib;
 
+/// <summary>
+/// Internal state of a rectangle.
+/// </summary>
 internal class RectangleState : ShapeState {
     public float width, height;
 
@@ -34,15 +37,24 @@ public class Rectangle : Shape, IColored {
         return pb;
     }
 
+    /// <summary>
+    /// Creates a new rectangle with the given width and height.
+    /// </summary>
     public Rectangle(float w, float h) : base(new RectangleState(CreateRectanglePath(w, h))) {
         var s = this.state as RectangleState;
         s.width = w;
         s.height = h;
     }
 
+    /// <summary>
+    /// Copy constructor.
+    /// </summary>
     public Rectangle(Rectangle r) : base(r) {
     }
 
+    /// <summary>
+    /// The width of the rectangle.
+    /// </summary>
     public float Width {
         get {
             return ((RectangleState)state).width;
@@ -55,6 +67,9 @@ public class Rectangle : Shape, IColored {
         }
     }
 
+    /// <summary>
+    /// The height of the rectangle.
+    /// </summary>
     public float Height {
         get {
             return ((RectangleState)state).height;
@@ -67,28 +82,10 @@ public class Rectangle : Shape, IColored {
         }
     }
 
-    public Rectangle Pos(Vector3 pos) {
-        Transform.Pos = pos;
-        return this;
-    }
-
-    public Rectangle W(float width) {
-        this.Width =width;
-        return this;
-    }
-
-    public Rectangle H(float height) {
-        this.Height = height;
-        return this;
-    }
-
-    public Rectangle C(Color color) {
-        this.Color = color;
-        return this;
-    }
-
+    /// <summary>
+    /// Clone this rectangle.
+    /// </summary>
     public override object Clone() {
         return new Rectangle(this);
     }
-
 }

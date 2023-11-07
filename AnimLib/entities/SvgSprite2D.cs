@@ -1,7 +1,16 @@
 namespace AnimLib;
 
+/// <summary>
+/// Internal state of a rectangle.
+/// </summary>
 public class SvgData {
+    /// <summary>
+    /// SVG code.
+    /// </summary>
     public string svg;
+    /// <summary>
+    /// internal handle.
+    /// </summary>
     public int handle;
 }
 
@@ -34,13 +43,25 @@ internal class SvgSpriteState : EntityState2D {
     }
 }
 
+/// <summary>
+/// A SVG sprite entity.
+/// </summary>
 public class SvgSprite : VisualEntity2D, IColored {
+    /// <summary>
+    /// Creates a new SVG sprite given the SVG code and the width and height.
+    /// </summary>
     public SvgSprite(SvgData svg, float width, float height) : base(new SvgSpriteState(svg, width, height)) {
     }
 
+    /// <summary>
+    /// Copy constructor.
+    /// </summary>
     public SvgSprite(SvgSprite sprite) : base(sprite) {
     }
 
+    /// <summary>
+    /// The tint color of the sprite.
+    /// </summary>
     public Color Color {
         get {
             return ((SvgSpriteState)state).color;
@@ -51,6 +72,9 @@ public class SvgSprite : VisualEntity2D, IColored {
         }
     }
 
+    /// <summary>
+    /// The SVG code of the sprite.
+    /// </summary>
     public SvgData Svg {
         get {
             return ((SvgSpriteState)state).svg;
@@ -61,6 +85,9 @@ public class SvgSprite : VisualEntity2D, IColored {
         }
     }
 
+    /// <summary>
+    /// The width of the sprite.
+    /// </summary>
     public float Width {
         get {
             return ((SvgSpriteState)state).width;
@@ -71,6 +98,9 @@ public class SvgSprite : VisualEntity2D, IColored {
         }
     }
 
+    /// <summary>
+    /// The height of the sprite.
+    /// </summary>
     public float Height {
         get {
             return ((SvgSpriteState)state).height;
@@ -81,6 +111,9 @@ public class SvgSprite : VisualEntity2D, IColored {
         }
     }
 
+    /// <summary>
+    /// Clone this sprite.
+    /// </summary>
     public override object Clone() {
         return new SvgSprite(this);
     }

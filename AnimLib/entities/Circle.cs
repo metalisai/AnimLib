@@ -1,5 +1,8 @@
 namespace AnimLib;
 
+/// <summary>
+/// Internal state of a circle.
+/// </summary>
 internal class CircleState : ShapeState {
     public float radius;
 
@@ -19,19 +22,27 @@ internal class CircleState : ShapeState {
 /// A circle shaped entity.
 /// </summary>
 public class Circle : Shape, IColored {
-
     private static ShapePath CreateCirclePath(float radius) {
         var pb = new PathBuilder();
         pb.Circle(Vector2.ZERO, radius);
         return pb;
     }
 
+    /// <summary>
+    /// Creates a new circle with the given radius.
+    /// </summary>
     public Circle(float radius) : base(new CircleState(CreateCirclePath(radius))) {
     }
 
+    /// <summary>
+    /// Copy constructor.
+    /// </summary>
     public Circle(Circle c) : base(c) {
     }
 
+    /// <summary>
+    /// The radius of the circle.
+    /// </summary>
     public float Radius { 
         get {
             return ((CircleState)state).radius;
@@ -42,20 +53,9 @@ public class Circle : Shape, IColored {
         }
     }
 
-    public Circle Pos(Vector3 p) {
-        this.Transform.Pos = p;
-        return this;
-    }
-
-    public Circle R(float r){
-        this.Radius = r;
-        return this;
-    }
-
-    public Circle C(Color color){ 
-        this.Color = color;
-        return this;
-    }
+    /// <summary>
+    /// Clone this circle.
+    /// </summary>
     public override object Clone() {
         return new Circle(this);
     }

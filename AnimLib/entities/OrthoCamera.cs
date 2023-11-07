@@ -47,12 +47,24 @@ internal class OrthoCameraState : CameraState {
     }
 }
 
+/// <summary>
+/// An orthographic camera.
+/// </summary>
 public class OrthoCamera : Camera {
+    /// <summary>
+    /// Create a new orthographic camera.
+    /// </summary>
     public OrthoCamera() : base(new OrthoCameraState()) {
     }
 
+    /// <summary>
+    /// Copy constructor.
+    /// </summary>
     public OrthoCamera(OrthoCamera oc) : base(oc) {}
 
+    /// <summary>
+    /// The width of the camera view.
+    /// </summary>
     public float Width {
         get {
             return ((OrthoCameraState)state).width;
@@ -61,6 +73,10 @@ public class OrthoCamera : Camera {
             ((OrthoCameraState)state).width = value;
         }
     }
+
+    /// <summary>
+    /// The height of the camera view.
+    /// </summary>
     public float Height {
         get {
             return ((OrthoCameraState)state).height;
@@ -70,6 +86,9 @@ public class OrthoCamera : Camera {
         }
     }
     
+    /// <summary>
+    /// Clone this camera.
+    /// </summary>
     public override object Clone() {
         return new OrthoCamera(this);
     }

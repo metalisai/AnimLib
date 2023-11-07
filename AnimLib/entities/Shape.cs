@@ -248,6 +248,9 @@ public class ShapePath {
 public class PathBuilder {
     private Vector2 lastPos = Vector2.ZERO;
 
+    /// <summary>
+    /// The path verbs built so far.
+    /// </summary>
     public List<(PathVerb verb, VerbData data)> path = new ();
 
     /// <summary>
