@@ -313,10 +313,15 @@ public class PathBuilder {
     /// Stroke an axis-aligned rectangle shape given two corners.
     /// </summary>
     public void Rectangle(Vector2 min, Vector2 max) {
-        MoveTo(min);
-        LineTo(new Vector2(max.x, min.y));
-        LineTo(max);
-        LineTo(new Vector2(min.x, max.y));
+        // counter-clockwise
+        var topLeft = new Vector2(min.x, max.y);
+        var bottomLeft = min;
+        var bottomRight = new Vector2(max.x, min.y);
+        var topRight = max;
+        MoveTo(topRight);
+        LineTo(topLeft);
+        LineTo(bottomLeft);
+        LineTo(bottomRight);
         Close();
     }
 
@@ -338,6 +343,32 @@ public class PathBuilder {
         ConicTo(cp2, end2, w);
         ConicTo(cp3, end3, w);
         ConicTo(cp4, start, w);
+        Close();
+    }
+
+    /// <summary>
+    /// Stroke a N-pointed star shape given an outer radius, inner radius and number of points.
+    /// </summary>
+    public void Star(float outerR, float innerR, int points)
+    {
+        var angle = 0.0f;
+        var angleStep = (float)(Math.PI * 2.0f / points);
+        var outer = new Vector2(outerR, 0.0f);
+        var inner = new Vector2(innerR, 0.0f);
+        var center = Vector2.ZERO;
+
+        MoveTo(center + inner);
+
+        for (int i = 0; i < points; i++)
+        {
+            LineTo(center + inner.Rotated(angle));
+            LineTo(center + outer.Rotated(angle + angleStep / 2.0f));
+            angle += angleStep;
+        }
+        if (points % 2 == 0)
+        {
+            LineTo(center + inner);
+        }
         Close();
     }
 

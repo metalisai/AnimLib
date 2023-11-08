@@ -338,7 +338,10 @@ internal partial class SkiaRenderer
             switch(entitiy) {
             case MorphShapeState morphShape:
                 using (SKPaint paint = new SKPaint()) {
-                    var path = morphShape.MorphLinear().ToSKPath();
+                    var path1 = CubicSpline.FromShape(morphShape.shape1);
+                    var path2 = CubicSpline.FromShape(morphShape.shape2);
+                    var morph = path1[0].MorphTo(path2[0], morphShape.progress);
+                    var path = morph.ToShapePath().ToSKPath();
                     confPaint(paint);
                     renderShape(paint, path, morphShape, morphShape.CurrentMode, morphShape.CurrentColor, morphShape.CurrentContourColor, morphShape.CurrentContourSize);
                 }

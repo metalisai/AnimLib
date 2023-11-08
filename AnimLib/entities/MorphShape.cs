@@ -56,79 +56,6 @@ internal class MorphShapeState : EntityState2D {
         return new MorphShapeState(this);
     }
 
-    private static Vector2 AveragePoint(Vector2[] points) {
-        var sum = new Vector2(0.0f, 0.0f);
-        foreach(var p in points) {
-            sum += p;
-        }
-        return (1.0f / points.Length) * sum;
-    }
-
-    private static int MinimalMoveOffset(Vector2[] a, Vector2[] b) {
-        if (a.Length != b.Length) {
-            throw new System.ArgumentException("Arrays must be of equal length");
-        }
-        var massPoint1 = AveragePoint(a);
-        var massPoint2 = AveragePoint(b);
-        var offset = massPoint2 - massPoint1; // shape a -> shape b
-        int bestOffset = 0;
-        float bestDistance = float.MaxValue;
-        for (int i = 0; i < a.Length; i++) {
-            float sum = 0.0f;
-            for (int j = 0; j < a.Length; j++) {
-                int idx1 = j;
-                int idx2 = (j + i) % a.Length;
-                var v1 = a[idx1];
-                var v2 = b[idx2] + offset;
-                var dif = v1 - v2;
-                sum += Vector2.Dot(dif, dif); // square distance
-            }
-            if (sum < bestDistance) {
-                bestDistance = sum;
-                bestOffset = i;
-            }
-        }
-        return bestOffset;
-    }
-
-    /// <summary>
-    /// Morphs a <c>ShapePath</c> into another <c>ShapePath</c> given progress.
-    /// </summary>
-    public ShapePath MorphLinear()
-    {
-        var startPath = shape1;
-        var endPath = shape2;
-        var t = progress;
-
-        int segments = 100;
-        var startLinear = startPath.Linearize(segments)[0];
-        var endLinear = endPath.Linearize(segments)[0];
-
-        // not allowing transitions from open to closed shapes for now
-        if (startLinear.closed != endLinear.closed) {
-            throw new System.ArgumentException("Both shapes must have the same number of close verbs");
-        }
-
-        var ignoreVerb = (PathVerb x) => x == PathVerb.Close || x == PathVerb.Move;
-        var minOffset = MinimalMoveOffset(startLinear.points, endLinear.points);
-
-        var pathBuilder = new PathBuilder();
-        var start0 = startLinear.points[0];
-        var end0 = endLinear.points[minOffset];
-        var p0 = Vector2.Lerp(start0, end0, t);
-        pathBuilder.MoveTo(p0);
-        for(int i = 1; i < startLinear.points.Length; i++) {
-            var p1 = startLinear.points[i];
-            var p2 = endLinear.points[(i+minOffset)%endLinear.points.Length];
-            var p = Vector2.Lerp(p1, p2, t);
-            pathBuilder.LineTo(p);
-        }
-        if (endLinear.closed) {
-            pathBuilder.Close();
-        }
-        return pathBuilder.GetPath();
-    }
-
     internal bool HasBody(ShapeMode mode) {
         return mode == ShapeMode.Filled || mode == ShapeMode.FilledContour;
     }
@@ -202,13 +129,22 @@ internal class MorphShapeState : EntityState2D {
 /// A morph shape between two shapes.
 /// </summary>
 public class MorphShape : VisualEntity2D {
-
-    public MorphShape(Shape a, Shape b) : base(new MorphShapeState(a.Path, b.Path, a.Color, b.Color, a.ContourColor, b.ContourColor, a.ContourSize, b.ContourSize, a.Mode, b.Mode)) {
+    /// <summary>
+    /// Creates a new morph shape between two shapes.
+    /// </summary>
+    public MorphShape(Shape a, Shape b, float progress = 0.0f) : base(new MorphShapeState(a.Path, b.Path, a.Color, b.Color, a.ContourColor, b.ContourColor, a.ContourSize, b.ContourSize, a.Mode, b.Mode)) {
+        this.Progress = progress;
     }
 
+    /// <summary>
+    /// Copy constructor.
+    /// </summary>
     public MorphShape(MorphShape ms) : base(ms) {
     }
 
+    /// <summary>
+    /// The progress of the morphing.
+    /// </summary>
     public float Progress {
         get {
             return ((MorphShapeState)state).progress;
@@ -219,6 +155,9 @@ public class MorphShape : VisualEntity2D {
         }
     }
 
+    /// <summary>
+    /// Clone this morph shape.
+    /// </summary>
     public override object Clone() {
         return new MorphShape(this);
     }
