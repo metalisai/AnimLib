@@ -4,9 +4,15 @@ namespace AnimLib;
 /// A 2D transform for 2D entities on a canvas.
 /// </summary>
 public class Transform2D {
+    /// <summary>
+    /// The entity this transform belongs to.
+    /// </summary>
     protected VisualEntity2D entity;
     internal Transform2D _parent;
 
+    /// <summary>
+    /// The parent transform.
+    /// </summary>
     public Transform2D parent {
         get {
             return entity.state.parentId == 0 ? null : ((VisualEntity2D)World.current.EntityResolver.GetEntity(entity.state.parentId)).Transform;
@@ -17,6 +23,9 @@ public class Transform2D {
         }
     }
 
+    /// <summary>
+    /// The position of the entity relative to the anchor point.
+    /// </summary>
     public Vector2 Pos {
         get {
             return entity.state.position;
@@ -26,6 +35,9 @@ public class Transform2D {
         }
     }
 
+    /// <summary>
+    /// The rotation of the entity in radians.
+    /// </summary>
     public float Rot {
         get {
             return entity.state.rot;
@@ -36,6 +48,9 @@ public class Transform2D {
         }
     }
 
+    /// <summary>
+    /// The scale of the entity.
+    /// </summary>
     public Vector2 Scale {
         get {
             return entity.state.scale;
@@ -46,6 +61,23 @@ public class Transform2D {
         }
     }
 
+    /// <summary>
+    /// The anchor on the parent entity.
+    /// </summary>
+    public Vector2 Anchor
+    {
+        get {
+            return entity.state.anchor;
+        }
+        set {
+            World.current.SetProperty(entity, "Anchor", value, entity.state.anchor);
+            entity.state.anchor = value;
+        }
+    }
+
+    /// <summary>
+    /// Create a new transform for the given entity.
+    /// </summary>
     public Transform2D(VisualEntity2D entity, Vector2 pos, float rot) {
         this.entity = entity;
         this.Pos = pos;
@@ -53,6 +85,9 @@ public class Transform2D {
         this.Scale = Vector2.ONE;
     }
 
+    /// <summary>
+    /// Create a new transform for the given entity.
+    /// </summary>
     public Transform2D(VisualEntity2D entity, Vector2 pos, float rot, Vector2 scale) {
         this.entity = entity;
         this.Pos = pos;
@@ -60,13 +95,31 @@ public class Transform2D {
         this.Scale = scale;
     }
 
+    /// <summary>
+    /// Copy constructor for a different entity.
+    /// </summary>
+    public Transform2D(Transform2D t, VisualEntity2D entity) {
+        this.entity = entity;
+        this.Pos = t.Pos;
+        this.Rot = t.Rot;
+        this.Scale = t.Scale;
+        this.Anchor = t.Anchor;
+    }
+
+    /// <summary>
+    /// Copy constructor.
+    /// </summary>
     public Transform2D(Transform2D t) {
         this.entity = t.entity;
         this.Pos = t.Pos;
         this.Rot = t.Rot;
         this.Scale = t.Scale;
+        this.Anchor = t.Anchor;
     }
 
+    /// <summary>
+    /// Create a new transform for the given entity.
+    /// </summary>
     public Transform2D(VisualEntity2D entity) {
         this.entity = entity;
     }

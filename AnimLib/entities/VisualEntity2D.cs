@@ -1,7 +1,16 @@
 namespace AnimLib;
 
+/// <summary>
+/// I have no idea what this is. ^^
+/// </summary>
 public enum Entity2DCoordinateSystem {
+    /// <summary>
+    /// Don't know 1
+    /// </summary>
     CanvasOrientedWorld,
+    /// <summary>
+    /// Don't know 2
+    /// </summary>
     CanvasNormalized,
 };
 
@@ -74,14 +83,24 @@ internal abstract class EntityState2D : EntityState {
     public abstract Vector2 AABB { get; }
 }
 
+/// <summary>
+/// A 2D visual entity placed on a 2D canvas.
+/// </summary>
 public abstract class VisualEntity2D : VisualEntity {
     private Canvas _canvas;
+    /// <summary>
+    /// The transform of the entity.
+    /// </summary>
     public Transform2D Transform;
 
     internal VisualEntity2D(EntityState2D state) : base(state) {
         Transform = new Transform2D(this);
         Canvas = Canvas.Default;
     }
+
+    /// <summary>
+    /// Copy constructor.
+    /// </summary>
     public VisualEntity2D(VisualEntity2D e) : base(e) {
         Transform = new Transform2D(this);
         Canvas = e.Canvas;
@@ -104,6 +123,9 @@ public abstract class VisualEntity2D : VisualEntity {
         }
     }
 
+    /// <summary>
+    /// The canvas the entity is placed on.
+    /// </summary>
     public Canvas Canvas 
     {
         get {
@@ -115,6 +137,10 @@ public abstract class VisualEntity2D : VisualEntity {
             _canvas = value;
         }
     }
+
+    /// <summary>
+    /// The anchor on the parent entity.
+    /// </summary>
     public Vector2 Anchor
     {
         get {
@@ -125,6 +151,10 @@ public abstract class VisualEntity2D : VisualEntity {
             ((EntityState2D)state).anchor = value;
         }
     }
+
+    /// <summary>
+    /// The origin of local coordinates withing the bounding rectangle.
+    /// </summary>
     public Vector2 Pivot
     {
         get {
@@ -136,6 +166,9 @@ public abstract class VisualEntity2D : VisualEntity {
         }
     }
 
+    /// <summary>
+    /// 2D rotation in radians.
+    /// </summary>
     public float Rot
     {
         get {
@@ -157,6 +190,9 @@ public abstract class VisualEntity2D : VisualEntity {
         }
     }
 
+    /// <summary>
+    /// Sort key used for sorting entities on the same canvas.
+    /// </summary>
     public int SortKey {
         get {
             return ((EntityState2D)state).sortKey;
@@ -167,18 +203,27 @@ public abstract class VisualEntity2D : VisualEntity {
         }
     }
 
+    /// <summary>
+    /// Assign a sort key to this entity that is higher than the given entity.
+    /// </summary>
     public void DrawAbove(VisualEntity2D ent) {
         var newKey = ent.state.sortKey+(new System.Random().Next(1, 100));
         World.current.SetProperty(this, "SortKey", newKey, ((EntityState2D)state).sortKey);
         ((EntityState2D)state).sortKey = newKey;
     }
 
+    /// <summary>
+    /// Assign a sort key to this entity that is lower than the given entity.
+    /// </summary>
     public void DrawBelow(VisualEntity2D ent) {
         var newKey = ent.state.sortKey-(new System.Random().Next(1, 100));
         World.current.SetProperty(this, "SortKey", newKey, ((EntityState2D)state).sortKey);
         ((EntityState2D)state).sortKey = newKey;
     }
 
+    /// <summary>
+    /// Callback when the entity is created within a world.
+    /// </summary>
     protected override void OnCreated() {
         // TODO: need better way (what if child entity gets created before parent for example)
         if(Transform._parent != null) {

@@ -227,6 +227,7 @@ public static class Animate {
         }
         World.current.Destroy(morph);
         var newShape = (Shape)endShape.Clone();
+        newShape.Transform = new Transform2D(startShape.Transform, newShape);
         World.current.CreateInstantly(newShape);
         return newShape;
     }

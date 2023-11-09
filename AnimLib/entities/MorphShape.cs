@@ -13,6 +13,19 @@ internal class MorphShapeState : EntityState2D {
     public ShapeMode mode1 = ShapeMode.FilledContour;
     public ShapeMode mode2 = ShapeMode.FilledContour;
 
+    public MorphShapeState(Shape shape1, Shape shape2) : base(shape1.state) {
+        this.shape1 = shape1.Path;
+        this.shape2 = shape2.Path;
+        this.color1 = shape1.Color;
+        this.color2 = shape2.Color;
+        this.contourColor1 = shape1.ContourColor;
+        this.contourColor2 = shape2.ContourColor;
+        this.contourSize1 = shape1.ContourSize;
+        this.contourSize2 = shape2.ContourSize;
+        this.mode1 = shape1.Mode;
+        this.mode2 = shape2.Mode;
+    }
+
     public MorphShapeState(ShapePath shape1, ShapePath shape2,
         Color color1, Color color2,
         Color contourColor1, Color contourColor2,
@@ -132,7 +145,7 @@ public class MorphShape : VisualEntity2D {
     /// <summary>
     /// Creates a new morph shape between two shapes.
     /// </summary>
-    public MorphShape(Shape a, Shape b, float progress = 0.0f) : base(new MorphShapeState(a.Path, b.Path, a.Color, b.Color, a.ContourColor, b.ContourColor, a.ContourSize, b.ContourSize, a.Mode, b.Mode)) {
+    public MorphShape(Shape a, Shape b, float progress = 0.0f) : base(new MorphShapeState(a, b)) {
         this.Progress = progress;
     }
 

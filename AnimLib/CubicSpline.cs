@@ -45,7 +45,11 @@ public class CubicSpline {
                 var next = new List<BezierNode>();
                 while (true)
                 {
-                    if (current.Count == 1)
+                    if (current.Count <= 0)
+                    {
+                        break;
+                    }
+                    else if (current.Count == 1)
                     {
                         next.Add(current[0]);
                         break;
@@ -248,29 +252,31 @@ public class CubicSpline {
         var a = this;
         var longer = a.Arcs.Count > b.Arcs.Count ? a : b;
         var shorter = a.Arcs.Count > b.Arcs.Count ? b : a;
-        if (longer != a)
+        var lenA = a.Arcs.Count;
+        var lenB = b.Arcs.Count;
+
+        float origT = t;
+        if (longer != a && lenA != lenB)
         {
             t = 1.0f - t;
         }
         var ret = new CubicSpline();
         ret.Arcs = new List<CubicBezier>();
-        ret.Start = Vector2.Lerp(longer.Start, shorter.Start, t);
+        ret.Start = Vector2.Lerp(a.Start, b.Start, origT);
         ret.Closed = a.Closed && b.Closed;
 
         var arrA = a.Arcs;
         var arrB = b.Arcs;
-        var lenA = a.Arcs.Count;
-        var lenB = b.Arcs.Count;
 
         if (lenA == lenB)
         {
             for (int mi = 0; mi < lenA; mi++)
             {
                 var interpolated = new CubicBezier();
-                interpolated.p0 = Vector2.Lerp(arrA[mi].p0, arrB[mi].p0, t);
-                interpolated.p1 = Vector2.Lerp(arrA[mi].p1, arrB[mi].p1, t);
-                interpolated.p2 = Vector2.Lerp(arrA[mi].p2, arrB[mi].p2, t);
-                interpolated.p3 = Vector2.Lerp(arrA[mi].p3, arrB[mi].p3, t);
+                interpolated.p0 = Vector2.Lerp(arrA[mi].p0, arrB[mi].p0, origT);
+                interpolated.p1 = Vector2.Lerp(arrA[mi].p1, arrB[mi].p1, origT);
+                interpolated.p2 = Vector2.Lerp(arrA[mi].p2, arrB[mi].p2, origT);
+                interpolated.p3 = Vector2.Lerp(arrA[mi].p3, arrB[mi].p3, origT);
                 ret.Arcs.Add(interpolated);
             }
             return ret;
