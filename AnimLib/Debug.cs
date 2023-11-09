@@ -4,8 +4,14 @@ using System.Runtime.CompilerServices;
 
 namespace AnimLib;
 
+/// <summary>
+/// Debugging utilities. When using these in animations, note that these a run during bake time, so they are not printed while seeking in the editor application.
+/// </summary>
 static public class Debug {
 
+    /// <summary>
+    /// Log a message.
+    /// </summary>
     public static void Log(string t, [CallerFilePath] string callerfile = "", [CallerLineNumber] int lineNumber = 0) {
 #if DEBUG
         var file = Path.GetFileName(callerfile);
@@ -13,6 +19,9 @@ static public class Debug {
 #endif
     }
 
+    /// <summary>
+    /// Log a warning.
+    /// </summary>
     public static void Warning(string t, [CallerFilePath] string callerfile = "", [CallerLineNumber] int lineNumber = 0) {
 #if DEBUG
         var file = Path.GetFileName(callerfile);
@@ -22,6 +31,9 @@ static public class Debug {
 #endif
     }
 
+    /// <summary>
+    /// Log an error.
+    /// </summary>
     public static void Error(string t, [CallerFilePath] string callerfile = "", [CallerLineNumber] int lineNumber = 0) {
 #if DEBUG
         var file = Path.GetFileName(callerfile);
@@ -32,7 +44,9 @@ static public class Debug {
 #endif
     }
 
-    // development time debugging log (colored because it is intended to be removed)
+    /// <summary>
+    /// Development time debugging log (colored because it is intended to be removed).
+    /// </summary>
     public static void TLog(string t, [CallerFilePath] string callerfile = "", [CallerLineNumber] int lineNumber = 0) {
 #if DEBUG
         var file = Path.GetFileName(callerfile);
@@ -42,7 +56,9 @@ static public class Debug {
 #endif
     }
 
-    // development time debugging log (colored because it is intended to be removed)
+    /// <summary>
+    /// Development time debugging log (colored because it is intended to be removed).
+    /// </summary>
     public static void TLogWithTrace(string t, [CallerFilePath] string callerfile = "", [CallerLineNumber] int lineNumber = 0) {
 #if DEBUG
         var file = Path.GetFileName(callerfile);
@@ -50,6 +66,22 @@ static public class Debug {
         Console.WriteLine($"{file}:{lineNumber} {t}");
         Console.WriteLine($"{Environment.StackTrace}");
         Console.ResetColor();
+#endif
+    }
+
+    /// <summary>
+    /// Asserts that the given condition is true. If not, throws an exception.
+    /// </summary>
+    public static void Assert(bool condition, string t = "Assertion failed", [CallerFilePath] string callerfile = "", [CallerLineNumber] int lineNumber = 0) {
+#if DEBUG
+        if (!condition) {
+            var file = Path.GetFileName(callerfile);
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"{file}:{lineNumber} {t}");
+            Console.ResetColor();
+            Console.WriteLine($"Trace: {System.Environment.StackTrace}");
+            throw new Exception(t);
+        }
 #endif
     }
 }

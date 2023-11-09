@@ -340,8 +340,10 @@ internal partial class SkiaRenderer
                 using (SKPaint paint = new SKPaint()) {
                     var path1 = CubicSpline.FromShape(morphShape.shape1);
                     var path2 = CubicSpline.FromShape(morphShape.shape2);
-                    var morph = path1[0].MorphTo(path2[0], morphShape.progress);
-                    var path = morph.ToShapePath().ToSKPath();
+                    //var morph = path1[0].MorphTo(path2[0], morphShape.progress);
+                    var morphs = CubicSpline.MorphCollection(path1, path2, morphShape.progress);
+                    //var path = morph.ToShapePath().ToSKPath();
+                    var path = CubicSpline.CollectionToShapePath(morphs).ToSKPath();
                     confPaint(paint);
                     renderShape(paint, path, morphShape, morphShape.CurrentMode, morphShape.CurrentColor, morphShape.CurrentContourColor, morphShape.CurrentContourSize);
                 }

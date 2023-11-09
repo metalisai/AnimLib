@@ -13,6 +13,15 @@ public  struct CubicBezier
     /// Control point.
     /// </summary>
     public Vector2 p0, p1, p2, p3;
+
+    /// <summary>
+    /// Constructs an array of the control points of this cubic bezier curve.
+    /// </summary>
+    public Vector2[] Points { 
+        get { 
+            return new Vector2[] { p0, p1, p2, p3 }; 
+        } 
+    }
 }
 
 /// <summary>
@@ -121,6 +130,18 @@ public class CubicSpline {
     public CubicSpline() {}
 
     /// <summary>
+    /// Clone this <c>CubicSpline</c>.
+    /// </summary>
+    public CubicSpline Clone()
+    {
+        var ret = new CubicSpline();
+        ret.Arcs = Arcs.Select(x => new CubicBezier() { p0 = x.p0, p1 = x.p1, p2 = x.p2, p3 = x.p3 }).ToList();
+        ret.Start = Start;
+        ret.Closed = Closed;
+        return ret;
+    }
+
+    /// <summary>
     /// Constructs a <c>CubicSpline</c> from a <c>ShapePath</c>. All verbs are converted to cubic bezier curves.
     /// </summary>
     public static CubicSpline[] FromShape(ShapePath src)
@@ -135,10 +156,12 @@ public class CubicSpline {
                 case PathVerb.Move:
                     if (started)
                     {
-                        throw new Exception("Move after start");
+                        ret.Add(current);
+                        current = new CubicSpline();
                     }
                     current.Start = v.data.points[0];
                     pos = v.data.points[0];
+                    started = true;
                     break;
                 case PathVerb.Line:
                     var dest = v.data.points[1];
@@ -177,8 +200,11 @@ public class CubicSpline {
                 case PathVerb.Conic:
                     cp = v.data.points[1];
                     dest = v.data.points[2];
-                    cp1 = Vector2.Lerp(pos, cp, 2.0f/3.0f);
-                    cp2 = Vector2.Lerp(cp, dest, 1.0f/3.0f);
+                    // conver rational quadratic to cubic
+                    // use the weight to determine the control point
+                    float w = v.data.conicWeight;
+                    cp1 = v.data.points[0] + w*(cp - v.data.points[0]);
+                    cp2 = dest + (1.0f-w)*(cp - dest);
                     bezier = new CubicBezier();
                     bezier.p0 = pos;
                     bezier.p1 = cp1;
@@ -196,7 +222,11 @@ public class CubicSpline {
                     throw new NotImplementedException();
             }
         }
-        return new CubicSpline[] { current };
+        if (current.Arcs.Count > 0)
+        {
+            ret.Add(current);
+        }
+        return ret.ToArray();
     }
 
     internal static (CubicBezier c1, CubicBezier c2) CollapsePair((CubicBezier c1, CubicBezier c2) src, CubicBezier dst, float t)
@@ -242,6 +272,148 @@ public class CubicSpline {
             pb.Close();
         }
         return pb;
+    }
+
+    /// Convert a collection of <c>CubicSpline</c> into a <c>ShapePath</c>.
+    public static ShapePath CollectionToShapePath(CubicSpline[] splines)
+    {
+        var pb = new PathBuilder();
+        foreach (var spline in splines)
+        {
+            pb.MoveTo(spline.Start);
+            foreach (var arc in spline.Arcs)
+            {
+                pb.CubicTo(arc.p1, arc.p2, arc.p3);
+            }
+            if (spline.Closed)
+            {
+                pb.Close();
+            }
+        }
+        return pb;
+    }
+
+    internal Vector2 ClosestControlPoint(Vector2 point, CubicSpline[] spline)
+    {
+        var ret = new Vector2();
+        var bestDistance = double.MaxValue;
+        foreach (var arc in Arcs)
+        {
+            var points = arc.Points;
+            foreach (var p in points)
+            {
+                var dif = p - point;
+                var distance = Vector2.Dot(dif, dif);
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    ret = p;
+                }
+            }
+        }
+        return ret;
+    }
+
+    internal static float MinControlPointDistance(CubicSpline a, CubicSpline b)
+    {
+        float ret = 0.0f;
+        var aPoints = a.Arcs.SelectMany(x => x.Points).ToList();
+        foreach (var acp in aPoints)
+        {
+            var bcp = b.ClosestControlPoint(acp, new CubicSpline[] { });
+            var dif = acp - bcp; 
+            var distance = Vector2.Dot(dif, dif);
+            ret += distance;
+        }
+        return ret;
+    }
+
+    internal static int[] BestMatches(CubicSpline[] a, CubicSpline[] b)
+    {
+        var ret = new int[a.Length];
+        var pool = Enumerable.Range(0, b.Length).ToList();
+        for (int i = 0; i < a.Length; i++)
+        {
+            int bestIndex = -1;
+            double bestDistance = double.MaxValue;
+            for (int j = 0; j < pool.Count; j++)
+            {
+                var idx = pool[j];
+                var splineA = a[i];
+                var splineB = b[idx];
+                var distance = MinControlPointDistance(splineA, splineB);
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    bestIndex = idx;
+                }
+            }
+            if (bestIndex == -1)
+            {
+                ret[i] = -1;
+            }
+            else
+            {
+                ret[i] = bestIndex;
+                pool.Remove(bestIndex);
+            }
+        }
+        return ret;
+    }
+
+    /// <summary>
+    /// Morphs a multi-part <c>CubicSpline</c> into another multi-part <c>CubicSpline</c> given progress.
+    /// </summary>
+    public static CubicSpline[] MorphCollection(CubicSpline[] a, CubicSpline[] b, float t)
+    {
+        var matches = BestMatches(a, b);
+        var ret = new CubicSpline[Math.Max(a.Length, b.Length)];
+        List<int> unMatchedB = Enumerable.Range(0, b.Length).ToList();
+        int retIdx = 0;
+
+        void scaleSpline(CubicSpline spline, float scale) {
+            var massPoint = spline.Arcs.SelectMany(x => x.Points).Aggregate((x, y) => x + y) / (spline.Arcs.Count*4);
+            spline.Start = massPoint + (scale * (spline.Start - massPoint));
+            for (int k = 0; k < spline.Arcs.Count; k++)
+            {
+                var arc = spline.Arcs[k];
+                arc.p0 = massPoint + scale * (arc.p0 - massPoint);
+                arc.p1 = massPoint + scale * (arc.p1 - massPoint);
+                arc.p2 = massPoint + scale * (arc.p2 - massPoint);
+                arc.p3 = massPoint + scale * (arc.p3 - massPoint);
+                spline.Arcs[k] = arc;
+            }
+        };
+
+        for (int i = 0; i < matches.Length; i++)
+        {
+            var idx = matches[i];
+            if (idx == -1)
+            {
+                // shrink into nothing
+                var spline = a[i].Clone();
+                float scale = Math.Clamp(1.0f - t, 0.0f, 1.0f);
+                scaleSpline(spline, scale);
+                ret[retIdx] = spline;
+            }
+            else
+            {
+                ret[retIdx] = a[i].MorphTo(b[idx], t);
+                unMatchedB.Remove(idx);
+            }
+            retIdx++;
+        }
+        foreach (var idx in unMatchedB)
+        {
+            // grow from nothing
+            var spline = b[idx].Clone();
+            float scale = Math.Clamp(t, 0.0f, 1.0f);
+            scaleSpline(spline, scale);
+            ret[retIdx] = spline;
+            retIdx++;
+        }
+        Debug.Assert(retIdx == ret.Length);
+        return ret;
     }
 
     /// <summary>
@@ -318,7 +490,6 @@ public class CubicSpline {
 
             var interpolatedList = new List<CubicBezier>();
             var subSpline = new CubicSpline() { Arcs = longerIndices.Select(x => longerArr[x]).ToList() };
-            var indicesStr = longerIndices.Select(x => x.ToString()).Aggregate((x, y) => x + " " + y);
             var tree = BezierNode.MakeTree(subSpline, shorterArr[shorterIndex]);
             BezierNode.Evaluate(tree, t, interpolatedList);
             foreach (var interpolated in interpolatedList)
