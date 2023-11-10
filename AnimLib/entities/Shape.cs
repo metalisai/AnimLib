@@ -10,6 +10,7 @@ internal class ShapeState : EntityState2D {
     public Color color = Color.RED;
     public Color contourColor = Color.BLACK;
     public float contourSize = 0.0f;
+    public (float, float) trim = (0.0f, 1.0f);
     public ShapeMode mode = ShapeMode.FilledContour;
 
     public ShapeState(ShapePath path) {
@@ -22,6 +23,7 @@ internal class ShapeState : EntityState2D {
         this.contourColor = ss.contourColor;
         this.contourSize = ss.contourSize;
         this.mode = ss.mode;
+        this.trim = ss.trim;
     }
 
     public override Vector2 AABB {
@@ -116,6 +118,19 @@ public class Shape : VisualEntity2D, IColored {
         set {
             World.current.SetProperty(this, "Mode", value, ((ShapeState)state).mode);
             ((ShapeState)state).mode = value;
+        }
+    }
+
+    /// <summary>
+    /// Trim of the underlying path in range [0, 1].
+    /// </summary>
+    public (float, float) Trim {
+        get {
+            return ((ShapeState)state).trim;
+        }
+        set {
+            World.current.SetProperty(this, "Trim", value, ((ShapeState)state).trim);
+            ((ShapeState)state).trim = value;
         }
     }
 

@@ -153,6 +153,44 @@ public class PathBuilder {
     }
 
     /// <summary>
+    /// Stroke a heart shape given a center and a radius.
+    /// </summary>
+    public void Heart(float radius, Vector2 center = default(Vector2))
+    {
+        var vtipY = 0.85f * radius * 2.0f;
+        var lowerCpX = 0.96f * radius * 2.0f;
+        var lowerCpY = 0.68f * radius * 2.0f;
+        var upperCpX = 0.28f * radius * 2.0f;
+        var upperCpY = 1.3f * radius * 2.0f;
+
+        center += new Vector2(0.0f, -0.5f*radius);
+
+        CubicBezier curve1 = new CubicBezier(){
+            p0 = center + new Vector2(0.0f, vtipY),
+            p1 = center + new Vector2(-upperCpX, upperCpY),
+            p2 = center + new Vector2(-lowerCpX, lowerCpY),
+            p3 = center + new Vector2(0.0f, 0.0f)
+        };
+        CubicBezier curve2 = new CubicBezier(){
+            p0 = curve1.p3,
+            p1 = center + new Vector2(lowerCpX, lowerCpY),
+            p2 = center + new Vector2(upperCpX, upperCpY),
+            p3 = curve1.p0
+        };
+
+        // split to 4 curves so that we can start at middle right (the mathematical 0 angle)
+        var (q1, q2) = CubicSpline.CollapsePair((curve1, curve2), curve1, 1.0f);
+        var (q3, q4) = CubicSpline.CollapsePair((curve1, curve2), curve2, 1.0f);
+
+        MoveTo(q4.p0);
+        CubicTo(q4.p1, q4.p2, q4.p3);
+        CubicTo(q1.p1, q1.p2, q1.p3);
+        CubicTo(q2.p1, q2.p2, q2.p3);
+        CubicTo(q3.p1, q3.p2, q3.p3);
+        Close();
+    }
+
+    /// <summary>
     /// Stroke a grid given a unit size, min and max coordinates.
     /// </summary>
     public void Grid(float unit, Vector2 min, Vector2 max)

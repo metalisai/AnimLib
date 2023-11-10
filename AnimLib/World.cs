@@ -136,8 +136,25 @@ public class World
     static int worldId = 0;
     [ThreadStatic]
     static int entityId = 1;
+    /// <summary>
+    /// Currently active world.
+    /// </summary>
     [ThreadStatic]
     public static World current;
+
+    Canvas _activeCanvas;
+
+    /// <summary>
+    /// The canvas that entities are created on by default.
+    /// </summary>
+    public Canvas ActiveCanvas {
+        get {
+            return _activeCanvas;
+        }
+        set {
+            _activeCanvas = value;
+        }
+    }
 
     AnimationSettings settings;
 
@@ -157,6 +174,9 @@ public class World
     internal EntityResolver EntityResolver;
     Color background = Color.WHITE;
 
+    /// <summary>
+    /// Id of the world.
+    /// </summary>
     public readonly int Id;
 
     Camera _activeCamera;
@@ -263,6 +283,8 @@ public class World
         var defaultCanvas = new Canvas(CanvasState.DEFAULTNAME, screenCam);
         CreateInstantly(defaultCanvas);
         Canvas.Default = defaultCanvas;
+
+        this.ActiveCanvas = defaultCanvas;
 
         CreateInstantly(cam);
         ActiveCamera = cam;

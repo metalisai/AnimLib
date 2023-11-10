@@ -22,6 +22,9 @@ namespace AnimLib {
 
             var opt = $"-y -f rawvideo -vcodec rawvideo -pixel_format rgb24 -video_size {width}x{height} -r {framerate} -i - -vf vflip {outputOpt} \"{filename}\"";
 
+            Debug.Log($"ffmpeg command: {"ffmpeg "+ opt}");
+            Debug.Log($"Working directory: {Directory.GetCurrentDirectory()}");
+
             var info = new ProcessStartInfo("ffmpeg", opt);
             info.UseShellExecute = false;
             info.CreateNoWindow = true;

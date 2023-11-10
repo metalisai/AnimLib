@@ -312,6 +312,12 @@ internal partial class SkiaRenderer
             var bounds = path.TightBounds;
             SKMatrix localTransform = GetLocalTransform(shape, rc, new Rect(bounds.Left, bounds.Top, bounds.Width, bounds.Height), css.Entities);
 
+            var realShape = shape as ShapeState;
+            if (realShape != null && realShape.trim != (0.0f, 1.0f))
+            {
+                paint.PathEffect = SKPathEffect.CreateTrim(realShape.trim.Item1, realShape.trim.Item2);
+            }
+
             path.Transform(localTransform);
 
             // draw fill
@@ -330,6 +336,11 @@ internal partial class SkiaRenderer
                 canvas.DrawPath(path, paint);
             }
             path.Dispose();
+            if (paint.PathEffect != null)
+            {
+                paint.PathEffect.Dispose();
+                paint.PathEffect = null;
+            }
         };
         
         foreach(var entitiy in css.Entities) {

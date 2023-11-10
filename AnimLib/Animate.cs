@@ -7,6 +7,24 @@ using System.Collections.Generic;
 namespace AnimLib;
 
 /// <summary>
+/// Text creation mode.
+/// </summary>
+public enum TextCreationMode {
+    /// <summary>
+    /// The text instantly appears.
+    /// </summary>
+    Instant,
+    /// <summary>
+    /// Fade the text in;
+    /// </summary>
+    Fade,
+    /// <summary>
+    /// Fade the text in with a path animation.
+    /// </summary>
+    PathAndFade,
+}
+
+/// <summary>
 /// Helper class to animate entities. Part of the AnimLib user API.
 /// </summary>
 public static class Animate {
@@ -230,5 +248,54 @@ public static class Animate {
         newShape.Transform = new Transform2D(startShape.Transform, newShape);
         World.current.CreateInstantly(newShape);
         return newShape;
+    }
+
+    /// <summary>
+    /// Create text with a fancy animation.
+    /// </summary>
+    public static async Task CreateText(Text2D text, TextCreationMode mode = TextCreationMode.PathAndFade, float charDelay = 0.1f)
+    {
+        var last = Task.CompletedTask;
+        switch (mode)
+        {
+            default:
+            case TextCreationMode.Instant:
+                World.current.CreateInstantly(text);
+                break;
+            case TextCreationMode.Fade:
+                foreach (var c in text.CurrentShapes) {
+                    c.s.Mode = ShapeMode.Filled;
+                    c.s.Color = text.Color.WithA(0);
+                    c.s.Trim = (0.0f, 1.0f);
+                }
+                text.Color = text.Color.WithA(0);
+                World.current.CreateInstantly(text);
+                foreach (var c in text.CurrentShapes) {
+                    last = Animate.Color(c.s, c.s.Color.WithA(0), c.s.Color.WithA(255), 0.5f);
+                    await AnimLib.Time.WaitSeconds(charDelay);
+                }
+                await last;
+                break;
+            case TextCreationMode.PathAndFade:
+                foreach (var c in text.CurrentShapes) {
+                    c.s.ContourColor = AnimLib.Color.BLACK;
+                    c.s.Mode = ShapeMode.Contour;
+                    c.s.Trim = (0.0f, 0.0f);
+                }
+                World.current.CreateInstantly(text);
+                foreach (var c in text.CurrentShapes) {
+                    async Task AnimateCreation(float from, float to) {
+                        await Animate.InterpF(x => c.s.Trim = (from, x), from, to, 0.5f);
+                        c.s.Color = text.Color.WithA(0);
+                        c.s.Mode = ShapeMode.FilledContour;
+                        await Animate.Color(c.s, c.s.Color.WithA(0), c.s.Color.WithA(255), 0.5f);
+                        c.s.Mode = ShapeMode.FilledContour;
+                    }
+                    _ = AnimateCreation(0.0f, 1.0f);
+                    await AnimLib.Time.WaitSeconds(charDelay);
+                }
+                await last;
+                break;
+        }
     }
 }

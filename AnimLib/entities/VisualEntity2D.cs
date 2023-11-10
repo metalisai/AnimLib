@@ -95,7 +95,15 @@ public abstract class VisualEntity2D : VisualEntity {
 
     internal VisualEntity2D(EntityState2D state) : base(state) {
         Transform = new Transform2D(this);
-        Canvas = Canvas.Default;
+        if (World.current.ActiveCanvas.created)
+        {
+            Canvas = World.current.ActiveCanvas;
+        }
+        else
+        {
+            Debug.Error("World.ActiveCanvas is set to a canvas entity that isn't created. Using default canvas.");
+            Canvas = Canvas.Default;
+        }
     }
 
     /// <summary>
