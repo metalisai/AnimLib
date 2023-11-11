@@ -165,18 +165,18 @@ public class PathBuilder {
 
         center += new Vector2(0.0f, -0.5f*radius);
 
-        CubicBezier curve1 = new CubicBezier(){
-            p0 = center + new Vector2(0.0f, vtipY),
-            p1 = center + new Vector2(-upperCpX, upperCpY),
-            p2 = center + new Vector2(-lowerCpX, lowerCpY),
-            p3 = center + new Vector2(0.0f, 0.0f)
-        };
-        CubicBezier curve2 = new CubicBezier(){
-            p0 = curve1.p3,
-            p1 = center + new Vector2(lowerCpX, lowerCpY),
-            p2 = center + new Vector2(upperCpX, upperCpY),
-            p3 = curve1.p0
-        };
+        CubicBezier<Vector2, float> curve1 = new (
+            center + new Vector2(0.0f, vtipY),
+            center + new Vector2(-upperCpX, upperCpY),
+            center + new Vector2(-lowerCpX, lowerCpY),
+            center + new Vector2(0.0f, 0.0f)
+        );
+        CubicBezier<Vector2, float> curve2 = new (
+            curve1.p3,
+            center + new Vector2(lowerCpX, lowerCpY),
+            center + new Vector2(upperCpX, upperCpY),
+            curve1.p0
+        );
 
         // split to 4 curves so that we can start at middle right (the mathematical 0 angle)
         var (q1, q2) = CubicSpline.CollapsePair((curve1, curve2), curve1, 1.0f);

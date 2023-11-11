@@ -5,39 +5,19 @@ using System.Collections.Generic;
 namespace AnimLib;
 
 /// <summary>
-/// A single arc of a cubic bezier curve.
-/// </summary>
-public  struct CubicBezier
-{
-    /// <summary>
-    /// Control point.
-    /// </summary>
-    public Vector2 p0, p1, p2, p3;
-
-    /// <summary>
-    /// Constructs an array of the control points of this cubic bezier curve.
-    /// </summary>
-    public Vector2[] Points { 
-        get { 
-            return new Vector2[] { p0, p1, p2, p3 }; 
-        } 
-    }
-}
-
-/// <summary>
 /// A spline made up of cubic bezier curves.
 /// </summary>
 public class CubicSpline {
     internal class BezierNode {
         public BezierNode Left, Right;
-        public CubicBezier Bezier;
+        public CubicBezier<Vector2, float> Bezier;
 
-        BezierNode(CubicBezier bezier)
+        BezierNode(CubicBezier<Vector2, float> bezier)
         {
             this.Bezier = bezier;
         }
 
-        internal static BezierNode MakeTree(CubicSpline cubics, CubicBezier dst)
+        internal static BezierNode MakeTree(CubicSpline cubics, CubicBezier<Vector2, float> dst)
         {
             var current = cubics.Arcs.Select(x => new BezierNode(x)).ToList();
             if (current.Count < 2)
@@ -68,11 +48,7 @@ public class CubicSpline {
                         var left = current[0];
                         var right = current[1];
                         current.RemoveRange(0, 2);
-                        var simplified = new CubicBezier();
-                        simplified.p0 = left.Bezier.p0;
-                        simplified.p1 = left.Bezier.p2;
-                        simplified.p2 = right.Bezier.p1;
-                        simplified.p3 = right.Bezier.p3;
+                        var simplified = new CubicBezier<Vector2, float>(left.Bezier.p0, left.Bezier.p2, right.Bezier.p1, right.Bezier.p3);
                         var newN = new BezierNode(simplified);
                         newN.Left = left;
                         newN.Right = right;
@@ -87,7 +63,7 @@ public class CubicSpline {
             return ret;
         }
 
-        internal static void Evaluate(BezierNode root, float t, List<CubicBezier> ret)
+        internal static void Evaluate(BezierNode root, float t, List<CubicBezier<Vector2, float>> ret)
         {
             var (p1, p2) = CollapsePair((root.Left.Bezier, root.Right.Bezier), root.Bezier, t);
             if (root.Left.Left == null && root.Left.Right == null)
@@ -114,7 +90,7 @@ public class CubicSpline {
     /// <summary>
     /// The cubic bezier curves that make up this spline.
     /// </summary>
-    public List<CubicBezier> Arcs = new();
+    public List<CubicBezier<Vector2, float>> Arcs = new();
     /// <summary>
     /// The starting point of this spline.
     /// </summary>
@@ -135,7 +111,7 @@ public class CubicSpline {
     public CubicSpline Clone()
     {
         var ret = new CubicSpline();
-        ret.Arcs = Arcs.Select(x => new CubicBezier() { p0 = x.p0, p1 = x.p1, p2 = x.p2, p3 = x.p3 }).ToList();
+        ret.Arcs = Arcs.Select(x => new CubicBezier<Vector2, float>(x.p0, x.p1, x.p2, x.p3)).ToList();
         ret.Start = Start;
         ret.Closed = Closed;
         return ret;
@@ -167,11 +143,7 @@ public class CubicSpline {
                     var dest = v.data.points[1];
                     var cp1 = Vector2.Lerp(pos, dest, 1.0f/3.0f);
                     var cp2 = Vector2.Lerp(pos, dest, 2.0f/3.0f);
-                    var bezier = new CubicBezier();
-                    bezier.p0 = pos;
-                    bezier.p1 = cp1;
-                    bezier.p2 = cp2;
-                    bezier.p3 = dest;
+                    var bezier = new CubicBezier<Vector2, float>(pos, cp1, cp2, dest);
                     current.Arcs.Add(bezier);
                     pos = dest;
                     break;
@@ -180,20 +152,12 @@ public class CubicSpline {
                     dest = v.data.points[2];
                     cp1 = Vector2.Lerp(pos, cp, 2.0f/3.0f);
                     cp2 = Vector2.Lerp(cp, dest, 1.0f/3.0f);
-                    bezier = new CubicBezier();
-                    bezier.p0 = pos;
-                    bezier.p1 = cp1;
-                    bezier.p2 = cp2;
-                    bezier.p3 = dest;
+                    bezier = new CubicBezier<Vector2, float>(pos, cp1, cp2, dest);
                     current.Arcs.Add(bezier);
                     pos = dest;
                     break;
                 case PathVerb.Cubic:
-                    bezier = new CubicBezier();
-                    bezier.p0 = pos;
-                    bezier.p1 = v.data.points[1];
-                    bezier.p2 = v.data.points[2];
-                    bezier.p3 = v.data.points[3];
+                    bezier = new CubicBezier<Vector2, float>(pos, v.data.points[1], v.data.points[2], v.data.points[3]);
                     current.Arcs.Add(bezier);
                     pos = v.data.points[3];
                     break;
@@ -205,11 +169,7 @@ public class CubicSpline {
                     float w = v.data.conicWeight;
                     cp1 = v.data.points[0] + w*(cp - v.data.points[0]);
                     cp2 = dest + (1.0f-w)*(cp - dest);
-                    bezier = new CubicBezier();
-                    bezier.p0 = pos;
-                    bezier.p1 = cp1;
-                    bezier.p2 = cp2;
-                    bezier.p3 = dest;
+                    bezier = new CubicBezier<Vector2, float>(pos, cp1, cp2, dest);
                     current.Arcs.Add(bezier);
                     pos = dest;
                     break;
@@ -229,7 +189,7 @@ public class CubicSpline {
         return ret.ToArray();
     }
 
-    internal static (CubicBezier c1, CubicBezier c2) CollapsePair((CubicBezier c1, CubicBezier c2) src, CubicBezier dst, float t)
+    internal static (CubicBezier<Vector2,float> c1, CubicBezier<Vector2, float> c2) CollapsePair((CubicBezier<Vector2, float> c1, CubicBezier<Vector2, float> c2) src, CubicBezier<Vector2, float> dst, float t)
     {
         var dst_c1p0 = dst.p0;
         var dst_c1p1 = (dst.p0 + dst.p1) * 0.5f;
@@ -240,19 +200,18 @@ public class CubicSpline {
         var dst_c2p2 = (dst.p2 + dst.p3) * 0.5f;
         var dst_c2p3 = dst.p3;
 
-        CubicBezier c1 = new CubicBezier();
-        CubicBezier c2 = new CubicBezier();
-
-        c1.p0 = Vector2.Lerp(src.c1.p0, dst_c1p0, t);
-        c1.p1 = Vector2.Lerp(src.c1.p1, dst_c1p1, t);
-        c1.p2 = Vector2.Lerp(src.c1.p2, dst_c1p2, t);
-        c1.p3 = Vector2.Lerp(src.c1.p3, dst_c1p3, t);
-
-        c2.p0 = Vector2.Lerp(src.c2.p0, dst_c2p0, t);
-        c2.p1 = Vector2.Lerp(src.c2.p1, dst_c2p1, t);
-        c2.p2 = Vector2.Lerp(src.c2.p2, dst_c2p2, t);
-        c2.p3 = Vector2.Lerp(src.c2.p3, dst_c2p3, t);
-
+        CubicBezier<Vector2, float> c1 = new (
+            Vector2.Lerp(src.c1.p0, dst_c1p0, t),
+            Vector2.Lerp(src.c1.p1, dst_c1p1, t),
+            Vector2.Lerp(src.c1.p2, dst_c1p2, t),
+            Vector2.Lerp(src.c1.p3, dst_c1p3, t)
+        );
+        CubicBezier<Vector2, float> c2 = new (
+            Vector2.Lerp(src.c2.p0, dst_c2p0, t),
+            Vector2.Lerp(src.c2.p1, dst_c2p1, t),
+            Vector2.Lerp(src.c2.p2, dst_c2p2, t),
+            Vector2.Lerp(src.c2.p3, dst_c2p3, t)
+        );
         return (c1, c2);
     }
 
@@ -433,7 +392,7 @@ public class CubicSpline {
             t = 1.0f - t;
         }
         var ret = new CubicSpline();
-        ret.Arcs = new List<CubicBezier>();
+        ret.Arcs = new List<CubicBezier<Vector2, float>>();
         ret.Start = Vector2.Lerp(a.Start, b.Start, origT);
         ret.Closed = a.Closed && b.Closed;
 
@@ -444,11 +403,12 @@ public class CubicSpline {
         {
             for (int mi = 0; mi < lenA; mi++)
             {
-                var interpolated = new CubicBezier();
-                interpolated.p0 = Vector2.Lerp(arrA[mi].p0, arrB[mi].p0, origT);
-                interpolated.p1 = Vector2.Lerp(arrA[mi].p1, arrB[mi].p1, origT);
-                interpolated.p2 = Vector2.Lerp(arrA[mi].p2, arrB[mi].p2, origT);
-                interpolated.p3 = Vector2.Lerp(arrA[mi].p3, arrB[mi].p3, origT);
+                var interpolated = new CubicBezier<Vector2, float>(
+                    Vector2.Lerp(arrA[mi].p0, arrB[mi].p0, origT),
+                    Vector2.Lerp(arrA[mi].p1, arrB[mi].p1, origT),
+                    Vector2.Lerp(arrA[mi].p2, arrB[mi].p2, origT),
+                    Vector2.Lerp(arrA[mi].p3, arrB[mi].p3, origT)
+                );
                 ret.Arcs.Add(interpolated);
             }
             return ret;
@@ -476,19 +436,20 @@ public class CubicSpline {
             // no subdivision/collapsing
             if (longerIndices.Count == 1)
             {
-                var interpolated = new CubicBezier();
                 var arc1 = longerArr[longerIndices[0]];
                 var arc2 = shorterArr[shorterIndex];
-                interpolated.p0 = Vector2.Lerp(arc1.p0, arc2.p0, t);
-                interpolated.p1 = Vector2.Lerp(arc1.p1, arc2.p1, t);
-                interpolated.p2 = Vector2.Lerp(arc1.p2, arc2.p2, t);
-                interpolated.p3 = Vector2.Lerp(arc1.p3, arc2.p3, t);
+                var interpolated = new CubicBezier<Vector2, float>(
+                    Vector2.Lerp(arc1.p0, arc2.p0, t),
+                    Vector2.Lerp(arc1.p1, arc2.p1, t),
+                    Vector2.Lerp(arc1.p2, arc2.p2, t),
+                    Vector2.Lerp(arc1.p3, arc2.p3, t)
+                );
                 ret.Arcs.Add(interpolated);
                 shorterIndex++;
                 continue;
             }
 
-            var interpolatedList = new List<CubicBezier>();
+            var interpolatedList = new List<CubicBezier<Vector2, float>>();
             var subSpline = new CubicSpline() { Arcs = longerIndices.Select(x => longerArr[x]).ToList() };
             var tree = BezierNode.MakeTree(subSpline, shorterArr[shorterIndex]);
             BezierNode.Evaluate(tree, t, interpolatedList);

@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Numerics;
 
 namespace AnimLib {
+    /// <summary>
+    /// A cubic bezier curve.
+    /// </summary>
     public class CubicBezier<T,F> 
         where T : 
             IMultiplyOperators<T, F, T>,
@@ -10,15 +13,35 @@ namespace AnimLib {
         where F :
             IFloatingPoint<F>
     {
-        public T p1, p2, p3, p4;
-        public CubicBezier(T p1, T p2, T p3, T p4) {
+        /// <summary>
+        /// Control point.
+        /// </summary>
+        public T p0, p1, p2, p3;
+
+        /// <summary>
+        /// Constructs a list of control points.
+        /// </summary>
+        public T[] Points {
+            get {
+                return new T[] { p0, p1, p2, p3 };
+            }
+        }
+
+        /// <summary>
+        /// Creates a cubic bezier curve with given control points.
+        /// </summary>
+        public CubicBezier(T p0, T p1, T p2, T p3) {
+            this.p0 = p0;
             this.p1 = p1;
             this.p2 = p2;
             this.p3 = p3;
-            this.p4 = p4;
         }
+
+        /// <summary>
+        /// Evaluates the curve at t.
+        /// </summary>
         public T Evaluate(F t) {
-            return BezierCurve.Cubic<T, F>(this.p1, this.p2, this.p3, this.p4, t);
+            return BezierCurve.Cubic<T, F>(this.p0, this.p1, this.p2, this.p3, t);
         }
     }
 
