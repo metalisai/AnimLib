@@ -32,7 +32,10 @@ public class PlayerScene {
         }
     }
 
-    internal PlayerScene() {
+    /// <summary>
+    /// Creates a new empty scene.
+    /// </summary>
+    public PlayerScene() {
     }
 
     [JsonConstructor]
