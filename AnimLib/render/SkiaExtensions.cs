@@ -50,7 +50,7 @@ public static class SkiaExtensions
                     break;
             }
         }
-        return pathBuilder.GetPath();
+        return pathBuilder.Build();
     }
 
     public static SKPath ToSKPath(this ShapePath p) {

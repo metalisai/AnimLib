@@ -63,7 +63,7 @@ internal class LinearSpline {
         if (endLinear.closed) {
             pathBuilder.Close();
         }
-        return pathBuilder.GetPath();
+        return pathBuilder.Build();
     }
 
 }

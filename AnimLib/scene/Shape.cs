@@ -34,7 +34,7 @@ public class PlayerShape : SceneObject2D
         pb.MoveTo(Vector2.ZERO);
         pb.CubicTo(new Vector2(2.0f, 0.0f), new Vector2(2.0f, 2.0f), new Vector2(3.0f, 3.0f));
         pb.CubicTo(new Vector2(4.0f, 4.0f), new Vector2(5.0f, 4.0f), new Vector2(6.0f, 4.0f));
-        this.path = pb.GetPath().path.Select(x => new PlayerPathVerb() { verb = x.Item1, data = x.Item2}).ToArray();
+        this.path = pb.Build().path.Select(x => new PlayerPathVerb() { verb = x.Item1, data = x.Item2}).ToArray();
     }
 
     [JsonConstructor]

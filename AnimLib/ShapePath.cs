@@ -123,7 +123,7 @@ public class ShapePath {
             {
                 builder.Close();
             }
-            return builder.GetPath();
+            return builder.Build();
         }
     }
 

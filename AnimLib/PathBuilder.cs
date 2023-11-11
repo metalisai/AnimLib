@@ -234,7 +234,7 @@ public class PathBuilder {
     /// <summary>
     /// Convert the path builder to a <see cref="ShapePath"/>.
     /// </summary>
-    public ShapePath GetPath() {
+    public ShapePath Build() {
         return this;
     }
     
