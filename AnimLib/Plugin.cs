@@ -7,13 +7,31 @@ namespace AnimLib;
 /// Settings which are used to configure the animation process.
 /// </summary>
 public class AnimationSettings {
+    /// <summary>
+    /// The name of the animation.
+    /// </summary>
     public string Name = Guid.NewGuid().ToString();
+    /// <summary>
+    /// The target FPS of the animation.
+    /// </summary>
     public double FPS = 60.0;
+    /// <summary>
+    /// The target frame width.
+    /// </summary>
     public int Width = 1920;
+    /// <summary>
+    /// The target frame height.
+    /// </summary>
     public int Height = 1080;
+    /// <summary>
+    /// The maximum length of the animation in seconds.
+    /// </summary>
     public double MaxLength = 600.0;
 
-    public AnimationSettings Clone() {
+    /// <summary>
+    /// Creates a copy of the settings.
+    /// </summary>
+    internal AnimationSettings Clone() {
         return new AnimationSettings() {
             Name = this.Name,
             FPS = this.FPS,
@@ -28,14 +46,20 @@ public class AnimationSettings {
 /// The animation behaviour is the main entry point for the animation process.
 /// </summary>
 public interface AnimationBehaviour {
+    /// <summary>
+    /// The animation procedure.
+    /// </summary>
     Task Animation(World world, Animator animator);
+    /// <summary>
+    /// The initialization procedure.
+    /// </summary>
     void Init(AnimationSettings settings);
 }
 
 /// <summary>
 /// Builtin behaviour in case no behaviour is specified.
 /// </summary>
-public class NoProjectBehaviour : AnimationBehaviour {
+internal class NoProjectBehaviour : AnimationBehaviour {
     public void Init(AnimationSettings settings) {
         settings.MaxLength = 1.0;
     }
@@ -61,7 +85,7 @@ public class NoProjectBehaviour : AnimationBehaviour {
 /// <summary>
 /// Builtin behaviour in case the specified behaviour has an error.
 /// </summary>
-public class ErrorBehaviour : AnimationBehaviour {
+internal class ErrorBehaviour : AnimationBehaviour {
     public void Init(AnimationSettings settings) {
         settings.MaxLength = 1.0;
     }
@@ -88,7 +112,7 @@ public class ErrorBehaviour : AnimationBehaviour {
 /// <summary>
 /// Builtin behaviour in case the project is loaded but no assembly containing the behaviour is found.
 /// </summary>
-public class EmptyBehaviour : AnimationBehaviour {
+internal class EmptyBehaviour : AnimationBehaviour {
     public void Init(AnimationSettings settings) {
         settings.MaxLength = 1.0;
     }

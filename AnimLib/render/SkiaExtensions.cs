@@ -5,7 +5,7 @@ namespace AnimLib;
 /// <summary>
 /// Extension methods to convert between AnimLib and SkiaSharp types.
 /// </summary>
-public static class SkiaExtensions
+internal static class SkiaExtensions
 {
     public static SKPoint ToSKPoint(this Vector2 v) {
         return new SKPoint(v.x, v.y);

@@ -28,7 +28,7 @@ public interface IColored {
     Color Color { get; set; }
 }
 
-public interface RendererResource {
+internal interface IRendererResource {
     string GetOwnerGuid();
 }
 
@@ -57,19 +57,35 @@ internal class WorldResources : IDisposable {
     }
 }
 
-public class ColoredTriangleMeshGeometry : RendererResource {
+/// <summary>
+/// A solid color triangle mesh.
+/// </summary>
+public class ColoredTriangleMeshGeometry : IRendererResource {
+    /// <summary>
+    /// The vertices of the mesh.
+    /// </summary>
     public Vector3[] vertices;
+    /// <summary>
+    /// The indices referencing the vertices.
+    /// </summary>
     public uint[] indices;
+    /// <summary>
+    /// Vertex colors.
+    /// </summary>
     public Color[] colors;
+    /// <summary>
+    /// The texture coordinates.
+    /// </summary>
     public Vector2[] edgeCoordinates;
-    public int VAOHandle = -1;
-    public int VBOHandle = -1;
-    public int EBOHandle = -1;
-    public bool Dirty = true;
-    // used by renderer to know who owns the resource (to know what can be deallocated)
-    public string ownerGuid;
 
-    public ColoredTriangleMeshGeometry(string ownerGuid) {
+    internal int VAOHandle = -1;
+    internal int VBOHandle = -1;
+    internal int EBOHandle = -1;
+    internal bool Dirty = true;
+    // used by renderer to know who owns the resource (to know what can be deallocated)
+    internal string ownerGuid;
+
+    internal ColoredTriangleMeshGeometry(string ownerGuid) {
         this.ownerGuid  = ownerGuid;
     }
 
@@ -91,11 +107,11 @@ public class ColoredTriangleMesh/* : VisualEntity*/ {
     public int entityId = -1;
 }
 
-public class RendererHandle {
+internal class RendererHandle {
     public ColoredTriangleMeshGeometry Handle;
 }
 
-public class RendererAnimation {
+internal class RendererAnimation {
     public Vector3? point;
     public Vector3? screenPoint;
     public float progress;
@@ -213,7 +229,7 @@ public class World
         this.currentEditor = null;
     }
 
-    public World(AnimationSettings settings) {
+    internal World(AnimationSettings settings) {
         this.settings = settings.Clone();
         current = this;
         EntityResolver = new EntityResolver {
@@ -231,7 +247,7 @@ public class World
         return entityId++;
     }
 
-    public void Update(double dt) {
+    internal void Update(double dt) {
         /*foreach(var label in _labels) {
             LabelState state = ((LabelState)label.state);
             var val = state.target.GetLabelWorldCoordinate(state.style, ((VisualEntity)state.target).state);

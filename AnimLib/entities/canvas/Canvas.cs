@@ -82,9 +82,15 @@ internal class CanvasState : EntityState3D {
     }
 }
 
+/// <summary>
+/// A canvas is a 2D plane in 3D space. It is defined by a center, a normal, an up vector, and a size. 2D objects are always created on a canvas.
+/// </summary>
 public class Canvas : VisualEntity3D {
     [ThreadStatic]
     static Canvas _default;
+    /// <summary>
+    /// The default canvas. Uses screen coordinates and is rendered directly on screen.
+    /// </summary>
     public static Canvas Default {
         get {
             return _default;
@@ -95,6 +101,9 @@ public class Canvas : VisualEntity3D {
         }
     }
 
+    /// <summary>
+    /// The width of the canvas.
+    /// </summary>
     public float Width {
         get {
             return ((CanvasState)state).width;
@@ -104,6 +113,9 @@ public class Canvas : VisualEntity3D {
         }
     }
 
+    /// <summary>
+    /// The height of the canvas.
+    /// </summary>
     public float Height {
         get {
             return ((CanvasState)state).height;
@@ -113,6 +125,9 @@ public class Canvas : VisualEntity3D {
         }
     }
     
+    /// <summary>
+    /// The center of the canvas.
+    /// </summary>
     public Vector3 Center {
         get {
             return ((CanvasState)state).center;
@@ -122,6 +137,9 @@ public class Canvas : VisualEntity3D {
         }
     }
 
+    /// <summary>
+    /// The normal vector of the canvas.
+    /// </summary>
     public Vector3 Normal {
         get {
             return ((CanvasState)state).normal;
@@ -131,6 +149,9 @@ public class Canvas : VisualEntity3D {
         }
     }
 
+    /// <summary>
+    /// Create a canvas with the given name given a ortho camera.
+    /// </summary>
     public Canvas(string name, OrthoCamera cam) : base(new CanvasState(name)) {
         var cs = state as CanvasState;
         cs.width = cam.Width;
@@ -141,7 +162,10 @@ public class Canvas : VisualEntity3D {
         cs.is2d = true;
     }
 
-    // identity - x is width, y is height, z is flat/depth
+    /// <summary>
+    /// Create a canvas.
+    /// identity - x is width, y is height, z is flat/depth
+    /// </summary>
     public Canvas(string name, Vector3 center, Vector3 up, Vector3 normal, Vector2 size) : base(new CanvasState(name)){
         var cs = state as CanvasState;
         cs.center = center;
@@ -151,19 +175,24 @@ public class Canvas : VisualEntity3D {
         cs.height = size.y;
     }
 
+    /// <summary>
+    /// Copy constructor.
+    /// </summary>
     public Canvas(Canvas c) : base(c) {
     }
 
+    /// <summary>
+    /// A matrix that transforms from normalized canvas coordinates to world coordinates.
+    /// </summary>
     public M4x4 CanvasToWorld {
         get {
             return (state as CanvasState).NormalizedCanvasToWorld;
         }
     }
-    // only possible when canvas is parallel to camera near plane
-    public M3x3 GetAffineTransform(PerspectiveCamera cam, Vector2 screenPos, Vector2 screenSize) {
-        throw new NotImplementedException();
-    }
 
+    /// <summary>
+    /// Clone this canvas.
+    /// </summary>
     public override object Clone() {
         return new Canvas(this);
     }

@@ -7,7 +7,7 @@ namespace AnimLib;
 
 // tuples don't seem to be serializable, so we need this..
 [Serializable]
-public struct PlayerPathVerb {
+internal struct PlayerPathVerb {
     [JsonInclude]
     public PathVerb verb;
     [JsonInclude]
@@ -15,7 +15,7 @@ public struct PlayerPathVerb {
 }
 
 [Serializable]
-public class PlayerShape : SceneObject2D
+internal class PlayerShape : SceneObject2D
 {
     [ShowInEditor]
     public Color color { get; set; } = Color.VIOLET;

@@ -1,6 +1,4 @@
-using System;
-
-public class Rect {
+internal class Rect {
     public Rect(float x, float y, float width, float height) {
         this.x = x;
         this.y = y;
