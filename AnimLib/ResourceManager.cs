@@ -9,7 +9,7 @@ namespace AnimLib;
 /// <summary>
 /// A manager for resources and project files associated with an animation. Serializes and stores animation state in a zip archive (the .animlib project file).
 /// </summary>
-public partial class ResourceManager {
+internal partial class ResourceManager {
 
     object rlock = new object();
 

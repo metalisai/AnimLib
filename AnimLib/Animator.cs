@@ -10,7 +10,7 @@ namespace AnimLib;
 /// The animator API that's passed to the animation behaviour. Stores state related to the animating process.
 /// </summary>
 public class Animator {
-    public class AnimationHandle2D {
+    internal class AnimationHandle2D {
         public string Identifier;
         public double StartTime;
         public double EndTime;
@@ -18,23 +18,31 @@ public class Animator {
         public Vector2 Anchor;
     }
 
-    public class AnimationHandle3D {
+    internal class AnimationHandle3D {
         public string Identifier;
         public double StartTime;
         public double EndTime;
         public Vector3 Position;
     }
 
+    /// <summary>
+    /// The currently active animator.
+    /// </summary>
     public static Animator Current { get; internal set; }
 
-    ResourceManager resourceManager;
-    World world;
+    internal ResourceManager resourceManager;
+    internal World world;
+
+    /// <summary>
+    /// The scene of the animation editor. Doesn't include programmatically created entities.
+    /// </summary>
     public PlayerScene Scene;
-    AnimationSettings settings;
-    AnimationPlayer.PlayerProperties props;
+
+    internal AnimationSettings settings;
+    internal AnimationPlayer.PlayerProperties props;
     internal List<AnimationHandle2D> VectorHandles = new List<AnimationHandle2D>();
     internal List<AnimationHandle3D> VectorHandles3D = new List<AnimationHandle3D>();
-    TextPlacement textPlacement;
+    internal TextPlacement textPlacement;
 
     internal Animator(ResourceManager resourceManager, World world, PlayerScene scene, AnimationSettings settings, AnimationPlayer.PlayerProperties props, TextPlacement text) {
         this.resourceManager = resourceManager;
@@ -45,17 +53,20 @@ public class Animator {
         this.textPlacement = text;
     }
 
-    public void BeginAnimate() {
+    internal void BeginAnimate() {
         if (Current != null) {
             throw new Exception("Animator already in use!");
         }
         Current = this;
     }
 
-    public void EndAnimate() {
+    internal void EndAnimate() {
         Current = null;
     }
 
+    /// <summary>
+    /// Get a named color from the Values panel.
+    /// </summary>
     public Color GetColor(string name) {
         Color col;
         if(props.Values.ColorMap.TryGetValue(name, out col)) {
@@ -65,18 +76,30 @@ public class Animator {
         }
     }
 
+    /// <summary>
+    /// Load a font from a stream. The font name can then be used as an identifier for the font. For example Text2D() creation.
+    /// </summary>
     public void LoadFont(Stream stream, string fontname) {
         textPlacement.LoadFont(stream, fontname);
     }
 
+    /// <summary>
+    /// Load a font from a file path. The font name can then be used as an identifier for the font. For example Text2D() creation.
+    /// </summary>
     public void LoadFont(string filename, string fontname) {
         textPlacement.LoadFont(filename, fontname);
     }
 
+    /// <summary>
+    /// Shape a string with the given font and size. Returns a list of shapes and the characters.
+    /// </summary>
     public List<(Shape s, char c)> ShapeText(string texts, Vector2 pos, int size, string font = null) {
         return textPlacement.PlaceTextAsShapes(texts, pos, size, font);
     }
 
+    /// <summary>
+    /// Create a 2D handle that can be moved in the animation editor.
+    /// </summary>
     public Vector2 CreateHandle2D(string name, Vector2 pos, Vector2 anchor = default) {
         string key = settings.Name + "/" + name;
         Vector2 storedPos;
@@ -94,6 +117,9 @@ public class Animator {
         return pos;
     }
 
+    /// <summary>
+    /// Create a 3D handle that can be moved in the animation editor.
+    /// </summary>
     public Vector3 CreateHandle3D(string name, Vector3 pos) {
         string key = settings.Name + "/" + name;
         Vector3 storedPos;
@@ -110,6 +136,9 @@ public class Animator {
         return pos;
     }
     
+    /// <summary>
+    /// Get a sound sample stored within the project.
+    /// </summary>
     public SoundSample? GetSoundResource(string name) {
         string fileName;
         try {
@@ -123,6 +152,9 @@ public class Animator {
         return null;
     }
 
+    /// <summary>
+    /// Get a SVG resource stored within the project.
+    /// </summary>
     public SvgData GetSvgResource(string name) {
         string fileName;
         try {
@@ -140,6 +172,9 @@ public class Animator {
         return null;
     }
 
+    /// <summary>
+    /// Get a texture resource stored within the project. Can be loaded from any common image format.
+    /// </summary>
     public Texture2D GetTextureResource(string name) {
         string fileName;
         try {

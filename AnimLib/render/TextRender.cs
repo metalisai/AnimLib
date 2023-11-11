@@ -4,24 +4,54 @@ using OpenTK.Graphics.OpenGL4;
 
 namespace AnimLib;
 
+/// <summary>
+/// Text horizontal alignment.
+/// </summary>
 public enum TextHorizontalAlignment {
+    /// <summary>
+    /// Unspecified.
+    /// </summary>
     None,
+    /// <summary>
+    /// Align left.
+    /// </summary>
     Left,
+    /// <summary>
+    /// Align center.
+    /// </summary>
     Center,
+    /// <summary>
+    /// Align right.
+    /// </summary>
     Right,
 }
 
+/// <summary>
+/// Text vertical alignment.
+/// </summary>
 public enum TextVerticalAlignment {
+    /// <summary>
+    /// Unspecified.
+    /// </summary>
     None,
+    /// <summary>
+    /// Align up.
+    /// </summary>
     Up,
+    /// <summary>
+    /// Align center.
+    /// </summary>
     Center,
+    /// <summary>
+    /// Align down.
+    /// </summary>
     Down,
 }
 
 /// <summary>
 /// A font cache for rendering text (not used for animations).
 /// </summary>
-public class FontCache {
+internal class FontCache {
     public class CachedGlyph {
         // NOTE: maybe it would be better to call thse U and V?
         public float X;

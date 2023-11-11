@@ -431,9 +431,8 @@ internal class ImguiContext {
     imgui_animlib_draw_menu_t draw_menu_cb;
     imgui_animlib_play_t play_cb;
     imgui_animlib_seek_t seek_cb;
-    IntPtr myCtx;
+    IntPtr ctxHandle;
 
-    IntPtr nativeCtx;
     Dictionary<int, Texture2D> textures = new Dictionary<int, Texture2D>();
     public ImguiContext(int width, int height, IPlatform platform) {
         draw_data_cb = new imgui_animlib_draw_data_cb_t(DrawDataCallback);
@@ -444,10 +443,10 @@ internal class ImguiContext {
 
         var bin_path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
         Console.WriteLine($"Bin path: {bin_path}");
-        myCtx = imgui_animlib_init(draw_data_cb, draw_cb, bin_path);
-        imgui_animlib_set_cb(myCtx, AnimlibCallbackId.AnimlibCallbackId_DrawMenu, Marshal.GetFunctionPointerForDelegate(draw_menu_cb));
-        imgui_animlib_set_cb(myCtx, AnimlibCallbackId.AnimlibCallbackId_Play, Marshal.GetFunctionPointerForDelegate(play_cb));
-        imgui_animlib_set_cb(myCtx, AnimlibCallbackId.AnimlibCallbackId_Seek, Marshal.GetFunctionPointerForDelegate(seek_cb));
+        ctxHandle = imgui_animlib_init(draw_data_cb, draw_cb, bin_path);
+        imgui_animlib_set_cb(ctxHandle, AnimlibCallbackId.AnimlibCallbackId_DrawMenu, Marshal.GetFunctionPointerForDelegate(draw_menu_cb));
+        imgui_animlib_set_cb(ctxHandle, AnimlibCallbackId.AnimlibCallbackId_Play, Marshal.GetFunctionPointerForDelegate(play_cb));
+        imgui_animlib_set_cb(ctxHandle, AnimlibCallbackId.AnimlibCallbackId_Seek, Marshal.GetFunctionPointerForDelegate(seek_cb));
 
         // TODO: free
         //
@@ -455,7 +454,7 @@ internal class ImguiContext {
 
         int w, h, bpp;
         IntPtr pixels;
-        imgui_animlib_get_fonts_texture_data(myCtx, out pixels, out w, out h, out bpp);
+        imgui_animlib_get_fonts_texture_data(ctxHandle, out pixels, out w, out h, out bpp);
         var dstPixels = new byte[w*h*bpp];
         Marshal.Copy(pixels, dstPixels, 0, w*h*bpp);
         var tex = new Texture2D(guid) {
@@ -467,7 +466,7 @@ internal class ImguiContext {
         };
         platform.LoadTexture(tex);
         textures.Add(tex.GLHandle, tex);
-        imgui_animlib_set_font_texture(myCtx, tex.GLHandle);
+        imgui_animlib_set_font_texture(ctxHandle, tex.GLHandle);
 
         Console.WriteLine($"Atlas w: {w} h: {h} bpp: {bpp} pixels: {pixels}");
 
@@ -485,16 +484,16 @@ internal class ImguiContext {
         this.indices.Clear();
         this.commands.Clear();
 
-        imgui_animlib_update(myCtx, width, height, dt, mousePos.x, mousePos.y, left, right, middle, scrollDelta);
-        imgui_animlib_begin_frame(myCtx);
+        imgui_animlib_update(ctxHandle, width, height, dt, mousePos.x, mousePos.y, left, right, middle, scrollDelta);
+        imgui_animlib_begin_frame(ctxHandle);
     }
 
     public IRect SceneWindow(double viewAspect, int textureHandle, bool playing, float cursor, float cursor_max) {
-        return imgui_animlib_scene_window(myCtx, viewAspect, textureHandle, playing, cursor, cursor_max);
+        return imgui_animlib_scene_window(ctxHandle, viewAspect, textureHandle, playing, cursor, cursor_max);
     }
 
     public ImguiContext.DrawList Render() {
-        imgui_animlib_end_frame(myCtx);
+        imgui_animlib_end_frame(ctxHandle);
         var drawList = new DrawList {
             vertices = this.vertices.ToArray(),
             indices = this.indices.ToArray(),
