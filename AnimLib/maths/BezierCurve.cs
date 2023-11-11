@@ -1,21 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace AnimLib {
-    public class CubicBezier1 {
-        public float p1, p2, p3, p4;
-        public CubicBezier1(float p1, float p2, float p3, float p4) {
-            this.p1 = p1;
-            this.p2 = p2;
-            this.p3 = p3;
-            this.p4 = p4;
-        }
-        public float Evaluate(float t) {
-            return BezierCurve.Cubic(this.p1, this.p2, this.p3, this.p4, t);
-        }
-    }
-
-    public class CubicBezier<T> {
+    public class CubicBezier<T,F> 
+        where T : 
+            IMultiplyOperators<T, F, T>,
+            IAdditionOperators<T, T, T>
+        where F :
+            IFloatingPoint<F>
+    {
         public T p1, p2, p3, p4;
         public CubicBezier(T p1, T p2, T p3, T p4) {
             this.p1 = p1;
@@ -23,61 +17,66 @@ namespace AnimLib {
             this.p3 = p3;
             this.p4 = p4;
         }
-        public T Evaluate(float t) {
-            return BezierCurve.Cubic<T>(this.p1, this.p2, this.p3, this.p4, t);
+        public T Evaluate(F t) {
+            return BezierCurve.Cubic<T, F>(this.p1, this.p2, this.p3, this.p4, t);
         }
     }
 
+    /// <summary>
+    /// Utility class for evaluating bezier curves.
+    /// </summary>
     public class BezierCurve {
-        public static float Quadratic(float p1, float p2, float p3, float t) {
-            float omt = 1.0f - t;
-            return omt*omt*p1 + 2.0f*omt*t*p2 + t*t*p3;
+        /// <summary>
+        /// Cubic bezier curve.
+        /// </summary>
+        public static T Cubic<T,F>(T p1, T p2, T p3, T p4, F t) 
+            where T : 
+                IMultiplyOperators<T, F, T>,
+                IAdditionOperators<T, T, T>
+            where F : 
+                IFloatingPoint<F>
+        {
+            F omt = F.One - t;
+            T p1d = p1, p2d = p2, p3d = p3, p4d = p4;
+            return p1d*omt*omt*omt + p2d*F.CreateChecked(3.0)*omt*omt*t + p3d*F.CreateChecked(3.0)*omt*t*t + p4d*t*t*t;
         }
 
-        public static Vector2 Quadratic(Vector2 p1, Vector2 p2, Vector2 p3, float t) {
-            float omt = 1.0f - t;
-            return omt*omt*p1 + 2.0f*omt*t*p2 + t*t*p3;
-        }
-
-        public static Vector3 Quadratic(Vector3 p1, Vector3 p2, Vector3 p3, float t) {
-            float omt = 1.0f - t;
-            return omt*omt*p1 + 2.0f*omt*t*p2 + t*t*p3;
-        }
-
-        public static float Cubic(float p1, float p2, float p3, float p4, float t) {
-            float omt = 1.0f - t;
-            return omt*omt*omt*p1 + 3*omt*omt*t*p2 + 3*omt*t*t*p3 + t*t*t*p4;
-        }
-
-        public static Vector2 Cubic(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4, float t) {
-            float omt = 1.0f - t;
-            return omt*omt*omt*p1 + 3*omt*omt*t*p2 + 3*omt*t*t*p3 + t*t*t*p4;
-        }
-
-        public static Vector3 Cubic(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4, float t) {
-            float omt = 1.0f - t;
-            return omt*omt*omt*p1 + 3*omt*omt*t*p2 + 3*omt*t*t*p3 + t*t*t*p4;
-        }
-
-        public static T Cubic<T>(T p1, T p2, T p3, T p4, float t) {
-            float omt = 1.0f - t;
-            dynamic p1d = p1, p2d = p2, p3d = p3, p4d = p4;
-            return omt*omt*omt*p1d + 3.0f*omt*omt*t*p2d + 3.0f*omt*t*t*p3d + t*t*t*p4d;
+        /// <summary>
+        /// Quadratic bezier curve.
+        /// </summary>
+        public static T Quadratic<T,F>(T p1, T p2, T p3, F t) 
+            where T : 
+                IMultiplyOperators<T, F, T>,
+                IAdditionOperators<T, T, T>
+            where F :
+                IFloatingPoint<F>
+        {
+            F omt = F.One - t;
+            T p1d = p1, p2d = p2, p3d = p3;
+            return p1d*omt*omt + p2d*F.CreateChecked(2.0f)*omt*t + p3d*t*t;
         }
 
         /// <summary>
         /// Rational quadratic bezier curve.
         /// </summary>
-        public static Vector2 Conic(Vector2 p0, Vector2 p1, Vector2 p2, float conicWeight, float t) {
-            float omt = 1.0f - t;
-            float omt2 = omt*omt;
-            float denom = omt2 + 2.0f*conicWeight*t*omt + t*t;
-            var inner = omt2*p0 + 2.0f*conicWeight*t*omt*p1 + t*t*p2;
-            return (1.0f / denom) * inner;
+        public static T Conic<T,F>(T p1, T p2, T p3, F conicWeight, F t) 
+            where T : 
+                IMultiplyOperators<T, F, T>,
+                IAdditionOperators<T, T, T>
+            where F :
+                IFloatingPoint<F>
+        {
+            F omt = F.One - t;
+            F omt2 = omt*omt;
+            F denom = omt2 + F.CreateChecked(2.0)*conicWeight*t*omt + t*t;
+            T inner = p1*omt2 + p2*F.CreateChecked(2.0)*conicWeight*t*omt + p3*t*t;
+            return inner*(F.One / denom);
         }
 
-        // first and last curves are quadratic
-        // middle curves are cubic, but one of the handles is mirrored from next/previous curve
+        /// <summary>
+        /// Linearizes a spline. First and last curves are quadratic
+        /// Middle curves are cubic, but one of the handles is mirrored from next/previous curve.
+        /// </summary>
         public static Vector2[] LinearizeSpline(Vector2[] spline, int segsPerCurve) {
             float step = 1.0f / segsPerCurve;
             var ret = new List<Vector2>();

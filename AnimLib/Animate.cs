@@ -45,10 +45,10 @@ public static class Animate {
         EaseInOutElastic,
     }
 
-    static CubicBezier1 bouncy1 = new CubicBezier1(0.0f, 0.0f, 1.5f, 1.0f);
-    static CubicBezier1 smooth1 = new CubicBezier1(0.0f, 0.0f, 1.0f, 1.0f);
+    static CubicBezier<float,float> bouncy1 = new (0.0f, 0.0f, 1.5f, 1.0f);
+    static CubicBezier<float,float> smooth1 = new (0.0f, 0.0f, 1.0f, 1.0f);
 
-    static CubicBezier<Vector2> smooth = new CubicBezier<Vector2>(new Vector2(0.0f, 0.0f), new Vector2(0.33f, 0.0f), new Vector2 (0.66f, 1.0f), new Vector2(1.0f, 1.0f));
+    static CubicBezier<Vector2,float> smooth = new CubicBezier<Vector2,float>(new Vector2(0.0f, 0.0f), new Vector2(0.33f, 0.0f), new Vector2 (0.66f, 1.0f), new Vector2(1.0f, 1.0f));
 
     // Evaluate curve at t
     private static float EvtCurve(float t, InterpCurve curve) {

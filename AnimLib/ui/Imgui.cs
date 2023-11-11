@@ -1,6 +1,4 @@
 using System;
-using OpenTK.Input;
-using OpenTK.Graphics.OpenGL4;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 

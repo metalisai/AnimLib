@@ -1,11 +1,16 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Text.Json.Serialization;
 
 namespace AnimLib
 {
     [Serializable]
-    public struct Vector2 : IEquatable<Vector2>{
+    public struct Vector2 : IEquatable<Vector2>,
+        IMultiplyOperators<Vector2, float, Vector2>,
+        IAdditionOperators<Vector2, Vector2, Vector2>,
+        ISubtractionOperators<Vector2, Vector2, Vector2>
+    {
         public float x, y;
         public static readonly Vector2 ZERO = new Vector2();
         public static readonly Vector2 ONE = new Vector2(1.0f, 1.0f);
