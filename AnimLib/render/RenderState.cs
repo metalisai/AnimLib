@@ -136,22 +136,13 @@ internal class RenderState
                     this.debugCamRot = Vector2.ZERO;
                 }
             }
-            /*if(ImGui.GetCurrentContext() != IntPtr.Zero) {
-                var io = ImGui.GetIO();
-                io.KeysDown[(int)args.Key] = true;
-            }*/
+            ImguiContext.KeyEdge((uint)args.Key, true);
         };
         platform.PKeyUp += (object sender, KeyboardKeyEventArgs args) => {
-            /*if(ImGui.GetCurrentContext() != IntPtr.Zero) {
-                var io = ImGui.GetIO();
-                io.KeysDown[(int)args.Key] = false;
-            }*/
+            ImguiContext.KeyEdge((uint)args.Key, false);
         };
         platform.PKeyPress += (object sender, KeyPressEventArgs args) => {
-            /*if(ImGui.GetCurrentContext() != IntPtr.Zero) {
-                var io = ImGui.GetIO();
-                io.AddInputCharacter(args.KeyChar);
-            }*/
+            ImguiContext.AddInputCharacter(args.KeyChar);
         };
 
         this.OnUpdate += (double dtd) => {
@@ -292,10 +283,13 @@ internal class RenderState
     bool wasOverridden = false;
 
     private void RenderFrame(object sender, FrameEventArgs args) {
+        Performance.BeginFrame();
+
         bool sceneUpdated = overrideCamera || wasOverridden || SceneStatus == AnimationPlayer.FrameStatus.New;
         wasOverridden = overrideCamera;
         //bool sceneUpdated = true;
         if(sceneUpdated) {
+            using var _ = new Performance.Call("Clear view buffers");
             foreach(var view in views) {
                 view.Buffer?.Clear();
                 view.Buffer?.OnPreRender();
@@ -307,20 +301,27 @@ internal class RenderState
         
         // TODO: use actual frame rate
         imgui.Update(uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2, 1.0f/60.0f, mousePos, mouseLeft, mouseRight, false, scrollDelta);
+        scrollDelta = 0.0f;
 
-        foreach(var view in views) {
-            view.BeginFrame();
+        {
+            using var _ = new Performance.Call("BeginFrame views");
+            foreach(var view in views) {
+                view.BeginFrame();
+            }
         }
         if(OnUpdate != null) {
+            using var _ = new Performance.Call("RenderState.OnUpdate");
             OnUpdate(args.Time);
         }
         
         if(OnPreRender != null) {
+            using var _ = new Performance.Call("RenderState.OnPreRender");
             OnPreRender();
         }
         // Render scene
         if(currentScene != null)
         {
+            using var _ = new Performance.Call("Render views");
             Performance.views = views.Count;
             sw.Restart();
             if(sceneUpdated) {
@@ -348,20 +349,25 @@ internal class RenderState
             Performance.TimeToRenderViews = sw.Elapsed.TotalSeconds;
         }
 
-        if(OnPostRender != null) {
-            OnPostRender();
-        }
-
         if(sceneUpdated) {
+            using var _ = new Performance.Call("OnPostRender views");
             foreach(var view in views) {
                 view.Buffer?.OnPostRender();
             }
         }
 
+        if(OnPostRender != null) {
+            using var _ = new Performance.Call("RenderState.OnPostRender");
+            OnPostRender();
+        }
+
         // Render UI
-        //var uiData = UserInterface.EndFrame();
-        var drawList = imgui.Render();
-        platform.RenderGUI(drawList, views, uiRenderBuffer);
+        {
+            using var _ = new Performance.Call("Render UI");
+            //var uiData = UserInterface.EndFrame();
+            var drawList = imgui.Render();
+            platform.RenderGUI(drawList, views, uiRenderBuffer);
+        }
 
         int sceneEntity = -2;
         if (views.Count > 0) {
@@ -376,5 +382,7 @@ internal class RenderState
             else
                 UserInterface.MouseEntityId = guiEntity;
         }
+
+        Performance.EndFrame();
     }
 }

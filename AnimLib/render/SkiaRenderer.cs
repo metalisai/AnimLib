@@ -262,6 +262,7 @@ internal partial class SkiaRenderer
     }
 
     public void RenderCanvas(CanvasSnapshot css, ref M4x4 worldToClip, bool gizmo) {
+        using var _ = new Performance.Call("SkiaRenderer.RenderCanvas");
         var rc = css.Canvas;
         var canvasToClip = worldToClip * rc.NormalizedCanvasToWorld;
         var mat = GetCanvasMatrix2D(ref canvasToClip, rc);
@@ -309,6 +310,8 @@ internal partial class SkiaRenderer
         };
 
         var renderShape = (SKPaint paint, SKPath path, EntityState2D shape, ShapeMode mode, Color color, Color contourColor, float contourSize) => {
+            using var _ = new Performance.Call("SkiaRenderer.RenderShape");
+
             var bounds = path.TightBounds;
             SKMatrix localTransform = GetLocalTransform(shape, rc, new Rect(bounds.Left, bounds.Top, bounds.Width, bounds.Height), css.Entities);
 
@@ -322,6 +325,7 @@ internal partial class SkiaRenderer
 
             // draw fill
             if(mode == ShapeMode.Filled || mode == ShapeMode.FilledContour) {
+                using var _aa = new Performance.Call("SkiaRenderer.RenderShape.Fill");
                 var c = color.ToSKColor();
                 paint.Color = c;
                 paint.Style = SKPaintStyle.Fill;
@@ -329,6 +333,7 @@ internal partial class SkiaRenderer
             }
             // draw contour
             if(mode == ShapeMode.Contour || mode == ShapeMode.FilledContour) {
+                using var _a = new Performance.Call("SkiaRenderer.RenderShape.Contour");
                 var c = contourColor.ToSKColor();
                 paint.Color = c;
                 paint.StrokeWidth = contourSize;
@@ -414,7 +419,10 @@ internal partial class SkiaRenderer
             }
         }
 
-        Flush(css.Canvas.entityId);
+        {
+            using var aaa = new Performance.Call("SkiaRenderer.RenderText");
+            Flush(css.Canvas.entityId);
+        }
     }
 
     int _texture = -1;

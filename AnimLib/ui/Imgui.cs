@@ -345,6 +345,18 @@ internal class ImguiContext {
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_fg_text")]
     public extern static void FgText(Vector2 screen_pos, uint col, [MarshalAs(UnmanagedType.LPStr)] string text_begin);
 
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_tree_node")]
+    public extern static bool TreeNode([MarshalAs(UnmanagedType.LPStr)] string label);
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_tree_pop")]
+    public extern static void TreePop();
+    //EXPORT void imgui_animlib_add_input_character(unsigned int c);
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_add_input_character")]
+    public extern static void AddInputCharacter(uint c);
+    //EXPORT void imgui_animlib_key_edge(unsigned int key, bool newstate);
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_key_edge")]
+    public extern static void KeyEdge(uint key, bool newstate);
+
+
     public static bool ListBox(string label, ref int current_item, string[] items, int height_in_items = 1)
     {
         var itemsPtr = Marshal.AllocHGlobal(items.Length * IntPtr.Size);
@@ -466,6 +478,8 @@ internal class ImguiContext {
     }
 
     public void Update(int width, int height, float dt, Vector2 mousePos, bool left, bool right, bool middle, float scrollDelta) {
+        using var block = new Performance.Call("Imgui Update");
+
         _width = width;
         _height = height;
 

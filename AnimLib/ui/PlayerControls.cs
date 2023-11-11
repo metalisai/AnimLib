@@ -833,6 +833,23 @@ internal class PlayerControls {
         return pos;
     }
 
+    void TraversePerfTree(Performance.Call node)
+    {
+        if (node == null)
+            return;
+        while (node != null)
+        {
+            if (ImguiContext.TreeNode(node.Name))
+            {
+                var time = (double)node.Time*1000.0/(double)System.Diagnostics.Stopwatch.Frequency;
+                ImguiContext.Text($"Time: {time:N3}ms");
+                TraversePerfTree(node.firstChild);
+                ImguiContext.TreePop();
+            }
+            node = node.nextSibling;
+        }
+    }
+
     public void ShowPerf() {
         ImguiContext.SetNextWindowSize(new System.Numerics.Vector2(300, 150), ImguiContext.ImGuiCond.FirstUseEver);
         var wflags = ImguiContext.ImGuiWindowFlags.NoDocking;
@@ -847,6 +864,9 @@ internal class PlayerControls {
         ImguiContext.Text($"Number of scene views: {Performance.views}");
         ImguiContext.Text($"Number of commands in animation: {Performance.CommandCount}");
         ImguiContext.Text($"Last bake time: {Performance.TimeToBake*1000:N3}ms");
+
+        TraversePerfTree(Performance.lastRoot);
+
         ImguiContext.End();
     }
 

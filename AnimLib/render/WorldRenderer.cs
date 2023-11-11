@@ -49,6 +49,7 @@ partial class WorldRenderer : IRenderer {
     }
 
     public void RenderCanvases(SceneView view, CanvasSnapshot[] canvases, M4x4 mat) {
+        using var _ = new Performance.Call("WorldRenderer.RenderCanvases");
         // with software rendering the canvas has to be cleared manually
         // with OpenGL the renderbuffer is cleared by our renderer
         /*if(platform.Skia.Mode == SkiaRenderer.RenderMode.Software) {
@@ -62,7 +63,10 @@ partial class WorldRenderer : IRenderer {
             platform.Skia.RenderCanvas(canvas, ref mat, this.gizmo);
             var buf = view.Buffer as DepthPeelRenderBuffer;
             RestoreState();
-            buf.BlitTextureWithEntityId(platform.Skia.Texture, canvas.Canvas.entityId);
+            {
+                using var __ = new Performance.Call("WorldRenderer buf.BlitTextureWithEntityId");
+                buf.BlitTextureWithEntityId(platform.Skia.Texture, canvas.Canvas.entityId);
+            }
         }
     }
 
@@ -107,6 +111,7 @@ partial class WorldRenderer : IRenderer {
     }
 
     public void RenderMeshes(ColoredTriangleMesh[] meshes, M4x4 camMat, M4x4 screenMat) {
+        using var _ = new Performance.Call("WorldRenderer.RenderMeshes");
         if(meshes.Length > 0) {
             // TODO: winding order is wrong?
             GL.Disable(EnableCap.CullFace);
@@ -396,6 +401,8 @@ partial class WorldRenderer : IRenderer {
     }
 
     public void RenderScene(WorldSnapshot ss, SceneView sv, CameraState cam, bool gizmo) {
+        using var _ = new Performance.Call("WorldRenderer.RenderScene");
+
         this.gizmo = gizmo;
         entRes = ss.resolver;
         long passedcount = 0;
