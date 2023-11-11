@@ -7,11 +7,11 @@ using System.Runtime.InteropServices;
 
 namespace AnimLib;
 
-public class BakedSound {
+internal class BakedSound {
     public SoundTrack[] tracks;
 }
 
-public class SoundTrack {
+internal class SoundTrack {
     public double length;
     public int sampleRate;
     public int Channels {
@@ -91,7 +91,7 @@ public class SoundTrack {
     }
 }
 
-public class TrackPlayer : IDisposable {
+internal class TrackPlayer : IDisposable {
     int sampleIndex;
 
     int SampleIndex {
@@ -181,18 +181,33 @@ public class TrackPlayer : IDisposable {
 
 }
 
+/// <summary>
+/// Builtin sound enumerations.
+/// </summary>
 public enum BuiltinSound {
+    /** Keyboard click sound 1. */
     Keyboard_Click1,
+    /** Keyboard click sound 2. */
     Keyboard_Click2,
+    /** Keyboard click sound 3. */
     Keyboard_Click3,
+    /** Keyboard click sound 4. */
     Keyboard_Click4,
+    /** Keyboard click sound 5. */
     Keyboard_Click5,
+    /** Keyboard click sound 6. */
     Keyboard_Click6,
+    /** Keyboard click sound 7. */
     Keyboard_Click7,
+    /** Keyboard click sound 8. */
     Keyboard_Click8,
+    /** Keyboard click sound 9. */
     Keyboard_Click9,
 }
 
+/// <summary>
+/// A PCM sound sample.
+/// </summary>
 public struct SoundSample {
 
     private static Dictionary<BuiltinSound, (string, string)> builtins = new Dictionary<BuiltinSound, (string, string)>() {
@@ -209,8 +224,19 @@ public struct SoundSample {
 
     private static ConcurrentDictionary<BuiltinSound, SoundSample> cache = new ConcurrentDictionary<BuiltinSound, SoundSample>();
 
+    /// <summary>
+    /// Sample rate in hz.
+    /// </summary>
     public int sampleRate;
+
+    /// <summary>
+    /// Number of channels.
+    /// </summary>
     public int channels;
+
+    /// <summary>
+    /// Samples of each channel.
+    /// </summary>
     public short[][] samples;
 
     private static SoundSample SoundFileToSample (byte[] data) {
@@ -227,6 +253,9 @@ public struct SoundSample {
         };
     }
 
+    /// <summary>
+    /// Load a sound sample from a file. Can parse most formats supported by BASS.
+    /// </summary>
     public static SoundSample? GetFromStream(Stream file) {
         if(file == null) return null;
         var ms = new MemoryStream();
@@ -235,6 +264,9 @@ public struct SoundSample {
         return SoundFileToSample(data);
     }
 
+    /// <summary>
+    /// Load a builtin sound sample.
+    /// </summary>
     public static SoundSample GetBuiltin(BuiltinSound sound) {
         SoundSample ret;
         if(!cache.TryGetValue(sound, out ret)) {
@@ -247,48 +279,18 @@ public struct SoundSample {
     }
 }
 
-public class Sound {
+internal class Sound {
 
     BassInfo bassInfo;
 
     private void InitBass() {
         Bass.UpdatePeriod = 10;
 
-        var res = EmbeddedResources.GetResource("txt", "test.txt");
-        var text = new StreamReader(res).ReadToEnd();
-        Debug.TLog($"File content: {text}");
-
         if(!Bass.Init(-1, 44100, DeviceInitFlags.Default))
         {
             Debug.Error("Failed to initialize audio device");
         }
         Bass.GetInfo(out bassInfo);
-
-        /*var data = EmbeddedResources.GetResourceBytes("sounds", "keyboard_click1.ogg");
-        var sample = Bass.SampleLoad(data, 0, data.Length, 1, BassFlags.Default);
-        var ch = Bass.SampleGetChannel(sample);
-        var sinfo = new SampleInfo();
-        var info = Bass.SampleGetInfo(sample, sinfo);
-        Bass.ChannelPlay(ch);
-        Debug.TLog($"sample {sinfo.Channels} channels {sinfo.Frequency} hz");
-        byte[] sampleData = new byte[sinfo.Length];
-        Bass.SampleGetData(sample, sampleData);*/
-
-        /*var sampleData16 = MemoryMarshal.Cast<byte, short>(sampleData.AsSpan());
-        var track = new SoundTrack(44100, 1, 60.0);
-        track.PushSoundMono(sampleData16, 3.0);
-        track.PushSoundMono(sampleData16, 4.0);
-        track.PushSoundMono(sampleData16, 5.0);
-        track.PushSoundMono(sampleData16, 5.5);
-        track.PushSoundMono(sampleData16, 6.0);
-        //var stream = Bass.CreateStream(data, 0, data.Length, BassFlags.Default);
-        //Bass.ChannelPlay(stream);
-        //System.Threading.Thread.Sleep(100);
-        
-        var player = new TrackPlayer();
-        player.Track = track;
-        player.Play();*/
-        
     }
 
     public Sound() {

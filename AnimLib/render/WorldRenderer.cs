@@ -479,9 +479,6 @@ partial class WorldRenderer : IRenderer {
             //GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
 
 
-            RectTransform.RootTransform = new RectTransform(new Dummy());
-            RectTransform.RootTransform.Size = new Vector2(pbSize.Item1, pbSize.Item2);
-
             if(ss.MeshBackedGeometries != null) {
                 int i = 0;
                 ColoredTriangleMesh[] meshes = new ColoredTriangleMesh[ss.MeshBackedGeometries.Length];

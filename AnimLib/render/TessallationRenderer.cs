@@ -230,9 +230,6 @@ partial class TessallationRenderer : IRenderer, IDisposable {
 
         M4x4 worldToClip = cam.CreateWorldToClipMatrix((float)pbSize.Item1/(float)pbSize.Item2);
 
-        RectTransform.RootTransform = new RectTransform(new Dummy());
-        RectTransform.RootTransform.Size = new Vector2(pbSize.Item1, pbSize.Item2);
-
         ctx.worldToClip = worldToClip;
         ctx.screenToClip = smat;
         ctx.camPosWorld = cam.position;

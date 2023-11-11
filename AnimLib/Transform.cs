@@ -4,8 +4,14 @@ namespace AnimLib;
 /// A 3D transform, consisting of a position, rotation, and scale.
 /// </summary>
 public class Transform {
+    /// <summary>
+    /// The entity this transform is attached to.
+    /// </summary>
     protected VisualEntity3D entity;
 
+    /// <summary>
+    /// The parent transform.
+    /// </summary>
     public Transform parent {
         get {
             return entity.state.parentId == 0 ? null : ((VisualEntity3D)World.current.EntityResolver.GetEntity(entity.state.parentId)).Transform;
@@ -15,13 +21,20 @@ public class Transform {
         }
     }
 
+    /// <summary>
+    /// The world position of this transform.
+    /// </summary>
     public virtual Vector3 WorldPos {
         get {
             // TODO
+            Debug.Warning("Warning: WorldPos not implemented for this type of transform.");
             return Pos;
         }
     }
 
+    /// <summary>
+    /// The local position of this transform.
+    /// </summary>
     public Vector3 Pos {
         get {
             return entity.state.position;
@@ -31,6 +44,9 @@ public class Transform {
         }
     }
 
+    /// <summary>
+    /// The local rotation of this transform.
+    /// </summary>
     public Quaternion Rot {
         get {
             return entity.state.rotation;
@@ -41,6 +57,9 @@ public class Transform {
         }
     }
 
+    /// <summary>
+    /// The local scale of this transform.
+    /// </summary>
     public Vector3 Scale {
         get {
             return entity.state.scale;
@@ -51,6 +70,9 @@ public class Transform {
         }
     }
 
+    /// <summary>
+    /// Creates a new transform.
+    /// </summary>
     public Transform(VisualEntity3D entity, Vector3 pos, Quaternion rot) {
         this.entity = entity;
         this.Pos = pos;
@@ -58,6 +80,9 @@ public class Transform {
         this.Scale = Vector3.ONE;
     }
 
+    /// <summary>
+    /// Creates a new transform.
+    /// </summary>
     public Transform(VisualEntity3D entity, Vector3 pos, Quaternion rot, Vector3 scale) {
         this.entity = entity;
         this.Pos = pos;
@@ -65,6 +90,9 @@ public class Transform {
         this.Scale = scale;
     }
 
+    /// <summary>
+    /// Copy constructor.
+    /// </summary>
     public Transform(Transform t) {
         this.entity = t.entity;
         this.Pos = t.Pos;
@@ -72,40 +100,10 @@ public class Transform {
         this.Scale = t.Scale;
     }
 
+    /// <summary>
+    /// Creates a new transform.
+    /// </summary>
     public Transform(VisualEntity3D entity) {
         this.entity = entity;
-    }
-}
-
-public class RectTransform : Transform {
-    public static RectTransform RootTransform = new RectTransform(new Dummy());
-    public Vector2 Size;
-    public Vector2 Anchor;
-
-    public RectTransform(RectTransform rect) : base(rect.entity) {
-        this.Pos = rect.Pos;
-        this.Rot = rect.Rot;
-        this.Scale = rect.Scale;
-        this.Size = rect.Size;
-        this.Anchor = rect.Anchor;
-        this.parent = rect.parent;
-    }
-
-    public RectTransform(VisualEntity3D ent) : base(ent) {
-    }
-
-    public override Vector3 WorldPos {
-        get {
-            float x,y;
-            if(parent != null) {
-                x = ((RectTransform)parent).Size.x*Anchor.x;
-                y = ((RectTransform)parent).Size.y*Anchor.y;
-            } else {
-                x = RootTransform.Size.x*Anchor.x;
-                y = RootTransform.Size.y*Anchor.y;
-            }
-            var p = new Vector3(x, y, 0.0f);
-            return Pos+p;
-        }
     }
 }

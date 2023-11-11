@@ -110,7 +110,6 @@ internal class RenderState
         if(uiRenderBuffer.Size.Item1 != width || uiRenderBuffer.Size.Item2 != height) {
             Debug.TLog($"Resize window to {width}x{height}");
             uiRenderBuffer.Resize(width, height);
-            RectTransform.RootTransform.Size = new Vector2(uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2);
         }
     }
 
