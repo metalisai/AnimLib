@@ -2,6 +2,7 @@ bin
 deps
 obj
 Videos
+docs
 #vim
 *.swp
 #imgui
@@ -13,3 +14,4 @@ Videos
 *.code-workspace
 todo.txt
 
+!docs/docfx.json

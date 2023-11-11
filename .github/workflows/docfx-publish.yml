@@ -22,8 +22,6 @@ jobs:
         run: dotnet restore
       - name: Install docfx
         run: dotnet tool update -g docfx
-      - name: Create docset
-        run: docfx init
       - name: DocFX Build
         working-directory: docs
         run: docfx docfx.json
