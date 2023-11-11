@@ -20,13 +20,15 @@
         ],
         "exclude": [
           "_site/**"
-        ]
+        ],
+        "src": ".."
       }
     ],
     "resources": [
       {
         "files": [
-          "images/**"
+          "images/**",
+          "../img/**"
         ]
       }
     ],
