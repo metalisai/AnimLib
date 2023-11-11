@@ -285,6 +285,15 @@ internal class RenderState
     private void RenderFrame(object sender, FrameEventArgs args) {
         Performance.BeginFrame();
 
+        // TODO: use actual frame rate
+        imgui.Update(uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2, 1.0f/60.0f, mousePos, mouseLeft, mouseRight, false, scrollDelta);
+        scrollDelta = 0.0f;
+
+        if(OnPreRender != null) {
+            using var _ = new Performance.Call("RenderState.OnPreRender");
+            OnPreRender();
+        }
+
         bool sceneUpdated = overrideCamera || wasOverridden || SceneStatus == AnimationPlayer.FrameStatus.New;
         wasOverridden = overrideCamera;
         //bool sceneUpdated = true;
@@ -299,10 +308,6 @@ internal class RenderState
 
         platform.ClearBackbuffer(0, 0, uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2);
         
-        // TODO: use actual frame rate
-        imgui.Update(uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2, 1.0f/60.0f, mousePos, mouseLeft, mouseRight, false, scrollDelta);
-        scrollDelta = 0.0f;
-
         {
             using var _ = new Performance.Call("BeginFrame views");
             foreach(var view in views) {
@@ -314,10 +319,6 @@ internal class RenderState
             OnUpdate(args.Time);
         }
         
-        if(OnPreRender != null) {
-            using var _ = new Performance.Call("RenderState.OnPreRender");
-            OnPreRender();
-        }
         // Render scene
         if(currentScene != null)
         {

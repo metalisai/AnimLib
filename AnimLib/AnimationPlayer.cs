@@ -363,9 +363,9 @@ internal class AnimationPlayer {
             controls.SetProgress((float)progress, machine.GetPlaybackTime());
             return ret;
         } else {
-            machine.Step(1.0 / (double)settings.FPS);
             var endTime = Math.Min(export.endTime, machine.GetEndTime());
             Debug.Log($"Exporting time {machine.GetPlaybackTime()}/{endTime}");
+            machine.Step(1.0 / (double)settings.FPS);
             var frame = machine.GetWorldSnapshot();
             if(machine.GetPlaybackTime() >= endTime) {
                 export.exporter.Stop();
