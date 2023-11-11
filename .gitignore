@@ -2,7 +2,8 @@ bin
 deps
 obj
 Videos
-docs
+docs/api
+docs/_site
 #vim
 *.swp
 #imgui

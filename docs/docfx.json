@@ -20,15 +20,13 @@
         ],
         "exclude": [
           "_site/**"
-        ],
-        "src": "."
+        ]
       }
     ],
     "resources": [
       {
         "files": [
-          "images/**",
-          "../img/**"
+          "images/**"
         ]
       }
     ],
@@ -38,8 +36,8 @@
       "modern"
     ],
     "globalMetadata": {
-      "_appName": "AnimLib",
-      "_appTitle": "AnimLib - Programmatic animations",
+      "_appName": "",
+      "_appTitle": "",
       "_enableSearch": true,
       "pdf": false
     }
