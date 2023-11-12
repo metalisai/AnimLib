@@ -450,7 +450,7 @@ public class World
         CreateInstantly(entity);
         var c = entity.Color;
         var alpha = c.a;
-        return Animate.InterpT<float>(x => {
+        return Animate.InterpF(x => {
                 c.a = (byte)Math.Round(x*((float)alpha));
                 entity.Color = c;
             }, 0.0f, 1.0f, duration);
@@ -463,7 +463,7 @@ public class World
         CreateInstantly(entity);
         var c = startColor;
         var alpha = c.a;
-        return Animate.InterpT<float>(x => {
+        return Animate.InterpF(x => {
                 c.a = (byte)Math.Round(x*((float)alpha));
                 setColor(c);
             }, 0.0f, 1.0f, duration);
@@ -474,7 +474,7 @@ public class World
     /// </summary>
     public async Task DestroyFadeOut<T>(T entity, float duration) where T : VisualEntity, IColored {
         var c = entity.Color;
-        await Animate.InterpT<float>(x => {
+        await Animate.InterpF(x => {
                 c.a = (byte)Math.Round((1.0f-x)*c.a);
                 entity.Color = c;
             }, 0.0f, 1.0f, duration);

@@ -8,6 +8,7 @@ namespace AnimLib
     [Serializable]
     public struct Vector2 : IEquatable<Vector2>,
         IMultiplyOperators<Vector2, float, Vector2>,
+        IMultiplyOperators<Vector2, double, Vector2>,
         IAdditionOperators<Vector2, Vector2, Vector2>,
         ISubtractionOperators<Vector2, Vector2, Vector2>
     {
@@ -105,6 +106,11 @@ namespace AnimLib
             return new Vector2(a*b.x, a*b.y);
         }
 
+        public static Vector2 operator* (double a, Vector2 b) {
+            float fa = (float)a;
+            return new Vector2(fa*b.x, fa*b.y);
+        }
+
         public static bool operator== (Vector2 a, Vector2 b) {
             return a.x == b.x && a.y == b.y;
         }
@@ -117,12 +123,22 @@ namespace AnimLib
             return new Vector2(b*a.x, b*a.y);
         }
 
+        public static Vector2 operator* (Vector2 a, double b) {
+            float fb = (float)b;
+            return new Vector2(fb*a.x, fb*a.y);
+        }
+
         public static Vector2 operator* (Vector2 a, Vector2 b) {
             return new Vector2(a.x*b.x, a.y*b.y);
         }
 
         public static Vector2 operator/ (Vector2 a, float b) {
             return new Vector2(a.x/b, a.y/b);
+        }
+
+        public static Vector2 operator/ (Vector2 a, double b) {
+            float fb = (float)b;
+            return new Vector2(a.x/fb, a.y/fb);
         }
 
         public static Vector2 operator/ (Vector2 a, Vector2 b) {

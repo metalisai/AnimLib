@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using System.Text.Json.Serialization;
 
 namespace AnimLib
@@ -7,7 +8,12 @@ namespace AnimLib
     /// A 3D vector.
     /// </summary>
     [Serializable]
-    public struct Vector3 {
+    public struct Vector3 :
+        IAdditionOperators<Vector3, Vector3, Vector3>,
+        ISubtractionOperators<Vector3, Vector3, Vector3>,
+        IMultiplyOperators<Vector3, double, Vector3>,
+        IMultiplyOperators<Vector3, float, Vector3>
+    {
         /// <summary>
         /// A component of the vector.
         /// </summary>
@@ -184,6 +190,23 @@ namespace AnimLib
         /// </summary>
         public static Vector3 operator*(float l, Vector3 r) {
             return new Vector3(l*r.x, l*r.y, l*r.z);
+        }
+
+        /// <summary>
+        /// Scale vector by a scalar.
+        /// </summary>
+        public static Vector3 operator*(Vector3 a, double s) 
+        {
+            float fs = (float)s;
+            return new Vector3(a.x*fs, a.y*fs, a.z*fs);
+        }
+
+        /// <summary>
+        /// Scale vector by a scalar.
+        /// </summary>
+        public static Vector3 operator*(double l, Vector3 r) {
+            float fl = (float)l;
+            return new Vector3(fl*r.x, fl*r.y, fl*r.z);
         }
 
         /// <summary>

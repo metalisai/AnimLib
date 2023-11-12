@@ -1,8 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Linq;
-using System.Collections.Generic;
+using System.Numerics;
 
 namespace AnimLib;
 
@@ -51,10 +50,17 @@ public static class Animate {
     static CubicBezier<Vector2,float> smooth = new CubicBezier<Vector2,float>(new Vector2(0.0f, 0.0f), new Vector2(0.33f, 0.0f), new Vector2 (0.66f, 1.0f), new Vector2(1.0f, 1.0f));
 
     // Evaluate curve at t
-    private static float EvtCurve(float t, InterpCurve curve) {
+    private static T EvtCurve<T>(T t, InterpCurve curve) 
+        where T : IFloatingPoint<T>,
+        ISubtractionOperators<T, T, T>,
+        IMultiplyOperators<T, T, T>,
+        IPowerFunctions<T>,
+        ITrigonometricFunctions<T>
+    {
         switch (curve) {
             case InterpCurve.Bouncy:
-            return bouncy1.Evaluate(t);
+            CubicBezier<T, T> bouncy11 = new (T.Zero, T.Zero, T.CreateChecked(1.5), T.One);
+            return bouncy11.Evaluate(t);
             case InterpCurve.Linear:
             return t;
             case InterpCurve.EaseInOut:
@@ -71,6 +77,11 @@ public static class Animate {
     /// <summary>
     /// Orbits a transform perpendicular to the given axis. Movement starts at the current position and orbits the specified angle during the given duration.
     /// </summary>
+    /// <param name="obj">The object's transform to orbit.</param>
+    /// <param name="axis">The axis to orbit around.</param>
+    /// <param name="p">The center of the orbit.</param>
+    /// <param name="angle">The total angle to orbit.</param>
+    /// <param name="duration">The duration of the orbit operation.</param>
     public static async Task OrbitPoint(Transform obj, Vector3 axis, Vector3 p, float angle, float duration) {
         // TODO: velocity ramping not instant
         bool infinite = false;;
@@ -97,6 +108,10 @@ public static class Animate {
     /// <summary>
     /// Offset (move) a 3D entity from its current position.
     /// </summary>
+    /// <param name="t">The transform to offset from it's current location.</param>
+    /// <param name="offset">The offset to move the transform by.</param>
+    /// <param name="duration">The duration of the offset operation.</param>
+    /// <param name="curve">The interpolation curve to use.</param>
     public static async Task Offset(this Transform t, Vector3 offset, double duration = 1.0, InterpCurve curve = InterpCurve.EaseInOut) {
         await InterpT(x => {
             t.Pos = x;
@@ -106,6 +121,10 @@ public static class Animate {
     /// <summary>
     /// Offset (move) a 2D entity from its current position.
     /// </summary>
+    /// <param name="t">The 2D transform to offset from it's current location.</param>
+    /// <param name="offset">The offset to move the transform by.</param>
+    /// <param name="duration">The duration of the offset operation.</param>
+    /// <param name="curve">The interpolation curve to use.</param>
     public static async Task Offset(this Transform2D t, Vector2 offset, double duration = 1.0, InterpCurve curve = InterpCurve.EaseInOut) {
         await InterpT(x => {
             t.Pos = x;
@@ -115,6 +134,10 @@ public static class Animate {
     /// <summary>
     /// Move a 2D entity to a given position.
     /// </summary>
+    /// <param name="t">The 2D transform to move to a new location.</param>
+    /// <param name="moveTo">The position to move the transform to.</param> 
+    /// <param name="duration">The duration of the move operation.</param>
+    /// <param name="curve">The interpolation curve to use.</param>
     public static async Task Move(this Transform2D t, Vector2 moveTo, double duration = 1.0, InterpCurve curve = InterpCurve.EaseInOut) {
         await InterpT(x => {
             t.Pos = x;
@@ -124,6 +147,10 @@ public static class Animate {
     /// <summary>
     /// Move a 3D entity to a given position.
     /// </summary>
+    /// <param name="t">The 3D transform to move to a new location.</param>
+    /// <param name="moveTo">The position to move the transform to.</param>
+    /// <param name="duration">The duration of the move operation.</param>
+    /// <param name="curve">The interpolation curve to use.</param>
     public static async Task Move(this Transform t, Vector3 moveTo, double duration = 1.0, InterpCurve curve = InterpCurve.EaseInOut) {
         await InterpT(x => {
             t.Pos = x;
@@ -133,7 +160,13 @@ public static class Animate {
     /// <summary>
     /// Interpolate a float with given interpolation curve.
     /// </summary>
-    public static async Task InterpF(Action<float> action, float start, float end, double duration, InterpCurve curve = InterpCurve.EaseInOut) {
+    /// <param name="action">The action to perform with the interpolated value.</param>
+    /// <param name="start">The start value of the interpolation.</param>
+    /// <param name="end">The end value of the interpolation.</param>
+    /// <param name="duration">The duration of the interpolation.</param>
+    /// <param name="curve">The interpolation curve to use.</param>
+    public static async Task InterpF(Action<float> action, float start, float end, double duration, InterpCurve curve = InterpCurve.EaseInOut) 
+    {
         double endTime = AnimLib.Time.T + duration;
         while (AnimLib.Time.T < endTime) {
             double progress = 1.0 - (endTime - AnimLib.Time.T)/ duration;
@@ -146,15 +179,31 @@ public static class Animate {
     }
 
     /// <summary>
-    /// Interpolate a dynamic type with given interpolation curve.
+    /// Interpolate a chosen type with given interpolation curve.
     /// </summary>
-    public static async Task InterpT<T>(Action<T> action, T start, T end, double duration, InterpCurve curve = InterpCurve.EaseInOut) {
-        dynamic startD = start;
-        dynamic endD = end;
-        double endTime = AnimLib.Time.T + duration;
-        while (AnimLib.Time.T < endTime) {
-            double progress = 1.0 - (endTime - AnimLib.Time.T)/ duration;
-            var t = (float)Math.Clamp(progress, 0.0f, 1.0f);
+    /// <param name="action">The action to perform with the interpolated value.</param>
+    /// <param name="start">The start value of the interpolation.</param>
+    /// <param name="end">The end value of the interpolation.</param>
+    /// <param name="duration">The duration of the interpolation.</param>
+    /// <param name="curve">The interpolation curve to use.</param>
+    /// <typeparam name="T">The type of the input and output values.</typeparam>
+    /// <typeparam name="F">The type of the duration.</typeparam>
+    public static async Task InterpT<T,F>(Action<T> action, T start, T end, F duration, InterpCurve curve = InterpCurve.EaseInOut) 
+        where T : 
+            IAdditionOperators<T, T, T>,
+            ISubtractionOperators<T, T, T>,
+            IMultiplyOperators<T, F, T>
+        where F : 
+            IFloatingPoint<F>,
+            IPowerFunctions<F>,
+            ITrigonometricFunctions<F>
+    {
+        T startD = start;
+        T endD = end;
+        F endTime = F.CreateChecked(AnimLib.Time.T) + duration;
+        while (F.CreateChecked(AnimLib.Time.T) < endTime) {
+            F progress = F.One - (endTime - F.CreateChecked(AnimLib.Time.T))/ duration;
+            var t = F.Clamp(progress, F.Zero, F.One);
             t = EvtCurve(t, curve);
             action.Invoke(start + (endD - startD) * t);
 
@@ -166,6 +215,11 @@ public static class Animate {
     /// <summary>
     /// Interpolates a <c>IColored</c> entity from a start color to a target color. Uses HSV color space.
     /// </summary>
+    /// <param name="entity">The entity to change color.</param>
+    /// <param name="startColor">The start color.</param>
+    /// <param name="targetColor">The target color.</param>
+    /// <param name="duration">The duration of the color change.</param>
+    /// <param name="curve">The interpolation curve to use.</param>
     public static async Task Color(IColored entity, Color startColor, Color targetColor, double duration, InterpCurve curve = InterpCurve.EaseInOut) {
         double endTime = AnimLib.Time.T + duration;
         while (AnimLib.Time.T < endTime) {
@@ -181,6 +235,10 @@ public static class Animate {
     /// <summary>
     /// Interpolates a <c>IColored</c> entity from its current color to a target color. Uses HSV color space.
     /// </summary>
+    /// <param name="entity">The entity to change color.</param>
+    /// <param name="targetColor">The target color.</param>
+    /// <param name="duration">The duration of the color change.</param>
+    /// <param name="curve">The interpolation curve to use.</param>
     public static Task Color(IColored entity, Color targetColor, double duration, InterpCurve curve = InterpCurve.EaseInOut) {
         return Color(entity, entity.Color, targetColor, duration, curve);
     }
@@ -188,6 +246,8 @@ public static class Animate {
     /// <summary>
     /// Accepts an animation lambda that takes current time as a parameter. The lambda is called every frame until the duration is reached.
     /// </summary>
+    /// <param name="action">The animation lambda.</param>
+    /// <param name="duration">The duration of the animation.</param>
     public static async Task Time(Action<double> action, double duration) {
         double startT = AnimLib.Time.T;
         double endT = AnimLib.Time.T + duration;
@@ -201,6 +261,8 @@ public static class Animate {
     /// <summary>
     /// Accepts a lambda that's called every frame.
     /// </summary>
+    /// <param name="action">The lambda to call every frame.</param>
+    /// <param name="token">The cancellation token that allows cancelling the operation.</param>
     public static async Task Update(Action action, CancellationToken token) {
         while (!token.IsCancellationRequested) {
             action.Invoke();
@@ -211,6 +273,11 @@ public static class Animate {
     /// <summary>
     /// Accepts a lambda that's called every frame with a parameter that follows a sine wave.
     /// </summary>
+    /// <param name="action">The action to call every frame.</param>
+    /// <param name="frequency">The frequency of the sine wave.</param>
+    /// <param name="amplitude">The amplitude of the sine wave.</param>
+    /// <param name="timeOffset">The time offset of the sine wave.</param>
+    /// <param name="duration">The duration of the sine wave.</param>
     public static async Task Sine(Action<float> action, double frequency, double amplitude = 1.0f, double timeOffset = 0.0f, double duration = 0.0) {
         bool infinite = duration <= 0.0;
         double startTime = AnimLib.Time.T;
@@ -227,6 +294,11 @@ public static class Animate {
     /// <summary>
     /// Morphs a shape into another shape.
     /// </summary>
+    /// <param name="startShape">The shape to morph from.</param>
+    /// <param name="endShape">The shape to morph to.</param>
+    /// <param name="duration">The duration of the morph.</param>
+    /// <param name="curve">The interpolation curve to use.</param>
+    /// <param name="destroyStartShape">Whether to destroy the start shape when creating the morph shape.</param>
     public static async Task<Shape> CreateMorph(Shape startShape, Shape endShape, float duration, InterpCurve curve = InterpCurve.EaseInOut, bool destroyStartShape = true)
     {
         var morph = new MorphShape(startShape, endShape);
@@ -253,6 +325,9 @@ public static class Animate {
     /// <summary>
     /// Create text with a fancy animation.
     /// </summary>
+    /// <param name="text">The text to create.</param>
+    /// <param name="mode">The creation mode.</param>
+    /// <param name="charDelay">The delay between creating each character.</param>
     public static async Task CreateText(Text2D text, TextCreationMode mode = TextCreationMode.PathAndFade, float charDelay = 0.1f)
     {
         var last = Task.CompletedTask;
