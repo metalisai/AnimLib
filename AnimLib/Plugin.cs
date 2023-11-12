@@ -11,18 +11,22 @@ public class AnimationSettings {
     /// The name of the animation.
     /// </summary>
     public string Name = Guid.NewGuid().ToString();
+
     /// <summary>
     /// The target FPS of the animation.
     /// </summary>
     public double FPS = 60.0;
+
     /// <summary>
     /// The target frame width.
     /// </summary>
     public int Width = 1920;
+
     /// <summary>
     /// The target frame height.
     /// </summary>
     public int Height = 1080;
+
     /// <summary>
     /// The maximum length of the animation in seconds.
     /// </summary>
@@ -50,6 +54,7 @@ public interface AnimationBehaviour {
     /// The animation procedure.
     /// </summary>
     Task Animation(World world, Animator animator);
+
     /// <summary>
     /// The initialization procedure.
     /// </summary>
@@ -63,6 +68,7 @@ internal class NoProjectBehaviour : AnimationBehaviour {
     public void Init(AnimationSettings settings) {
         settings.MaxLength = 1.0;
     }
+
     public async Task Animation(World world, Animator animator) {
         var hw = new Text2D("No project loaded!");
         hw.Transform.Pos = new Vector2(100.0f, -200.0f);
@@ -89,6 +95,7 @@ internal class ErrorBehaviour : AnimationBehaviour {
     public void Init(AnimationSettings settings) {
         settings.MaxLength = 1.0;
     }
+
     public async Task Animation(World world, Animator animator) {
         var hw = new Text2D();
         hw.Transform.Pos = new Vector2(100.0f, -200.0f);
@@ -116,6 +123,7 @@ internal class EmptyBehaviour : AnimationBehaviour {
     public void Init(AnimationSettings settings) {
         settings.MaxLength = 1.0;
     }
+
     public async Task Animation(World world, Animator animator) {
         var hw = new Text2D();
         hw.Transform.Pos = new Vector2(100.0f, -200.0f);

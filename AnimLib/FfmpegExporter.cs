@@ -95,8 +95,12 @@ internal class FfmpegExporter {
         Stop();
     }
 
-    public void Stop() {
+    public void Stop(bool cancelled = false) {
         if(ffmpegProcess != null) {
+            if (cancelled) {
+                Console.WriteLine("ffmpeg stream cancelled! Killed process.");
+                ffmpegProcess.Kill();
+            }
             ffmpegProcess.StandardInput.Close();
             ffmpegProcess.WaitForExit();
             ffmpegProcess.CancelOutputRead();

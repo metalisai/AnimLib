@@ -353,7 +353,31 @@ internal class ImguiContext {
     //EXPORT void imgui_animlib_key_edge(unsigned int key, bool newstate);
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_key_edge")]
     public extern static void KeyEdge(uint key, bool newstate);
+    //EXPORT void imgui_animlib_progress_bar(float fraction, const ImVec2 *size_arg, const char *overlay);
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_progress_bar")]
+    public extern static void ProgressBarInternal(float fraction, IntPtr size_arg, [MarshalAs(UnmanagedType.LPStr)] string overlay = null);
+    //EXPORT void imgui_animlib_begin_popup(const char *str_id, ImGuiWindowFlags flags);
+    //EXPORT void imgui_animlib_begin_popup_modal(const char *name, bool *p_open, ImGuiWindowFlags flags);
+    //EXPORT void imgui_animlib_end_popup();
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_begin_popup")]
+    public extern static bool BeginPopup([MarshalAs(UnmanagedType.LPStr)] string str_id, ImGuiWindowFlags flags = 0);
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_begin_popup_modal")]
+    public extern static bool BeginPopupModal([MarshalAs(UnmanagedType.LPStr)] string name, ref bool p_open, ImGuiWindowFlags flags = 0);
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_end_popup")]
+    public extern static void EndPopup();
 
+    public static void ProgressBar(float fraction, Vector2? size, string overlay = null)
+    {
+        var sizePtr = IntPtr.Zero;
+        if(size.HasValue) {
+            sizePtr = Marshal.AllocHGlobal(Marshal.SizeOf<Vector2>());
+            Marshal.StructureToPtr(size.Value, sizePtr, false);
+        }
+        ProgressBarInternal(fraction, sizePtr, overlay);
+        if(sizePtr != IntPtr.Zero) {
+            Marshal.FreeHGlobal(sizePtr);
+        }
+    }
 
     public static bool ListBox(string label, ref int current_item, string[] items, int height_in_items = 1)
     {

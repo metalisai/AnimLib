@@ -78,6 +78,26 @@ internal class AnimationPlayer {
     public ResourceManager ResourceManager = new ResourceManager();
 
     AnimationExport export = null;
+
+    public float? ExportProgress {
+        get {
+            if(export == null) return null;
+            return (float)(export.currentProgress / (export.endTime - export.startTime));
+        }
+    }
+
+    public float ExportLength {
+        get {
+            if(export == null) return 0.0f;
+            return (float)(export.endTime - export.startTime);
+        }
+    }
+
+    public bool Exporting {
+        get {
+            return export != null;
+        }
+    }
     
     Thread bakeThread;
 
@@ -98,12 +118,6 @@ internal class AnimationPlayer {
     bool haveProject {
         get {
             return currentBehaviour != null;
-        }
-    }
-
-    public bool Exporting {
-        get {
-            return export != null;
         }
     }
 
@@ -146,6 +160,13 @@ internal class AnimationPlayer {
 
     public void Close() {
         running = false;
+    }
+
+    public void CancelExport() {
+        if(export != null) {
+            export.exporter.Stop(true);
+            export = null;
+        }
     }
 
     public AnimationPlayer(string projectPath, PlayerControls ctrl) {
@@ -364,6 +385,7 @@ internal class AnimationPlayer {
             return ret;
         } else {
             var endTime = Math.Min(export.endTime, machine.GetEndTime());
+            export.currentProgress = machine.GetPlaybackTime();
             Debug.Log($"Exporting time {machine.GetPlaybackTime()}/{endTime}");
             machine.Step(1.0 / (double)settings.FPS);
             var frame = machine.GetWorldSnapshot();

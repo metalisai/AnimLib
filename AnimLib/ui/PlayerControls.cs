@@ -29,6 +29,12 @@ internal class PlayerControls {
     // scene has been changed, but change is not finished (e.g. gizmos still being used)
     bool changePending = false;
 
+    private bool Exporting {
+        get {
+            return _showExport;
+        }
+    }
+
     private bool _showExport = false;
     private bool _showPerformance = false;
     private bool _showResources = false;
@@ -322,9 +328,34 @@ internal class PlayerControls {
         }        
     }
 
+    private void ShowExportProgress() {
+        bool open = true;
+        var flags = ImguiContext.ImGuiWindowFlags.NoDocking;
+        flags |= ImguiContext.ImGuiWindowFlags.NoResize;
+        flags |= ImguiContext.ImGuiWindowFlags.AlwaysAutoResize;
+        flags |= ImguiContext.ImGuiWindowFlags.NoCollapse;
+        if (ImguiContext.Begin("Export progress", ref open, flags))
+        {
+            float progress = player.ExportProgress ?? 0.0f;
+            ImguiContext.Text($"Exporting to {exportfileName}");
+            ImguiContext.ProgressBar(progress, new Vector2(400.0f, 0.0f));
+            float ptime = progress * player.ExportLength;
+            ImguiContext.Text($"{ptime:F2} / {player.ExportLength:F2}");
+
+            if (ImguiContext.Button("Cancel"))
+            {
+                player.CancelExport();
+            }
+
+            ImguiContext.End();
+        }
+    }
+
     private void ShowExportWindow() {
-        ImguiContext.SetNextWindowSize(new System.Numerics.Vector2(430, 450), ImguiContext.ImGuiCond.FirstUseEver);
+        //ImguiContext.SetNextWindowSize(new System.Numerics.Vector2(430, 450), ImguiContext.ImGuiCond.FirstUseEver);
         var wflags = ImguiContext.ImGuiWindowFlags.NoDocking;
+        wflags |= ImguiContext.ImGuiWindowFlags.AlwaysAutoResize;
+        wflags |= ImguiContext.ImGuiWindowFlags.NoResize;
         if(!ImguiContext.Begin("Export", ref _showExport, wflags)) {
             ImguiContext.End();
             return;
@@ -880,6 +911,11 @@ internal class PlayerControls {
         //ShowDock();
         if(_showExport) {
             ShowExportWindow();
+        }
+
+        if (player.Exporting)
+        {
+            ShowExportProgress();
         }
 
         if(_showResources)
