@@ -205,17 +205,19 @@ internal partial class SkiaRenderer
             float transX = x4;
             float transY = y4;
 
-            // TODO: something more readable?
-            // top left
-            /*float scaleX = (y1 * x2 * x4 - x1 * y2 * x4 + x1 * y3 * x4 - x2 * y3 * x4 - y1 * x2 * x3 + x1 * y2 * x3 - x1 * y4 * x3 + x2 * y4 * x3) / (x2 * y3 * w + y2 * x4 * w - y3 * x4 * w - x2 * y4 * w - y2 * w * x3 + y4 * w * x3);
-    float skewX = (-x1 * x2 * y3 - y1 * x2 * x4 + x2 * y3 * x4 + x1 * x2 * y4 + x1 * y2 * x3 + y1 * x4 * x3 - y2 * x4 * x3 - x1 * y4 * x3) / (x2 * y3 * h + y2 * x4 * h - y3 * x4 * h - x2 * y4 * h - y2 * h * x3 + y4 * h * x3);
-            float transX = x1;
-            float skewY = (-y1 * x2 * y3 + x1 * y2 * y3 + y1 * y3 * x4 - y2 * y3 * x4 + y1 * x2 * y4 - x1 * y2 * y4 - y1 * y4 * x3 + y2 * y4 * x3) / (x2 * y3 * w + y2 * x4 * w - y3 * x4 * w - x2 * y4 * w - y2 * w * x3 + y4 * w * x3);
-            float scaleY = (-y1 * x2 * y3 - y1 * y2 * x4 + y1 * y3 * x4 + x1 * y2 * y4 - x1 * y3 * y4 + x2 * y3 * y4 + y1 * y2 * x3 - y2 * y4 * x3) / (x2 * y3 * h + y2 * x4 * h - y3 * x4 * h - x2 * y4 * h - y2 * h * x3 + y4 * h * x3);
-            float transY = y1;
-            float persp0 = (x1 * y3 - x2 * y3 + y1 * x4 - y2 * x4 - x1 * y4 + x2 * y4 - y1 * x3 + y2 * x3) / (x2 * y3 * w + y2 * x4 * w - y3 * x4 * w - x2 * y4 * w - y2 * w * x3 + y4 * w * x3);
-            float persp1 = (-y1 * x2 + x1 * y2 - x1 * y3 - y2 * x4 + y3 * x4 + x2 * y4 + y1 * x3 - y4 * x3) / (x2 * y3 * h + y2 * x4 * h - y3 * x4 * h - x2 * y4 * h - y2 * h * x3 + y4 * h * x3);
-            float persp2 = 1.0f;*/
+            // Skia checks if the matrix has perspective transform and if it does, it will make rendering very slow
+            // Due to rounding errors it might think that the matrix has perspective transform even if it doesn't
+            // So we round the values to 0.0f or 1.0f if they are close enough
+            const float epsilon = 1e-8f;
+            bool isPersp0 = MathF.Abs(persp0 - 0.0f) > epsilon;
+            bool isPersp1 = MathF.Abs(persp1 - 0.0f) > epsilon;
+            bool isPersp2 = MathF.Abs(persp2 - 1.0f) > epsilon;
+            if (!isPersp0 && !isPersp1 && !isPersp2)
+            {
+                persp0 = 0.0f;
+                persp1 = 0.0f;
+                persp2 = 1.0f;
+            }
 
             var mat = new SKMatrix(scaleX, skewX, transX, skewY, scaleY, transY, persp0, persp1, persp2);
             return mat;
