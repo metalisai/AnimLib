@@ -327,7 +327,7 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         Performance.TimeToWaitSync = sw.Elapsed.TotalSeconds;
     }
 
-    public void RenderImGui(ImguiContext.DrawList data, IList<SceneView> views, IRenderBuffer rb) {
+    public void RenderImGui(ImguiContext.DrawList data, IList<SceneView> views, IBackendRenderBuffer rb) {
         GL.BindBuffer(BufferTarget.ArrayBuffer, imguiVbo);
         if (data.vertices.Length > 0)
         {
@@ -388,7 +388,7 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         return;
     }
 
-    public void RenderGUI(ImguiContext.DrawList data, IList<SceneView> views, IRenderBuffer rb)
+    public void RenderGUI(ImguiContext.DrawList data, IList<SceneView> views, IBackendRenderBuffer rb)
     {
         DepthPeelRenderBuffer pb;
         GL.Viewport(0, 0, rb.Size.Item1, rb.Size.Item2);

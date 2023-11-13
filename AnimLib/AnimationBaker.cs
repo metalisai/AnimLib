@@ -63,7 +63,9 @@ internal class AnimationBaker {
     }
 
     public BakedAnimation BakeAnimation(AnimationBehaviour behaviour1, AnimationSettings settings, AnimationPlayer.PlayerProperties props, PlayerScene scene) {
+        Time.Reset();
         var world = new World(settings);
+        world.Reset();
         var animator = new Animator(resourceManager, world, scene, settings, props, text);
 
         haveError = false;
@@ -74,8 +76,6 @@ internal class AnimationBaker {
 
         sw.Restart();
 
-        Time.Reset();
-        world.Reset();
         double t = 0.0;
         double dt = 1.0 / settings.FPS;
         double start = 0.0;

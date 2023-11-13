@@ -165,7 +165,7 @@ partial class TessallationRenderer : IRenderer, IDisposable {
             }
         }
     }
-    public void RenderBeziers(BezierState[] beziers, M4x4 mat, M4x4 orthoMat, IRenderBuffer rb)
+    public void RenderBeziers(BezierState[] beziers, M4x4 mat, M4x4 orthoMat, IBackendRenderBuffer rb)
     {
     }
     /*public void RenderTextureRectangles(TexRectState[] rectangles, M4x4 mat)
@@ -174,9 +174,11 @@ partial class TessallationRenderer : IRenderer, IDisposable {
     public void RenderMeshes(ColoredTriangleMesh[] meshes, M4x4 camMat, M4x4 orthoMat)
     {
     }
-    public void RenderScene(WorldSnapshot ss, SceneView sv, CameraState cam, bool gizmo)
+    public void RenderScene(WorldSnapshot ss, CameraState cam, bool gizmo, out IBackendRenderBuffer mainBuffer)
     {
-        entRes = ss.resolver;
+        throw new NotImplementedException();
+
+        /*entRes = ss.resolver;
 
         MultisampleRenderBuffer pb; 
         var w = sv.BufferWidth;
@@ -194,10 +196,6 @@ partial class TessallationRenderer : IRenderer, IDisposable {
             return;
         }
 
-        /*pb.Bind();
-        GL.DepthMask(true);
-        GL.ClearDepth(1.0f);
-        GL.Clear(ClearBufferMask.DepthBufferBit);*/
         pb.Bind();
 
         var bcol = ss.Camera.clearColor;
@@ -244,22 +242,19 @@ partial class TessallationRenderer : IRenderer, IDisposable {
             RenderCubes(ss.Cubes, worldToClip);
         }
         // render circles
-        /*if(ss.Circles != null) {
-            RenderCircles(ss.Circles);
-        }*/
         // render meshes
         // render texrects
         // render glyphs
         // render labels
         // render beziers
-
+        */
     }
 
-    public bool BufferValid(IRenderBuffer buf) {
+    public bool BufferValid(IBackendRenderBuffer buf) {
         return buf is MultisampleRenderBuffer;
     }
 
-    public IRenderBuffer CreateBuffer(int w, int h) {
+    public IBackendRenderBuffer CreateBuffer(int w, int h) {
         var buf = new MultisampleRenderBuffer(platform);
         buf.Resize(w, h);
         // TODO: this is wrong!

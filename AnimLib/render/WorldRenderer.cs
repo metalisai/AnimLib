@@ -26,6 +26,8 @@ partial class WorldRenderer : IRenderer {
     private OpenTKPlatform platform;
     private RenderState rs;
 
+    private Dictionary<int, IBackendRenderBuffer> renderBuffers = new();
+
     bool gizmo = true;
 
     System.Diagnostics.Stopwatch sw;
@@ -48,7 +50,7 @@ partial class WorldRenderer : IRenderer {
         sw = new System.Diagnostics.Stopwatch();
     }
 
-    public void RenderCanvases(SceneView view, CanvasSnapshot[] canvases, M4x4 mat) {
+    public void RenderCanvases(IBackendRenderBuffer buffer, CanvasSnapshot[] canvases, M4x4 mat) {
         using var _ = new Performance.Call("WorldRenderer.RenderCanvases");
         // with software rendering the canvas has to be cleared manually
         // with OpenGL the renderbuffer is cleared by our renderer
@@ -61,7 +63,7 @@ partial class WorldRenderer : IRenderer {
         var sorted = canvases.OrderBy(x => x.Canvas.is2d ? 1 : 0);
         foreach(var canvas in sorted) {
             platform.Skia.RenderCanvas(canvas, ref mat, this.gizmo);
-            var buf = view.Buffer as DepthPeelRenderBuffer;
+            var buf = buffer as DepthPeelRenderBuffer;
             RestoreState();
             {
                 using var __ = new Performance.Call("WorldRenderer buf.BlitTextureWithEntityId");
@@ -70,7 +72,7 @@ partial class WorldRenderer : IRenderer {
         }
     }
 
-    public void RenderBeziers(BezierState[] beziers, M4x4 mat, M4x4 orthoMat, IRenderBuffer buf) {
+    public void RenderBeziers(BezierState[] beziers, M4x4 mat, M4x4 orthoMat, IBackendRenderBuffer buf) {
         if(beziers.Length > 0) {
             GL.Disable(EnableCap.CullFace);
             GL.Disable(EnableCap.DepthTest);
@@ -388,35 +390,56 @@ partial class WorldRenderer : IRenderer {
         GL.Viewport(state.vpX, state.vpY, state.vpW, state.vpH);
     }
 
-    public bool BufferValid(IRenderBuffer buf) {
+    public bool BufferValid(IBackendRenderBuffer buf) {
         return buf is DepthPeelRenderBuffer;
     }
 
-    public IRenderBuffer CreateBuffer(int w, int h) {
+    public IBackendRenderBuffer CreateBuffer(int w, int h, int id) {
         var buf = new DepthPeelRenderBuffer(platform);
         buf.Resize(w, h);
         // TODO: this is wrong!
         platform.Skia.SetBuffer(buf);
+        Debug.TLog($"Created new DepthPeelRenderBuffer with size {w}x{h}");
+
+        renderBuffers.Add(id, buf);
         return buf;
     }
 
-    public void RenderScene(WorldSnapshot ss, SceneView sv, CameraState cam, bool gizmo) {
+    public void RenderScene(WorldSnapshot ss, CameraState cam, bool gizmo, out IBackendRenderBuffer mainBuffer) {
         using var _ = new Performance.Call("WorldRenderer.RenderScene");
 
         this.gizmo = gizmo;
         entRes = ss.resolver;
         long passedcount = 0;
 
+        var rb0 = ss.RenderBuffers[0];
+        var w = rb0.Width;
+        var h = rb0.Height;
+
         DepthPeelRenderBuffer pb;
-        var w = sv.BufferWidth;
-        var h = sv.BufferHeight;
-        if(!(sv.Buffer is DepthPeelRenderBuffer) || sv.Buffer == null) {
-            var buf = new DepthPeelRenderBuffer(platform);
-            buf.Resize(w, h);
-            sv.Buffer = buf;
-            platform.Skia.SetBuffer(buf);
+
+        {
+            using var ___ = new Performance.Call("Manage renderer buffers");
+            foreach (var rb in ss.RenderBuffers) {
+                if (!this.renderBuffers.TryGetValue(rb.BackendHandle, out var createdRb)
+                    || createdRb.Size.w != rb.Width
+                    || createdRb.Size.h != rb.Height)
+                {
+                    if (createdRb != null)
+                    {
+                        createdRb.Dispose();
+                    }
+                    createdRb = CreateBuffer(rb.Width, rb.Height, rb.BackendHandle);
+                    this.renderBuffers[rb.BackendHandle] = createdRb;
+                    Debug.Log($"Created new renderbuffer. Id: {rb.BackendHandle}, Size: {rb.Width}x{rb.Height}, Type: {createdRb.GetType()}, texId {createdRb.Texture()}");
+                }
+                this.renderBuffers[rb.BackendHandle].Clear();
+                this.renderBuffers[rb.BackendHandle].OnPreRender();
+            }
         }
-        pb = sv.Buffer as DepthPeelRenderBuffer;
+
+        mainBuffer = this.renderBuffers[rb0.BackendHandle];
+        pb = mainBuffer as DepthPeelRenderBuffer;
         GL.Viewport(0, 0, pb.Size.Item1, pb.Size.Item2);
         if (pb == null) {
             Console.WriteLine("Can't render scene because renderbuffer isn't DepthPeelRenderBuffer");
@@ -448,7 +471,7 @@ partial class WorldRenderer : IRenderer {
         //GL.BlendFuncSeparate(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha, BlendingFactorSrc.One, BlendingFactorDest.Zero); 
         GL.Enable(EnableCap.Blend);
 
-        var smat = M4x4.Ortho(0.0f, pb.Size.Item1, 0.0f, pb.Size.Item2, -1.0f, 1.0f);
+        var smat = M4x4.Ortho(0.0f, pb.Size.w, 0.0f, pb.Size.h, -1.0f, 1.0f);
         var query = GL.GenQuery();
 
         var _programs = platform.Programs;
@@ -457,11 +480,11 @@ partial class WorldRenderer : IRenderer {
         var pbSize = pb.Size;
         if(cam is OrthoCameraState) {
             var ocam = cam as OrthoCameraState;
-            ocam.width = pbSize.Item1;
-            ocam.height = pbSize.Item2;
+            ocam.width = pbSize.w;
+            ocam.height = pbSize.h;
         }
 
-        M4x4 worldToClip = cam.CreateWorldToClipMatrix((float)pbSize.Item1/(float)pbSize.Item2);
+        M4x4 worldToClip = cam.CreateWorldToClipMatrix((float)pbSize.w/(float)pbSize.h);
         int p = 0;
         for(p = 0; p < 16; p++) {
             drawId = 0;
@@ -477,7 +500,6 @@ partial class WorldRenderer : IRenderer {
             }
             GL.BeginQuery(QueryTarget.SamplesPassed, query);
             //GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
-
 
             if(ss.MeshBackedGeometries != null) {
                 int i = 0;
@@ -540,11 +562,10 @@ partial class WorldRenderer : IRenderer {
                 Debug.Warning("Labels are not implemented yet!");
             }
             if(ss.Beziers != null) {
-                RenderBeziers(ss.Beziers, worldToClip, smat, sv.Buffer);
+                RenderBeziers(ss.Beziers, worldToClip, smat, mainBuffer);
             }
 
             GL.EndQuery(QueryTarget.SamplesPassed);
-
 
             //TODO:
             //RenderTriangleMeshes();
@@ -562,7 +583,7 @@ partial class WorldRenderer : IRenderer {
         }
 
         if(ss.Glyphs != null) {
-            RenderGlyphs(new Vector2(pbSize.Item1, pbSize.Item2), ss.Glyphs, cam as PerspectiveCameraState);
+            RenderGlyphs(new Vector2(pbSize.w, pbSize.h), ss.Glyphs, cam as PerspectiveCameraState);
         }
 
         GL.DeleteQuery(query);
@@ -576,11 +597,15 @@ partial class WorldRenderer : IRenderer {
         //platform.Skia.Clear();
         sw.Restart();
         if(ss.Canvases != null)
-            RenderCanvases(sv, ss.Canvases, worldToClip);
+            RenderCanvases(mainBuffer, ss.Canvases, worldToClip);
         sw.Stop();
         Performance.TimeToRenderCanvases = sw.Elapsed.TotalSeconds;
         // render skia (all skia GL commands get executed here)
         //platform.Skia.Flush();
         // render skia (all skia GL commands get executed here)
+        
+        foreach (var buf in this.renderBuffers.Values) {
+            buf.OnPostRender();
+        }
     }
 }

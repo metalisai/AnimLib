@@ -28,7 +28,7 @@ internal class SceneView
         public bool dragging;
     }
 
-    private IRenderBuffer renderBuffer;
+    private IBackendRenderBuffer renderBuffer;
     private Dictionary<string, PointGizmoState> pointGizmos = new Dictionary<string, PointGizmoState>();
     int x, y, width, height; // coordnates inside window 
     int bufferWidth, bufferHeight;
@@ -43,7 +43,7 @@ internal class SceneView
         }
     }
 
-    public SceneView(IRenderBuffer rb, int x, int y, int width, int height)
+    public SceneView(IBackendRenderBuffer rb, int x, int y, int width, int height)
     {
         renderBuffer = rb;
         this.x = x;
@@ -64,12 +64,6 @@ internal class SceneView
         this.bufferHeight = bufferHeight;
     }
 
-    public void ResizeBuffer(int w, int h) {
-        renderBuffer?.Resize(w, h);
-        this.bufferWidth = w;
-        this.bufferHeight = h;
-    }
-
     public int TextureHandle {
         get {
             return renderBuffer?.Texture() ?? 0;
@@ -88,15 +82,14 @@ internal class SceneView
         }
     }
 
-    public IRenderBuffer Buffer {
+    public IBackendRenderBuffer Buffer {
         get {
             return renderBuffer;
         }
         set {
-            renderBuffer?.Dispose();
-            Debug.TLog(value.Size.ToString());
-            System.Diagnostics.Debug.Assert(value.Size == (this.bufferWidth, this.bufferHeight));
             renderBuffer = value;
+            this.bufferWidth = value.Size.w;
+            this.bufferHeight = value.Size.h;
         }
     }
 

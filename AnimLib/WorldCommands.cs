@@ -50,3 +50,9 @@ internal class WorldSetActiveCameraCommand : WorldCommand {
 internal class WorldEndCommand : WorldCommand {
     
 }
+
+internal class WorldCreateRenderBufferCommand : WorldCommand {
+    public int width;
+    public int height;
+    public int Id;
+}

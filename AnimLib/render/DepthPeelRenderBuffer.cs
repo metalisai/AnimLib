@@ -3,7 +3,7 @@ using OpenTK.Graphics.OpenGL4;
 
 namespace AnimLib;
 
-internal partial class DepthPeelRenderBuffer : IRenderBuffer, IDisposable {
+internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable {
     public int _depthTex1 = -1, _depthTex2 = -1, _fbo = -1;
     public int _colorTex = -1;
     public int _entityIdTex = -1;
@@ -15,7 +15,7 @@ internal partial class DepthPeelRenderBuffer : IRenderBuffer, IDisposable {
     int _blitvao = -1, _blitvbo = -1;
     IPlatform platform;
 
-    public (int,int) Size {
+    public (int w, int h) Size {
         get {
             return (_width, _height);
         }
@@ -281,6 +281,7 @@ internal partial class DepthPeelRenderBuffer : IRenderBuffer, IDisposable {
     }
 
     public void Dispose() {
+        Debug.TLogWithTrace("DepthPeelRenderBuffer Disposing");
         DeleteBuffers();
         GL.DeleteFramebuffer(_fbo);
         GL.DeleteVertexArray(_blitvao);

@@ -37,7 +37,7 @@ internal partial class SkiaRenderer
     GRBackendRenderTarget renderTarget;
     SKSurface surface;
     SKCanvas canvas;
-    IRenderBuffer glBuffer; // intermediate buffer for hw rendering
+    IBackendRenderBuffer glBuffer; // intermediate buffer for hw rendering
     GRGlInterface glInterface;
 
     Texture2D tex;
@@ -98,7 +98,7 @@ internal partial class SkiaRenderer
         return ret;
     }
 
-    public void SetBuffer(IRenderBuffer buf) {
+    public void SetBuffer(IBackendRenderBuffer buf) {
         width = buf.Size.Item1;
         height = buf.Size.Item2;
         if(mode == RenderMode.OpenGL) {

@@ -6,9 +6,8 @@ using OpenTK.Input;
 namespace AnimLib;
 
 internal interface IRenderer {
-    void RenderScene(WorldSnapshot ss, SceneView sv, CameraState cam, bool gizmo);
-    bool BufferValid(IRenderBuffer buf);
-    public IRenderBuffer CreateBuffer(int w, int h);
+    void RenderScene(WorldSnapshot ss, CameraState cam, bool gizmo, out IBackendRenderBuffer mainBuffer);
+    bool BufferValid(IBackendRenderBuffer buf);
 }
 
 public enum BuiltinShader {
@@ -64,7 +63,7 @@ internal class RenderState
 
     public ColoredTriangleMeshGeometry cubeGeometry;
 
-    IRenderBuffer uiRenderBuffer;
+    IBackendRenderBuffer uiRenderBuffer;
 
     FontCache _fr;
     ITypeSetter ts = new FreetypeSetting();
@@ -228,7 +227,7 @@ internal class RenderState
         scrollDelta = args.DeltaPrecise;
     }
 
-    public int GetGuiEntityAtPixel(IRenderBuffer pb, Vector2 pixel) {
+    public int GetGuiEntityAtPixel(IBackendRenderBuffer pb, Vector2 pixel) {
         if(pixel.x >= 0.0f && pixel.x < pb.Size.Item1 && pixel.y >= 0.0f && pixel.y < pb.Size.Item2) {
             return pb.GetEntityAtPixel((int)pixel.x, pb.Size.Item2-(int)pixel.y-1);
         } else {
@@ -296,13 +295,6 @@ internal class RenderState
         bool sceneUpdated = overrideCamera || wasOverridden || SceneStatus == AnimationPlayer.FrameStatus.New;
         wasOverridden = overrideCamera;
         //bool sceneUpdated = true;
-        if(sceneUpdated) {
-            using var _ = new Performance.Call("Clear view buffers");
-            foreach(var view in views) {
-                view.Buffer?.Clear();
-                view.Buffer?.OnPreRender();
-            }
-        }
         uiRenderBuffer.Clear();
 
         platform.ClearBackbuffer(0, 0, uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2);
@@ -326,21 +318,10 @@ internal class RenderState
             sw.Restart();
             if(sceneUpdated) {
                 foreach(var sv in views) {
-                    // different renderer can use diffent types of buffers
-                    // create the buffer if its wrong type or not created yet
-                    bool valid = renderer.BufferValid(sv.Buffer);
-                    if(sv.Buffer == null || !valid) {
-                        if(sv.Buffer != null && !valid) {
-                            sv.Buffer.Dispose();
-                        }
-                        sv.Buffer = renderer.CreateBuffer(sv.BufferWidth, sv.BufferHeight);
-                    }
                     var sceneCamera = currentScene.Camera;
                     if(overrideCamera) sceneCamera = debugCamera;
-                    if(sceneUpdated) {
-                        renderer.RenderScene(currentScene, sv, sceneCamera, _renderGizmos);
-                        sv.PostRender(sceneCamera, currentScene);
-                    }
+                    renderer.RenderScene(currentScene, sceneCamera, _renderGizmos, out var mainBuffer);
+                    sv.Buffer = mainBuffer;
                 }
             } else {
                 //Debug.TLog($"Not rendering scene, no changes {test++}");

@@ -3,7 +3,7 @@ using OpenTK.Graphics.OpenGL4;
 
 namespace AnimLib;
 
-internal class MultisampleRenderBuffer : IRenderBuffer, IDisposable{
+internal class MultisampleRenderBuffer : IBackendRenderBuffer, IDisposable{
     int _fbo = -1;
     int _blitFbo = -1;
     int _colorTex = -1;

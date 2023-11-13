@@ -24,6 +24,7 @@ internal class WorldMachine {
     Dictionary<int, AbsorbDestruction> _absorbs = new Dictionary<int, AbsorbDestruction>();
 
     Dictionary<int, EntityState> _destroyedEntities = new Dictionary<int, EntityState>();
+    List<RenderBufferState> _renderBuffers = new();
 
     public double fps = 60.0;
     string _lastAction = ""; // this is for debug
@@ -66,8 +67,22 @@ internal class WorldMachine {
         //_activeCamera = cam;
         Step(0.0);
     }
+
     public void SetProgram(WorldCommand[] commands) {
         _program = commands.ToArray();
+        _renderBuffers.Clear();
+        foreach(var cmd in _program)
+        {
+            switch (cmd) {
+                case WorldCreateRenderBufferCommand createRenderBuffer:
+                    _renderBuffers.Add(new RenderBufferState() {
+                        Width = createRenderBuffer.width,
+                        Height = createRenderBuffer.height,
+                        BackendHandle = createRenderBuffer.Id
+                    });
+                    break;
+            }
+        }
         Reset();
     }
 
@@ -161,6 +176,7 @@ internal class WorldMachine {
         }
         ret.Canvases = l.ToArray();
         ret.Camera = _activeCamera.Clone() as CameraState;
+        ret.RenderBuffers = _renderBuffers.ToArray();
         return ret;
     }
 

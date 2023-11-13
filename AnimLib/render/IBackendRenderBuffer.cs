@@ -5,7 +5,7 @@ namespace AnimLib;
 /// <summary>
 /// A render buffer is a framebuffer object that can be used to render a scene to a texture.
 /// </summary>
-public interface IRenderBuffer : IDisposable{
+internal interface IBackendRenderBuffer : IDisposable{
     void OnPreRender();
     void OnPostRender();
     void Bind();
@@ -14,7 +14,7 @@ public interface IRenderBuffer : IDisposable{
     int GetEntityAtPixel(int x, int y);
     int Texture();
     void Clear();
-    (int, int) Size { get; }
+    (int w, int h) Size { get; }
     int FBO { get; }
     void ReadPixels(ref byte data);
 }

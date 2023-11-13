@@ -4,6 +4,9 @@ using System;
 
 namespace AnimLib;
 
+/// <summary>
+/// Animation time API for the animation behavior.
+/// </summary>
 public class Time 
 {
     private class WaitTask {

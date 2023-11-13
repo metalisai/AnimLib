@@ -25,24 +25,31 @@ public class Animator {
         public Vector3 Position;
     }
 
-    /// <summary>
-    /// The currently active animator.
-    /// </summary>
-    public static Animator Current { get; internal set; }
-
     internal ResourceManager resourceManager;
     internal World world;
-
-    /// <summary>
-    /// The scene of the animation editor. Doesn't include programmatically created entities.
-    /// </summary>
-    public PlayerScene Scene;
-
     internal AnimationSettings settings;
     internal AnimationPlayer.PlayerProperties props;
     internal List<AnimationHandle2D> VectorHandles = new List<AnimationHandle2D>();
     internal List<AnimationHandle3D> VectorHandles3D = new List<AnimationHandle3D>();
     internal TextPlacement textPlacement;
+
+    /// <summary>
+    /// The descriptor for the main render target. This is the render target that's used for the final output.
+    /// </summary>
+    public RenderBuffer Backbuffer {
+        get;
+        private set;
+    }
+
+    /// <summary>
+    /// The currently active animator.
+    /// </summary>
+    public static Animator Current { get; internal set; }
+
+    /// <summary>
+    /// The scene of the animation editor. Doesn't include programmatically created entities.
+    /// </summary>
+    public PlayerScene Scene;
 
     internal Animator(ResourceManager resourceManager, World world, PlayerScene scene, AnimationSettings settings, AnimationPlayer.PlayerProperties props, TextPlacement text) {
         this.resourceManager = resourceManager;
@@ -51,6 +58,7 @@ public class Animator {
         this.Scene = scene;
         this.props = props;
         this.textPlacement = text;
+        this.Backbuffer = new RenderBuffer(settings.Width, settings.Height, true);
     }
 
     internal void BeginAnimate() {

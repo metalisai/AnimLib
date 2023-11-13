@@ -137,6 +137,8 @@ internal class WorldSnapshot {
     public BezierState[] Beziers;
     public CanvasSnapshot[] Canvases;
     public MorphShape[] MorphShapes;
+    // NOTE: the first renderbuffer is always the main one
+    public RenderBufferState[] RenderBuffers;
     public double Time;
 }
 
@@ -152,6 +154,8 @@ public class World
     static int worldId = 0;
     [ThreadStatic]
     static int entityId = 1;
+    [ThreadStatic]
+    static int renderBufferId = 1;
     /// <summary>
     /// Currently active world.
     /// </summary>
@@ -211,6 +215,18 @@ public class World
             _commands.Add(cmd);
             _activeCamera = value;
         }
+    }
+
+    internal int CreateRenderBuffer(int width, int height, bool main = false) {
+        var id = renderBufferId++;
+        var cmd = new WorldCreateRenderBufferCommand() {
+            width = width,
+            height = height,
+            time = Time.T,
+            Id = id,
+        };
+        _commands.Add(cmd);
+        return id;
     }
     
     internal void StartEditing(object editor) {
@@ -280,6 +296,7 @@ public class World
 
     internal void Reset() {
         StartEditing(this);
+        renderBufferId = 1;
         Resources?.Dispose();
         Resources = new WorldResources();
         _entities.Clear();
