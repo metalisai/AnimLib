@@ -49,7 +49,7 @@ public class Animator {
     /// <summary>
     /// The scene of the animation editor. Doesn't include programmatically created entities.
     /// </summary>
-    public PlayerScene Scene;
+    internal PlayerScene Scene;
 
     internal Animator(ResourceManager resourceManager, World world, PlayerScene scene, AnimationSettings settings, AnimationPlayer.PlayerProperties props, TextPlacement text) {
         this.resourceManager = resourceManager;

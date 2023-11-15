@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 
 namespace AnimLib;
 
-public class PlayerScene {
+internal class PlayerScene {
     internal enum SceneEventType {
         None,
         Create,
