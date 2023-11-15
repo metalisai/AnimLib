@@ -57,8 +57,12 @@ internal class PlayerScene {
 
     [NonSerialized] // this list is only used for optimization (to get all 2d objects at once)
     internal IList<SceneObject2D> Objects2D = new List<SceneObject2D>();
+
+    [JsonInclude]
     internal IList<PlayerCircle> Circles { get; set; } = new List<PlayerCircle>();
+    [JsonInclude]
     internal IList<PlayerRect> Rectangles { get; set; } = new List<PlayerRect>();
+    [JsonInclude]
     internal IList<PlayerShape> Shapes { get; set; } = new List<PlayerShape>();
 
     /*public IList<PlayerArrow> Arrows { get; set; } = new List<PlayerArrow>();
