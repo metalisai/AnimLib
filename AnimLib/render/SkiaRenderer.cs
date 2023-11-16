@@ -260,6 +260,10 @@ internal partial class SkiaRenderer
         var lt = trs * changePivot;
         //lt.m22 *= -1.0f;
         var ret = lt.ToSKMatrix();
+        if (ent.homography != null)
+        {
+            ret = ret.PreConcat(ent.homography.Value.ToSKMatrix());
+        }
         return ret;
     }
 

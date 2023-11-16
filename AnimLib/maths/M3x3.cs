@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using MathNet.Numerics.LinearAlgebra;
 
 namespace AnimLib
 {
@@ -46,12 +48,105 @@ namespace AnimLib
             return tr;
         }
 
+        public static M3x3 Rotate(Quaternion q) {
+            M3x3 ret = new() {
+                m11 = 1.0f - 2.0f*q.y*q.y - 2.0f*q.z*q.z,
+                m21 = 2.0f*q.x*q.y + 2.0f*q.w*q.z,
+                m31 = 2.0f*q.x*q.z - 2.0f*q.w*q.y,
+
+                m12 = 2.0f*q.x*q.y - 2.0f*q.w*q.z,
+                m22 = 1.0f - 2.0f*q.x*q.x - 2.0f*q.z*q.z,
+                m32 = 2.0f*q.y*q.z + 2.0f*q.w*q.x,
+                
+                m13 = 2.0f*q.x*q.z + 2.0f*q.w*q.y,
+                m23 = 2.0f*q.y*q.z - 2.0f*q.w*q.x,
+                m33 = 1.0f - 2.0f*q.x*q.x - 2.0f*q.y*q.y,
+            };
+            return ret;
+        }
+
         public static M3x3 Rotate_2D(float r) {
             M3x3 rot;
             rot.m11 = MathF.Cos(r); rot.m12 = -MathF.Sin(r); rot.m13 = 0.0f;
             rot.m21 = MathF.Sin(r); rot.m22 = MathF.Cos(r); rot.m23 = 0.0f;
             rot.m31 = 0.0f; rot.m32 = 0.0f; rot.m33 = 1.0f;
             return rot;
+        }
+
+        public static M3x3 Homography(Vector2[] src, Vector2[] dst) {
+            int n = src.Length;
+            if (n < 4) {
+                throw new ArgumentException("Need at least 4 points to compute homography");
+            }
+            var A = Matrix<float>.Build.Dense(2*n,2*n);
+            for (int i = 0; i < n; i++)
+            {
+                A[2*i, 0] = src[i].x;
+                A[2*i, 1] = src[i].y;
+                A[2*i, 2] = 1.0f;
+                A[2*i, 6] = -src[i].x*dst[i].x;
+                A[2*i, 7] = -src[i].y*dst[i].x;
+                A[2*i+1, 3] = src[i].x;
+                A[2*i+1, 4] = src[i].y;
+                A[2*i+1, 5] = 1.0f;
+                A[2*i+1, 6] = -src[i].x*dst[i].y;
+                A[2*i+1, 7] = -src[i].y*dst[i].y;
+            }
+            var b = Vector<float>.Build.DenseOfArray(dst.SelectMany(v => new float[] {v.x, v.y}).ToArray());
+            var x = A.PseudoInverse() * b;
+            M3x3 ret;
+            ret.m11 = x[0]; ret.m12 = x[1]; ret.m13 = x[2];
+            ret.m21 = x[3]; ret.m22 = x[4]; ret.m23 = x[5];
+            ret.m31 = x[6]; ret.m32 = x[7]; ret.m33 = 1.0f;
+            return ret;
+        }
+
+        private static M4x4 RotXOp(float perspective, float angle)
+        {
+            var rot = Quaternion.AngleAxis(angle, Vector3.RIGHT);
+            return M4x4.Rotate(rot);
+        }
+
+        private static M4x4 RotYOp(float perspective, float angle)
+        {
+            var rot = Quaternion.AngleAxis(angle, Vector3.UP);
+            return M4x4.Rotate(rot);
+        }
+
+        private static M4x4 RotZOp(float perspective, float angle)
+        {
+            var rot = Quaternion.AngleAxis(angle, Vector3.FORWARD);
+            return M4x4.Rotate(rot);
+        }
+
+        public static M3x3 RotateX_2D(float perspective, float angle) {
+            return Rotate_2D(perspective, angle, RotXOp(perspective, angle));
+        }
+
+        public static M3x3 RotateY_2D(float perspective, float angle) {
+            return Rotate_2D(perspective, angle, RotYOp(perspective, angle));
+        }
+
+        public static M3x3 RotateZ_2D(float perspective, float angle) {
+            return Rotate_2D(perspective, angle, RotZOp(perspective, angle));
+        }
+
+        private static M3x3 Rotate_2D(float perspective, float angle, in M4x4 op) {
+            Vector4 point1 = new(0.0f, 0.0f, 0.0f, 1.0f);
+            Vector4 point2 = new(0.0f, 1.0f, 0.0f, 1.0f);
+            Vector4 point3 = new(1.0f, 0.0f, 0.0f, 1.0f);
+            Vector4 point4 = new(1.0f, 1.0f, 0.0f, 1.0f);
+            var transformed1 = op * point1;
+            var transformed2 = op * point2;
+            var transformed3 = op * point3;
+            var transformed4 = op * point4;
+            transformed1 /= transformed1.w;
+            transformed2 /= transformed2.w;
+            transformed3 /= transformed3.w;
+            transformed4 /= transformed4.w;
+
+            M3x3 ret = Homography([point1.xy, point2.xy, point3.xy, point4.xy], [transformed1.xy, transformed2.xy, transformed3.xy, transformed4.xy]);
+            return ret;
         }
 
         public static M3x3 TRS_2D(Vector2 t, float r, Vector2 s) {
@@ -124,6 +219,14 @@ namespace AnimLib
                 m33 = -l.m33,
             };
         }
-
+        
+        /// <summary>
+        /// Identity matrix.
+        /// </summary>
+        public static readonly M3x3 IDENTITY = new M3x3() {
+            m11 = 1.0f, m12 = 0.0f, m13 = 0.0f,
+            m21 = 0.0f, m22 = 1.0f, m23 = 0.0f,
+            m31 = 0.0f, m32 = 0.0f, m33 = 1.0f,
+        };
     }
 }

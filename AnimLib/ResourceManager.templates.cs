@@ -9,7 +9,7 @@ internal partial class ResourceManager {
         sb.Append(
 $@"<Project Sdk=""Microsoft.NET.Sdk"">
 <PropertyGroup>
-<TargetFramework>net7.0</TargetFramework>
+<TargetFramework>net8.0</TargetFramework>
 </PropertyGroup>
 
 <PropertyGroup Condition=""'$(Configuration)|$(Platform)'=='Debug|AnyCPU'"">

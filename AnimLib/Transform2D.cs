@@ -49,6 +49,19 @@ public class Transform2D {
     }
 
     /// <summary>
+    /// The homography/perspective transform relative to the parent.
+    /// </summary>
+    public M3x3? Homography {
+        get {
+            return entity.state.homography;
+        }
+        set {
+            World.current.SetProperty(entity, "homography", value, entity.state.homography);
+            entity.state.homography = value;
+        }
+    }
+
+    /// <summary>
     /// The scale of the entity.
     /// </summary>
     public Vector2 Scale {

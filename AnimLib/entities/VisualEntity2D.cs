@@ -22,6 +22,7 @@ internal abstract class EntityState2D : EntityState {
     public Vector2 anchor = Vector2.ZERO;
     public Vector2 pivot = Vector2.ZERO;
     public Vector2 scale = Vector2.ONE;
+    public M3x3? homography = null; // optional homography matrix (relative to canvas)
     // NOTE: pivot and anchor always use CanvasNormalized coordinates
     public Entity2DCoordinateSystem csystem = Entity2DCoordinateSystem.CanvasOrientedWorld;
 
@@ -38,6 +39,7 @@ internal abstract class EntityState2D : EntityState {
         this.scale = e2d.scale;
         this.csystem = e2d.csystem;
         this.sortKey = e2d.sortKey;
+        this.homography = e2d.homography;
     }
 
     // normalized coordinates -0.5..0.5
