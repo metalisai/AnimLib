@@ -1,7 +1,7 @@
 namespace AnimLib;
 
 /// <summary>
-/// Internal state of a rectangle.
+/// Internal state of a star.
 /// </summary>
 internal class StarState : ShapeState {
     public int points;
@@ -29,7 +29,7 @@ internal class StarState : ShapeState {
 }
 
 /// <summary>
-/// A rectangle shaped entity.
+/// A n-point star shaped entity.
 /// </summary>
 public class Star : Shape, IColored {
 
@@ -40,7 +40,7 @@ public class Star : Shape, IColored {
     }
 
     /// <summary>
-    /// Creates a new rectangle with the given width and height.
+    /// Creates a new star with the given inner, outer radius and number of points.
     /// </summary>
     public Star(float outerR, float innerR, int points = 5) : base(new StarState(CreateStarPath(outerR, innerR, points))) {
         var s = this.state as StarState;
@@ -56,7 +56,7 @@ public class Star : Shape, IColored {
     }
 
     /// <summary>
-    /// Clone this rectangle.
+    /// Clone this star.
     /// </summary>
     public override object Clone() {
         return new Star(this);
