@@ -219,6 +219,45 @@ public static class Animate {
     }
 
     /// <summary>
+    /// Animates according to equations of motion.
+    /// </summary>
+    /// <param name="action">The action to call every frame.</param>
+    /// <param name="x0">The initial position.</param>
+    /// <param name="a">The acceleration.</param>
+    /// <param name="duration">The duration of the animation.</param>
+    /// <param name="v0">The initial velocity.</param>
+    /// <typeparam name="T">The type of the values. Scalar or a vector.</typeparam>
+    public static async Task Accelerate<T>(Action<T> action, T x0, T a, float duration, T v0 = default(T))
+        where T : 
+            IAdditionOperators<T, T, T>,
+            ISubtractionOperators<T, T, T>,
+            IMultiplyOperators<T, float, T>
+    {
+        double startT = AnimLib.Time.T;
+        double endT = AnimLib.Time.T + duration;
+        while (AnimLib.Time.T < endT) {
+            double currentT = AnimLib.Time.T - startT;
+            T currentValue = x0 + v0*(float)currentT + a*(float)currentT*(float)currentT;
+            action.Invoke(currentValue);
+            await AnimLib.Time.WaitFrame();
+        }
+        action.Invoke(x0 + v0*duration + a*duration*duration);
+    }
+
+    /// <summary>
+    /// Animates a transform according to equations of motion.
+    /// </summary>
+    /// <param name="t">The transform.</param>
+    /// <param name="a">The acceleration.</param>
+    /// <param name="duration">The duration of the animation.</param>
+    /// <param name="v0">The initial velocity.</param>
+    public static Task Accelerate(Transform2D t, Vector2 a, float duration, Vector2 v0)
+    {
+        Action<Vector2> action = x => t.Pos = x;
+        return Accelerate(action, t.Pos, a, duration, v0);
+    }
+
+    /// <summary>
     /// Accepts a lambda that's called every frame.
     /// </summary>
     /// <param name="action">The lambda to call every frame.</param>

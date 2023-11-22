@@ -94,7 +94,7 @@ public class Text2D : EntityCollection2D, IColored
     /// <summary>
     /// When this entity is created, create the underlying shapes.
     /// </summary>
-    protected override void OnCreated() {
+    private protected override void OnCreated() {
         CreateText();
         base.OnCreated();
     }

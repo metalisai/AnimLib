@@ -58,7 +58,7 @@ public abstract class EntityCollection2D : VisualEntity2D {
         World.current.Destroy(this);
     }
 
-    protected override void OnCreated() {
+    private protected override void OnCreated() {
         foreach (var e in entities) {
             World.current.CreateInstantly(e);
             World.current.AttachChild(this, e);

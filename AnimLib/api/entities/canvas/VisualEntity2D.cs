@@ -219,7 +219,7 @@ public abstract class VisualEntity2D : VisualEntity {
     /// <summary>
     /// Callback when the entity is created within a world.
     /// </summary>
-    protected override void OnCreated() {
+    private protected override void OnCreated() {
         // TODO: need better way (what if child entity gets created before parent for example)
         if(Transform._parent != null) {
             Transform.parent = Transform._parent;
