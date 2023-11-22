@@ -29,13 +29,29 @@ internal class SpriteState : EntityState2D {
     }
 }
 
+/// <summary>
+/// A 2D sprite. Displays a bitmap image.
+/// </summary>
 public class Sprite : VisualEntity2D, IColored {
+    /// <summary>
+    /// Create a new sprite.
+    /// </summary>
+    /// <param name="texture">The texture of the sprite.</param>
+    /// <param name="width">The width of the sprite.</param>
+    /// <param name="height">The height of the sprite.</param>
     public Sprite(Texture2D texture, float width, float height) : base(new SpriteState(texture, width, height)) {
     }
 
+    /// <summary>
+    /// Copy constructor.
+    /// </summary>
+    /// <param name="sprite">The sprite to copy.</param>
     public Sprite(Sprite sprite) : base(sprite) {
     }
 
+    /// <summary>
+    /// Tint color of the sprite.
+    /// </summary>
     public Color Color {
         get {
             return ((SpriteState)state).color;
@@ -46,6 +62,9 @@ public class Sprite : VisualEntity2D, IColored {
         }
     }
 
+    /// <summary>
+    /// The texture of the sprite.
+    /// </summary>
     public Texture2D Texture {
         get {
             return ((SpriteState)state).texture;
@@ -56,6 +75,9 @@ public class Sprite : VisualEntity2D, IColored {
         }
     }
 
+    /// <summary>
+    /// The width of the sprite.
+    /// </summary>
     public float Width {
         get {
             return ((SpriteState)state).width;
@@ -66,6 +88,9 @@ public class Sprite : VisualEntity2D, IColored {
         }
     }
 
+    /// <summary>
+    /// The height of the sprite.
+    /// </summary>
     public float Height {
         get {
             return ((SpriteState)state).height;
@@ -76,6 +101,9 @@ public class Sprite : VisualEntity2D, IColored {
         }
     }
 
+    /// <summary>
+    /// Clone this sprite.
+    /// </summary>
     public override object Clone() {
         return new Sprite(this);
     }

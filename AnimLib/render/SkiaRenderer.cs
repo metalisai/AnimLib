@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using Svg.Skia;
 using SkiaSharp;
 using System.IO;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace AnimLib;
 
@@ -25,8 +27,8 @@ internal partial class SkiaRenderer
 
     int textureId = 0;
     int svgId = 0;
-    Dictionary<int, SKBitmap> LoadedImages = new Dictionary<int, SKBitmap>();
-    Dictionary<int, SKSvg> LoadedSvgs = new Dictionary<int, SKSvg>();
+    Dictionary<int, SKImage> LoadedImages = new ();
+    Dictionary<int, SKSvg> LoadedSvgs = new ();
 
     RenderMode mode;
 
@@ -51,7 +53,7 @@ internal partial class SkiaRenderer
         textPlacement = new TextPlacement("/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf", "Ubuntu");
     }
 
-    private SKBitmap LoadTexture(Texture2D texture) {
+    private SKImage LoadTexture(Texture2D texture) {
         int handle = textureId++;
         SKImageInfo info;
         switch(texture.Format) {
@@ -73,29 +75,26 @@ internal partial class SkiaRenderer
                 Debug.Error($"Can't load texture, unsupported format {texture.Format}");
                 return null;
         }
-        SKBitmap bitmap = new();
-        GCHandle gcHandle = GCHandle.Alloc(texture.RawData, GCHandleType.Pinned);
-        var ptr = gcHandle.AddrOfPinnedObject();
-        bitmap.InstallPixels(info, ptr);
-        LoadedImages.Add(handle, bitmap);
+        SKImage image = SKImage.FromPixelCopy(info, texture.RawData);
+        LoadedImages.Add(handle, image);
         texture.GLHandle = handle;
-        Debug.TLog($"Loaded texture {texture.Width}x{texture.Height} format {texture.Format}");
-        return bitmap;
+        Debug.Log($"Loaded texture {texture.Width}x{texture.Height} format {texture.Format}");
+        return image;
     }
 
     private SKSvg LoadSvg(SvgData svg) {
         int handle = svg.GetHashCode();
-        SKSvg ret = new SKSvg();
+        SKSvg newSvg = new SKSvg();
         var data = System.Text.Encoding.UTF8.GetBytes(svg.svg);
         var stream = new MemoryStream();
         stream.Write(data);
         stream.Flush();
         stream.Position = 0;
-        ret.Load(stream);
+        newSvg.Load(stream);
         svg.handle = handle;
-        LoadedSvgs.Add(handle, ret);
-        Debug.TLog($"Loaded SVG with length {svg.svg.Length}");
-        return ret;
+        LoadedSvgs.Add(handle, newSvg);
+        Debug.Log($"Loaded SVG with length {svg.svg.Length}.");
+        return newSvg;
     }
 
     public void SetBuffer(IBackendRenderBuffer buf) {
@@ -395,13 +394,13 @@ internal partial class SkiaRenderer
                 }
                 break;
             case SpriteState sprite:
-                SKBitmap bitmap = null;
+                SKImage image = null;
                 if(sprite.texture.GLHandle > 0) {
-                    bitmap = LoadedImages[sprite.texture.GLHandle];
+                    image = LoadedImages[sprite.texture.GLHandle];
                 } else {
-                    bitmap = LoadTexture(sprite.texture);
+                    image = LoadTexture(sprite.texture);
                 }
-                if(bitmap != null && mat != null) {
+                if(image != null && mat != null) {
 
                     //SKMatrix GetLocalTransform(EntityState2D ent, CanvasState rc, Rect aabb) {
                     var curMat = canvas.TotalMatrix;
@@ -412,7 +411,7 @@ internal partial class SkiaRenderer
                         paint.FilterQuality = SKFilterQuality.High;
                         paint.BlendMode = SKBlendMode.SrcOver;
                         paint.Color = sprite.color.ToSKColor();
-                        canvas.DrawBitmap(bitmap, rect, paint);
+                        canvas.DrawImage(image, rect, paint);
                     }
                     canvas.SetMatrix(curMat);
                 }
@@ -425,10 +424,32 @@ internal partial class SkiaRenderer
                     svg = LoadSvg(svgsprite.svg);
                 }
                 if(svg != null && mat != null) {
+                    var bounds = svg.Picture.CullRect;
                     var curMat = canvas.TotalMatrix;
-                    var local = GetLocalTransform(svgsprite, rc, new Rect(0.0f, 0.0f, svgsprite.width, svgsprite.height), css.Entities).PreConcat(new SKMatrix(1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f)).PostConcat(curMat);
-                    canvas.SetMatrix(local);
                     var rect = new SKRect(-svgsprite.width/2.0f, -svgsprite.height/2.0f, svgsprite.width/2.0f, svgsprite.height/2.0f);
+                    float scaleX = 1.0f, scaleY = 1.0f;
+                    float aspect = bounds.Width / bounds.Height;
+                    if (svgsprite.width > 0.0f) {
+                        scaleX = svgsprite.width / bounds.Width;
+                    }
+                    if (svgsprite.height > 0.0f) {
+                        scaleY = svgsprite.height / bounds.Height;
+                    }
+
+                    if (svgsprite.width > 0.0f && svgsprite.height <= 0.0f) {
+                        scaleY = scaleX;
+                    }
+                    else if (svgsprite.height > 0.0f && svgsprite.width <= 0.0f) {
+                        scaleX = scaleY;
+                    }
+                    float tX = -bounds.Width*scaleX/2.0f;
+                    float tY = bounds.Height*scaleY/2.0f;
+
+                    var preMat = new SKMatrix(scaleX, 0.0f, tX, 0.0f, -scaleY, tY, 0.0f, 0.0f, 1.0f);
+                    var local = GetLocalTransform(svgsprite, rc, new Rect(0.0f, 0.0f, svgsprite.width, svgsprite.height), css.Entities).PreConcat(preMat).PostConcat(curMat);
+                    canvas.SetMatrix(local);
+
+                    // TODO: scale svg to fit rect
                     using(var paint = new SKPaint()) {
                         paint.BlendMode = SKBlendMode.SrcOver;
                         paint.Color = svgsprite.color.ToSKColor();

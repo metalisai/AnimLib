@@ -50,12 +50,16 @@ public class SvgSprite : VisualEntity2D, IColored {
     /// <summary>
     /// Creates a new SVG sprite given the SVG code and the width and height.
     /// </summary>
-    public SvgSprite(SvgData svg, float width, float height) : base(new SvgSpriteState(svg, width, height)) {
+    /// <param name="svg">The SVG code.</param>
+    /// <param name="width">The width of the sprite.</param>
+    /// <param name="height">The height of the sprite.</param>
+    public SvgSprite(SvgData svg, float width = -1.0f, float height = -1.0f) : base(new SvgSpriteState(svg, width, height)) {
     }
 
     /// <summary>
     /// Copy constructor.
     /// </summary>
+    /// <param name="sprite">The sprite to copy.</param>
     public SvgSprite(SvgSprite sprite) : base(sprite) {
     }
 
