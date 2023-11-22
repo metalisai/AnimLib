@@ -165,7 +165,7 @@ internal partial class SkiaRenderer
         canvas.Clear(SKColors.Transparent);
     }
 
-    SKMatrix? GetCanvasMatrix2D(ref M4x4 canvasToClip, CanvasState canvas) {
+    SKMatrix? GetCanvasMatrix2D(ref M4x4 canvasToClip, out SKRect clipRegion, CanvasState canvas) {
         if(!canvas.is2d) {
             float bw = this.width;
             float bh = this.height;
@@ -183,7 +183,10 @@ internal partial class SkiaRenderer
             // this solution is far from perfect but gets rid of ghost images for most part
             // perspective clipping is tough
             if(bl.w < 0 || br.w < 0 || tl.w < 0 || tr.w < 0)
+            {
+                clipRegion = new SKRect(0.0f, 0.0f, glBuffer.Size.w, glBuffer.Size.h);
                 return null;
+            }
             float x1 = (0.5f * tl.x + 0.5f) * bw;
             float y1 = (0.5f * tl.y + 0.5f) * bh;
             float x2 = (0.5f * tr.x + 0.5f) * bw;
@@ -220,9 +223,16 @@ internal partial class SkiaRenderer
             }
 
             var mat = new SKMatrix(scaleX, skewX, transX, skewY, scaleY, transY, persp0, persp1, persp2);
+            // TODO: 3D clip region is a polygon, not a rectangle
+            clipRegion = new SKRect(0, 0, glBuffer.Size.w, glBuffer.Size.h);
             return mat;
         } else {
-            var mat2d = new SKMatrix(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+            float tX = canvas.center.x;
+            float tY = canvas.center.y;
+            var mat2d = new SKMatrix(1.0f, 0.0f, tX, 0.0f, 1.0f, tY, 0.0f, 0.0f, 1.0f);
+            float oX = glBuffer.Size.w/2.0f + canvas.center.x;
+            float oY = glBuffer.Size.h/2.0f + canvas.center.y;
+            clipRegion = new SKRect(oX - canvas.width/2.0f, oY - canvas.height/2.0f, oX + canvas.width/2.0f, oY + canvas.height/2.0f);
             return mat2d;
         }
     }
@@ -240,8 +250,10 @@ internal partial class SkiaRenderer
         }
 
         Vector2 origin;
-        if(ent.parentId <= 0) {
-            origin = (new Vector2(0.5f, 0.5f)+ent.anchor)*new Vector2(rc.width, rc.height);
+        if(ent.parentId <= 0) { // has no parent
+            float w = glBuffer.Size.w;
+            float h = glBuffer.Size.h;
+            origin = (new Vector2(0.5f, 0.5f)+ent.anchor)*new Vector2(w, h);
         } else {
             origin = Vector2.ZERO;
         }
@@ -271,7 +283,7 @@ internal partial class SkiaRenderer
         using var _ = new Performance.Call("SkiaRenderer.RenderCanvas");
         var rc = css.Canvas;
         var canvasToClip = worldToClip * rc.NormalizedCanvasToWorld;
-        var mat = GetCanvasMatrix2D(ref canvasToClip, rc);
+        var mat = GetCanvasMatrix2D(ref canvasToClip, out var clipRegion, rc);
         // can't create transform (canvas off screen, clipping with near plane etc)
         if(mat == null)
             return;
@@ -289,6 +301,9 @@ internal partial class SkiaRenderer
 
         // NOTE: ctx.ResetContext() will be called here
         Clear();
+
+        canvas.Save();
+        canvas.ClipRect(clipRegion, SKClipOperation.Intersect);
 
         canvas.SetMatrix(mat.Value);
         // gizmo
@@ -429,6 +444,7 @@ internal partial class SkiaRenderer
             using var aaa = new Performance.Call("SkiaRenderer.RenderText");
             Flush(css.Canvas.entityId);
         }
+        canvas.Restore();
     }
 
     int _texture = -1;

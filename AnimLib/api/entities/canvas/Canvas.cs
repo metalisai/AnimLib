@@ -176,6 +176,19 @@ public class Canvas : VisualEntity3D {
     }
 
     /// <summary>
+    /// Create a new 2D canvas.
+    /// </summary>
+    public Canvas(string name, Vector2 center, Vector2 size) : base(new CanvasState(name)) {
+        var cs = state as CanvasState;
+        cs.center = new Vector3(center.x, center.y, 0.0f);
+        cs.up = Vector3.UP;
+        cs.normal = -Vector3.FORWARD;
+        cs.width = size.x;
+        cs.height = size.y;
+        cs.is2d = true;
+    }
+
+    /// <summary>
     /// Copy constructor.
     /// </summary>
     public Canvas(Canvas c) : base(c) {
