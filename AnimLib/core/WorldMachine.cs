@@ -140,9 +140,9 @@ internal class WorldMachine {
         Step(delta);
     }
 
-    class EntComparer : IComparer<EntityState2D>
+    class EntComparer : IComparer<EntityState>
     {
-        public int Compare(EntityState2D x, EntityState2D y)
+        public int Compare(EntityState x, EntityState y)
         {
             if(x.sortKey < y.sortKey)
                 return -1;
@@ -164,7 +164,7 @@ internal class WorldMachine {
             }
         };
         var l = new List<CanvasSnapshot>();
-        foreach(var c in _canvases) {
+        foreach(var c in _canvases.OrderBy(x => _entities[x.Key].sortKey)) {
             var canvas = _entities[c.Key] as CanvasState;
             var css = new CanvasSnapshot() {
                     Entities = c.Value.Entities.Where(x => x.active).Select(x => x.Clone() as EntityState2D).ToArray(),

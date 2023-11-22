@@ -82,13 +82,16 @@ internal class AnimationPlayer {
     public float? ExportProgress {
         get {
             if(export == null) return null;
-            return (float)(export.currentProgress / (export.endTime - export.startTime));
+            return (float)(export.currentProgress / ExportLength);
         }
     }
 
     public float ExportLength {
         get {
             if(export == null) return 0.0f;
+            if (machine.GetEndTime() < export.endTime) {
+                return (float)(machine.GetEndTime() - export.startTime);
+            }
             return (float)(export.endTime - export.startTime);
         }
     }

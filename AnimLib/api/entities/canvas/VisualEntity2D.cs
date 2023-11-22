@@ -16,7 +16,6 @@ public enum Entity2DCoordinateSystem {
 
 internal abstract class EntityState2D : EntityState {
     public int canvasId = -1; // entity Id of canvas
-    public int sortKey = 0;
     public Vector2 position = Vector2.ZERO;
     public float rot = 0.0f;
     public Vector2 anchor = Vector2.ZERO;
@@ -38,7 +37,6 @@ internal abstract class EntityState2D : EntityState {
         this.pivot = e2d.pivot;
         this.scale = e2d.scale;
         this.csystem = e2d.csystem;
-        this.sortKey = e2d.sortKey;
         this.homography = e2d.homography;
     }
 
@@ -197,19 +195,6 @@ public abstract class VisualEntity2D : VisualEntity {
         set {
             World.current.SetProperty(this, "CSystem", value, ((EntityState2D)state).csystem);
             ((EntityState2D)state).csystem = value;
-        }
-    }
-
-    /// <summary>
-    /// Sort key used for sorting entities on the same canvas.
-    /// </summary>
-    public int SortKey {
-        get {
-            return ((EntityState2D)state).sortKey;
-        }
-        set {
-            World.current.SetProperty(this, "SortKey", value, ((EntityState2D)state).sortKey);
-            ((EntityState2D)state).sortKey = value;
         }
     }
 
