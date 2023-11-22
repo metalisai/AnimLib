@@ -474,6 +474,34 @@ public class World
     }
 
     /// <summary>
+    /// Create a 2D shape by tracing it's contour, then fading the fill if it has one.
+    /// </summary>
+    /// <param name="entity">The shape to create.</param>
+    /// <param name="duration">The duration of the whole animation.</param>
+    /// <returns></returns>
+    /// <typeparam name="T">The type of the shape.</typeparam>
+    public async Task CreateTraceAndFade<T>(T entity, float duration) where T : Shape, IColored {
+        bool fadeIn = entity.Mode == ShapeMode.FilledContour || entity.Mode == ShapeMode.Filled;
+        float traceDuration = fadeIn ? duration*0.5f : duration;
+        var oldMode = entity.Mode;
+        var c = entity.Color;
+        var alpha = c.a;
+        entity.Mode = ShapeMode.Contour;
+        entity.Trim = (0.0f, 0.0f);
+        CreateInstantly(entity);
+        await Animate.InterpF(x => {
+                entity.Trim = (0.0f, x);
+            }, 0.0f, 1.0f, traceDuration);
+        entity.Mode = oldMode;
+        if (fadeIn) {
+            await Animate.InterpF(x => {
+                c.a = (byte)Math.Round(x*((float)alpha));
+                entity.Color = c;
+            }, 0.0f, 1.0f, duration*0.5f);
+        }
+    }
+
+    /// <summary>
     /// Create an <c>IColored</c> entity with a fade in animation. Calls the <c>setcolor</c> function each time the color is updated.
     /// </summary>
     public Task CreateFadeIn<T>(T entity, Color startColor, Action<Color> setColor, float duration) where T : VisualEntity,IColored {
