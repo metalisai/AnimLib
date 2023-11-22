@@ -3,6 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Numerics;
 
+using EaseType = AnimLib.Ease.EaseType;
+
 namespace AnimLib;
 
 /// <summary>
@@ -27,52 +29,10 @@ public enum TextCreationMode {
 /// Helper class to animate entities. Part of the AnimLib user API.
 /// </summary>
 public static class Animate {
-
-    /// <summary>
-    /// Interpolation curve type.
-    /// </summary>
-    public enum InterpCurve {
-        /// <summary>Linear interpolation.</summary>
-        Linear,
-        /// <summary>Smooth interpolation.</summary>
-        EaseInOut,
-        /// <summary>Smooth interpolation with a overshoot bounce.</summary>
-        Bouncy,
-        /// <summary>Smooth interpolation with an elastic oscillation at the end.</summary>
-        EaseOutElastic,
-        /// <summary>Smooth interpolation with an elastic oscillation at beginning and end.</summary>
-        EaseInOutElastic,
-    }
-
     static CubicBezier<float,float> bouncy1 = new (0.0f, 0.0f, 1.5f, 1.0f);
     static CubicBezier<float,float> smooth1 = new (0.0f, 0.0f, 1.0f, 1.0f);
 
     static CubicBezier<Vector2,float> smooth = new CubicBezier<Vector2,float>(new Vector2(0.0f, 0.0f), new Vector2(0.33f, 0.0f), new Vector2 (0.66f, 1.0f), new Vector2(1.0f, 1.0f));
-
-    // Evaluate curve at t
-    private static T EvtCurve<T>(T t, InterpCurve curve) 
-        where T : IFloatingPoint<T>,
-        ISubtractionOperators<T, T, T>,
-        IMultiplyOperators<T, T, T>,
-        IPowerFunctions<T>,
-        ITrigonometricFunctions<T>
-    {
-        switch (curve) {
-            case InterpCurve.Bouncy:
-            CubicBezier<T, T> bouncy11 = new (T.Zero, T.Zero, T.CreateChecked(1.5), T.One);
-            return bouncy11.Evaluate(t);
-            case InterpCurve.Linear:
-            return t;
-            case InterpCurve.EaseInOut:
-            return Interp.EaseInOut(t);
-            case InterpCurve.EaseOutElastic:
-            return Interp.EaseOutElastic(t);
-            case InterpCurve.EaseInOutElastic:
-            return Interp.EaseInOutElastic(t);
-            default:
-            throw new NotImplementedException();
-        }
-    }
 
     /// <summary>
     /// Orbits a transform perpendicular to the given axis. Movement starts at the current position and orbits the specified angle during the given duration.
@@ -112,7 +72,7 @@ public static class Animate {
     /// <param name="offset">The offset to move the transform by.</param>
     /// <param name="duration">The duration of the offset operation.</param>
     /// <param name="curve">The interpolation curve to use.</param>
-    public static async Task Offset(this Transform t, Vector3 offset, double duration = 1.0, InterpCurve curve = InterpCurve.EaseInOut) {
+    public static async Task Offset(this Transform t, Vector3 offset, double duration = 1.0, EaseType curve = EaseType.EaseInOut) {
         await InterpT(x => {
             t.Pos = x;
         }, t.Pos, t.Pos+offset, duration, curve);
@@ -125,7 +85,7 @@ public static class Animate {
     /// <param name="offset">The offset to move the transform by.</param>
     /// <param name="duration">The duration of the offset operation.</param>
     /// <param name="curve">The interpolation curve to use.</param>
-    public static async Task Offset(this Transform2D t, Vector2 offset, double duration = 1.0, InterpCurve curve = InterpCurve.EaseInOut) {
+    public static async Task Offset(this Transform2D t, Vector2 offset, double duration = 1.0, EaseType curve = EaseType.EaseInOut) {
         await InterpT(x => {
             t.Pos = x;
         }, t.Pos, t.Pos+offset, duration, curve);
@@ -138,7 +98,7 @@ public static class Animate {
     /// <param name="moveTo">The position to move the transform to.</param> 
     /// <param name="duration">The duration of the move operation.</param>
     /// <param name="curve">The interpolation curve to use.</param>
-    public static async Task Move(this Transform2D t, Vector2 moveTo, double duration = 1.0, InterpCurve curve = InterpCurve.EaseInOut) {
+    public static async Task Move(this Transform2D t, Vector2 moveTo, double duration = 1.0, EaseType curve = EaseType.EaseInOut) {
         await InterpT(x => {
             t.Pos = x;
         }, t.Pos, moveTo, duration, curve);
@@ -151,7 +111,7 @@ public static class Animate {
     /// <param name="moveTo">The position to move the transform to.</param>
     /// <param name="duration">The duration of the move operation.</param>
     /// <param name="curve">The interpolation curve to use.</param>
-    public static async Task Move(this Transform t, Vector3 moveTo, double duration = 1.0, InterpCurve curve = InterpCurve.EaseInOut) {
+    public static async Task Move(this Transform t, Vector3 moveTo, double duration = 1.0, EaseType curve = EaseType.EaseInOut) {
         await InterpT(x => {
             t.Pos = x;
         }, t.Pos, moveTo, duration, curve);
@@ -165,13 +125,13 @@ public static class Animate {
     /// <param name="end">The end value of the interpolation.</param>
     /// <param name="duration">The duration of the interpolation.</param>
     /// <param name="curve">The interpolation curve to use.</param>
-    public static async Task InterpF(Action<float> action, float start, float end, double duration, InterpCurve curve = InterpCurve.EaseInOut) 
+    public static async Task InterpF(Action<float> action, float start, float end, double duration, EaseType curve = EaseType.EaseInOut) 
     {
         double endTime = AnimLib.Time.T + duration;
         while (AnimLib.Time.T < endTime) {
             double progress = 1.0 - (endTime - AnimLib.Time.T)/ duration;
             var t = (float)Math.Clamp(progress, 0.0f, 1.0f);
-            t = EvtCurve(t, curve);
+            t = Ease.Evaluate(t, curve);
             action.Invoke(start + (end - start) * t);
             await AnimLib.Time.WaitFrame();
         }
@@ -188,7 +148,7 @@ public static class Animate {
     /// <param name="curve">The interpolation curve to use.</param>
     /// <typeparam name="T">The type of the input and output values.</typeparam>
     /// <typeparam name="F">The type of the duration.</typeparam>
-    public static async Task InterpT<T,F>(Action<T> action, T start, T end, F duration, InterpCurve curve = InterpCurve.EaseInOut) 
+    public static async Task InterpT<T,F>(Action<T> action, T start, T end, F duration, EaseType curve = EaseType.EaseInOut) 
         where T : 
             IAdditionOperators<T, T, T>,
             ISubtractionOperators<T, T, T>,
@@ -204,7 +164,7 @@ public static class Animate {
         while (F.CreateChecked(AnimLib.Time.T) < endTime) {
             F progress = F.One - (endTime - F.CreateChecked(AnimLib.Time.T))/ duration;
             var t = F.Clamp(progress, F.Zero, F.One);
-            t = EvtCurve(t, curve);
+            t = Ease.Evaluate(t, curve);
             action.Invoke(start + (endD - startD) * t);
 
             await AnimLib.Time.WaitFrame();
@@ -220,12 +180,12 @@ public static class Animate {
     /// <param name="targetColor">The target color.</param>
     /// <param name="duration">The duration of the color change.</param>
     /// <param name="curve">The interpolation curve to use.</param>
-    public static async Task Color(IColored entity, Color startColor, Color targetColor, double duration, InterpCurve curve = InterpCurve.EaseInOut) {
+    public static async Task Color(IColored entity, Color startColor, Color targetColor, double duration, EaseType curve = EaseType.EaseInOut) {
         double endTime = AnimLib.Time.T + duration;
         while (AnimLib.Time.T < endTime) {
             double progress = 1.0 - (endTime - AnimLib.Time.T)/ duration;
             var t = (float)Math.Clamp(progress, 0.0f, 1.0f);
-            t = EvtCurve(t, curve);
+            t = Ease.Evaluate(t, curve);
             entity.Color = AnimLib.Color.LerpHSV(startColor, targetColor, (float)t);
             await AnimLib.Time.WaitFrame();
         }
@@ -239,7 +199,7 @@ public static class Animate {
     /// <param name="targetColor">The target color.</param>
     /// <param name="duration">The duration of the color change.</param>
     /// <param name="curve">The interpolation curve to use.</param>
-    public static Task Color(IColored entity, Color targetColor, double duration, InterpCurve curve = InterpCurve.EaseInOut) {
+    public static Task Color(IColored entity, Color targetColor, double duration, EaseType curve = EaseType.EaseInOut) {
         return Color(entity, entity.Color, targetColor, duration, curve);
     }
 
@@ -299,7 +259,7 @@ public static class Animate {
     /// <param name="duration">The duration of the morph.</param>
     /// <param name="curve">The interpolation curve to use.</param>
     /// <param name="destroyStartShape">Whether to destroy the start shape when creating the morph shape.</param>
-    public static async Task<Shape> CreateMorph(Shape startShape, Shape endShape, float duration, InterpCurve curve = InterpCurve.EaseInOut, bool destroyStartShape = true)
+    public static async Task<Shape> CreateMorph(Shape startShape, Shape endShape, float duration, EaseType curve = EaseType.EaseInOut, bool destroyStartShape = true)
     {
         var morph = new MorphShape(startShape, endShape);
         if (destroyStartShape && startShape.created) {
@@ -311,7 +271,7 @@ public static class Animate {
         while (AnimLib.Time.T - startTime < duration) {
             double progress = 1.0 - (endTime - AnimLib.Time.T)/ duration;
             var t = (float)Math.Clamp(progress, 0.0f, 1.0f);
-            t = EvtCurve(t, curve);
+            t = Ease.Evaluate(t, curve);
             morph.Progress = t;
             await AnimLib.Time.WaitFrame();
         }

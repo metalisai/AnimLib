@@ -28,7 +28,7 @@ public static class Interp {
     /// <param name="t">Interpolation factor [0..1]</param>
     /// <returns>The interpolated value with an ease in.</returns>
     /// <typeparam name="F">Floating point type.</typeparam>
-    public static F EaseIn<F>(F t) 
+    public static F EaseInQuad<F>(F t) 
         where F : IFloatingPoint<F>
     {
         return t*t;
