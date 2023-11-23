@@ -14,6 +14,8 @@ I started working on this years ago and occasionally come back to it every now a
 refactor. The initial version was very different from what it is now. I've lost interest in the project and I didn't see any reason to keep it private, so I
 decided to put it up on github.
 
+![Some example renders.](https://blog.tammearu.eu/animlib/)
+
 ## How does it work?
 
 You'd open up the application, create a new project and then compile a .dll plugin that the application can load.
