@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace AnimLib;
 
-public enum PlatformTextureSampler {
+internal enum PlatformTextureSampler {
     Mipmap,
     Blit,
     Linear,

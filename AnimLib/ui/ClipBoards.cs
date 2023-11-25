@@ -1,17 +1,14 @@
-using System;
-using System.Collections.Generic;
+namespace AnimLib;
 
-namespace AnimLib {
-    public static class Clipboard {
-        private static object data = null;
+internal static class Clipboard {
+    private static object data = null;
 
-        public static object Object {
-            get {
-                return data;
-            }
-            set {
-                data = value;
-            }
+    public static object Object {
+        get {
+            return data;
+        }
+        set {
+            data = value;
         }
     }
 }
