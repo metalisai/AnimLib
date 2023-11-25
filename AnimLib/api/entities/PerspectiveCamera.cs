@@ -79,10 +79,24 @@ internal class PerspectiveCameraState : CameraState
     }
 }
 
+/// <summary>
+/// A 3D perspective camera.
+/// </summary>
 public class PerspectiveCamera : Camera {
+    /// <summary>
+    /// Creates a new PerspectiveCamera.
+    /// </summary>
     public PerspectiveCamera() : base(new PerspectiveCameraState()) {
     }
+
+    /// <summary>
+    /// Copy constructor.
+    /// </summary>
     public PerspectiveCamera(PerspectiveCamera pc) : base(pc) {}
+
+    /// <summary>
+    /// The field of view in radians.
+    /// </summary>
     public float Fov {
         get {
             return ((PerspectiveCameraState)state).fov;
@@ -91,6 +105,10 @@ public class PerspectiveCamera : Camera {
             ((PerspectiveCameraState)state).fov = value;
         }
     }
+
+    /// <summary>
+    /// The near clipping plane.
+    /// </summary>
     public float ZNear {
         get {
             return ((PerspectiveCameraState)state).zNear;
@@ -99,6 +117,10 @@ public class PerspectiveCamera : Camera {
             ((PerspectiveCameraState)state).zNear = value;
         }
     }
+
+    /// <summary>
+    /// The far clipping plane.
+    /// </summary>
     public float ZFar {
         get {
             return ((PerspectiveCameraState)state).zFar;
@@ -108,18 +130,31 @@ public class PerspectiveCamera : Camera {
         }
     }
 
+    /// <summary>
+    /// Converts a world-space position to a normalized screen-space position.
+    /// </summary>
     public Vector3 WorldToClipPos(float aspect, Vector3 pos) {
         return ((PerspectiveCameraState)state).WorldToClipPos(aspect, pos);
     }   
 
+    /// <summary>
+    /// Creates a matrix that converts from clip-space to world-space. Note that a perspective division has to be performed after multiplying with that matrix.
+    /// </summary>
+    /// <param name="aspect">The aspect ratio of the screen.</param>
     public M4x4 CreateClipToWorldMatrix(float aspect) {
         return ((PerspectiveCameraState)state).CreateClipToWorldMatrix(aspect);
     }
 
+    /// <summary>
+    /// Create a ray from a clip-space position.
+    /// </summary>
     public Ray RayFromClip(Vector2 clipPos, float aspect) {
         return ((PerspectiveCameraState)state).RayFromClip(clipPos, aspect);
     }
 
+    /// <summary>
+    /// Clone this camera.
+    /// </summary>
     public override object Clone() {
         return new PerspectiveCamera(this);
     }
