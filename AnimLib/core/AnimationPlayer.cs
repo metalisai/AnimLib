@@ -11,12 +11,14 @@ namespace AnimLib;
 /// </summary>
 internal class AnimationPlayer {
 
-    public class AnimationExport {
-        public string fileName;
-        public double startTime;
-        public double endTime;
-        public double currentProgress;
-        public FfmpegExporter exporter;
+    public record AnimationExport(
+        string fileName, 
+        double startTime, 
+        double endTime, 
+        double currentProgress, 
+        FfmpegExporter exporter
+    ) {
+        public double currentProgress { get; set; } = currentProgress;
     }
 
     [Serializable]
@@ -210,12 +212,7 @@ internal class AnimationPlayer {
     {
         Console.WriteLine($"Export animation {filename} from time {start} to {end}.");
         var path = "Videos/"+filename;
-        export = new AnimationExport() {
-            fileName = path,
-            startTime = start,
-            endTime = end,
-            exporter = new FfmpegExporter()
-        };
+        export = new AnimationExport(path, start, end, 0.0, new FfmpegExporter());
 
         machine.SeekSeconds(start);
         var root = Path.GetDirectoryName(path);

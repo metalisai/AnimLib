@@ -13,16 +13,15 @@ internal class PlayerScene {
         Delete,
     }
 
-    internal class SceneEvent {
-        public SceneEventType type;
-        public SceneObject obj;
-        public double time;
-    }
+    internal record SceneEvent(SceneEventType type, SceneObject obj, double time);
 
     internal class SEComparer : IComparer<SceneEvent>
     {
         public int Compare([AllowNull] SceneEvent x, [AllowNull] SceneEvent y)
         {
+            if(x == null || y == null) {
+                throw new ArgumentNullException();
+            }
             var dif = x.time - y.time;
             if(dif == 0.0) {
                 return 0;
@@ -36,10 +35,12 @@ internal class PlayerScene {
     /// Creates a new empty scene.
     /// </summary>
     public PlayerScene() {
+        SceneEvents = new List<SceneEvent>();
     }
 
     [JsonConstructor]
     internal PlayerScene(IList<PlayerCircle> circles, IList<PlayerRect> rectangles, IList<PlayerShape> shapes) {
+        SceneEvents = new List<SceneEvent>();
         if(circles != null) {
             this.Circles = circles;
             foreach(var c in circles) Objects2D.Add(c);
@@ -112,27 +113,18 @@ internal class PlayerScene {
         return Objects2D.Select(x => (SceneObject)x).ToArray();
     }
 
-    internal List<SceneEvent> GenerateEvents() {
+    internal void GenerateEvents() {
         var ret = new List<SceneEvent>();
         var objs = GetObjects();
 
         foreach(var obj in objs) {
-            var createe = new SceneEvent() {
-                type = SceneEventType.Create,
-                obj = obj,
-                time = obj.timeslice.Item1,
-            };
-            var dele = new SceneEvent() {
-                type = SceneEventType.Delete,
-                obj = obj,
-                time = obj.timeslice.Item2,
-            };
+            var createe = new SceneEvent(SceneEventType.Create, obj, obj.timeslice.Item1);
+            var dele = new SceneEvent(SceneEventType.Delete, obj, obj.timeslice.Item2);
             ret.Add(createe);
             ret.Add(dele);
         }
         ret.Sort(new SEComparer());
-
-        return ret;
+        this.SceneEvents = ret;
     }
 
     internal void DestroyObject(SceneObject obj) {
@@ -174,10 +166,10 @@ internal class PlayerScene {
     }
 
     public void UpdateEvents() {
-        SceneEvents = GenerateEvents();
+        GenerateEvents();
     }
 
-    internal SceneObject GetCanvasObject(string canvasName, Vector2 canvasPos) {
+    internal SceneObject? GetCanvasObject(string canvasName, Vector2 canvasPos) {
         foreach(var so in sceneObjects.Values) {
             switch(so) {
                 case SceneObject2D s2d:
@@ -192,15 +184,15 @@ internal class PlayerScene {
         return null;
     }
 
-    internal SceneObject GetSceneObjectById(int id) {
-        SceneObject ret = null;
+    internal SceneObject? GetSceneObjectById(int id) {
+        SceneObject? ret = null;
         if(sceneObjects.TryGetValue(id, out ret)) {
             return ret;
         }
         return null;
     }
 
-    public VisualEntity GetSceneEntityByName(string name) {
+    public VisualEntity? GetSceneEntityByName(string name) {
         // TODO: use hash map!
         var objs = GetObjects();
         foreach(var obj in objs) {
@@ -227,9 +219,7 @@ internal class PlayerScene {
 
     // TODO: this needs to be refactored
     public void ManageSceneObjects(World world) {
-        if(SceneEvents == null) {
-            UpdateEvents();
-        }
+        UpdateEvents();
         foreach(var e in SceneEvents) {
             if(e.time < LastTime) {
                 continue;
@@ -250,7 +240,7 @@ internal class PlayerScene {
                                 switch(ce) {
                                     case Canvas canvas:
                                         var cs = canvas.state as CanvasState;
-                                        if(cs.name == so2d.CanvasName) {
+                                        if(cs != null && cs.name == so2d.CanvasName) {
                                             System.Diagnostics.Debug.Assert(ce.created);
                                             c.Canvas = canvas;
                                             world.CreateInstantly(c);
@@ -320,8 +310,9 @@ internal class PlayerScene {
                     var ent = world.FindEntityByCreator(e.obj);
                     if(ent == null) {
                         Debug.Error($"Scene destroying entity that isn't created by us {e.obj.name}");
+                    } else {
+                        world.Destroy(ent);
                     }
-                    world.Destroy(ent);
                 }
             } else {
                 break;
