@@ -3,7 +3,10 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
+
 namespace AnimLib;
+
+using CanvasProperties = (string Name, (string Name, object Value)[] Properties);
 
 /// <summary>
 /// An interface for entities that can be colored.
@@ -105,6 +108,7 @@ internal class RendererAnimation {
 }
 
 internal class CanvasSnapshot {
+    public required CanvasProperties[] Effects;
     public required CanvasState Canvas;
     public required EntityState2D[] Entities;
 }
@@ -340,16 +344,6 @@ public class World
     internal delegate void OnPropertyChangedD(VisualEntity ent, string prop, object newValue);
     internal event OnPropertyChangedD OnPropertyChanged;
 
-    internal void SetDynProprty(int id, object value) {
-        var cmd = new WorldDynPropertyCommand(
-            entityId: id,
-            newvalue: value,
-            oldvalue: _dynamicProperties[id],
-            time: Time.T
-        );
-        _dynamicProperties[id] = value;
-    }
-
     internal void SetProperty<T>(VisualEntity entity, string propert, T value, T oldvalue) where T : notnull {
         if(value.Equals(oldvalue))
             return;
@@ -453,7 +447,24 @@ public class World
             value: vl,
             time: Time.T
         );
+        _commands.Add(cmd);
         return id;
+    }
+
+    internal object? GetDynProperty(int id) {
+        _dynamicProperties.TryGetValue(id, out var ret);
+        return ret;
+    }
+
+    internal void SetDynProperty(int id, object value) {
+        var cmd = new WorldDynPropertyCommand(
+            entityId: id,
+            newvalue: value,
+            oldvalue: _dynamicProperties[id],
+            time: Time.T
+        );
+        _commands.Add(cmd);
+        _dynamicProperties[id] = value;
     }
 
     /// <summary>

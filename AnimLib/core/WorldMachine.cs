@@ -159,10 +159,15 @@ internal class WorldMachine {
         var l = new List<CanvasSnapshot>();
         foreach(var c in _canvases.OrderBy(x => _entities[x.Key].sortKey)) {
             var canvas = (CanvasState)_entities[c.Key];
+            var effects = canvas.effects.Select(x => 
+                (x.GetType().Name,
+                x.properties.Select(x => (x.Key, this._dynamicProperties[x.Value.Id])).ToArray())
+            ).ToArray();
             var css = new CanvasSnapshot() {
-                    Entities = c.Value.Entities.Where(x => x.active).Select(x => (EntityState2D)x.Clone()).ToArray(),
-                    Canvas = canvas
-                };
+                Entities = c.Value.Entities.Where(x => x.active).Select(x => (EntityState2D)x.Clone()).ToArray(),
+                Canvas = canvas,
+                Effects = effects,
+            };
             Array.Sort(css.Entities, new EntComparer());
             l.Add(css);
             foreach(var s in css.Entities) s.canvas = canvas;
@@ -401,6 +406,12 @@ internal class WorldMachine {
             break;
             case WorldSetActiveCameraCommand setActiveCameraCommand:
             _activeCamera = (setActiveCameraCommand.oldCamEntId == 0 ? null : (CameraState)_entities[setActiveCameraCommand.oldCamEntId]);
+            break;
+            case WorldCreateDynPropertyCommand createDynPropertyCommand:
+            _dynamicProperties.Remove(createDynPropertyCommand.propertyId);
+            break;
+            case WorldDynPropertyCommand dynPropertyCommand:
+            _dynamicProperties[dynPropertyCommand.entityId] = dynPropertyCommand.oldvalue;
             break;
         }
     }

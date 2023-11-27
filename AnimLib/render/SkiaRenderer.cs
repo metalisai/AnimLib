@@ -8,6 +8,8 @@ using System.IO;
 using System.Xml;
 using System.Xml.Linq;
 
+using CanvasProperties = (string Name, (string Name, object Value)[] Properties);
+
 namespace AnimLib;
 
 /// <summary>
@@ -302,6 +304,32 @@ internal partial class SkiaRenderer
         Clear();
 
         canvas.Save();
+        int restoreCount = 1;
+
+        T getValue<T>(CanvasProperties test, string name) {
+            return (T)test.Properties.First(x => x.Name == name).Value;
+        }
+
+        foreach(var eff in css.Effects) {
+            // NOTE: using typeof to make sure that if someone changes the name of the effect, it can be caught at compile time
+            if (eff.Name == typeof (CanvasBlurEffect).Name) {
+                using var _x = new Performance.Call("SkiaRenderer.RenderCanvas.Blur");
+                float radiusX = getValue<float>(eff, "radiusX");
+                float radiusY = getValue<float>(eff, "radiusY");
+                using var filter = SKImageFilter.CreateBlur(radiusY, radiusY);
+                canvas.SaveLayer(new SKPaint() { ImageFilter = filter });
+                restoreCount++;
+            }
+            else if (eff.Name == typeof (CanvasDilateEffect).Name) {
+                using var _x = new Performance.Call("SkiaRenderer.RenderCanvas.Dilate");
+                float radiusX = getValue<float>(eff, "radiusX");
+                float radiusY = getValue<float>(eff, "radiusY");
+                using var filter = SKImageFilter.CreateDilate(radiusX, radiusY);
+                canvas.SaveLayer(new SKPaint() { ImageFilter = filter });
+                restoreCount++;
+            }
+        }
+
         canvas.ClipRect(clipRegion, SKClipOperation.Intersect);
 
         canvas.SetMatrix(mat.Value);
@@ -461,11 +489,14 @@ internal partial class SkiaRenderer
             }
         }
 
+        for (int i = 0; i < restoreCount; i++)
+        {
+            canvas.Restore();
+        }
         {
             using var aaa = new Performance.Call("SkiaRenderer.RenderText");
             Flush(css.Canvas.entityId);
         }
-        canvas.Restore();
     }
 
     int _texture = -1;
