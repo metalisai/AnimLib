@@ -16,12 +16,12 @@ internal class EntityStateResolver {
 internal abstract class EntityState : ICloneable {
     // TODO: find way to reference state without VisualEntity
     public int parentId = 0;
-    public object creator; // AnimationBehaviour or SceneObject
+    // who created this entity inside the world, i.e. AnimationBehaviour or SceneObject
+    public object? creator; 
     public bool active = true;
     public bool selectable = true;
     public int entityId = -1;
     public int sortKey = 0; // used to sort 2D or transparent 3D entities
-    public RendererAnimation anim = null;
     public abstract object Clone();
 
     public EntityState() {

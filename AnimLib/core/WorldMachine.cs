@@ -150,16 +150,7 @@ internal class WorldMachine {
     }
 
     public WorldSnapshot GetWorldSnapshot() {
-        var ret = new WorldSnapshot();
-        ret.Glyphs = _glyphs.Where(x => x.active).ToArray();
-        ret.MeshBackedGeometries = _mbgeoms.Where(x => x.active).ToArray();
-        ret.Cubes = _cubes.Where(x => x.active).ToArray();
-        ret.Beziers = _beziers.Where(x => x.active).ToArray();
-        ret.resolver = new EntityStateResolver {
-            GetEntityState = entid => {
-                return _entities.ContainsKey(entid) ? _entities[entid] : null;
-            }
-        };
+
         var l = new List<CanvasSnapshot>();
         foreach(var c in _canvases.OrderBy(x => _entities[x.Key].sortKey)) {
             var canvas = _entities[c.Key] as CanvasState;
@@ -171,9 +162,24 @@ internal class WorldMachine {
             l.Add(css);
             foreach(var s in css.Entities) s.canvas = canvas;
         }
-        ret.Canvases = l.ToArray();
-        ret.Camera = _activeCamera.Clone() as CameraState;
-        ret.RenderBuffers = _renderBuffers.ToArray();
+
+        var ret = new WorldSnapshot() {
+            Glyphs = _glyphs.Where(x => x.active).ToArray(),
+            MeshBackedGeometries = _mbgeoms.Where(x => x.active).ToArray(),
+            Cubes = _cubes.Where(x => x.active).ToArray(),
+            Beziers = _beziers.Where(x => x.active).ToArray(),
+            resolver = new EntityStateResolver {
+                GetEntityState = entid => {
+                    return _entities.ContainsKey(entid) ? _entities[entid] : null;
+                }
+            },
+            Canvases = l.ToArray(),
+            Camera = (CameraState)_activeCamera.Clone(),
+            RenderBuffers = _renderBuffers.ToArray(),
+            // TODO: populate these
+            Rectangles = Array.Empty<RectangleState>(),
+            Meshes = Array.Empty<ColoredTriangleMesh>(),
+        };
         return ret;
     }
 

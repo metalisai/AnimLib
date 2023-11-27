@@ -97,11 +97,15 @@ public abstract class VisualEntity2D : VisualEntity {
         Transform = new Transform2D(this);
         if (World.current.ActiveCanvas.created)
         {
+            // this is here to make the compiler happy
+            _canvas = Canvas.Default;
             Canvas = World.current.ActiveCanvas;
         }
         else
         {
             Debug.Error("World.ActiveCanvas is set to a canvas entity that isn't created. Using default canvas.");
+            // this is here to make the compiler happy
+            _canvas = Canvas.Default;
             Canvas = Canvas.Default;
         }
     }
@@ -111,6 +115,8 @@ public abstract class VisualEntity2D : VisualEntity {
     /// </summary>
     public VisualEntity2D(VisualEntity2D e) : base(e) {
         Transform = new Transform2D(this);
+        // this is here to make the compiler happy
+        _canvas = e.Canvas;
         Canvas = e.Canvas;
     }
 

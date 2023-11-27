@@ -25,20 +25,32 @@ internal abstract class EntityState3D : EntityState {
     }
 }
 
+/// <summary>
+/// A 3D visual entity. Unlike <see cref="VisualEntity2D"/>, this entity does not require a canvas (and can't be placed on one).
+/// </summary>
 public abstract class VisualEntity3D : VisualEntity {
+    /// <summary>
+    /// The 3D transform of the entity.
+    /// </summary>
     public Transform Transform;
 
+    /// <summary>
+    /// Copy constructor.
+    /// </summary>
     public VisualEntity3D(VisualEntity3D ent) : base(ent) {
         Transform = new Transform(this);
     }
     
+    /// <summary>
+    /// Creates a new 3D visual entity from a state.
+    /// </summary>
     internal VisualEntity3D(EntityState state) : base(state) {
         Transform = new Transform(this);
     }
 
     internal new EntityState3D state {
         get {
-            return base.state as EntityState3D;
+            return (EntityState3D)base.state;
         }
     }
 }

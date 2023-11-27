@@ -105,26 +105,25 @@ internal class RendererAnimation {
 }
 
 internal class CanvasSnapshot {
-    public CanvasState Canvas;
-    public EntityState2D[] Entities;
+    public required CanvasState Canvas;
+    public required EntityState2D[] Entities;
 }
 
 /// <summary>
 /// WorldSnapshot is a snapshot of the current world state. Used to render the world in a given point in time.
 /// </summary>
 internal class WorldSnapshot {
-    public EntityStateResolver resolver;
-    public CameraState Camera;
-    public RectangleState[] Rectangles;
-    public CubeState[] Cubes;
-    public GlyphState[] Glyphs;
-    public ColoredTriangleMesh[] Meshes;
-    public MeshBackedGeometry[] MeshBackedGeometries;
-    public BezierState[] Beziers;
-    public CanvasSnapshot[] Canvases;
-    public MorphShape[] MorphShapes;
+    public required EntityStateResolver resolver;
+    public required CameraState Camera;
+    public required RectangleState[] Rectangles;
+    public required CubeState[] Cubes;
+    public required GlyphState[] Glyphs;
+    public required ColoredTriangleMesh[] Meshes;
+    public required MeshBackedGeometry[] MeshBackedGeometries;
+    public required BezierState[] Beziers;
+    public required CanvasSnapshot[] Canvases;
     // NOTE: the first renderbuffer is always the main one
-    public RenderBufferState[] RenderBuffers;
+    public required RenderBufferState[] RenderBuffers;
     public double Time;
 }
 
