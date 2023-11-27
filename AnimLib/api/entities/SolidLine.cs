@@ -86,49 +86,6 @@ public class SolidLine : VisualEntity3D {
     public SolidLine(SolidLine sl) : base(sl) {
     }
 
-    internal Vector2? GetLabelOffset(CameraState cam, Rect label, LabelStyle style, EntityState state, Vector2 screenSize)
-    {
-        var mstate = (SolidLineState)state;
-        if(cam is PerspectiveCameraState) {
-            var pcam  = cam as PerspectiveCameraState;
-            var startS = pcam.WorldToScreenPos(mstate.points[0], screenSize);
-            var endS = pcam.WorldToScreenPos(mstate.points[1], screenSize);
-            var dirS = (endS-startS).Normalized;
-            var dotH = Vector2.Dot(dirS, Vector2.RIGHT);
-            var dotV = Vector2.Dot(dirS, Vector2.UP);
-            var alphaH = MathF.Acos(dotH);
-            var linewhh = 0.5f*mstate.width/(MathF.Abs(MathF.Sin(0.5f*MathF.PI-alphaH)));
-            var alphaV = MathF.Acos(dotV);
-            var linewhv = 0.5f*mstate.width/(MathF.Abs(MathF.Sin(0.5f*MathF.PI-alphaV)));
-            var centerS = 0.5f*(startS+endS);
-        
-            float x, y;
-            if(MathF.Abs(dotH) >= MathF.Abs(dotV)) { // place up
-                var centerH = 0.5f*(mstate.points[0]+mstate.points[1]) + new Vector3(0.0f, linewhh, 0.0f);
-                var centerSH = pcam.WorldToScreenPos(centerH, screenSize);
-                var dif = centerSH-centerS;
-                x = 0.0f;
-                y = MathF.Abs(0.5f*label.width*MathF.Tan(alphaH))+0.5f*label.height;
-                return new Vector2(-x, -y);
-            } else { // place left
-                var centerV = 0.5f*(mstate.points[0]+mstate.points[1]) + new Vector3(-linewhv, 0.0f, 0.0f);
-                var centerSV = pcam.WorldToScreenPos(centerV, screenSize);
-                var dif = centerSV-centerS;
-                x = MathF.Abs(0.5f*label.height*MathF.Tan(alphaV))+0.5f*label.width;
-                y = 0.0f;
-                return new Vector2(-x+dif.x, -y+dif.y);
-            }
-        } else {
-            throw new NotImplementedException();
-        }
-    }
-
-    internal Vector3? GetLabelWorldCoordinate(LabelStyle style, EntityState state)
-    {
-        var ps = ((SolidLineState)state).points;
-        return 0.5f*(ps[0]+ps[1]);
-    }
-
     public override object Clone() {
         return new SolidLine(this);
     }

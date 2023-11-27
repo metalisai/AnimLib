@@ -5,26 +5,13 @@ using System.Threading.Tasks;
 
 namespace AnimLib;
 
-public enum LabelStyle {
-    None,
-    Horizontal, // only horizontal orientation allowed
-    Free, // can have any orientation
-}
-
-/*public interface Labelable {
-    Vector2? GetLabelOffset(CameraState cam, Rect label, LabelStyle style, EntityState state, Vector2 screenSize);
-    Vector3? GetLabelWorldCoordinate(LabelStyle style, EntityState state);
-}*/
-
-public class AbsorbDestruction {
-    public int entityId;
-    public Vector3? point;
-    public Vector3? screenPoint;
-    public float duration;
-    public float progress;
-}
-
+/// <summary>
+/// An interface for entities that can be colored.
+/// </summary>
 public interface IColored {
+    /// <summary>
+    /// The (multiplicative) color of the entity.
+    /// </summary>
     Color Color { get; set; }
 }
 
@@ -133,7 +120,6 @@ internal class WorldSnapshot {
     public GlyphState[] Glyphs;
     public ColoredTriangleMesh[] Meshes;
     public MeshBackedGeometry[] MeshBackedGeometries;
-    public (LabelState, EntityState)[] Labels;
     public BezierState[] Beziers;
     public CanvasSnapshot[] Canvases;
     public MorphShape[] MorphShapes;
@@ -180,7 +166,6 @@ public class World
 
     List<WorldCommand> _commands = new List<WorldCommand>();
     List<WorldSoundCommand> _soundCommands = new List<WorldSoundCommand>();
-    List<Label> _labels = new List<Label>();
     List<Func<VisualEntity, bool>> CreationListeners = new List<Func<VisualEntity, bool>>();
 
     // used by EntityCollection to keep track of children
@@ -190,7 +175,7 @@ public class World
     private Dictionary<int, VisualEntity> _entities = new Dictionary<int, VisualEntity>();
 
     internal ITypeSetter ts = new FreetypeSetting();
-    object currentEditor = null; // who edits things right now (e.g. scene or animationbehaviour)
+    object? currentEditor = null; // who edits things right now (e.g. scene or animationbehaviour)
     internal EntityResolver EntityResolver;
     Color background = Color.WHITE;
 
@@ -199,11 +184,11 @@ public class World
     /// </summary>
     public readonly int Id;
 
-    Camera _activeCamera;
+    Camera? _activeCamera;
     /// <summary>
-    /// The currently active camera.
+    /// The currently active camera. If null nothing is rendered.
     /// </summary>
-    public Camera ActiveCamera {
+    public Camera? ActiveCamera {
         get {
             return _activeCamera;
         } set {
@@ -257,7 +242,6 @@ public class World
         //this._activeCamera.Position = new Vector3(0.0f, 0.0f, 13.0f);
         Reset();
     }
-    List<AbsorbDestruction> removes = new List<AbsorbDestruction>();
 
     internal int GetUniqueId() {
         return entityId++;
@@ -272,7 +256,6 @@ public class World
             }
         }*/
         
-        removes.Clear();
     }
 
     /// <summary>
@@ -301,7 +284,6 @@ public class World
         Resources = new WorldResources();
         _entities.Clear();
         _commands.Clear();
-        _labels.Clear();
         var cam = new PerspectiveCamera();
         cam.Fov = 60.0f;
         cam.ZNear = 0.1f;
@@ -324,12 +306,12 @@ public class World
         EndEditing();
     }
 
-    internal Canvas FindCanvas(string name) {
+    internal Canvas? FindCanvas(string name) {
         foreach(var ent in _entities) {
             if(ent.Value is Canvas) {
                 var canvas = ent.Value as Canvas;
-                var state = canvas.state as CanvasState;
-                if(state.name == name) {
+                var state = canvas?.state as CanvasState;
+                if(state != null && state.name == name) {
                     return canvas;
                 }
             }
@@ -337,7 +319,7 @@ public class World
         return null;
     }
 
-    internal VisualEntity FindEntityByCreator(object creator) {
+    internal VisualEntity? FindEntityByCreator(object creator) {
         foreach(var ent in _entities.Values) {
             if(ent.state.creator == creator) {
                 return ent;
@@ -357,7 +339,7 @@ public class World
     internal delegate void OnPropertyChangedD(VisualEntity ent, string prop, object newValue);
     internal event OnPropertyChangedD OnPropertyChanged;
 
-    internal void SetProperty<T>(VisualEntity entity, string propert, T value, T oldvalue) {
+    internal void SetProperty<T>(VisualEntity entity, string propert, T value, T oldvalue) where T : notnull {
         if(value.Equals(oldvalue))
             return;
         if(entity.created) {
@@ -375,7 +357,7 @@ public class World
         }
     }
 
-    internal void SetPropertyMulti<T>(IEnumerable<VisualEntity> entity, string propert, T value, T[] oldvalues) {
+    internal void SetPropertyMulti<T>(IEnumerable<VisualEntity> entity, string propert, T value, T[] oldvalues) where T : notnull {
         var ents = entity.Zip(oldvalues, (f, s) => (f, s)).Where(x => x.f.created);
         var cmd = new WorldPropertyMultiCommand {
             entityIds = ents.Select(x => x.f.EntityId).ToArray(),
@@ -392,7 +374,12 @@ public class World
         if(currentEditor == null) {
             Debug.Error("Entity created when no one is editing!? Use StartEditing() before modifying world.");
         }
-        entity.state.creator = currentEditor;
+        if (currentEditor != null) {
+            entity.state.creator = currentEditor;
+        }
+        else {
+            Debug.Warning("Entity created without creator. This is not a problem but might make debugging harder.");
+        }
         var cmd = new WorldCreateCommand() {
             time = Time.T,
             entity = entity.state.Clone(),
@@ -400,11 +387,6 @@ public class World
         _commands.Add(cmd);
         entity.created = true;
         _entities.Add(entity.EntityId, entity);
-        switch(entity) {
-            case Label l1:
-            _labels.Add(l1);
-            break;
-        }
         entity.EntityCreated();
         CheckDependantEntities(entity);
     }

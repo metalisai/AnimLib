@@ -16,12 +16,10 @@ internal class WorldMachine {
     List<MeshBackedGeometry> _mbgeoms = new List<MeshBackedGeometry>();
     List<CubeState> _cubes = new List<CubeState>();
     List<EntityState> _cameras =  new List<EntityState>();
-    List<LabelState> _labels = new List<LabelState>();
     List<BezierState> _beziers = new List<BezierState>();
     Dictionary<int, CanvasEntities> _canvases = new Dictionary<int, CanvasEntities>();
     //Dictionary<VisualEntity, EntityState> _entities = new Dictionary<VisualEntity, EntityState>();
     Dictionary<int, EntityState> _entities = new Dictionary<int, EntityState>();
-    Dictionary<int, AbsorbDestruction> _absorbs = new Dictionary<int, AbsorbDestruction>();
 
     Dictionary<int, EntityState> _destroyedEntities = new Dictionary<int, EntityState>();
     List<RenderBufferState> _renderBuffers = new();
@@ -56,7 +54,6 @@ internal class WorldMachine {
         //_rectangles.Clear();
         _cubes.Clear();
         _cameras.Clear();
-        _labels.Clear();
         _playCursorCmd = 0;
         _currentPlaybackTime = 0.0;
         _entities.Clear();
@@ -201,10 +198,6 @@ internal class WorldMachine {
             state = (EntityState)bz.Clone();
             _beziers.Add((BezierState)state);
             break;
-            case LabelState l1:
-            state = (EntityState)l1.Clone();
-            _labels.Add((LabelState)state);
-            break;
             case PerspectiveCameraState p1:
             state = (EntityState)p1.Clone();
             _cameras.Add((PerspectiveCameraState)state);
@@ -242,9 +235,6 @@ internal class WorldMachine {
             break;
             case BezierState bz:
             _beziers.RemoveAll(x => x.entityId == entityId);
-            break;
-            case LabelState l1:
-            _labels.RemoveAll(x => x.entityId == entityId);
             break;
             case SolidLineState l2:
             _mbgeoms.RemoveAll(x => x.entityId == entityId);
@@ -336,26 +326,6 @@ internal class WorldMachine {
             case WorldSetActiveCameraCommand setActiveCameraCommand:
             _activeCamera = (CameraState)_entities[setActiveCameraCommand.cameraEntId];
             break;
-            case WorldAbsorbCommand abscmd:
-            if(abscmd.progress > 0.0f && abscmd.progress < 1.0f) {
-                if(!_absorbs.TryAdd(abscmd.entityId, new AbsorbDestruction() {
-                    entityId = abscmd.entityId,
-                    progress = abscmd.progress,
-                })) {
-                    _absorbs[abscmd.entityId].progress = abscmd.progress;
-                    _entities[abscmd.entityId].anim.progress = abscmd.progress;
-                } else {
-                    _entities[abscmd.entityId].anim = new RendererAnimation() {
-                        point = abscmd.absorbPoint,
-                        screenPoint = abscmd.absorbScreenPoint,
-                        progress = 0.0f,
-                    };
-                }
-            } else if(abscmd.progress >= 1.0f) {
-                _absorbs.Remove(abscmd.entityId);
-                _entities[abscmd.entityId].anim = null;
-            }
-            break;
         }
     }
 
@@ -414,26 +384,6 @@ internal class WorldMachine {
             break;
             case WorldSetActiveCameraCommand setActiveCameraCommand:
             _activeCamera = (setActiveCameraCommand.oldCamEntId == 0 ? null : (CameraState)_entities[setActiveCameraCommand.oldCamEntId]);
-            break;
-            case WorldAbsorbCommand abscmd:
-                if(_absorbs.ContainsKey(abscmd.entityId)) {
-                    _absorbs[abscmd.entityId].progress = abscmd.oldprogress;
-                    _entities[abscmd.entityId].anim.progress = abscmd.progress;
-                    if(abscmd.oldprogress == 0.0f){
-                        _absorbs.Remove(abscmd.entityId);
-                        _entities[abscmd.entityId].anim = null;
-                    }
-                } else {
-                    _absorbs.Add(abscmd.entityId, new AbsorbDestruction() {
-                        entityId = abscmd.entityId,
-                        progress = abscmd.oldprogress,
-                    });
-                    _entities[abscmd.entityId].anim = new RendererAnimation(){
-                        point = abscmd.absorbPoint,
-                        screenPoint = abscmd.absorbScreenPoint,
-                        progress = 1.0f,
-                    };;
-                }
             break;
         }
     }

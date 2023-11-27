@@ -35,7 +35,7 @@ internal class TextPlacement : System.IDisposable {
             this.font = font;
         }
 
-        public override bool Equals(object obj) {
+        public override bool Equals(object? obj) {
             if(obj is GlyphKey) {
                 var other = (TPGlyphKey)obj;
                 return other.codepoint == this.codepoint && other.size == this.size && other.font == this.font;
@@ -79,9 +79,8 @@ internal class TextPlacement : System.IDisposable {
             g.position.y = y + pos[i].YOffset;
             x += pos[i].XAdvance;
             y += pos[i].YAdvance;
-            SKPath path;
             var key = new TPGlyphKey(g.character, size, lf.name);
-            if(!CachedGlyphPaths.TryGetValue(key, out path)) {
+            if(!CachedGlyphPaths.TryGetValue(key, out var path)) {
                 path = lf.skFont.GetGlyphPath((ushort)info[i].Codepoint);
                 path.Transform(mirrorMat);
                 CachedGlyphPaths.Add(key, path);
@@ -111,10 +110,9 @@ internal class TextPlacement : System.IDisposable {
             x += pos[i].XAdvance;
             y += pos[i].YAdvance;
             var cluster = info[i].Cluster;
-            SKPath path;
             char cp = (char)info[i].Codepoint;
             var key = new TPGlyphKey(cp, size, lf.name);
-            if(!CachedGlyphPaths.TryGetValue(key, out path)) {
+            if(!CachedGlyphPaths.TryGetValue(key, out var path)) {
                 path = lf.skFont.GetGlyphPath((ushort)info[i].Codepoint);
                 path.Transform(mirrorMat);
                 CachedGlyphPaths.Add(key, path);
@@ -199,7 +197,7 @@ internal class TextPlacement : System.IDisposable {
         activeFont = fontName;
     }
 
-    public List<(PlacedGlyph,SKPath)> PlaceText(string text, Vector2 origin, int size, string font = null) {
+    public List<(PlacedGlyph,SKPath)> PlaceText(string text, Vector2 origin, int size, string? font = null) {
         // write line
         var buf = new Buffer();
         buf.AddUtf8(text);
@@ -221,7 +219,7 @@ internal class TextPlacement : System.IDisposable {
         }
     }
 
-    public List<(Shape, char c)> PlaceTextAsShapes(string text, Vector2 origin, int size, string font = null) {
+    public List<(Shape, char c)> PlaceTextAsShapes(string text, Vector2 origin, int size, string? font = null) {
         var buf = new Buffer();
         buf.AddUtf8(text);
         buf.GuessSegmentProperties();

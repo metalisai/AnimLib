@@ -10,19 +10,21 @@ namespace AnimLib;
 /// The animator API that's passed to the animation behaviour. Stores state related to the animating process.
 /// </summary>
 public class Animator {
-    internal class AnimationHandle2D {
-        public string Identifier;
-        public double StartTime;
-        public double EndTime;
-        public Vector2 Position;
-        public Vector2 Anchor;
+    internal record AnimationHandle2D (
+        string Identifier, 
+        double StartTime, 
+        double EndTime, 
+        Vector2 Anchor
+    ) {
+        public Vector2 Position { get; set; }
     }
 
-    internal class AnimationHandle3D {
-        public string Identifier;
-        public double StartTime;
-        public double EndTime;
-        public Vector3 Position;
+    internal record AnimationHandle3D (
+        string Identifier,
+        double StartTime,
+        double EndTime
+    ) {
+        public Vector3 Position { get; set; }
     }
 
     internal ResourceManager resourceManager;
@@ -44,7 +46,7 @@ public class Animator {
     /// <summary>
     /// The currently active animator.
     /// </summary>
-    public static Animator Current { get; internal set; }
+    public static Animator? Current { get; internal set; }
 
     /// <summary>
     /// The scene of the animation editor. Doesn't include programmatically created entities.
@@ -101,7 +103,7 @@ public class Animator {
     /// <summary>
     /// Shape a string with the given font and size. Returns a list of shapes and the characters.
     /// </summary>
-    public List<(Shape s, char c)> ShapeText(string texts, Vector2 pos, int size, string font = null) {
+    public List<(Shape s, char c)> ShapeText(string texts, Vector2 pos, int size, string? font = null) {
         return textPlacement.PlaceTextAsShapes(texts, pos, size, font);
     }
 
@@ -114,13 +116,12 @@ public class Animator {
         if(props.VectorHandleMap.TryGetValue(key, out storedPos)) {
             pos = storedPos;
         }
-        var handle = new AnimationHandle2D {
-            Identifier = key,
-            StartTime = Time.T,
-            EndTime = Time.T + 1000.0,
-            Position = pos,
-            Anchor = anchor,
-        };
+        var handle = new AnimationHandle2D (
+            Identifier: key,
+            StartTime: Time.T,
+            EndTime: Time.T + 1000.0,
+            Anchor: anchor
+        ) { Position = pos };
         VectorHandles.Add(handle);
         return pos;
     }
@@ -134,12 +135,11 @@ public class Animator {
         if(props.VectorHandleMap3D.TryGetValue(key, out storedPos)) {
             pos = storedPos;
         }
-        var handle = new AnimationHandle3D {
-            Identifier = key,
-            StartTime = Time.T,
-            EndTime = Time.T + 1000.0,
-            Position = pos,
-        };
+        var handle = new AnimationHandle3D (
+            Identifier: key,
+            StartTime: Time.T,
+            EndTime: Time.T + 1000.0
+        ) { Position = pos };
         VectorHandles3D.Add(handle);
         return pos;
     }

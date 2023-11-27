@@ -557,10 +557,6 @@ partial class WorldRenderer : IRenderer {
             if(ss.Meshes != null) {
                 RenderMeshes(ss.Meshes, worldToClip, smat);
             }
-            if(ss.Labels != null) {
-                //RenderLabels(new Vector2(pbSize.Item1, pbSize.Item2), ss.Labels, cam);
-                Debug.Warning("Labels are not implemented yet!");
-            }
             if(ss.Beziers != null) {
                 RenderBeziers(ss.Beziers, worldToClip, smat, mainBuffer);
             }

@@ -34,14 +34,6 @@ internal class WorldDestroyCommand : WorldCommand {
     public int entityId;
 }
 
-internal class WorldAbsorbCommand : WorldCommand {
-    public int entityId;
-    public float progress;
-    public float oldprogress;
-    public Vector3? absorbPoint;
-    public Vector3? absorbScreenPoint;
-}
-
 internal class WorldSetActiveCameraCommand : WorldCommand {
     public int cameraEntId;
     public int oldCamEntId;
