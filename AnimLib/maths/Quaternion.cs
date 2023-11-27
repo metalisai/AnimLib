@@ -12,12 +12,12 @@ public struct Quaternion {
     /// </summary>
     public float w;
     /// <summary>
-    /// The imaginary component of the quaternion.
+    /// An imaginary component of the quaternion.
     /// </summary>
     public float x, y, z;
 
     /// <summary>
-    /// Property for the real component of the quaternion. For serialization purposes.
+    /// Property for an imaginary X component of the quaternion. For serialization purposes.
     /// </summary>
     public float X {
         get { return x; }
@@ -25,7 +25,7 @@ public struct Quaternion {
     }
 
     /// <summary>
-    /// Property for the imaginary component of the quaternion. For serialization purposes.
+    /// Property for an imaginary Y component of the quaternion. For serialization purposes.
     /// </summary>
     public float Y {
         get { return y; }
@@ -33,7 +33,7 @@ public struct Quaternion {
     }
 
     /// <summary>
-    /// Property for the imaginary component of the quaternion. For serialization purposes.
+    /// Property for an imaginary Z component of the quaternion. For serialization purposes.
     /// </summary>
     public float Z {
         get { return z; }
