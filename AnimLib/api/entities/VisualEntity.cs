@@ -9,9 +9,7 @@ internal enum VisualEntityFlags {
     ManagedLifetime = 2,
 }
 
-internal class EntityStateResolver {
-    public Func<int, EntityState> GetEntityState;
-}
+internal record EntityStateResolver(Func<int, EntityState?> GetEntityState);
 
 internal abstract class EntityState : ICloneable {
     // TODO: find way to reference state without VisualEntity

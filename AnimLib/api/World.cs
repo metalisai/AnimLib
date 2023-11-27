@@ -35,9 +35,9 @@ internal class WorldResources : IDisposable {
 
     public void Dispose()
     {
-        MeshGeometries = null;
-        Textures = null;
-        MeshBackedGeometries = null;
+        MeshGeometries.Clear();
+        Textures.Clear();
+        MeshBackedGeometries.Clear();
         // make sure renderer knows that everything we allocated is no longer needed
         RenderState.currentPlatform.DestroyOwner(hash);
         Debug.Log("World resources destroyed " + GetGuid());
@@ -51,19 +51,19 @@ public class ColoredTriangleMeshGeometry : IRendererResource {
     /// <summary>
     /// The vertices of the mesh.
     /// </summary>
-    public Vector3[] vertices;
+    public Vector3[] vertices = Array.Empty<Vector3>();
     /// <summary>
     /// The indices referencing the vertices.
     /// </summary>
-    public uint[] indices;
+    public uint[] indices = Array.Empty<uint>();
     /// <summary>
     /// Vertex colors.
     /// </summary>
-    public Color[] colors;
+    public Color[] colors = Array.Empty<Color>();
     /// <summary>
     /// The texture coordinates.
     /// </summary>
-    public Vector2[] edgeCoordinates;
+    public Vector2[] edgeCoordinates = Array.Empty<Vector2>();
 
     internal int VAOHandle = -1;
     internal int VBOHandle = -1;
@@ -76,7 +76,7 @@ public class ColoredTriangleMeshGeometry : IRendererResource {
         this.ownerGuid  = ownerGuid;
     }
 
-    public string GetOwnerGuid()
+    string IRendererResource.GetOwnerGuid()
     {
         return ownerGuid;
     }
@@ -114,7 +114,7 @@ internal class CanvasSnapshot {
 /// </summary>
 internal class WorldSnapshot {
     public required EntityStateResolver resolver;
-    public required CameraState Camera;
+    public required CameraState? Camera;
     public required RectangleState[] Rectangles;
     public required CubeState[] Cubes;
     public required GlyphState[] Glyphs;
@@ -163,15 +163,17 @@ public class World
 
     AnimationSettings settings;
 
-    List<WorldCommand> _commands = new List<WorldCommand>();
-    List<WorldSoundCommand> _soundCommands = new List<WorldSoundCommand>();
-    List<Func<VisualEntity, bool>> CreationListeners = new List<Func<VisualEntity, bool>>();
+    List<WorldCommand> _commands = new ();
+    List<WorldSoundCommand> _soundCommands = new ();
+    List<Func<VisualEntity, bool>> CreationListeners = new ();
 
     // used by EntityCollection to keep track of children
     private Dictionary<int, List<VisualEntity>> _children = new ();
     private Dictionary<int, VisualEntity> _parents = new ();
 
-    private Dictionary<int, VisualEntity> _entities = new Dictionary<int, VisualEntity>();
+    private Dictionary<int, VisualEntity> _entities = new ();
+
+    private Dictionary<int, object> _dynamicProperties = new ();
 
     internal ITypeSetter ts = new FreetypeSetting();
     object? currentEditor = null; // who edits things right now (e.g. scene or animationbehaviour)
@@ -191,11 +193,11 @@ public class World
         get {
             return _activeCamera;
         } set {
-            var cmd = new WorldSetActiveCameraCommand() {
-                oldCamEntId = _activeCamera?.EntityId ?? 0,
-                cameraEntId = value?.EntityId ?? 0,
-                time = Time.T,
-            };
+            var cmd = new WorldSetActiveCameraCommand(
+                cameraEntId: value?.EntityId ?? 0,
+                oldCamEntId: _activeCamera?.EntityId ?? 0,
+                time: Time.T
+            );
             _commands.Add(cmd);
             _activeCamera = value;
         }
@@ -203,12 +205,12 @@ public class World
 
     internal int CreateRenderBuffer(int width, int height, bool main = false) {
         var id = renderBufferId++;
-        var cmd = new WorldCreateRenderBufferCommand() {
-            width = width,
-            height = height,
-            time = Time.T,
-            Id = id,
-        };
+        var cmd = new WorldCreateRenderBufferCommand(
+            width: width,
+            height: height,
+            id: id,
+            time: Time.T
+        );
         _commands.Add(cmd);
         return id;
     }
@@ -261,11 +263,11 @@ public class World
     /// Play a specified <c>SoundSample</c>.
     /// </summary>
     public void PlaySound(SoundSample sound, float volume = 1.0f) {
-        var command = new WorldPlaySoundCommand() {
-            time = Time.T,
-            volume = volume,
-            sound = sound,
-        };
+        var command = new WorldPlaySoundCommand(
+            volume: volume,
+            sound: sound,
+            time: Time.T
+        );
         _soundCommands.Add(command);
     }
 
@@ -338,6 +340,16 @@ public class World
     internal delegate void OnPropertyChangedD(VisualEntity ent, string prop, object newValue);
     internal event OnPropertyChangedD OnPropertyChanged;
 
+    internal void SetDynProprty(int id, object value) {
+        var cmd = new WorldDynPropertyCommand(
+            entityId: id,
+            newvalue: value,
+            oldvalue: _dynamicProperties[id],
+            time: Time.T
+        );
+        _dynamicProperties[id] = value;
+    }
+
     internal void SetProperty<T>(VisualEntity entity, string propert, T value, T oldvalue) where T : notnull {
         if(value.Equals(oldvalue))
             return;
@@ -345,26 +357,26 @@ public class World
             if(OnPropertyChanged != null) {
                 OnPropertyChanged(entity, propert, value);
             }
-            var cmd = new WorldPropertyCommand {
-                entityId = entity.EntityId,
-                time = Time.T,
-                property = propert,
-                newvalue = value,
-                oldvalue = oldvalue,
-            };
+            var cmd = new WorldPropertyCommand(
+                entityId: entity.EntityId,
+                property: propert,
+                newvalue: value,
+                oldvalue: oldvalue,
+                time: Time.T
+            );
             _commands.Add(cmd);
         }
     }
 
     internal void SetPropertyMulti<T>(IEnumerable<VisualEntity> entity, string propert, T value, T[] oldvalues) where T : notnull {
         var ents = entity.Zip(oldvalues, (f, s) => (f, s)).Where(x => x.f.created);
-        var cmd = new WorldPropertyMultiCommand {
-            entityIds = ents.Select(x => x.f.EntityId).ToArray(),
-            time = Time.T,
-            property = propert,
-            newvalue = value,
-            oldvalue = ents.Select(x => (object)x.s).ToArray(),
-        };
+        var cmd = new WorldPropertyMultiCommand(
+            entityIds: ents.Select(x => x.f.EntityId).ToArray(),
+            time: Time.T,
+            property: propert,
+            newvalue: value,
+            oldvalue: ents.Select(x => (object)x.s).ToArray()
+        );
         _commands.Add(cmd);
     }
 
@@ -379,10 +391,10 @@ public class World
         else {
             Debug.Warning("Entity created without creator. This is not a problem but might make debugging harder.");
         }
-        var cmd = new WorldCreateCommand() {
-            time = Time.T,
-            entity = entity.state.Clone(),
-        };
+        var cmd = new WorldCreateCommand(
+            entity: entity.state.Clone(),
+            time: Time.T
+        );
         _commands.Add(cmd);
         entity.created = true;
         _entities.Add(entity.EntityId, entity);
@@ -431,6 +443,17 @@ public class World
             CheckDependantEntities(dent);
         }
         return ent;
+    }
+
+    internal int CreateDynProperty(object vl) {
+        var id = GetUniqueId();
+        _dynamicProperties.Add(id, vl);
+        var cmd = new WorldCreateDynPropertyCommand(
+            propertyId: id,
+            value: vl,
+            time: Time.T
+        );
+        return id;
     }
 
     /// <summary>
@@ -556,16 +579,17 @@ public class World
                 Destroy(child);
             }
         }
-        var cmd = new WorldDestroyCommand() {
-            time = Time.T,
-            entityId = obj.EntityId,
-        };
+        var cmd = new WorldDestroyCommand(
+            entityId: obj.EntityId,
+            time: Time.T
+        );
         obj.created = false;
         _commands.Add(cmd);
     }
 
     internal WorldCommand[] GetCommands() {
-        return _commands.Concat(new WorldCommand[]{new WorldEndCommand{time = Time.T}}).ToArray();
+        var wc = new WorldEndCommand(Time.T);
+        return _commands.Concat(new WorldCommand[]{wc}).ToArray();
     }
 
     internal WorldSoundCommand[] GetSoundCommands() {

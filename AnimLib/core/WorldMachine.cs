@@ -24,6 +24,8 @@ internal class WorldMachine {
     Dictionary<int, EntityState> _destroyedEntities = new Dictionary<int, EntityState>();
     List<RenderBufferState> _renderBuffers = new();
 
+    Dictionary<int, object> _dynamicProperties = new Dictionary<int, object>();
+
     public double fps = 60.0;
     string _lastAction = ""; // this is for debug
 
@@ -42,11 +44,11 @@ internal class WorldMachine {
         }
     }
 
-    private WorldCommand[] _program;
+    private WorldCommand[] _program = Array.Empty<WorldCommand>();
     int _playCursorCmd = 0;
     double _currentPlaybackTime = 0.0;
 
-    CameraState _activeCamera;
+    CameraState? _activeCamera;
 
     public void Reset() {
         _glyphs.Clear();
@@ -75,7 +77,7 @@ internal class WorldMachine {
                     _renderBuffers.Add(new RenderBufferState() {
                         Width = createRenderBuffer.width,
                         Height = createRenderBuffer.height,
-                        BackendHandle = createRenderBuffer.Id
+                        BackendHandle = createRenderBuffer.id
                     });
                     break;
             }
@@ -139,8 +141,11 @@ internal class WorldMachine {
 
     class EntComparer : IComparer<EntityState>
     {
-        public int Compare(EntityState x, EntityState y)
+        public int Compare(EntityState? x, EntityState? y)
         {
+            if (x == null && y == null) return 0;
+            else if (x == null) return -1;
+            else if (y == null) return 1;
             if(x.sortKey < y.sortKey)
                 return -1;
             else if(x.sortKey == y.sortKey)
@@ -153,9 +158,9 @@ internal class WorldMachine {
 
         var l = new List<CanvasSnapshot>();
         foreach(var c in _canvases.OrderBy(x => _entities[x.Key].sortKey)) {
-            var canvas = _entities[c.Key] as CanvasState;
+            var canvas = (CanvasState)_entities[c.Key];
             var css = new CanvasSnapshot() {
-                    Entities = c.Value.Entities.Where(x => x.active).Select(x => x.Clone() as EntityState2D).ToArray(),
+                    Entities = c.Value.Entities.Where(x => x.active).Select(x => (EntityState2D)x.Clone()).ToArray(),
                     Canvas = canvas
                 };
             Array.Sort(css.Entities, new EntComparer());
@@ -168,13 +173,13 @@ internal class WorldMachine {
             MeshBackedGeometries = _mbgeoms.Where(x => x.active).ToArray(),
             Cubes = _cubes.Where(x => x.active).ToArray(),
             Beziers = _beziers.Where(x => x.active).ToArray(),
-            resolver = new EntityStateResolver {
-                GetEntityState = entid => {
+            resolver = new EntityStateResolver(
+                GetEntityState: entid => {
                     return _entities.ContainsKey(entid) ? _entities[entid] : null;
                 }
-            },
+            ),
             Canvases = l.ToArray(),
-            Camera = (CameraState)_activeCamera.Clone(),
+            Camera = (_activeCamera?.Clone() as CameraState) ?? null,
             RenderBuffers = _renderBuffers.ToArray(),
             // TODO: populate these
             Rectangles = Array.Empty<RectangleState>(),
@@ -217,7 +222,7 @@ internal class WorldMachine {
             _canvases.Add(state.entityId, new CanvasEntities());
             break;
             case EntityState2D ent2d:
-            var canvas = _entities[ent2d.canvasId] as CanvasState;
+            var canvas = (CanvasState)_entities[ent2d.canvasId];
             state = (EntityState)ent2d.Clone();
             _canvases[canvas.entityId].Entities.Add((EntityState2D)state);
             break;
@@ -298,7 +303,7 @@ internal class WorldMachine {
                         }
                     }
                     var field = state.GetType().GetField(lower);
-                    field.SetValue(state, wpm.newvalue);
+                    field?.SetValue(state, wpm.newvalue);
                 }
             }
             break;
@@ -326,11 +331,17 @@ internal class WorldMachine {
                     }
                 }
                 var field = state.GetType().GetField(lower);
-                field.SetValue(state, worldProperty.newvalue);
+                field?.SetValue(state, worldProperty.newvalue);
             }
             break;
             case WorldSetActiveCameraCommand setActiveCameraCommand:
             _activeCamera = (CameraState)_entities[setActiveCameraCommand.cameraEntId];
+            break;
+            case WorldCreateDynPropertyCommand createDynPropertyCommand:
+            _dynamicProperties.Add(createDynPropertyCommand.propertyId, createDynPropertyCommand.value);
+            break;
+            case WorldDynPropertyCommand dynPropertyCommand:
+            _dynamicProperties[dynPropertyCommand.entityId] = dynPropertyCommand.newvalue;
             break;
         }
     }
@@ -365,7 +376,7 @@ internal class WorldMachine {
                         }
                     }
                     var field = state.GetType().GetField(lower);
-                    field.SetValue(state, oval);
+                    field?.SetValue(state, oval);
                 }
             }
             break;
@@ -385,7 +396,7 @@ internal class WorldMachine {
                     }
                 }
                 var field = state.GetType().GetField(lower);
-                field.SetValue(state, worldProperty.oldvalue);
+                field?.SetValue(state, worldProperty.oldvalue);
             }
             break;
             case WorldSetActiveCameraCommand setActiveCameraCommand:
@@ -400,8 +411,8 @@ internal class WorldMachine {
         }
     }
 
-    public EntityState GetEntityState(int entityId) {
-        EntityState ret = null;
+    public EntityState? GetEntityState(int entityId) {
+        EntityState? ret = null;
         _entities.TryGetValue(entityId, out ret);
         return ret;
     }

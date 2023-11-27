@@ -170,12 +170,12 @@ partial class WorldRenderer : IRenderer {
                         m.Geometry.EBOHandle = ebo;
                         // register owner for deletion (if owner gets destroyed)
                         // (we created a new buffer, but we don't know the lifetime of it)
-                        if(m.Geometry.GetOwnerGuid() != "") {
-                            OpenTKPlatform.AllocatedResources res;
-                            var ar = RenderState.currentPlatform as OpenTKPlatform;
-                            if(!ar.allocatedResources.TryGetValue(m.Geometry.GetOwnerGuid(), out res)) {
+                        var irr = (IRendererResource)m.Geometry;
+                        var ar = RenderState.currentPlatform as OpenTKPlatform;
+                        if(irr.GetOwnerGuid() != "" && ar != null) {
+                            if(!ar.allocatedResources.TryGetValue(irr.GetOwnerGuid(), out var res)) {
                                 res = new OpenTKPlatform.AllocatedResources();
-                                ar.allocatedResources.Add(m.Geometry.GetOwnerGuid(), res);
+                                ar.allocatedResources.Add(irr.GetOwnerGuid(), res);
                             }
                             res.buffers.Add(vbo); res.buffers.Add(ebo);
                             res.vaos.Add(vao);

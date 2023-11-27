@@ -1,50 +1,47 @@
 namespace AnimLib;
 
-internal class WorldCommand {
-    public double time;
-}
+internal record WorldCommand(double time);
 
-internal class WorldSoundCommand : WorldCommand {
-    public float volume;
-}
+internal record WorldSoundCommand(float volume, double time) : WorldCommand(time);
 
-internal class WorldPlaySoundCommand : WorldSoundCommand {
-    public SoundSample sound;
-}
+internal record WorldPlaySoundCommand(SoundSample sound, float volume, double time) : WorldSoundCommand(volume, time);
 
-internal class WorldPropertyMultiCommand : WorldCommand {
-    public int[] entityIds;
-    public string property;
-    public object newvalue;
-    public object[] oldvalue;
-}
+internal record WorldPropertyMultiCommand (
+    int[] entityIds,
+    string property,
+    object newvalue,
+    object[] oldvalue,
+    double time
+) : WorldCommand(time);
 
-internal class WorldPropertyCommand : WorldCommand {
-    public int entityId;
-    public string property;
-    public object newvalue;
-    public object oldvalue;
-}
+internal record WorldDynPropertyCommand (
+    int entityId,
+    object newvalue,
+    object oldvalue,
+    double time
+) : WorldCommand(time);
 
-internal class WorldCreateCommand : WorldCommand {
-    public object entity;
-}
+// entity properties
+internal record WorldPropertyCommand (
+    int entityId,
+    string property,
+    object newvalue,
+    object oldvalue,
+    double time
+) : WorldCommand(time);
 
-internal class WorldDestroyCommand : WorldCommand {
-    public int entityId;
-}
+internal record WorldCreateDynPropertyCommand (
+    int propertyId,
+    object value,
+    double time
+) : WorldCommand(time);
 
-internal class WorldSetActiveCameraCommand : WorldCommand {
-    public int cameraEntId;
-    public int oldCamEntId;
-}
+internal record WorldCreateCommand(object entity, double time) : WorldCommand(time);
 
-internal class WorldEndCommand : WorldCommand {
-    
-}
+internal record WorldDestroyCommand (int entityId, double time) : WorldCommand(time);
 
-internal class WorldCreateRenderBufferCommand : WorldCommand {
-    public int width;
-    public int height;
-    public int Id;
-}
+internal record WorldSetActiveCameraCommand(int cameraEntId, int oldCamEntId, double time) : WorldCommand(time);
+
+internal record WorldEndCommand(double time) : WorldCommand(time);
+
+internal record WorldCreateRenderBufferCommand(int width, int height, int id, double time) : WorldCommand(time);
