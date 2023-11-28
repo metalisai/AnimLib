@@ -62,8 +62,8 @@ partial class WorldRenderer : IRenderer {
         // draw 2D last so that they are always in front
         var sorted = canvases.OrderBy(x => x.Canvas.is2d ? 1 : 0);
         foreach(var canvas in sorted) {
-            platform.Skia.RenderCanvas(canvas, ref mat, this.gizmo);
-            var buf = buffer as DepthPeelRenderBuffer;
+            var buf = (DepthPeelRenderBuffer)buffer;
+            platform.Skia.RenderCanvas(canvas, ref mat, this.gizmo, buf);
             RestoreState();
             {
                 using var __ = new Performance.Call("WorldRenderer buf.BlitTextureWithEntityId");

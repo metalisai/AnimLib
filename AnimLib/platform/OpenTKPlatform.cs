@@ -214,8 +214,8 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
 
         // skia
         Skia = new SkiaRenderer(this);
-        Skia.CreateGL(); // messes up render state when scene has textures, arc rendering buggy
-        //Skia.CreateSW();
+        Skia.CreateGL(true); // messes up render state when scene has textures, arc rendering buggy
+        //Skia.CreateSW(false); // HDR is very slow
 
         if(OnLoaded != null) {
             OnLoaded(this, null);
@@ -227,26 +227,37 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
     public void LoadTexture(Texture2D tex2d) {
         PixelFormat fmt = default;
         PixelType typ = default;
+        PixelInternalFormat pif = default;
         switch(tex2d.Format) {
             case Texture2D.TextureFormat.R8:
                 fmt = PixelFormat.Red;
                 typ = PixelType.UnsignedByte;
+                pif = PixelInternalFormat.R8;
                 break;
             case Texture2D.TextureFormat.RGB8:
                 fmt = PixelFormat.Rgb;
                 typ = PixelType.UnsignedByte;
+                pif = PixelInternalFormat.Rgb8;
                 break;
             case Texture2D.TextureFormat.RGBA8:
                 fmt = PixelFormat.Rgba;
                 typ = PixelType.UnsignedByte;
+                pif = PixelInternalFormat.Rgba;
                 break;
             case Texture2D.TextureFormat.ARGB8:
                 fmt = PixelFormat.Bgra;
                 typ = PixelType.UnsignedInt8888Reversed;
+                pif = PixelInternalFormat.Rgba;
                 break;
             case Texture2D.TextureFormat.BGR8:
                 fmt = PixelFormat.Bgr;
                 typ = PixelType.UnsignedByte;
+                pif = PixelInternalFormat.Rgb8;
+                break;
+            case Texture2D.TextureFormat.RGBA16F:
+                fmt = PixelFormat.Rgba;
+                typ = PixelType.HalfFloat;
+                pif = PixelInternalFormat.Rgba16f;
                 break;
             default:
                 throw new NotImplementedException();
@@ -269,7 +280,7 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         GL.BindTexture(TextureTarget.Texture2D, tex);
         GL.PixelStore(PixelStoreParameter.UnpackAlignment, tex2d.Alignment);
         GL.TexImage2D(TextureTarget.Texture2D, 
-            0, PixelInternalFormat.Rgba, 
+            0, pif, 
             tex2d.Width, tex2d.Height, 0, 
             fmt, typ, 
             ref tex2d.RawData[0]

@@ -11,6 +11,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
     int _boundDepthTexture;
 
     int _entBlitProgram = -1;
+    bool _isHDR = true;
 
     int _blitvao = -1, _blitvbo = -1;
     IPlatform platform;
@@ -132,7 +133,9 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
 
         _colorTex = GL.GenTexture();
         GL.BindTexture(TextureTarget.Texture2D, _colorTex);
-        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
+        // NOTE: this is RGBA16F HDR
+        var internalFormat = _isHDR ? PixelInternalFormat.Rgba16f : PixelInternalFormat.Rgba;
+        GL.TexImage2D(TextureTarget.Texture2D, 0, internalFormat, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
         GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, _colorTex, 0);
@@ -317,5 +320,11 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
     }
 
     public void OnPostRender() {
+    }
+
+    public bool IsHDR {
+        get {
+            return _isHDR;
+        }
     }
 }

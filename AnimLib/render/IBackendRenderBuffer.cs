@@ -14,6 +14,7 @@ internal interface IBackendRenderBuffer : IDisposable{
     int GetEntityAtPixel(int x, int y);
     int Texture();
     void Clear();
+    bool IsHDR { get; }
     (int w, int h) Size { get; }
     int FBO { get; }
     void ReadPixels(ref byte data);

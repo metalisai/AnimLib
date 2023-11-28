@@ -33,6 +33,7 @@ internal partial class SkiaRenderer
     Dictionary<int, SKSvg> LoadedSvgs = new ();
 
     RenderMode mode;
+    bool hdr;
 
     int width;
     int height;
@@ -103,6 +104,7 @@ internal partial class SkiaRenderer
         width = buf.Size.Item1;
         height = buf.Size.Item2;
         if(mode == RenderMode.OpenGL) {
+            var colorType = this.hdr ? SKColorType.RgbaF16 : SKColorType.Rgba8888;
             // TODO: don't need a buffer this complex (only need color and stencil)
             if(glBuffer == null) {
                 glBuffer = new DepthPeelRenderBuffer(platform);
@@ -113,16 +115,18 @@ internal partial class SkiaRenderer
             }
             // tell skia that gl context was modified
             ctx.ResetContext();
-            var fbInfo = new GRGlFramebufferInfo((uint)glBuffer.FBO, SKColorType.Rgba8888.ToGlSizedFormat());
+            var fbInfo = new GRGlFramebufferInfo((uint)glBuffer.FBO, colorType.ToGlSizedFormat());
             renderTarget = new GRBackendRenderTarget(buf.Size.Item1, buf.Size.Item2, 0, 8, fbInfo);
-            surface = SKSurface.Create(ctx, renderTarget, GRSurfaceOrigin.TopLeft, SKColorType.Rgba8888);
+            surface = SKSurface.Create(ctx, renderTarget, GRSurfaceOrigin.TopLeft, colorType);
             canvas = surface.Canvas;
         } else if(mode == RenderMode.Software) {
+            // NOTE: F16 is extremely slow in software mode
+            var colorType = this.hdr ? SKColorType.RgbaF16 : SKColorType.Rgba8888;
             // in software mode render to image then blit to renderbuffer
             var imageInfo = new SKImageInfo(
                 width: buf.Size.Item1,
                 height: buf.Size.Item2,
-                colorType: SKColorType.Rgba8888,
+                colorType: colorType,
                 alphaType: SKAlphaType.Premul);
             surface = SKSurface.Create(imageInfo);
             canvas = surface.Canvas;
@@ -133,7 +137,7 @@ internal partial class SkiaRenderer
     }
 
     // OpenGL rendering
-    public void CreateGL() {
+    public void CreateGL(bool hdr) {
         if(mode != RenderMode.None) {
             Debug.Error($"CreateGL() called after already initialized, mode: {mode}");
             return;
@@ -144,6 +148,7 @@ internal partial class SkiaRenderer
             Debug.Error("Gl interface not valid for skia");
         }
         ctx = GRContext.CreateGl(glInterface);
+        this.hdr = hdr;
         /*var fbInfo = new GRGlFramebufferInfo((uint)glBuffer.FBO, SKColorType.Rgba8888.ToGlSizedFormat());
         renderTarget = new GRBackendRenderTarget(1920, 1080, 0, 8, fbInfo);
         surface = SKSurface.Create(ctx, renderTarget, GRSurfaceOrigin.TopLeft, SKColorType.Rgba8888);
@@ -151,14 +156,15 @@ internal partial class SkiaRenderer
     }
 
     // Software rendering
-    public void CreateSW() {
+    public void CreateSW(bool hdr) {
         if(mode != RenderMode.None) {
-            Debug.Error($"CreateGL() called after already initialized, mode: {mode}");
+            Debug.Error($"CreateSW() called after already initialized, mode: {mode}");
             return;
         }
         mode = RenderMode.Software;
         glInterface = null;
         ctx = null;
+        this.hdr = hdr;
     }
 
     public void Clear() {
@@ -166,7 +172,7 @@ internal partial class SkiaRenderer
         canvas.Clear(SKColors.Transparent);
     }
 
-    SKMatrix? GetCanvasMatrix2D(ref M4x4 canvasToClip, out SKRect clipRegion, CanvasState canvas) {
+    SKMatrix? GetCanvasMatrix2D(ref M4x4 canvasToClip, out SKRect clipRegion, CanvasState canvas, (float w, float h) bufferSize) {
         if(!canvas.is2d) {
             float bw = this.width;
             float bh = this.height;
@@ -225,26 +231,26 @@ internal partial class SkiaRenderer
 
             var mat = new SKMatrix(scaleX, skewX, transX, skewY, scaleY, transY, persp0, persp1, persp2);
             // TODO: 3D clip region is a polygon, not a rectangle
-            clipRegion = new SKRect(0, 0, glBuffer.Size.w, glBuffer.Size.h);
+            clipRegion = new SKRect(0, 0, bufferSize.w, bufferSize.h);
             return mat;
         } else {
             float tX = canvas.center.x;
             float tY = canvas.center.y;
             var mat2d = new SKMatrix(1.0f, 0.0f, tX, 0.0f, 1.0f, tY, 0.0f, 0.0f, 1.0f);
-            float oX = glBuffer.Size.w/2.0f + canvas.center.x;
-            float oY = glBuffer.Size.h/2.0f + canvas.center.y;
+            float oX = bufferSize.w/2.0f + canvas.center.x;
+            float oY = bufferSize.h/2.0f + canvas.center.y;
             clipRegion = new SKRect(oX - canvas.width/2.0f, oY - canvas.height/2.0f, oX + canvas.width/2.0f, oY + canvas.height/2.0f);
             return mat2d;
         }
     }
 
-    M3x3 getModelMatrix(EntityState2D ent, CanvasState rc, EntityState2D[] entities) {
+    M3x3 getModelMatrix(EntityState2D ent, CanvasState rc, EntityState2D[] entities, (float w, float h) bufferSize) {
         M3x3? parentMat = null;
         if(ent.parentId > 0) {
             // TODO: optimize
             var parent = entities.Where(x => x.entityId == ent.parentId).FirstOrDefault();
             if(parent != null) {
-                parentMat = getModelMatrix(parent, rc, entities);
+                parentMat = getModelMatrix(parent, rc, entities, bufferSize);
             } else {
                 Debug.Warning($"Parent set ({ent.parentId}) but it was not part of the canvas");
             }
@@ -252,8 +258,8 @@ internal partial class SkiaRenderer
 
         Vector2 origin;
         if(ent.parentId <= 0) { // has no parent
-            float w = glBuffer.Size.w;
-            float h = glBuffer.Size.h;
+            float w = bufferSize.w;
+            float h = bufferSize.h;
             origin = (new Vector2(0.5f, 0.5f)+ent.anchor)*new Vector2(w, h);
         } else {
             origin = Vector2.ZERO;
@@ -266,10 +272,10 @@ internal partial class SkiaRenderer
         return trs;
     }
 
-    SKMatrix GetLocalTransform(EntityState2D ent, CanvasState rc, Rect aabb, EntityState2D[] entities) {
+    SKMatrix GetLocalTransform(EntityState2D ent, CanvasState rc, Rect aabb, EntityState2D[] entities, (float, float) bufferSize) {
         // TODO: AABB center and (0,0) might be misaligned?
         var changePivot = M3x3.Translate_2D(-(new Vector2(aabb.width, aabb.height)*ent.pivot));
-        var trs = getModelMatrix(ent, rc, entities);
+        var trs = getModelMatrix(ent, rc, entities, bufferSize);
         var lt = trs * changePivot;
         //lt.m22 *= -1.0f;
         var ret = lt.ToSKMatrix();
@@ -280,11 +286,11 @@ internal partial class SkiaRenderer
         return ret;
     }
 
-    public void RenderCanvas(CanvasSnapshot css, ref M4x4 worldToClip, bool gizmo) {
+    public void RenderCanvas(CanvasSnapshot css, ref M4x4 worldToClip, bool gizmo, IBackendRenderBuffer rb) {
         using var _ = new Performance.Call("SkiaRenderer.RenderCanvas");
         var rc = css.Canvas;
         var canvasToClip = worldToClip * rc.NormalizedCanvasToWorld;
-        var mat = GetCanvasMatrix2D(ref canvasToClip, out var clipRegion, rc);
+        var mat = GetCanvasMatrix2D(ref canvasToClip, out var clipRegion, rc, rb.Size);
         // can't create transform (canvas off screen, clipping with near plane etc)
         if(mat == null)
             return;
@@ -317,7 +323,8 @@ internal partial class SkiaRenderer
                 float radiusX = getValue<float>(eff, "radiusX");
                 float radiusY = getValue<float>(eff, "radiusY");
                 using var filter = SKImageFilter.CreateBlur(radiusY, radiusY);
-                canvas.SaveLayer(new SKPaint() { ImageFilter = filter });
+                using var paint = new SKPaint() { ImageFilter = filter };
+                canvas.SaveLayer(paint);
                 restoreCount++;
             }
             else if (eff.Name == typeof (CanvasDilateEffect).Name) {
@@ -325,7 +332,8 @@ internal partial class SkiaRenderer
                 float radiusX = getValue<float>(eff, "radiusX");
                 float radiusY = getValue<float>(eff, "radiusY");
                 using var filter = SKImageFilter.CreateDilate(radiusX, radiusY);
-                canvas.SaveLayer(new SKPaint() { ImageFilter = filter });
+                using var paint = new SKPaint() { ImageFilter = filter };
+                canvas.SaveLayer(paint);
                 restoreCount++;
             }
         }
@@ -361,7 +369,7 @@ internal partial class SkiaRenderer
             using var _ = new Performance.Call("SkiaRenderer.RenderShape");
 
             var bounds = path.TightBounds;
-            SKMatrix localTransform = GetLocalTransform(shape, rc, new Rect(bounds.Left, bounds.Top, bounds.Width, bounds.Height), css.Entities);
+            SKMatrix localTransform = GetLocalTransform(shape, rc, new Rect(bounds.Left, bounds.Top, bounds.Width, bounds.Height), css.Entities, rb.Size);
 
             var realShape = shape as ShapeState;
             if (realShape != null && realShape.trim != (0.0f, 1.0f))
@@ -432,7 +440,7 @@ internal partial class SkiaRenderer
 
                     //SKMatrix GetLocalTransform(EntityState2D ent, CanvasState rc, Rect aabb) {
                     var curMat = canvas.TotalMatrix;
-                    var local = GetLocalTransform(sprite, rc, new Rect(0.0f, 0.0f, sprite.width, sprite.height), css.Entities).PreConcat(new SKMatrix(1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f)).PostConcat(curMat);
+                    var local = GetLocalTransform(sprite, rc, new Rect(0.0f, 0.0f, sprite.width, sprite.height), css.Entities, rb.Size).PreConcat(new SKMatrix(1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f)).PostConcat(curMat);
                     canvas.SetMatrix(local);
                     var rect = new SKRect(-sprite.width/2.0f, -sprite.height/2.0f, sprite.width/2.0f, sprite.height/2.0f);
                     using(var paint = new SKPaint()) {
@@ -474,7 +482,7 @@ internal partial class SkiaRenderer
                     float tY = bounds.Height*scaleY/2.0f;
 
                     var preMat = new SKMatrix(scaleX, 0.0f, tX, 0.0f, -scaleY, tY, 0.0f, 0.0f, 1.0f);
-                    var local = GetLocalTransform(svgsprite, rc, new Rect(0.0f, 0.0f, svgsprite.width, svgsprite.height), css.Entities).PreConcat(preMat).PostConcat(curMat);
+                    var local = GetLocalTransform(svgsprite, rc, new Rect(0.0f, 0.0f, svgsprite.width, svgsprite.height), css.Entities, rb.Size).PreConcat(preMat).PostConcat(curMat);
                     canvas.SetMatrix(local);
 
                     // TODO: scale svg to fit rect
@@ -519,13 +527,19 @@ internal partial class SkiaRenderer
                 if(tex == null) {
                     tex = new Texture2D("SkiaRenderer"); 
                 }
+                var requiredSize = img.Info.BytesSize;
                 tex.GenerateMipmap = false;
                 tex.Width = img.Width;
                 tex.Height = img.Height;
-                tex.Format = Texture2D.TextureFormat.RGBA8;
+                //tex.Format = Texture2D.TextureFormat.RGBA8;
+                tex.Format = this.hdr ? Texture2D.TextureFormat.RGBA16F : Texture2D.TextureFormat.RGBA8;
                 // allocate new buffer if needed
                 if(tex.RawData == null || tex.RawData.Length != tex.Width * tex.Height * 4) {
-                    tex.RawData = new byte[tex.Width * tex.Height * 4];
+                    tex.RawData = new byte[requiredSize];
+                }
+                if(tex.RawData.Length < requiredSize) {
+                    Debug.Error($"Skia buffer too small, required {requiredSize} bytes, got {tex.RawData.Length}");
+                    return;
                 }
                 var pinned = GCHandle.Alloc(tex.RawData, GCHandleType.Pinned);
                 System.IntPtr dst = pinned.AddrOfPinnedObject();

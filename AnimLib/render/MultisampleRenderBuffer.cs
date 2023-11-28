@@ -248,4 +248,6 @@ internal class MultisampleRenderBuffer : IBackendRenderBuffer, IDisposable{
         _fbo = -1;
         _blitFbo = -1;
     }
+
+    public bool IsHDR { get { return false; } }
 }
