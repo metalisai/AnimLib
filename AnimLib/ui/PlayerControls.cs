@@ -146,7 +146,7 @@ internal class PlayerControls {
             };
             var w = view.Buffer.Size.Item1;
             var h = view.Buffer.Size.Item2;
-            Vector2 mpos = ImguiContext.GetMousePos();
+            Vector2 mpos = Imgui.GetMousePos();
             var ray = cam.RayFromClip(new Vector2((mpos.x/w)*2.0f-1.0f, (mpos.y/h)*-2.0f+1.0f), w/h);
             var pos3 = ray.Intersect(plane);
             if(pos3 != null) {
@@ -282,11 +282,11 @@ internal class PlayerControls {
         };
         if (cam == null)
             return;
-        Vector2 dropPos = ImguiContext.GetMousePos();
+        Vector2 dropPos = Imgui.GetMousePos();
         var maybeRay = view.ScreenRay(dropPos);
-        if(maybeRay != null && ImguiContext.BeginDragDropTarget()) {
+        if(maybeRay != null && Imgui.BeginDragDropTarget()) {
             var ray = maybeRay.Value;
-            IntPtr payloadPtr = ImguiContext.AcceptDragDropPayload("DND_CREATE_ITEM_2D");
+            IntPtr payloadPtr = Imgui.AcceptDragDropPayload("DND_CREATE_ITEM_2D");
             unsafe {
                 if(payloadPtr != IntPtr.Zero) {
                     Debug.TLog("Attempt drop 2D object");
@@ -313,7 +313,7 @@ internal class PlayerControls {
                     }
                 } 
             }
-            payloadPtr = ImguiContext.AcceptDragDropPayload("DND_CREATE_ITEM_3D");
+            payloadPtr = Imgui.AcceptDragDropPayload("DND_CREATE_ITEM_3D");
             unsafe {
                 if(payloadPtr != IntPtr.Zero) {
                     Debug.TLog("Attempt drop 3D object");
@@ -324,60 +324,60 @@ internal class PlayerControls {
                     }
                 }
             }
-            ImguiContext.EndDragDropTarget();
+            Imgui.EndDragDropTarget();
         }        
     }
 
     private void ShowExportProgress() {
         bool open = true;
-        var flags = ImguiContext.ImGuiWindowFlags.NoDocking;
-        flags |= ImguiContext.ImGuiWindowFlags.NoResize;
-        flags |= ImguiContext.ImGuiWindowFlags.AlwaysAutoResize;
-        flags |= ImguiContext.ImGuiWindowFlags.NoCollapse;
-        if (ImguiContext.Begin("Export progress", ref open, flags))
+        var flags = Imgui.ImGuiWindowFlags.NoDocking;
+        flags |= Imgui.ImGuiWindowFlags.NoResize;
+        flags |= Imgui.ImGuiWindowFlags.AlwaysAutoResize;
+        flags |= Imgui.ImGuiWindowFlags.NoCollapse;
+        if (Imgui.Begin("Export progress", ref open, flags))
         {
             float progress = player.ExportProgress ?? 0.0f;
-            ImguiContext.Text($"Exporting to {exportfileName}");
-            ImguiContext.ProgressBar(progress, new Vector2(400.0f, 0.0f));
+            Imgui.Text($"Exporting to {exportfileName}");
+            Imgui.ProgressBar(progress, new Vector2(400.0f, 0.0f));
             float ptime = progress * player.ExportLength;
-            ImguiContext.Text($"{ptime:F2} / {player.ExportLength:F2}");
+            Imgui.Text($"{ptime:F2} / {player.ExportLength:F2}");
 
-            if (ImguiContext.Button("Cancel"))
+            if (Imgui.Button("Cancel"))
             {
                 player.CancelExport();
             }
 
-            ImguiContext.End();
+            Imgui.End();
         }
     }
 
     private void ShowExportWindow() {
         //ImguiContext.SetNextWindowSize(new System.Numerics.Vector2(430, 450), ImguiContext.ImGuiCond.FirstUseEver);
-        var wflags = ImguiContext.ImGuiWindowFlags.NoDocking;
-        wflags |= ImguiContext.ImGuiWindowFlags.AlwaysAutoResize;
-        wflags |= ImguiContext.ImGuiWindowFlags.NoResize;
-        if(!ImguiContext.Begin("Export", ref _showExport, wflags)) {
-            ImguiContext.End();
+        var wflags = Imgui.ImGuiWindowFlags.NoDocking;
+        wflags |= Imgui.ImGuiWindowFlags.AlwaysAutoResize;
+        wflags |= Imgui.ImGuiWindowFlags.NoResize;
+        if(!Imgui.Begin("Export", ref _showExport, wflags)) {
+            Imgui.End();
             return;
         }
         Vector2 v = new (2.0f, 2.0f);
-        ImguiContext.PushStyleVar(ImguiContext.ImGuiStyleVar.FramePadding, ref v);
-        ImguiContext.Columns(1);
-        ImguiContext.Separator();
+        Imgui.PushStyleVar(Imgui.ImGuiStyleVar.FramePadding, ref v);
+        Imgui.Columns(1);
+        Imgui.Separator();
 
-        ImguiContext.Text("Export animation");
-        ImguiContext.Spacing();
+        Imgui.Text("Export animation");
+        Imgui.Spacing();
 
-        ImguiContext.InputText("File name", ref exportfileName, 64);
-        ImguiContext.InputDouble("Start Time", ref exportStartTime);
-        ImguiContext.InputDouble("End Time", ref exportEndTime);
-        if(ImguiContext.Button("Export")) {
+        Imgui.InputText("File name", ref exportfileName, 64);
+        Imgui.InputDouble("Start Time", ref exportStartTime);
+        Imgui.InputDouble("End Time", ref exportEndTime);
+        if(Imgui.Button("Export")) {
             player.ExportAnimation(exportfileName, exportStartTime, exportEndTime);
         }
 
-        ImguiContext.Separator();
-        ImguiContext.PopStyleVar();
-        ImguiContext.End();
+        Imgui.Separator();
+        Imgui.PopStyleVar();
+        Imgui.End();
     }
 
     //var dockNodeFlags = ImguiContext.ImGuiDockNodeFlags.PassthruCentralNode;
@@ -509,38 +509,38 @@ internal class PlayerControls {
     }*/
 
     public void ShowResourceInterface() {
-        ImguiContext.ImGuiWindowFlags wflags = ImguiContext.ImGuiWindowFlags.NoDocking | ImguiContext.ImGuiWindowFlags.AlwaysAutoResize;
-        if(ImguiContext.Begin("Resources", ref _showResources, wflags)) {
+        Imgui.ImGuiWindowFlags wflags = Imgui.ImGuiWindowFlags.NoDocking | Imgui.ImGuiWindowFlags.AlwaysAutoResize;
+        if(Imgui.Begin("Resources", ref _showResources, wflags)) {
             var entries = player.ResourceManager.GetStoredResources();
             if(entries.Length > 0) {
                 var items = entries.Select(x => x.name).ToArray();
-                ImguiContext.ListBox("Resource files", ref selectedResource, items, items.Length);
+                Imgui.ListBox("Resource files", ref selectedResource, items, items.Length);
                 Vector4 col = new (0.5f, 0.5f, 0.5f, 1.0f);
-                ImguiContext.PushStyleColor(ImguiContext.ImGuiCol.Button, ref col);
-                if(ImguiContext.Button("Delete")) {
+                Imgui.PushStyleColor(Imgui.ImGuiCol.Button, ref col);
+                if(Imgui.Button("Delete")) {
                     if(selectedResource < entries.Length) {
                         var res = entries[selectedResource].name;
                         player.ResourceManager.DeleteResource(res);
                         Console.WriteLine($"Delete resource {res}");
                     }
                 }
-                ImguiContext.PopStyleColor();
+                Imgui.PopStyleColor();
             } else {
                 if(player.ResourceManager.haveProject) {
-                    ImguiContext.Text("No resource files in this project!\nTo add some, you can drag and drop them in the application window.");
+                    Imgui.Text("No resource files in this project!\nTo add some, you can drag and drop them in the application window.");
                 } else {
-                    ImguiContext.Text("No project loaded.");
+                    Imgui.Text("No project loaded.");
                 }
             }
         }
-        ImguiContext.End();
+        Imgui.End();
     }
 
     private void DrawMainMenu() {
-        ImguiContext.BeginMenuBar();
-        if (ImguiContext.BeginMenu("File"))
+        Imgui.BeginMenuBar();
+        if (Imgui.BeginMenu("File"))
         {
-            if (ImguiContext.MenuItem("New project..."))
+            if (Imgui.MenuItem("New project..."))
             {
                 var result = FileChooser.ChooseDirectory("Choose a directory for new project...", "");
                 System.Console.WriteLine($"new project: {result}");
@@ -548,7 +548,7 @@ internal class PlayerControls {
                     player.ResourceManager.CreateProject(result);
                 }
             }
-            if (ImguiContext.MenuItem("Open project..."))
+            if (Imgui.MenuItem("Open project..."))
             {
                 var result = FileChooser.ChooseFile("Choose a project file to open...", "", new string[] {"*.animproj"});
                 System.Console.WriteLine($"open project: {result}");
@@ -558,51 +558,51 @@ internal class PlayerControls {
                     Debug.Warning("Failed to choose project file");
                 }
             }
-            if (ImguiContext.MenuItem("Export video..."))
+            if (Imgui.MenuItem("Export video..."))
             {
                 _showExport = !_showExport;
                 if(_showExport) {
                     exportfileName = "animation-"+DateTime.Now.ToString("yyyy_MM_dd_HHmmss")+".mp4";
                 }
             }
-            if (ImguiContext.MenuItem("Update"))
+            if (Imgui.MenuItem("Update"))
             {
                 player.SetAnimationDirty(true);
             }
-            ImguiContext.EndMenu();
+            Imgui.EndMenu();
         }
 
-        if (ImguiContext.BeginMenu("Window"))
+        if (Imgui.BeginMenu("Window"))
         {
-            if (ImguiContext.MenuItem("Resources..."))
+            if (Imgui.MenuItem("Resources..."))
             {
                 _showResources = true;
             }
-            if (ImguiContext.MenuItem("Values..."))
+            if (Imgui.MenuItem("Values..."))
             {
                 _showProperties = true;
             }
-            if (ImguiContext.MenuItem("Preferences"))
+            if (Imgui.MenuItem("Preferences"))
             {
             }
-            if (ImguiContext.MenuItem("Debug"))
+            if (Imgui.MenuItem("Debug"))
             {
                 _showPerformance = true;
             }
-            ImguiContext.EndMenu();
+            Imgui.EndMenu();
         }
 
-        if (ImguiContext.BeginMenu("Create"))
+        if (Imgui.BeginMenu("Create"))
         {
             var cam = view.LastCamera as PerspectiveCameraState;
             if(cam != null) 
             {
                 Vector4 col = new (0.5f, 0.5f, 0.5f, 1.0f);
-                ImguiContext.PushStyleColor(ImguiContext.ImGuiCol.Text, ref col);
-                ImguiContext.Text("(Drag and drop)");
-                ImguiContext.PopStyleColor();
+                Imgui.PushStyleColor(Imgui.ImGuiCol.Text, ref col);
+                Imgui.Text("(Drag and drop)");
+                Imgui.PopStyleColor();
                 Action<string, int, bool> createItem = (string name, int idx, bool is2d) => {
-                    ImguiContext.DragDropItem(name);
+                    Imgui.DragDropItem(name);
                 };
                 createItem("Circle", (int)DragDropObject.Circle, true);
                 createItem("Rectangle", (int)DragDropObject.Rectangle, true);
@@ -616,51 +616,51 @@ internal class PlayerControls {
             {
                 Debug.Warning("No camera");
             }
-            ImguiContext.EndMenu();
+            Imgui.EndMenu();
         }
 
-        ImguiContext.EndMenuBar();
+        Imgui.EndMenuBar();
 
         if(currentError != null) {
-            var wf = ImguiContext.ImGuiWindowFlags.AlwaysAutoResize;
+            var wf = Imgui.ImGuiWindowFlags.AlwaysAutoResize;
             bool open = true;
-            ImguiContext.Begin("Animation error", ref open, wf);
-            ImguiContext.Text(currentError);
-            ImguiContext.Text(currentStackTrace);
-            ImguiContext.End();
+            Imgui.Begin("Animation error", ref open, wf);
+            Imgui.Text(currentError);
+            Imgui.Text(currentStackTrace);
+            Imgui.End();
         }
     }
 
     private void ShowProperties() {
         string colorName = "";
-        if(ImguiContext.Begin("Values", ref _showProperties)) {
+        if(Imgui.Begin("Values", ref _showProperties)) {
             var values = player.GetValues();
             if(values != null) {
-                ImguiContext.Text("Add values and use them in code");
+                Imgui.Text("Add values and use them in code");
                 // Colors
-                if(ImguiContext.CollapsingHeader("Colors")) {
+                if(Imgui.CollapsingHeader("Colors")) {
                     // Show existing
                     foreach(var (key,col) in values.ColorMap.Select(x => (x.Key, x.Value)).ToArray()) {
                         var c = col.ToVector4();
-                        if(ImguiContext.ColorEdit4(key, ref c)) {
+                        if(Imgui.ColorEdit4(key, ref c)) {
                             values.ColorMap[key] = new Color(c);
                             player.SetAnimationDirty();
                         }
                     }
                     // Create new
-                    ImguiContext.InputText("Name", ref colorName, 64);
-                    ImguiContext.SameLine();
-                    if(ImguiContext.Button("Create")) {
+                    Imgui.InputText("Name", ref colorName, 64);
+                    Imgui.SameLine();
+                    if(Imgui.Button("Create")) {
                         if(!string.IsNullOrEmpty(colorName) && !values.ColorMap.ContainsKey(colorName)) {
                             values.ColorMap.Add(colorName, Color.GREEN);
                         }
                     }
                 }
             } else {
-                ImguiContext.Text("No values");
+                Imgui.Text("No values");
             }
         }
-        ImguiContext.End();
+        Imgui.End();
     }
 
     private void ShowItemSelection() {
@@ -744,94 +744,94 @@ internal class PlayerControls {
             }
             // Imgui proprty window
 
-            ImguiContext.SetNextWindowSize(new System.Numerics.Vector2(430, 450), ImguiContext.ImGuiCond.FirstUseEver);
+            Imgui.SetNextWindowSize(new System.Numerics.Vector2(430, 450), Imgui.ImGuiCond.FirstUseEver);
             
-            var wflags = ImguiContext.ImGuiWindowFlags.AlwaysAutoResize;
+            var wflags = Imgui.ImGuiWindowFlags.AlwaysAutoResize;
             bool show = true;
-            if(!ImguiContext.Begin("Object properties", ref show, wflags)) {
-                ImguiContext.End();
+            if(!Imgui.Begin("Object properties", ref show, wflags)) {
+                Imgui.End();
                 return;
             }
             Vector2 fp = new (2.0f, 2.0f);
-            ImguiContext.PushStyleVar(ImguiContext.ImGuiStyleVar.FramePadding, ref fp);
-            ImguiContext.Columns(1);
-            ImguiContext.Separator();
+            Imgui.PushStyleVar(Imgui.ImGuiStyleVar.FramePadding, ref fp);
+            Imgui.Columns(1);
+            Imgui.Separator();
 
-            ImguiContext.Text("Object properties");
-            ImguiContext.Spacing();
+            Imgui.Text("Object properties");
+            Imgui.Spacing();
             foreach(var propF in Selection.Properties) {
                 var prop = propF.Item2();
                 switch(prop) {
                     case Vector3 v1:
                     Vector3 v = v1;
-                    if(ImguiContext.InputFloat3(propF.Item1, ref v)) {
+                    if(Imgui.InputFloat3(propF.Item1, ref v)) {
                         propF.Item3((Vector3)v);
                         player.SetAnimationDirty();
                     }
                     break;
                     case Vector2 v2:
                     Vector2 vv = v2;
-                    if(ImguiContext.InputFloat2(propF.Item1, ref vv)) {
+                    if(Imgui.InputFloat2(propF.Item1, ref vv)) {
                         propF.Item3((Vector2)vv);
                         player.SetAnimationDirty();
                     }
                     break;
                     case double d1:
-                    if(ImguiContext.InputDouble(propF.Item1, ref d1)) {
+                    if(Imgui.InputDouble(propF.Item1, ref d1)) {
                         propF.Item3(d1);
                         player.SetAnimationDirty();
                     }
                     break;
                     case float f1:
-                    if(ImguiContext.InputFloat(propF.Item1, ref f1)) {
+                    if(Imgui.InputFloat(propF.Item1, ref f1)) {
                         propF.Item3(f1);
                         player.SetAnimationDirty();
                     }
                     break;
                     case Color c1:
                     var c = c1.ToVector4();
-                    if(ImguiContext.ColorEdit4(propF.Item1, ref c)) {
+                    if(Imgui.ColorEdit4(propF.Item1, ref c)) {
                         propF.Item3(new Color(c.x, c.y, c.z, c.w));
                         player.SetAnimationDirty();
                     }
                     //ImguiContext.SameLine();
                     var colNames = values.ColorMap.Select(x =>x.Key).ToArray();
-                    if(ImguiContext.BeginCombo(propF.Item1, "Select color")) {
+                    if(Imgui.BeginCombo(propF.Item1, "Select color")) {
                         for(int i = 0; i < colNames.Length; i++) {
-                            if(ImguiContext.Selectable(colNames[i], false)) {
+                            if(Imgui.Selectable(colNames[i], false)) {
                                 propF.Item3(values.ColorMap[colNames[i]]);
                                 player.SetAnimationDirty();
                             }
                         }
-                        ImguiContext.EndCombo();
+                        Imgui.EndCombo();
                     }
                     break;
                     case string s1:
-                    if(ImguiContext.InputText(propF.Item1, ref s1, 128)) {
+                    if(Imgui.InputText(propF.Item1, ref s1, 128)) {
                         propF.Item3(s1);
                         player.SetAnimationDirty();
                     }
                     break;
                     default:
                         if(prop.GetType().IsEnum) {
-                            if(ImguiContext.BeginCombo(propF.Item1, prop.ToString())) {
+                            if(Imgui.BeginCombo(propF.Item1, prop.ToString())) {
                                 var enumValues = Enum.GetValues(prop.GetType());
                                 foreach(var val in enumValues) {
-                                    if(ImguiContext.Selectable(val.ToString(), false)) {
+                                    if(Imgui.Selectable(val.ToString(), false)) {
                                         propF.Item3(val);
                                         player.SetAnimationDirty();
                                     }
                                 }
-                                ImguiContext.EndCombo();
+                                Imgui.EndCombo();
                             }
                         }
                     break;
                 }
             }
 
-            ImguiContext.Separator();
-            ImguiContext.PopStyleVar();
-            ImguiContext.End();
+            Imgui.Separator();
+            Imgui.PopStyleVar();
+            Imgui.End();
         }
     }
 
@@ -870,35 +870,35 @@ internal class PlayerControls {
             return;
         while (node != null)
         {
-            if (ImguiContext.TreeNode(node.Name))
+            if (Imgui.TreeNode(node.Name))
             {
                 var time = (double)node.Time*1000.0/(double)System.Diagnostics.Stopwatch.Frequency;
-                ImguiContext.Text($"Time: {time:N3}ms");
+                Imgui.Text($"Time: {time:N3}ms");
                 TraversePerfTree(node.firstChild);
-                ImguiContext.TreePop();
+                Imgui.TreePop();
             }
             node = node.nextSibling;
         }
     }
 
     public void ShowPerf() {
-        ImguiContext.SetNextWindowSize(new System.Numerics.Vector2(300, 150), ImguiContext.ImGuiCond.FirstUseEver);
-        var wflags = ImguiContext.ImGuiWindowFlags.NoDocking;
-        if(!ImguiContext.Begin("Developer debug", ref _showPerformance, wflags)) {
-            ImguiContext.End();
+        Imgui.SetNextWindowSize(new System.Numerics.Vector2(300, 150), Imgui.ImGuiCond.FirstUseEver);
+        var wflags = Imgui.ImGuiWindowFlags.NoDocking;
+        if(!Imgui.Begin("Developer debug", ref _showPerformance, wflags)) {
+            Imgui.End();
             return;
         }
-        ImguiContext.Text($"Frame processing: {Performance.TimeToProcessFrame*1000.0:N3}ms");
-        ImguiContext.Text($"Wait sync: {Performance.TimeToWaitSync*1000.0:N3}ms");
-        ImguiContext.Text($"View rendering: {Performance.TimeToRenderViews*1000.0:N3}ms");
-        ImguiContext.Text($"  Canvas rendering: {Performance.TimeToRenderCanvases*1000.0:N3}ms");
-        ImguiContext.Text($"Number of scene views: {Performance.views}");
-        ImguiContext.Text($"Number of commands in animation: {Performance.CommandCount}");
-        ImguiContext.Text($"Last bake time: {Performance.TimeToBake*1000:N3}ms");
+        Imgui.Text($"Frame processing: {Performance.TimeToProcessFrame*1000.0:N3}ms");
+        Imgui.Text($"Wait sync: {Performance.TimeToWaitSync*1000.0:N3}ms");
+        Imgui.Text($"View rendering: {Performance.TimeToRenderViews*1000.0:N3}ms");
+        Imgui.Text($"  Canvas rendering: {Performance.TimeToRenderCanvases*1000.0:N3}ms");
+        Imgui.Text($"Number of scene views: {Performance.views}");
+        Imgui.Text($"Number of commands in animation: {Performance.CommandCount}");
+        Imgui.Text($"Last bake time: {Performance.TimeToBake*1000:N3}ms");
 
         TraversePerfTree(Performance.lastRoot);
 
-        ImguiContext.End();
+        Imgui.End();
     }
 
     public void DoInterface() {
@@ -924,7 +924,7 @@ internal class PlayerControls {
             ShowProperties();
 
         // select on left click
-        if(ImguiContext.IsMouseClicked(0)
+        if(Imgui.IsMouseClicked(0)
                 && UserInterface.MouseEntityId >= 0 
                 && player.Scene != null) 
         {
@@ -949,7 +949,7 @@ internal class PlayerControls {
                 var c = ent as CanvasState;
                 var mat = c.WorldToNormalizedCanvas;
                 Vector2 normPos;
-                if(view.TryIntersectCanvas(c, ImguiContext.GetMousePos(), out normPos)) {
+                if(view.TryIntersectCanvas(c, Imgui.GetMousePos(), out normPos)) {
                     Vector2 canvasPos = (normPos)*new Vector2(c.width, c.height);
                     Debug.TLog($"Found canvas {c.name} {normPos} {canvasPos}");
                     lock(player.Scene.sceneLock) {
@@ -966,7 +966,7 @@ internal class PlayerControls {
             else {
                 Debug.Warning($"Mouse over entity, but no entity with id {UserInterface.MouseEntityId} in scene");
             }
-        } else if(ImguiContext.IsMouseClicked(0) && UserInterface.MouseEntityId == -1 /*&& !ImGuizmo.IsOver()*/) {
+        } else if(Imgui.IsMouseClicked(0) && UserInterface.MouseEntityId == -1 /*&& !ImGuizmo.IsOver()*/) {
             Selection = null;
         }
 

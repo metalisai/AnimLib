@@ -269,9 +269,9 @@ public struct Vector2 : IEquatable<Vector2>,
     /// <summary>
     /// Compares an object to this vector for equality. True only if the object is a vector and has equal components.
     /// </summary>
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
-        return obj is Vector2 && ((Vector2)obj).x == x && ((Vector2)obj).y == y;
+        return obj is Vector2 ov2 && ov2.x == x && ov2.y == y;
     }
 
     /// <summary>

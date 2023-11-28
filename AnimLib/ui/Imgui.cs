@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace AnimLib;
 
-internal class ImguiContext {
+internal class Imgui {
 
     [StructLayout(LayoutKind.Sequential)]
     public struct ImDrawVert {
@@ -27,9 +27,9 @@ internal class ImguiContext {
     }
 
     public record DrawList {
-        public ImDrawVert[] vertices;
-        public ushort[] indices;
-        public ImDrawCmd[] commands;
+        public ImDrawVert[] vertices = Array.Empty<ImDrawVert>();
+        public ushort[] indices = Array.Empty<ushort>();
+        public ImDrawCmd[] commands = Array.Empty<ImDrawCmd>();
     }
 
     enum AnimlibCallbackId : int {
@@ -215,7 +215,7 @@ internal class ImguiContext {
 
     private const string LibraryName = "imgui_animlib";
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
-    public static extern IntPtr imgui_animlib_init(imgui_animlib_draw_data_cb_t draw_data_cb, imgui_animlib_draw_cb_t draw_cb, [MarshalAs(UnmanagedType.LPStr)] string resources_path = null);
+    public static extern IntPtr imgui_animlib_init(imgui_animlib_draw_data_cb_t draw_data_cb, imgui_animlib_draw_cb_t draw_cb, [MarshalAs(UnmanagedType.LPStr)] string? resources_path = null);
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
     public static extern void imgui_animlib_shutdown(IntPtr ctx);
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
@@ -258,7 +258,7 @@ internal class ImguiContext {
     public static bool InputText(string label, ref string buf, uint size) {
         var bufPtr = Marshal.StringToHGlobalAnsi(buf);
         var ret = InputTextInternal(label, bufPtr, size);
-        buf = Marshal.PtrToStringAnsi(bufPtr);
+        buf = Marshal.PtrToStringAnsi(bufPtr) ?? "";
         Marshal.FreeHGlobal(bufPtr);
         return ret;
     }
@@ -397,9 +397,9 @@ internal class ImguiContext {
         return ret;
     }
 
-    public event Action DrawMenuEvent;
-    public event Action PlayEvent;
-    public event Action<float> SeekEvent;
+    public event Action? DrawMenuEvent;
+    public event Action? PlayEvent;
+    public event Action<float>? SeekEvent;
 
     void DrawMenuCallback() {
         DrawMenuEvent?.Invoke();
@@ -458,7 +458,7 @@ internal class ImguiContext {
     IntPtr ctxHandle;
 
     Dictionary<int, Texture2D> textures = new Dictionary<int, Texture2D>();
-    public ImguiContext(int width, int height, IPlatform platform) {
+    public Imgui(int width, int height, IPlatform platform) {
         draw_data_cb = new imgui_animlib_draw_data_cb_t(DrawDataCallback);
         draw_cb = new imgui_animlib_draw_cb_t(DrawCallback);
         draw_menu_cb = new imgui_animlib_draw_menu_t(DrawMenuCallback);
@@ -474,7 +474,6 @@ internal class ImguiContext {
 
         // TODO: free
         //
-
 
         int w, h, bpp;
         IntPtr pixels;
@@ -516,7 +515,7 @@ internal class ImguiContext {
         return imgui_animlib_scene_window(ctxHandle, viewAspect, textureHandle, playing, cursor, cursor_max);
     }
 
-    public ImguiContext.DrawList Render() {
+    public Imgui.DrawList Render() {
         imgui_animlib_end_frame(ctxHandle);
         var drawList = new DrawList {
             vertices = this.vertices.ToArray(),

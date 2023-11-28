@@ -1,5 +1,6 @@
-namespace AnimLib {
-    partial class WorldRenderer {
+namespace AnimLib;
+
+partial class GlWorldRenderer {
 
 string vertShader = @"#version 330 core 
 layout(location = 0) in vec4 position;
@@ -570,5 +571,4 @@ void main() {
     outColor = vec4(outColorRGB, alpha);
     outEntityId = v_entityId;
 }";
-    }
 }

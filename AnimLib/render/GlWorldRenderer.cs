@@ -8,7 +8,7 @@ namespace AnimLib;
 /// <summary>
 /// <c>IRenderer</c> implementation using OpenGL and SkiaSharp. A renderer is responsible for rendering <c>WorldSnapshot</c> for a specified <c>SceneView</c> using appropriate coordinate transformations.
 /// </summary>
-partial class WorldRenderer : IRenderer {
+partial class GlWorldRenderer : IRenderer {
     
     int _circleProgram;
     int _rectangleProgram;
@@ -32,7 +32,7 @@ partial class WorldRenderer : IRenderer {
 
     System.Diagnostics.Stopwatch sw;
 
-    public WorldRenderer(OpenTKPlatform platform, RenderState rs) {
+    public GlWorldRenderer(OpenTKPlatform platform, RenderState rs) {
         this.platform = platform;
         this.rs = rs;
         _circleProgram = platform.AddShader(circleVert, circleFrag, null);
@@ -86,8 +86,10 @@ partial class WorldRenderer : IRenderer {
             var ssLoc = GL.GetUniformLocation(_bezierProgram, "_ScreenSize");
             var wLog = GL.GetUniformLocation(_bezierProgram, "_Width");
             GL.BindVertexArray(platform.rectVao);
-            foreach(var bz in beziers) {
-                int count = 1 + (bz.points.Length-3)/2;
+            foreach(BezierState bz in beziers) {
+                // NOTE: bz.points causes nullable warning in sdk 8.0.100, seems like a compiler bug?
+                Vector3[] points = bz.points!;
+                int count = 1 + (bz.points!.Length-3)/2;
                 M4x4 modelToWorld, modelToClip;
                 if(bz.points == null || bz.points.Length < 3)
                     continue;
@@ -210,9 +212,8 @@ partial class WorldRenderer : IRenderer {
         }
     }
 
-    public void RenderGlyphs(Vector2 screenSize, GlyphState[] gs, PerspectiveCameraState worldCamera) {
+    public void RenderGlyphs(Vector2 screenSize, GlyphState[] gs, CameraState worldCamera) {
         var mat = M4x4.Ortho(0.0f, screenSize.x, 0.0f, screenSize.y, -1.0f, 1.0f);
-        var cam = worldCamera;
         foreach(var ch in gs) {
             var modelToWorld = ch.ModelToWorld(entRes);
             //Vector2 anchorPos = ch.anchor * screenSize;
@@ -223,38 +224,6 @@ partial class WorldRenderer : IRenderer {
         rs.FontCache.RenderTest(_textProgram, mat);
         drawId++;
     }
-
-    /*public void RenderLabels(Vector2 screenSize, (LabelState, EntityState)[] labels, CameraState gcam) {
-        var mat = M4x4.Ortho(0.0f, screenSize.x, 0.0f, screenSize.y, -1.0f, 1.0f);
-        var cam = ((PerspectiveCameraState)gcam);
-        foreach(var label in labels){
-            var l = label.Item1;
-            Rect size;
-            Color c = l.color;
-            var sss = rs.TypeSetting.GetSize(l.text, l.size);
-            size = new Rect(0.0f, 0.0f, sss.x, sss.y);
-            var pos3 = l.target.GetLabelWorldCoordinate(l.style, label.Item2);
-            var pos2 = cam.WorldToScreenPos(pos3.Value, screenSize);
-            var pos = pos2 + l.target.GetLabelOffset(cam, size, l.style, label.Item2, screenSize);
-            float z = l.position.z;
-            if(pos != null) {
-                if(l.anim != null) {
-                    c.a = (byte)(255 - (byte)(((MathF.Max(0.9f,l.anim.progress)-0.9f)/0.1f)*255));
-                    Vector2 absorbpos;
-                    if(l.anim.point != null) {
-                        absorbpos = cam.WorldToScreenPos(l.anim.point.Value, screenSize);
-                    } else {
-                        absorbpos = l.anim.screenPoint.Value;
-                        z += l.anim.screenPoint.Value.z;
-                    }
-                    pos = Vector2.Berp(pos.Value, absorbpos, l.anim.progress);
-                }
-                Vector3 p = new Vector3(pos.Value.x, pos.Value.y, z);
-                rs.FontCache.PushString(l.text, p, l.size, c, l.entityId, TextHorizontalAlignment.Center, TextVerticalAlignment.Center);
-            }
-        }
-        rs.FontCache.RenderTest(_textProgram, mat);
-    }*/
 
     public int GetProgram(BuiltinShader shader) {
         switch(shader) {
@@ -416,8 +385,6 @@ partial class WorldRenderer : IRenderer {
         var w = rb0.Width;
         var h = rb0.Height;
 
-        DepthPeelRenderBuffer pb;
-
         {
             using var ___ = new Performance.Call("Manage renderer buffers");
             foreach (var rb in ss.RenderBuffers) {
@@ -439,15 +406,15 @@ partial class WorldRenderer : IRenderer {
         }
 
         mainBuffer = this.renderBuffers[rb0.BackendHandle];
-        pb = mainBuffer as DepthPeelRenderBuffer;
-        GL.Viewport(0, 0, pb.Size.Item1, pb.Size.Item2);
+        var pb = mainBuffer as DepthPeelRenderBuffer;
         if (pb == null) {
             Console.WriteLine("Can't render scene because renderbuffer isn't DepthPeelRenderBuffer");
             return;
         }
+        GL.Viewport(0, 0, mainBuffer.Size.w, mainBuffer.Size.h);
         GL.Enable(EnableCap.PolygonOffsetFill);
 
-        pb.Bind();
+        mainBuffer.Bind();
         GL.DepthMask(true);
         GL.ClearDepth(1.0f);
         GL.Clear(ClearBufferMask.DepthBufferBit);
@@ -457,7 +424,7 @@ partial class WorldRenderer : IRenderer {
         GL.DepthFunc(DepthFunction.Greater);
         GL.Enable(EnableCap.DepthTest);
 
-        var background = ss.Camera.clearColor;
+        var background = ss.Camera?.clearColor ?? Color.WHITE;
         GL.ClearColor((float)background.r/255.0f, (float)background.g/255.0f, (float)background.b/255.0f, (float)background.a/255.0f);
         GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
         GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
@@ -471,15 +438,14 @@ partial class WorldRenderer : IRenderer {
         //GL.BlendFuncSeparate(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha, BlendingFactorSrc.One, BlendingFactorDest.Zero); 
         GL.Enable(EnableCap.Blend);
 
-        var smat = M4x4.Ortho(0.0f, pb.Size.w, 0.0f, pb.Size.h, -1.0f, 1.0f);
+        var smat = M4x4.Ortho(0.0f, mainBuffer.Size.w, 0.0f, mainBuffer.Size.h, -1.0f, 1.0f);
         var query = GL.GenQuery();
 
         var _programs = platform.Programs;
 
         // TODO: bind framebuffer when we have render targets
-        var pbSize = pb.Size;
-        if(cam is OrthoCameraState) {
-            var ocam = cam as OrthoCameraState;
+        var pbSize = mainBuffer.Size;
+        if(cam is OrthoCameraState ocam) {
             ocam.width = pbSize.w;
             ocam.height = pbSize.h;
         }
@@ -506,7 +472,7 @@ partial class WorldRenderer : IRenderer {
                 ColoredTriangleMesh[] meshes = new ColoredTriangleMesh[ss.MeshBackedGeometries.Length];
                 var throwawayGeometries = new List<ColoredTriangleMeshGeometry>();
                 foreach(var mbg in ss.MeshBackedGeometries) {
-                    ColoredTriangleMeshGeometry geom = null;
+                    ColoredTriangleMeshGeometry? geom = null;
                     if(mbg.RendererHandle == null) {
                         // TODO: find a way to reuse these, this is nasty
                         geom = new ColoredTriangleMeshGeometry("");
@@ -579,7 +545,7 @@ partial class WorldRenderer : IRenderer {
         }
 
         if(ss.Glyphs != null) {
-            RenderGlyphs(new Vector2(pbSize.w, pbSize.h), ss.Glyphs, cam as PerspectiveCameraState);
+            RenderGlyphs(new Vector2(pbSize.w, pbSize.h), ss.Glyphs, cam);
         }
 
         GL.DeleteQuery(query);

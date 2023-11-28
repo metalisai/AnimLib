@@ -327,13 +327,13 @@ internal class SceneView
         if(lastArea == null)
             return false;
         var screenP = bufferToScreen(pos);
-        var inGizmo = ((Vector2)ImguiContext.GetMousePos() - screenP).Length < 5.0f;
-        ImguiContext.FgCircleFilled(screenP, 6.0f, 0xFF000000);
-        ImguiContext.FgCircleFilled(screenP, 5.0f, inGizmo ? 0xFF5555FF : color);
+        var inGizmo = ((Vector2)Imgui.GetMousePos() - screenP).Length < 5.0f;
+        Imgui.FgCircleFilled(screenP, 6.0f, 0xFF000000);
+        Imgui.FgCircleFilled(screenP, 5.0f, inGizmo ? 0xFF5555FF : color);
 
         if (label != null && inGizmo)
-            ImguiContext.FgText(screenP-new Vector2(0.0f, 20.0f), 0xFF000000, label);
-        if (inGizmo && ImguiContext.IsMouseClicked(0))
+            Imgui.FgText(screenP-new Vector2(0.0f, 20.0f), 0xFF000000, label);
+        if (inGizmo && Imgui.IsMouseClicked(0))
             return true;
         else
             return false;
@@ -346,15 +346,15 @@ internal class SceneView
 
         var newp = pos;
         var screenP = bufferToScreen(pos);
-        var inGizmo = !usingGizmo && ((Vector2)ImguiContext.GetMousePos() - screenP).Length < 5.0f;
+        var inGizmo = !usingGizmo && ((Vector2)Imgui.GetMousePos() - screenP).Length < 5.0f;
         PointGizmoState state = new PointGizmoState { dragging = false };
         if(!pointGizmos.TryGetValue(uid, out state)) {
-            if(ImguiContext.IsMouseClicked(0) && inGizmo) {
+            if(Imgui.IsMouseClicked(0) && inGizmo) {
                 state.dragging = true;
                 pointGizmos.Add(uid, state);
             }
         } else {
-            if(!ImguiContext.IsMouseDown(0)) {
+            if(!Imgui.IsMouseDown(0)) {
                 state.dragging = false;
                 pointGizmos.Remove(uid);
                 endupdate = true;
@@ -365,16 +365,16 @@ internal class SceneView
         }
 
         if(state.dragging) {
-            newp = screenToBuffer((Vector2)ImguiContext.GetMousePos());
+            newp = screenToBuffer((Vector2)Imgui.GetMousePos());
         }
         bool active = inGizmo || state.dragging;
         // use new coordinates for drawing (if it got overriden)
         screenP = bufferToScreen(newp);
-        ImguiContext.FgCircleFilled(screenP, 6.0f, 0xFF000000);
-        ImguiContext.FgCircleFilled(screenP, 5.0f, active ? 0xFF5555FF : color);
+        Imgui.FgCircleFilled(screenP, 6.0f, 0xFF000000);
+        Imgui.FgCircleFilled(screenP, 5.0f, active ? 0xFF5555FF : color);
         if (active && showlabel)
         {
-            ImguiContext.FgText(screenP-new Vector2(0.0f, 20.0f), 0xFF000000, uid);
+            Imgui.FgText(screenP-new Vector2(0.0f, 20.0f), 0xFF000000, uid);
         }
         if(!state.dragging)
             return null;

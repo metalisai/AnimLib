@@ -35,7 +35,7 @@ internal class RenderState
         platform.mouseScroll += mouseScroll;
         platform.PRenderFrame += RenderFrame;
 
-        imgui = new ImguiContext((int)uiRenderBuffer.Size.Item1, (int)uiRenderBuffer.Size.Item2, platform);
+        imgui = new Imgui((int)uiRenderBuffer.Size.Item1, (int)uiRenderBuffer.Size.Item2, platform);
     }
 
     readonly internal IPlatform platform;
@@ -80,7 +80,7 @@ internal class RenderState
 
     System.Diagnostics.Stopwatch sw;
 
-    public ImguiContext imgui = null;
+    public Imgui imgui = null;
 
     public AnimationPlayer.FrameStatus frameStatus;
     public AnimationPlayer.FrameStatus SceneStatus {
@@ -117,13 +117,17 @@ internal class RenderState
 
         sw = new System.Diagnostics.Stopwatch();
 
-        renderer = new WorldRenderer(platform as OpenTKPlatform, this);
+        var glPlatform = platform as OpenTKPlatform;
+        if(glPlatform == null) {
+            throw new Exception("GlWorldRenderer currently requires OpenTKPlatform");
+        }
+        renderer = new GlWorldRenderer(glPlatform, this);
         //renderer = new TessallationRenderer(platform as OpenTKPlatform, this);
         Debug.TLog($"Renderer implementation: {renderer}");
         _fr = new FontCache(ts, platform);
         uiRenderBuffer.Resize(1024, 1024);
 
-        platform.PKeyDown += (object sender, KeyboardKeyEventArgs args) => {
+        platform.PKeyDown += (object? sender, KeyboardKeyEventArgs args) => {
             if(args.Key == Key.F && !args.IsRepeat) {
                 overrideCamera = !overrideCamera;
                 if(overrideCamera) {
@@ -134,13 +138,13 @@ internal class RenderState
                     this.debugCamRot = Vector2.ZERO;
                 }
             }
-            ImguiContext.KeyEdge((uint)args.Key, true);
+            Imgui.KeyEdge((uint)args.Key, true);
         };
-        platform.PKeyUp += (object sender, KeyboardKeyEventArgs args) => {
-            ImguiContext.KeyEdge((uint)args.Key, false);
+        platform.PKeyUp += (object? sender, KeyboardKeyEventArgs args) => {
+            Imgui.KeyEdge((uint)args.Key, false);
         };
-        platform.PKeyPress += (object sender, KeyPressEventArgs args) => {
-            ImguiContext.AddInputCharacter(args.KeyChar);
+        platform.PKeyPress += (object? sender, KeyPressEventArgs args) => {
+            Imgui.AddInputCharacter(args.KeyChar);
         };
 
         this.OnUpdate += (double dtd) => {
@@ -166,7 +170,7 @@ internal class RenderState
             }
         };
 
-        platform.mouseMove += (object s, MouseMoveEventArgs args) => {
+        platform.mouseMove += (object? s, MouseMoveEventArgs args) => {
             var state = OpenTK.Input.Keyboard.GetState();
             if(overrideCamera && !state[OpenTK.Input.Key.ControlLeft]) {
                 this.debugCamRot.x += args.XDelta*0.01f;
@@ -319,12 +323,16 @@ internal class RenderState
             if(sceneUpdated) {
                 foreach(var sv in views) {
                     var sceneCamera = currentScene.Camera;
-                    if(overrideCamera) sceneCamera = debugCamera;
+                    if(overrideCamera) {
+                        sceneCamera = debugCamera;
+                    }
+                    if (sceneCamera == null) {
+                        Debug.Warning("No camera in scene");
+                        continue;
+                    }
                     renderer.RenderScene(currentScene, sceneCamera, _renderGizmos, out var mainBuffer);
                     sv.Buffer = mainBuffer;
                 }
-            } else {
-                //Debug.TLog($"Not rendering scene, no changes {test++}");
             }
             sw.Stop();
             Performance.TimeToRenderViews = sw.Elapsed.TotalSeconds;
@@ -352,9 +360,9 @@ internal class RenderState
 
         int sceneEntity = -2;
         if (views.Count > 0) {
-            sceneEntity = views[0].GetEntityIdAtPixel(ImguiContext.GetMousePos());
+            sceneEntity = views[0].GetEntityIdAtPixel(Imgui.GetMousePos());
         }
-        var guiEntity = GetGuiEntityAtPixel(uiRenderBuffer, ImguiContext.GetMousePos());
+        var guiEntity = GetGuiEntityAtPixel(uiRenderBuffer, Imgui.GetMousePos());
         if(sceneEntity == -2) { // out of scene viewport
             UserInterface.MouseEntityId = guiEntity;
         } else {

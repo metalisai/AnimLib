@@ -62,7 +62,7 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         }
     }
 
-    static DebugProc proc;
+    static DebugProc? proc;
 
     public static ConcurrentBag<string> destroyedOwners = new ConcurrentBag<string>();
     public Dictionary<string, AllocatedResources> allocatedResources = new Dictionary<string, AllocatedResources>();
@@ -71,7 +71,7 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         Width = width;
         Height = height;
 
-        FileDrop += (object sender, OpenTK.Input.FileDropEventArgs args) => {
+        FileDrop += (object? sender, OpenTK.Input.FileDropEventArgs args) => {
             if(PFileDrop != null) {
                 PFileDrop(this, args);
             }
@@ -127,9 +127,9 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         GL.EnableVertexAttribArray(0);
         GL.EnableVertexAttribArray(1);
         GL.EnableVertexAttribArray(2);
-        GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, Marshal.SizeOf(typeof(ImguiContext.ImDrawVert)), Marshal.OffsetOf<ImguiContext.ImDrawVert>("pos"));
-        GL.VertexAttribPointer(1, 4, VertexAttribPointerType.UnsignedByte, true, Marshal.SizeOf(typeof(ImguiContext.ImDrawVert)), Marshal.OffsetOf<ImguiContext.ImDrawVert>("col"));
-        GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, Marshal.SizeOf(typeof(ImguiContext.ImDrawVert)), Marshal.OffsetOf<ImguiContext.ImDrawVert>("uv"));
+        GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, Marshal.SizeOf(typeof(Imgui.ImDrawVert)), Marshal.OffsetOf<Imgui.ImDrawVert>("pos"));
+        GL.VertexAttribPointer(1, 4, VertexAttribPointerType.UnsignedByte, true, Marshal.SizeOf(typeof(Imgui.ImDrawVert)), Marshal.OffsetOf<Imgui.ImDrawVert>("col"));
+        GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, Marshal.SizeOf(typeof(Imgui.ImDrawVert)), Marshal.OffsetOf<Imgui.ImDrawVert>("uv"));
         GL.BindVertexArray(0);
     }
 
@@ -175,38 +175,38 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         string rendererStr = GL.GetString(StringName.Renderer);
         Debug.Log($"OpenGL context info\n\tGL version: {version}\n\tShading language version: {shadingLang}\n\tRenderer: {rendererStr}");
 
-        this.KeyDown += (object sender, KeyboardKeyEventArgs args) => {
+        this.KeyDown += (object? sender, KeyboardKeyEventArgs args) => {
             if(PKeyDown != null) {
                 PKeyDown(this, args);
             }
         };
-        this.KeyUp += (object sender, KeyboardKeyEventArgs args) => {
+        this.KeyUp += (object? sender, KeyboardKeyEventArgs args) => {
             if(PKeyUp != null) {
                 PKeyUp(this, args);
             }
         };
-        this.KeyPress += (object sender, KeyPressEventArgs args) => {
+        this.KeyPress += (object? sender, KeyPressEventArgs args) => {
             if(PKeyPress != null) {
                 PKeyPress(this, args);
             }
         };
 
-        this.MouseDown += (object sender, MouseButtonEventArgs args) => {
+        this.MouseDown += (object? sender, MouseButtonEventArgs args) => {
             if(mouseDown != null) {
                 mouseDown(this, args);
             }
         };
-        this.MouseUp += (object sender, MouseButtonEventArgs args) => {
+        this.MouseUp += (object? sender, MouseButtonEventArgs args) => {
             if(mouseUp != null) {
                 mouseUp(this, args);
             }
         };
-        this.MouseMove += (object sender, MouseMoveEventArgs args) => {
+        this.MouseMove += (object? sender, MouseMoveEventArgs args) => {
             if(mouseMove != null) {
                 mouseMove(this, args);
             }
         };
-        this.MouseWheel += (object sender, MouseWheelEventArgs args) => {
+        this.MouseWheel += (object? sender, MouseWheelEventArgs args) => {
             if(mouseScroll != null) {
                 mouseScroll(this, args);
             }
@@ -218,7 +218,7 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         //Skia.CreateSW(false); // HDR is very slow
 
         if(OnLoaded != null) {
-            OnLoaded(this, null);
+            OnLoaded(this, new());
         }
 
         base.OnLoad(e);
@@ -269,8 +269,7 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         }
 
         if(tex2d.ownerGuid != "") {
-            AllocatedResources res;
-            if(!allocatedResources.TryGetValue(tex2d.ownerGuid, out res)) {
+            if(!allocatedResources.TryGetValue(tex2d.ownerGuid, out var res)) {
                 res = new AllocatedResources();
                 allocatedResources.Add(tex2d.ownerGuid, res);
             }
@@ -305,10 +304,8 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         // destory resources that are no longer needed
         sw.Restart();
         if(destroyedOwners.Count > 0) {
-            string owner;
-            while(destroyedOwners.TryTake(out owner)) {
-                AllocatedResources res;
-                if(!allocatedResources.TryGetValue(owner, out res)) {
+            while(destroyedOwners.TryTake(out var owner)) {
+                if(!allocatedResources.TryGetValue(owner, out var res)) {
                     break;
                 } else {
                     Debug.Log($"Renderer resource owner {owner} with resources destroyed");
@@ -338,11 +335,11 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         Performance.TimeToWaitSync = sw.Elapsed.TotalSeconds;
     }
 
-    public void RenderImGui(ImguiContext.DrawList data, IList<SceneView> views, IBackendRenderBuffer rb) {
+    public void RenderImGui(Imgui.DrawList data, IList<SceneView> views, IBackendRenderBuffer rb) {
         GL.BindBuffer(BufferTarget.ArrayBuffer, imguiVbo);
         if (data.vertices.Length > 0)
         {
-            GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, data.vertices.Length*Marshal.SizeOf(typeof(ImguiContext.ImDrawVert)), ref data.vertices[0]);
+            GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, data.vertices.Length*Marshal.SizeOf(typeof(Imgui.ImDrawVert)), ref data.vertices[0]);
         }
         else
         {
@@ -399,11 +396,10 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         return;
     }
 
-    public void RenderGUI(ImguiContext.DrawList data, IList<SceneView> views, IBackendRenderBuffer rb)
+    public void RenderGUI(Imgui.DrawList data, IList<SceneView> views, IBackendRenderBuffer rb)
     {
-        DepthPeelRenderBuffer pb;
         GL.Viewport(0, 0, rb.Size.Item1, rb.Size.Item2);
-        pb = rb as DepthPeelRenderBuffer;
+        var pb = rb as DepthPeelRenderBuffer;
 
         GL.Enable(EnableCap.PolygonOffsetFill);
         System.Diagnostics.Debug.Assert(pb is DepthPeelRenderBuffer);
@@ -455,7 +451,15 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
     }
 
-    public int AddShader(string v, string f, string g, string tcs = null, string tes = null) {
+    /// <summary>
+    /// Add a shader program.
+    /// </summary>
+    /// <param name="v">Vertex shader source.</param>
+    /// <param name="f">Fragment shader source.</param>
+    /// <param name="g">Geometry shader source.</param>
+    /// <param name="tcs">Tessellation control shader source.</param>
+    /// <param name="tes">Tessellation evaluation shader source.</param>
+    public int AddShader(string v, string f, string? g, string? tcs = null, string? tes = null) {
         int[] ps = new int[1];
         var vs = GL.CreateShader(ShaderType.VertexShader);
         GL.ShaderSource(vs, v);

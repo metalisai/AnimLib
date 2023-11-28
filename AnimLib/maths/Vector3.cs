@@ -335,9 +335,9 @@ namespace AnimLib
         /// <summary>
         /// Vector3 is equal to another object if it is a Vector3 and all components are equal.
         /// </summary>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            return obj is Vector3 && ((Vector3)obj).x == x && ((Vector3)obj).y == y && ((Vector3)obj).z == z;
+            return obj is Vector3 ov3 && ov3.x == x && ov3.y == y && ov3.z == z;
         }
 
         /// <summary>

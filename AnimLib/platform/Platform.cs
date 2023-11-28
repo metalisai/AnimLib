@@ -36,7 +36,7 @@ internal interface IPlatform {
     int AddShader(string v, string f, string g, string tcs = null, string tes = null);
     void DestroyOwner(string owner);
 
-    void RenderGUI(ImguiContext.DrawList data, IList<SceneView> views, IBackendRenderBuffer rb);
+    void RenderGUI(Imgui.DrawList data, IList<SceneView> views, IBackendRenderBuffer rb);
     void ClearBackbuffer(int x, int y, int w, int h); 
     //void RenderImGui(ImDrawDataPtr data, Texture2D atlas);
 

@@ -1,10 +1,12 @@
+using System;
 using System.Linq;
 
 namespace AnimLib;
+
 internal class BezierState : EntityState3D {
     public float width = 1.0f;
     public Color color = Color.BLACK;
-    public Vector3[] points;
+    public Vector3[] points = Array.Empty<Vector3>();
 
     public BezierState() {}
 
