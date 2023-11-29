@@ -3,9 +3,18 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace AnimLib;
+
+/// <summary>
+/// An implementation of an animated float value that returns to a set value at a set speed.
+/// </summary>
 public class ElasticFloat {
+    /// <summary>
+    /// Operating mode of the ElasticFloat.
+    /// </summary>
     public enum Mode {
+        /// <summary> Only ease when returning to target. </summary>
         EaseOut,
+        /// <summary> Ease when setting and when returning. </summary>
         EaseInOut,
     }
 
@@ -24,6 +33,9 @@ public class ElasticFloat {
     Action<float> setAction = (x) => {
     };
 
+    /// <summary>
+    /// The action called when the value is updated.
+    /// </summary>
     public Action<float> Action {
         set {
             this.setAction = value;
@@ -36,6 +48,14 @@ public class ElasticFloat {
         return ret;
     }
 
+    /// <summary>
+    /// Create a new ElasticFloat.
+    /// </summary>
+    /// <param name="setAction">The action called when the value is updated.</param>
+    /// <param name="returnValue">The value to return to.</param>
+    /// <param name="returnSpeed">The speed at which to return to the value.</param>
+    /// <param name="mode">The mode of the ElasticFloat.</param>
+    /// <returns></returns>
     public ElasticFloat(Action<float> setAction, float returnValue, float returnSpeed, Mode mode = Mode.EaseOut) {
         this.mode = mode;
         this.setAction = setAction;
@@ -69,6 +89,9 @@ public class ElasticFloat {
             }, src.Token);
     }
 
+    /// <summary>
+    /// The current value of the ElasticFloat.
+    /// </summary>
     public float Value {
         get {
             return currentValue;
@@ -84,12 +107,18 @@ public class ElasticFloat {
         }
     }
 
+    /// <summary>
+    /// Setter to set the return speed of the ElasticFloat.
+    /// </summary>
     public float ReturnSpeed {
         set {
             this.speed = value;
         }
     }
 
+    /// <summary>
+    /// Stop updating this ElasticFloat.
+    /// </summary>
     public void Stop() {
         src.Cancel();
     }

@@ -213,9 +213,6 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
         var loc = GL.GetUniformLocation(_bloomProgram, "_MainTex");
         GL.Uniform1(loc, 0);
         var horLoc = GL.GetUniformLocation(_bloomProgram, "_Horizontal");
-        if (loc < 0 || horLoc < 0) {
-            Debug.Error($"Bloom effect shader missing uniforms {loc} {horLoc}");
-        }
         var vpsLoc = GL.GetUniformLocation(_bloomProgram, "_ViewportSize");
         GL.Uniform1(horLoc, horizontal ? 1 : 0);
         GL.Uniform2(vpsLoc, ebuf.Width, ebuf.Height);

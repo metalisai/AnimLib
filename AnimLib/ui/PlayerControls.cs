@@ -22,9 +22,9 @@ internal class PlayerControls {
     public delegate void StopD();
     public delegate void SeekD(double progress);
 
-    public event PlayD OnPlay;
-    public event StopD OnStop;
-    public event SeekD OnSeek;
+    public event PlayD? OnPlay;
+    public event StopD? OnStop;
+    public event SeekD? OnSeek;
 
     // scene has been changed, but change is not finished (e.g. gizmos still being used)
     bool changePending = false;
@@ -45,13 +45,13 @@ internal class PlayerControls {
     float progress = 0.0f;
     double progressSeconds = 0.0;
 
-    string currentError = null;
-    string currentStackTrace = null;
+    string? currentError = null;
+    string? currentStackTrace = null;
 
     Vector2 anchor = new Vector2(0.5f, 1.0f);
 
-    SceneObject _selection = null;
-    public SceneObject Selection {
+    SceneObject? _selection = null;
+    public SceneObject? Selection {
         get {
             return _selection;
         }
@@ -71,11 +71,24 @@ internal class PlayerControls {
 
     Dictionary<string, Gizmo3DObj> gizmoStates = new Dictionary<string, Gizmo3DObj>();
 
-    public PlayerControls(RenderState renderer) {
+    public PlayerControls(RenderState renderer, AnimationPlayer player) {
         this.renderer = renderer;
         view = new SceneView(0, 0, 100, 100, 1920, 1080);
         renderer.AddSceneView(view);
         renderer.imgui.DrawMenuEvent += DrawMainMenu;
+        
+        if(this.player != null)
+            throw new Exception();
+        this.player = player;
+        player.OnAnimationBaked += OnBaked;
+        player.OnError += OnError;
+        this.player.OnProgressUpdate += (sender, progress) => {
+            SetProgress((float)progress, progress);
+        };
+        this.player.OnPlayStateChanged += (sender, playing) => {
+            SetPlaying(playing);
+        };
+
         renderer.imgui.PlayEvent += () => {
             Debug.Log("Play " + playing);
             if (!this.playing)
@@ -103,11 +116,6 @@ internal class PlayerControls {
     }
 
     public void SetPlayer(AnimationPlayer player) {
-        if(this.player != null)
-            throw new Exception();
-        this.player = player;
-        player.OnAnimationBaked += OnBaked;
-        player.OnError += OnError;
     }
 
     public void SetPlaying(bool playing) {

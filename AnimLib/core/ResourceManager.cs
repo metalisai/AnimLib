@@ -14,48 +14,45 @@ internal partial class ResourceManager {
     object rlock = new object();
 
     public delegate void AssemblyChanged(string newpath);
-    public event AssemblyChanged OnAssemblyChanged;
+    public event AssemblyChanged? OnAssemblyChanged;
 
     bool resourcesDirty = false;
-    ZipArchive resourceArchive;
+    ZipArchive? resourceArchive;
     MemoryStream ms;
 
     readonly string SCENE_FILE_NAME = "scene.json";
     readonly string SETTINGS_FILE_NAME = "settings.json";
     readonly string PROPERTIES_FILE_NAME = "properties.json";
-    readonly string RESOURCES_DIR = ".resources";
-    readonly string SETTINGS_DIR = ".animlib";
-    public readonly string PROJECT_EXTENSION = ".animproj";
+    readonly static string RESOURCES_DIR = ".resources";
+    readonly static string SETTINGS_DIR = ".animlib";
+    public readonly static string PROJECT_EXTENSION = ".animproj";
 
-    string currentProjectPath;
+    string? currentProjectPath;
 
     public ResourceManager() {
         ms = new MemoryStream();
     }
 
-    protected string FirstLetterToUpper(string str)
+    protected static string FirstLetterToUpper(string str)
     {
-        if (str == null)
-            return null;
-
-        if (str.Length > 1)
+        if (str.Length > 1) {
             return char.ToUpper(str[0]) + str.Substring(1);
+        }
 
         return str.ToUpper();
     }
 
-    private ZipArchiveEntry CreateProjectTextFile(string filename, string text)
+    private static ZipArchiveEntry CreateProjectTextFile(ZipArchive archive, string filename, string text)
     {
-        var scene = resourceArchive.CreateEntry($"{SETTINGS_DIR}/{filename}");
+        var scene = archive.CreateEntry($"{SETTINGS_DIR}/{filename}");
         scene.ExternalAttributes |= Convert.ToInt32("664", 8) << 16;
-        using(var scenestream = scene.Open())
-        {
+        using(var scenestream = scene.Open()) {
             scenestream.Write(System.Text.UTF8Encoding.UTF8.GetBytes(text));
         }
         return scene;
     }
 
-    private string GetAssemblyPath(string projectDirectory, string projectname)
+    private static string GetAssemblyPath(string projectDirectory, string projectname)
     {
         return Path.Join(projectDirectory, $"bin/{projectname}.dll");
     }
@@ -77,13 +74,13 @@ internal partial class ResourceManager {
             var name = Path.GetFileName(directoryPath);
             currentProjectPath = Path.Join(directoryPath, name+PROJECT_EXTENSION);
             // create scene.json
-            CreateProjectTextFile(SCENE_FILE_NAME, "{}");
+            CreateProjectTextFile(resourceArchive, SCENE_FILE_NAME, "{}");
             // create settings.json
             var pset = new ProjectSettings() {
                 Name = name,
             };
             string json = JsonSerializer.Serialize(pset);
-            var settings = CreateProjectTextFile(SETTINGS_FILE_NAME, json);
+            var settings = CreateProjectTextFile(resourceArchive, SETTINGS_FILE_NAME, json);
             // create src directory
             var srcPath = Path.Join(directoryPath, "src");
             Directory.CreateDirectory(srcPath);
@@ -101,7 +98,7 @@ internal partial class ResourceManager {
             if(OnAssemblyChanged != null) {
                 var asmPath = GetAssemblyPath(directoryPath, name);
                 try {
-                    var asmDir = Path.GetDirectoryName(asmPath);
+                    var asmDir = Path.GetDirectoryName(asmPath) ?? throw new Exception("Failed to get directory name");
                     System.IO.Directory.CreateDirectory(asmDir);
                     Debug.Log($"Created directory {asmDir}");
                 } catch (Exception e) {
@@ -118,6 +115,10 @@ internal partial class ResourceManager {
         ms = new MemoryStream();
         lock(rlock) {
             var projectDir = Path.GetDirectoryName(projectFile);
+            if (projectDir == null) {
+                Debug.Error($"Failed to get directory name from {projectFile}");
+                return false;
+            }
             currentProjectPath = projectFile;
             try {
                 using(var fs = new FileStream(currentProjectPath, FileMode.Open, FileAccess.Read)) {
@@ -125,7 +126,7 @@ internal partial class ResourceManager {
                     currentProjectPath = projectFile;
                 }
             } catch (FileNotFoundException) {
-                System.Console.WriteLine($"Project file not found {projectFile}");
+                Debug.Error($"Project file not found {projectFile}");
                 return false;
             }
             resourceArchive = new ZipArchive(ms, ZipArchiveMode.Update, true);
@@ -144,15 +145,17 @@ internal partial class ResourceManager {
                     OnAssemblyChanged(assembly);
                 }
             }
-            System.Console.WriteLine($"Project loaded {projectFile}");
+            Debug.Log($"Project loaded {projectFile}");
             return true;
         }
     }
 
     public void AddResource(string filename) {
         lock(rlock) {
-            if(!haveProject)
+            if(!haveProject || resourceArchive == null) {
+                Debug.Warning($"No project loaded, not adding resource {filename}");
                 return;
+            }
             string name = Path.GetFileName(filename);
             var entry = resourceArchive.Entries.Where(x => x.Name == name).FirstOrDefault();
             if(entry != null) {
@@ -168,8 +171,10 @@ internal partial class ResourceManager {
     public void AddResource(string resource, byte[] file)
     {
         lock(rlock) {
-            if(!haveProject)
+            if(!haveProject || resourceArchive == null) {
+                Debug.Warning($"No project loaded, not adding resource {resource}");
                 return;
+            }
             var entry = resourceArchive.CreateEntry($"{RESOURCES_DIR}/{resource}");
             using(var es = entry.Open())
             {
@@ -182,8 +187,10 @@ internal partial class ResourceManager {
 
     public void DeleteResource(string name) {
         lock(rlock) {
-            if(!haveProject)
+            if(!haveProject || resourceArchive == null) {
+                Debug.Warning($"No project loaded, not deleting resource {name}");
                 return;
+            }
             var entry = resourceArchive.Entries.Where(x => x.FullName == $"{RESOURCES_DIR}/{name}").FirstOrDefault();
             if(entry != null) {
                 entry.Delete();
@@ -193,16 +200,17 @@ internal partial class ResourceManager {
         }
     }
 
-    public Stream GetResource(string name, out string fileName) {
+    public Stream? GetResource(string name, out string fileName) {
         lock(rlock) {
-            if(!haveProject) {
+            if(!haveProject || resourceArchive == null) {
+                Debug.TLogWithTrace($"No project loaded, can't get resource {name}");
                 fileName = "";
                 return null;
             }
             var resname = $"{RESOURCES_DIR}/{name}";
             var entry = resourceArchive.Entries.Where(x => 
                     x.FullName.StartsWith(resname)).FirstOrDefault();
-            fileName = Path.GetFileName(entry?.Name);
+            fileName = Path.GetFileName(entry?.Name ?? name);
             return entry?.Open();
         }
     }
@@ -213,7 +221,8 @@ internal partial class ResourceManager {
 
     public StoredResource[] GetStoredResources() {
         lock(rlock) {
-            if(!haveProject) {
+            if(!haveProject || resourceArchive == null) {
+                Debug.Warning($"No project loaded, not getting resources");
                 return new StoredResource[0];
             }
             return resourceArchive.Entries.Where(x => x.FullName.StartsWith($"{RESOURCES_DIR}/"))
@@ -223,24 +232,29 @@ internal partial class ResourceManager {
         }
     }
 
-    internal AnimationPlayer.PlayerProperties GetProperties() {
+    internal AnimationPlayer.PlayerProperties? GetProperties() {
         lock(rlock) {
-            if(!haveProject)
+            if(!haveProject || resourceArchive == null) {
+                Debug.Warning($"No project loaded, not getting properties");
                 return null;
+            }
             var fn = $"{SETTINGS_DIR}/{PROPERTIES_FILE_NAME}";
-            using(Stream s = resourceArchive.GetEntry(fn)?.Open()) {
-                if (s != null) {
-                    StreamReader sr = new StreamReader(s);
-                    var str = sr.ReadToEnd();
-                    return JsonSerializer.Deserialize<AnimationPlayer.PlayerProperties>(str) ?? new AnimationPlayer.PlayerProperties();
-                } else {
-                    return new AnimationPlayer.PlayerProperties();
-                }
+            using Stream? s = resourceArchive.GetEntry(fn)?.Open();
+            if (s != null) {
+                StreamReader sr = new StreamReader(s);
+                var str = sr.ReadToEnd();
+                return JsonSerializer.Deserialize<AnimationPlayer.PlayerProperties>(str) ?? new AnimationPlayer.PlayerProperties();
+            } else {
+                return new AnimationPlayer.PlayerProperties();
             }
         }
     }
 
     private void SaveJsonToFile(object sdata, string filename) {
+        if (!haveProject || resourceArchive == null) {
+            Debug.Warning($"No project loaded, not saving {filename}");
+            return;
+        }
         var entry = resourceArchive.GetEntry(filename);
         JsonSerializerOptions opt = new JsonSerializerOptions();
         opt.MaxDepth = 10;
@@ -251,7 +265,7 @@ internal partial class ResourceManager {
         if (entry != null) {
             entry.Delete();
         }
-        var ne = CreateProjectTextFile(Path.GetFileName(filename), "{}");
+        var ne = CreateProjectTextFile(resourceArchive, Path.GetFileName(filename), "{}");
         using(var ns = ne.Open())
         {
             ns.Write(data);
@@ -269,23 +283,23 @@ internal partial class ResourceManager {
         }
     }
 
-    public PlayerScene GetScene() {
+    public PlayerScene? GetScene() {
         lock(rlock) {
-            if(!haveProject)
+            if(!haveProject || resourceArchive == null) {
+                Debug.Warning($"No project loaded, not getting scene");
                 return null;
+            }
             var fn = $"{SETTINGS_DIR}/{SCENE_FILE_NAME}";
-            using(Stream s = resourceArchive.GetEntry(fn)?.Open())
+            using Stream? s = resourceArchive.GetEntry(fn)?.Open();
+            if (s != null)
             {
-                if (s != null)
-                {
-                    StreamReader sr = new StreamReader(s);
-                    var str = sr.ReadToEnd();
-                    return JsonSerializer.Deserialize<PlayerScene>(str) ?? new PlayerScene();
-                }
-                else
-                {
-                    return new PlayerScene();
-                }
+                using StreamReader sr = new (s);
+                var str = sr.ReadToEnd();
+                return JsonSerializer.Deserialize<PlayerScene>(str) ?? new PlayerScene();
+            }
+            else
+            {
+                return new PlayerScene();
             }
         }
     }
@@ -303,12 +317,19 @@ internal partial class ResourceManager {
 
     public bool Save() {
         lock(rlock) {
-            if(!haveProject)
+            if(!haveProject || resourceArchive == null) {
+                Debug.Warning($"No project loaded, nothing to save.");
                 return false;
-            if(!resourcesDirty)
+            }
+            if(!resourcesDirty) {
                 return true;
+            }
+            if(currentProjectPath == null) {
+                Debug.Error($"No project path set, can't save");
+                return false;
+            }
             try {
-                var fs = new FileStream(currentProjectPath, FileMode.Create, FileAccess.Write, FileShare.Write);
+                using var fs = new FileStream(currentProjectPath, FileMode.Create, FileAccess.Write, FileShare.Write);
                 resourceArchive.Dispose();
                 ms.WriteTo(fs);
                 fs.Dispose();

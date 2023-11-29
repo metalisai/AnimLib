@@ -52,12 +52,14 @@ internal class AnimationPlayer {
 
     AnimationBehaviour currentBehaviour;
     volatile BakedAnimation currentAnimation;
-    PlayerControls controls;
 
     internal delegate void BakeD();
     internal delegate void ErrorD(string error, string stackTrace);
     internal event ErrorD OnError;
     internal event BakeD OnAnimationBaked;
+
+    public event EventHandler<bool> OnPlayStateChanged;
+    public event EventHandler<float> OnProgressUpdate;
 
     // must rebake animation?
     volatile bool mustUpdate = false;
@@ -114,7 +116,7 @@ internal class AnimationPlayer {
             return _paused;
         }
         set {
-            controls.SetPlaying(!value);
+            OnPlayStateChanged?.Invoke(this, !value);
             _paused = value;
         }
     }
@@ -174,25 +176,8 @@ internal class AnimationPlayer {
         }
     }
 
-    public AnimationPlayer(string projectPath, PlayerControls ctrl) {
+    public AnimationPlayer() {
         trackPlayer = new TrackPlayer();
-        ctrl.OnPlay += () => {
-            if(Exporting) return;
-            Play();
-            trackPlayer.Seek(machine.GetProgress());
-            trackPlayer.Play();
-        };
-        ctrl.OnStop += () => {
-            if(Exporting) return;
-            Stop();
-            trackPlayer.Pause();
-        };
-        ctrl.OnSeek += (double p) => {
-            if(Exporting) return;
-            Seek(p);
-            trackPlayer.Seek(p);
-        };
-        controls = ctrl;
 
         running = true;
         // Create a thread and call a background method   
@@ -201,10 +186,13 @@ internal class AnimationPlayer {
         bakeThread.Start(); 
     }
 
-    public void OnEndRenderScene() {
+    public void OnEndRenderScene(IEnumerable<SceneView> views) {
         if(Exporting) {
-            var tex = controls.MainView.CaptureScene();
-            FrameCaptured(tex);
+            //var tex = controls.MainView.CaptureScene();
+            var tex = views.FirstOrDefault()?.CaptureScene();
+            if (tex != null) {
+                FrameCaptured(tex.Value);
+            }
         }
     }
 
@@ -256,10 +244,12 @@ internal class AnimationPlayer {
 
     public void Stop() {
         paused = true;
+        trackPlayer.Pause();
     }
 
     public void Play() {
         paused = false;
+        trackPlayer.Play();
     }
 
     public void FileDrop(string filename) {
@@ -268,8 +258,9 @@ internal class AnimationPlayer {
 
     public void Seek(double progress) {
         machine.Seek(progress);
-        controls.SetProgress((float)machine.GetProgress(), machine.GetPlaybackTime());
+        OnProgressUpdate?.Invoke(this, (float)machine.GetProgress());
         frameChanged = true;
+        trackPlayer.Seek(progress);
     }
 
     // mark that animation needs update
@@ -376,7 +367,7 @@ internal class AnimationPlayer {
                 frameChanged = false;
             }
             var progress = machine.GetProgress();
-            controls.SetProgress((float)progress, machine.GetPlaybackTime());
+            OnProgressUpdate?.Invoke(this, (float)progress);
             return ret;
         } else {
             var endTime = Math.Min(export.endTime, machine.GetEndTime());

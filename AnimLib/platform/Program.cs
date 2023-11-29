@@ -9,11 +9,11 @@ using System.Collections.Concurrent;
 namespace AnimLib;
 
 class SyncCtx : SynchronizationContext {
-    static ConcurrentBag<(SendOrPostCallback, object)> postedCallbacks = new ConcurrentBag<(SendOrPostCallback, object)>();
-    public override void Post(SendOrPostCallback d, object state) {
+    static ConcurrentBag<(SendOrPostCallback, object?)> postedCallbacks = new ();
+    public override void Post(SendOrPostCallback d, object? state) {
         postedCallbacks.Add((d, state));
     }
-    public override void Send(SendOrPostCallback d, object state) {
+    public override void Send(SendOrPostCallback d, object? state) {
         throw new NotImplementedException();
     }
 
@@ -30,21 +30,18 @@ class SyncCtx : SynchronizationContext {
 /// </summary>
 internal class Program
 {
-    static PlayerControls pctrl;
-    static AnimationPlayer player;
-
     static SyncCtx mainCtx = new SyncCtx();
 
-    static void AssemblyPathChanged(string newpath)
+    static void AssemblyPathChanged(string newpath, AnimationPlayer player)
     {
         Console.WriteLine($"Assembly path changed to {newpath}");
-        var behaviour = LoadAndWatchBehaviour(newpath);
+        var behaviour = LoadAndWatchBehaviour(newpath, player);
         player.SetBehaviour(behaviour);
     }
 
     [STAThread]
-    static void OnChanged(object sender, FileSystemEventArgs args) {
-        AnimationBehaviour plugin = null;
+    static void OnChanged(object sender, FileSystemEventArgs args, AnimationPlayer player) {
+        AnimationBehaviour? plugin = null;
         Debug.Log("Behaviour changed, trying to reload");
         for(int i = 0; i < 5; i++) {
             try {
@@ -96,7 +93,7 @@ internal class Program
         }
     }
 
-    static AnimationBehaviour LoadAndWatchBehaviour(string fullpath) {
+    static AnimationBehaviour LoadAndWatchBehaviour(string fullpath, AnimationPlayer player) {
         if (watcher != null)
         {
             Debug.Log($"Current behaviour watch disposed");
@@ -108,40 +105,34 @@ internal class Program
         watcher.Path = Path.GetDirectoryName(fullpath);
         watcher.NotifyFilter = NotifyFilters.LastWrite;
         watcher.Filter = Path.GetFileName(fullpath);
-        watcher.Changed += OnChanged;
+        watcher.Changed += (s, args) => OnChanged(s, args, player);
         //watcher.Created += OnChanged;
         return LoadBehaviour(fullpath);
     }
 
     static FileSystemWatcher watcher;
-    static Sound sound;
 
     [STAThread]
     static void Main(string[] args)
     {
         var platform = new OpenTKPlatform(1024, 1024);
         var renderState = new RenderState(platform);
-        sound = new Sound();
 
-        pctrl = new PlayerControls(renderState);
-        //player = new AnimationPlayer(plugin, pctrl, world);
-        player = new AnimationPlayer(null, pctrl);
-        player.ResourceManager.OnAssemblyChanged += AssemblyPathChanged;
+        AnimationPlayer player = new ();
+        PlayerControls pctrl = new (renderState, player);
+        player.ResourceManager.OnAssemblyChanged += (path) => AssemblyPathChanged(path, player);
         pctrl.SetPlayer(player);
 
         player.SetBehaviour(new NoProjectBehaviour());
         
         SynchronizationContext.SetSynchronizationContext(mainCtx);
 
-        //var anim = player.BakeAnimation(plugin, 60.0f, 0.0f, 1000.0f);
-        //var cam = game.CreateCamera(90.0f, 0.1f, 1000.0f);
-
-        platform.PFileDrop += (object sender, OpenTK.Input.FileDropEventArgs args) => {
+        platform.PFileDrop += (object? sender, OpenTK.Input.FileDropEventArgs args) => {
             Debug.Log($"DROP FILE {args.FileName}");
             player.FileDrop(args.FileName);
         };
 
-        platform.PKeyUp += (object sender, OpenTK.Input.KeyboardKeyEventArgs args) => {
+        platform.PKeyUp += (object? sender, OpenTK.Input.KeyboardKeyEventArgs args) => {
             if(args.Key == OpenTK.Input.Key.Delete) {
                 pctrl.Delete();
             }

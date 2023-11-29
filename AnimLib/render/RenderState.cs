@@ -55,7 +55,7 @@ internal class RenderState
     public delegate void OnUpdateDelegate(double dt);
     public OnUpdateDelegate? OnUpdate;
     public delegate void OnRenderSceneDelegate();
-    public delegate void OnEndRenderSceneDelegate();
+    public delegate void OnEndRenderSceneDelegate(IEnumerable<SceneView> views);
     public OnRenderSceneDelegate? OnPreRender;
     public OnEndRenderSceneDelegate? OnPostRender;
 
@@ -346,7 +346,7 @@ internal class RenderState
 
         if(OnPostRender != null) {
             using var _ = new Performance.Call("RenderState.OnPostRender");
-            OnPostRender();
+            OnPostRender(views);
         }
 
         // Render UI
