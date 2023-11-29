@@ -11,6 +11,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
     int _boundDepthTexture;
 
     int _entBlitProgram = -1;
+    int _bloomProgram = -1;
     bool _isHDR = true;
 
     int _blitvao = -1, _blitvbo = -1;
@@ -31,6 +32,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
     public DepthPeelRenderBuffer(IPlatform platform) {
         this.platform = platform;            
         _entBlitProgram = platform.AddShader(canvasBlitVert, canvasBlitFrag, null);
+        _bloomProgram = platform.AddShader(effectVert, bloomFrag, null);
     }
 
     public int Texture() {
@@ -122,7 +124,6 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
         // fbo hasn't been created yet
         if(_fbo == -1) {
             _fbo = GL.GenFramebuffer();
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fbo);
         }
         // delete old buffers if they exist
         DeleteBuffers();
@@ -164,7 +165,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
 
         var err = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
         if(err != FramebufferErrorCode.FramebufferComplete) {
-            System.Diagnostics.Debug.Fail("Frame buffer not complete: " + err);
+            Debug.Error("Frame buffer not complete: " + err);
         }
         _width = width;
         _height = height;
@@ -176,24 +177,80 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
     public void Bind() {
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fbo);
         GL.DrawBuffers(2, new DrawBuffersEnum[] {DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1});
+        GL.Viewport(0, 0, _width, _height);
     }
 
     public void BlitTextureWithEntityId(Texture2D tex, int entityId) {
         var loc = GL.GetUniformLocation(_entBlitProgram, "_EntityId");
+        var viewPortLoc = GL.GetUniformLocation(_entBlitProgram, "_ViewportSize");
         if(loc < 0) {
             //Debug.Error("_EntityId uniform not found in blit shader");
         }
         GL.ProgramUniform1(_entBlitProgram, loc, entityId);
+        GL.ProgramUniform2(_entBlitProgram, viewPortLoc, _width, _height);
         BlitTexture(tex, _entBlitProgram);
     }
 
     public void BlitTextureWithEntityId(int tex, int entityId) {
         var loc = GL.GetUniformLocation(_entBlitProgram, "_EntityId");
+        var viewPortLoc = GL.GetUniformLocation(_entBlitProgram, "_ViewportSize");
         if(loc < 0) {
             Debug.Error("_EntityId uniform not found in blit shader");
         }
+        GL.ProgramUniform2(_entBlitProgram, viewPortLoc, _width, _height);
         GL.ProgramUniform1(_entBlitProgram, loc, entityId);
         BlitTexture(tex, _entBlitProgram);
+    }
+
+    public void ApplyEffect(EffectBuffer ebuf, bool horizontal) {
+        int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);
+        int rbuf = GL.GetInteger(GetPName.ReadFramebufferBinding);
+
+        GL.UseProgram(_bloomProgram);
+        GL.BindVertexArray(_blitvao);
+        GL.BindTextureUnit(0, _colorTex);
+        GL.BindSampler(0, 0);
+        var loc = GL.GetUniformLocation(_bloomProgram, "_MainTex");
+        GL.Uniform1(loc, 0);
+        var horLoc = GL.GetUniformLocation(_bloomProgram, "_Horizontal");
+        if (loc < 0 || horLoc < 0) {
+            Debug.Error($"Bloom effect shader missing uniforms {loc} {horLoc}");
+        }
+        var vpsLoc = GL.GetUniformLocation(_bloomProgram, "_ViewportSize");
+        GL.Uniform1(horLoc, horizontal ? 1 : 0);
+        GL.Uniform2(vpsLoc, ebuf.Width, ebuf.Height);
+
+        GL.Disable(EnableCap.DepthTest);
+        GL.Disable(EnableCap.Blend);
+
+        ebuf.Bind();
+        GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
+
+        GL.UseProgram(platform.BlitProgram);
+        loc = GL.GetUniformLocation(platform.BlitProgram, "_MainTex");
+        vpsLoc = GL.GetUniformLocation(platform.BlitProgram, "_ViewportSize");
+        GL.Uniform1(loc, 0);
+        GL.Uniform2(vpsLoc, _width, _height);
+
+
+        this.Bind();
+        //GL.BlendEquationSeparate(BlendEquationMode.Max, BlendEquationMode.FuncAdd);
+        //GL.BlendFuncSeparate(BlendingFactorSrc.One, BlendingFactorDest.One, BlendingFactorSrc.One, BlendingFactorDest.Zero);
+        GL.BlendEquation(BlendEquationMode.FuncAdd);
+        GL.BlendFunc(BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
+        GL.Enable(EnableCap.Blend);
+
+        // copy back to color tex
+        var buffers2 = new DrawBuffersEnum[] { DrawBuffersEnum.ColorAttachment0 };
+        GL.DrawBuffers(buffers2.Length, buffers2);
+        GL.BindTextureUnit(0, ebuf.GetColorTex());
+        GL.BindSampler(0, 0);
+        GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
+
+        GL.BindVertexArray(0);
+
+        GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, dbuf);
+        GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, rbuf);
     }
 
     public void BlitTexture(int handle, int? blitProgram = null) {
@@ -206,6 +263,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
         GL.BindVertexArray(_blitvao);
         var bp = blitProgram ?? platform.BlitProgram;
         var loc = GL.GetUniformLocation(bp, "_MainTex");
+        var vpsLoc = GL.GetUniformLocation(bp, "_ViewportSize");
         GL.UseProgram(bp);
         GL.Uniform1(loc, 0);
         GL.Disable(EnableCap.DepthTest);
@@ -240,8 +298,10 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
 
         GL.BindVertexArray(_blitvao);
         var loc = GL.GetUniformLocation(platform.BlitProgram, "_MainTex");
+        var vpsLoc = GL.GetUniformLocation(platform.BlitProgram, "_ViewportSize");
         GL.UseProgram(platform.BlitProgram);
         GL.Uniform1(loc, 0);
+        GL.Uniform2(vpsLoc, sw, sh);
         GL.Disable(EnableCap.DepthTest);
         GL.Disable(EnableCap.CullFace);
         GL.Enable(EnableCap.Blend);
@@ -299,10 +359,11 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
         //GL.DrawBuffers(3, new DrawBuffersEnum[] {DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1, DrawBuffersEnum.ColorAttachment2});
         int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);
         GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, _fbo);
-        GL.DrawBuffers(2, new DrawBuffersEnum[] {DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1});
-        int clearId = -1;
-        GL.ClearBuffer(ClearBuffer.Color, 1, ref clearId);
-        GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
+        var buffers = new DrawBuffersEnum[] {DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1, DrawBuffersEnum.ColorAttachment2};
+        GL.DrawBuffers(buffers.Length, buffers);
+        //int clearId = -1;
+        //GL.ClearBuffer(ClearBuffer.Color, 1, ref clearId);
+        //GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
         GL.ColorMask(true, true, true, true);
         GL.ClearColor(1.0f, 1.0f, 1.0f, 0.0f);
         GL.Clear(ClearBufferMask.ColorBufferBit);

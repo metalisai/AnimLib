@@ -33,7 +33,7 @@ internal interface IPlatform {
     event EventHandler<FrameEventArgs> PRenderFrame;
 
     void LoadTexture(Texture2D tex2d);
-    int AddShader(string v, string f, string g, string tcs = null, string tes = null);
+    int AddShader(string v, string f, string? g, string? tcs = null, string? tes = null);
     void DestroyOwner(string owner);
 
     void RenderGUI(Imgui.DrawList data, IList<SceneView> views, IBackendRenderBuffer rb);

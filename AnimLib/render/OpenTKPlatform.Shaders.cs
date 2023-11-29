@@ -11,8 +11,10 @@ gl_Position = position;
 string blitFrag = @"#version 330 core
 layout(location = 0) out vec4 outColor;
 uniform sampler2D _MainTex;
+uniform ivec2 _ViewportSize;
 void main() {
-outColor = texelFetch(_MainTex, ivec2(gl_FragCoord.xy), 0);
+vec2 texCoord = gl_FragCoord.xy / _ViewportSize;
+outColor = texture(_MainTex, texCoord);
 //outColor.a = 0.5;
 //outColor = texture(_MainTex, gl_FragCoord.xy);
 //outColor = vec4(1.0, 0.0, 0.0, 1.0);

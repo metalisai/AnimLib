@@ -510,8 +510,7 @@ public class World
         entity.Mode = oldMode;
         if (fadeIn) {
             await Animate.InterpF(x => {
-                c.a = (byte)Math.Round(x*((float)alpha));
-                entity.Color = c;
+                entity.Color = c.WithA(x);
             }, 0.0f, 1.0f, duration*0.5f);
         }
     }

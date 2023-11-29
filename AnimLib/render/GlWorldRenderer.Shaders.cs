@@ -1,6 +1,6 @@
 namespace AnimLib;
 
-partial class GlWorldRenderer {
+internal partial class GlWorldRenderer {
 
 string vertShader = @"#version 330 core 
 layout(location = 0) in vec4 position;

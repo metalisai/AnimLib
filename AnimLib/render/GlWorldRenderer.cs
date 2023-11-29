@@ -8,7 +8,7 @@ namespace AnimLib;
 /// <summary>
 /// <c>IRenderer</c> implementation using OpenGL and SkiaSharp. A renderer is responsible for rendering <c>WorldSnapshot</c> for a specified <c>SceneView</c> using appropriate coordinate transformations.
 /// </summary>
-partial class GlWorldRenderer : IRenderer {
+internal partial class GlWorldRenderer : IRenderer {
     
     int _circleProgram;
     int _rectangleProgram;
@@ -31,6 +31,7 @@ partial class GlWorldRenderer : IRenderer {
     bool gizmo = true;
 
     System.Diagnostics.Stopwatch sw;
+    EffectBuffer effectBuffer;
 
     public GlWorldRenderer(OpenTKPlatform platform, RenderState rs) {
         this.platform = platform;
@@ -46,6 +47,9 @@ partial class GlWorldRenderer : IRenderer {
         //_wireTriangleProgram = AddShader(wireTriangleVert, wireTriangleFrag, null);
         //_lineProgram = AddShader(lineVert, lineFrag, lineGeom);
         _textProgram = platform.AddShader(textVert, textFrag, null);
+
+        // TODO: dispose
+        effectBuffer = new EffectBuffer();
 
         sw = new System.Diagnostics.Stopwatch();
     }
@@ -204,7 +208,6 @@ partial class GlWorldRenderer : IRenderer {
                 GL.UniformMatrix4(loc, 1, false, ref modelToClip.m11);
                 var col4 = Vector4.FromInt32(m.Tint.ToU32());
                 GL.Uniform4(colLoc, col4.x, col4.y, col4.z, col4.w);
-                //GL.Uniform4(outlineLoc, m.Outline.r/255.0f, m.Outline.g/255.0f, m.Outline.b/255.0f, m.OutlineWidth);
                 GL.Uniform1(entLoc, m.entityId);
                 GL.DrawElements(PrimitiveType.Triangles, m.Geometry.indices.Length, DrawElementsType.UnsignedInt, 0);
                 drawId++;
@@ -366,6 +369,7 @@ partial class GlWorldRenderer : IRenderer {
     public IBackendRenderBuffer CreateBuffer(int w, int h, int id) {
         var buf = new DepthPeelRenderBuffer(platform);
         buf.Resize(w, h);
+        effectBuffer.Resize(w/2, h/2);
         // TODO: this is wrong!
         platform.Skia.SetBuffer(buf);
         Debug.TLog($"Created new DepthPeelRenderBuffer with size {w}x{h}");
@@ -425,11 +429,12 @@ partial class GlWorldRenderer : IRenderer {
         GL.Enable(EnableCap.DepthTest);
 
         var background = ss.Camera?.clearColor ?? Color.WHITE;
-        GL.ClearColor((float)background.r/255.0f, (float)background.g/255.0f, (float)background.b/255.0f, (float)background.a/255.0f);
+        var col = background.ToVector4();
+        GL.ClearColor(col.x, col.y, col.z, col.w);
         GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
         GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
 
-        var bufs = new DrawBuffersEnum[] {DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1};
+        var bufs = new DrawBuffersEnum[] {DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1, DrawBuffersEnum.ColorAttachment2};
         GL.DrawBuffers(2, bufs);
 
         GL.BlendEquation(BlendEquationMode.FuncAdd);
@@ -560,6 +565,10 @@ partial class GlWorldRenderer : IRenderer {
         sw.Restart();
         if(ss.Canvases != null)
             RenderCanvases(mainBuffer, ss.Canvases, worldToClip);
+
+        pb.ApplyEffect(effectBuffer, true);
+        //pb.ApplyEffect(effectBuffer, false);
+
         sw.Stop();
         Performance.TimeToRenderCanvases = sw.Elapsed.TotalSeconds;
         // render skia (all skia GL commands get executed here)

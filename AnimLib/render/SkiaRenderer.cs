@@ -38,14 +38,14 @@ internal partial class SkiaRenderer
     int width;
     int height;
 
-    GRContext ctx;
-    GRBackendRenderTarget renderTarget;
-    SKSurface surface;
-    SKCanvas canvas;
-    IBackendRenderBuffer glBuffer; // intermediate buffer for hw rendering
-    GRGlInterface glInterface;
+    GRContext? ctx;
+    GRBackendRenderTarget? renderTarget;
+    SKSurface? surface;
+    SKCanvas? canvas;
+    IBackendRenderBuffer? glBuffer; // intermediate buffer for hw rendering
+    GRGlInterface? glInterface;
 
-    Texture2D tex;
+    Texture2D? tex;
 
     IPlatform platform;
 
@@ -56,7 +56,7 @@ internal partial class SkiaRenderer
         textPlacement = new TextPlacement("/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf", "Ubuntu");
     }
 
-    private SKImage LoadTexture(Texture2D texture) {
+    private SKImage? LoadTexture(Texture2D texture) {
         int handle = textureId++;
         SKImageInfo info;
         switch(texture.Format) {
@@ -114,7 +114,7 @@ internal partial class SkiaRenderer
                 Debug.Log($"Resize Skia GL buffer to {buf.Size.Item1}x{buf.Size.Item2}");
             }
             // tell skia that gl context was modified
-            ctx.ResetContext();
+            ctx?.ResetContext();
             var fbInfo = new GRGlFramebufferInfo((uint)glBuffer.FBO, colorType.ToGlSizedFormat());
             renderTarget = new GRBackendRenderTarget(buf.Size.Item1, buf.Size.Item2, 0, 8, fbInfo);
             surface = SKSurface.Create(ctx, renderTarget, GRSurfaceOrigin.TopLeft, colorType);
@@ -169,7 +169,7 @@ internal partial class SkiaRenderer
 
     public void Clear() {
         ctx?.ResetContext();
-        canvas.Clear(SKColors.Transparent);
+        canvas?.Clear(SKColors.Transparent);
     }
 
     SKMatrix? GetCanvasMatrix2D(ref M4x4 canvasToClip, out SKRect clipRegion, CanvasState canvas, (float w, float h) bufferSize) {
@@ -191,7 +191,7 @@ internal partial class SkiaRenderer
             // perspective clipping is tough
             if(bl.w < 0 || br.w < 0 || tl.w < 0 || tr.w < 0)
             {
-                clipRegion = new SKRect(0.0f, 0.0f, glBuffer.Size.w, glBuffer.Size.h);
+                clipRegion = new SKRect(0.0f, 0.0f, bufferSize.w, bufferSize.h);
                 return null;
             }
             float x1 = (0.5f * tl.x + 0.5f) * bw;
@@ -309,7 +309,7 @@ internal partial class SkiaRenderer
         // NOTE: ctx.ResetContext() will be called here
         Clear();
 
-        canvas.Save();
+        canvas?.Save();
         int restoreCount = 1;
 
         T getValue<T>(CanvasProperties test, string name) {
@@ -324,7 +324,7 @@ internal partial class SkiaRenderer
                 float radiusY = getValue<float>(eff, "radiusY");
                 using var filter = SKImageFilter.CreateBlur(radiusY, radiusY);
                 using var paint = new SKPaint() { ImageFilter = filter };
-                canvas.SaveLayer(paint);
+                canvas?.SaveLayer(paint);
                 restoreCount++;
             }
             else if (eff.Name == typeof (CanvasDilateEffect).Name) {
@@ -333,14 +333,14 @@ internal partial class SkiaRenderer
                 float radiusY = getValue<float>(eff, "radiusY");
                 using var filter = SKImageFilter.CreateDilate(radiusX, radiusY);
                 using var paint = new SKPaint() { ImageFilter = filter };
-                canvas.SaveLayer(paint);
+                canvas?.SaveLayer(paint);
                 restoreCount++;
             }
         }
 
-        canvas.ClipRect(clipRegion, SKClipOperation.Intersect);
+        canvas?.ClipRect(clipRegion, SKClipOperation.Intersect);
 
-        canvas.SetMatrix(mat.Value);
+        canvas?.SetMatrix(mat.Value);
         // gizmo
         if(gizmo && mat != null && !rc.is2d) {
             // draw canvas outline
@@ -354,7 +354,7 @@ internal partial class SkiaRenderer
                 paint.Style = SKPaintStyle.Stroke;
                 paint.StrokeWidth = 0.0f;
                 paint.Color = SKColors.Black;
-                canvas.DrawPath(path, paint);
+                canvas?.DrawPath(path, paint);
                 path.Dispose();
             }
         }
@@ -382,19 +382,19 @@ internal partial class SkiaRenderer
             // draw fill
             if(mode == ShapeMode.Filled || mode == ShapeMode.FilledContour) {
                 using var _aa = new Performance.Call("SkiaRenderer.RenderShape.Fill");
-                var c = color.ToSKColor();
-                paint.Color = c;
+                var c = color.ToSKColorF();
+                paint.ColorF = c;
                 paint.Style = SKPaintStyle.Fill;
-                canvas.DrawPath(path, paint);
+                canvas?.DrawPath(path, paint);
             }
             // draw contour
             if(mode == ShapeMode.Contour || mode == ShapeMode.FilledContour) {
                 using var _a = new Performance.Call("SkiaRenderer.RenderShape.Contour");
-                var c = contourColor.ToSKColor();
-                paint.Color = c;
+                var c = contourColor.ToSKColorF();
+                paint.ColorF = c;
                 paint.StrokeWidth = contourSize;
                 paint.Style = SKPaintStyle.Stroke;
-                canvas.DrawPath(path, paint);
+                canvas?.DrawPath(path, paint);
             }
             path.Dispose();
             if (paint.PathEffect != null)
@@ -430,7 +430,7 @@ internal partial class SkiaRenderer
                 }
                 break;
             case SpriteState sprite:
-                SKImage image = null;
+                SKImage? image = null;
                 if(sprite.texture.GLHandle > 0) {
                     image = LoadedImages[sprite.texture.GLHandle];
                 } else {
@@ -439,27 +439,31 @@ internal partial class SkiaRenderer
                 if(image != null && mat != null) {
 
                     //SKMatrix GetLocalTransform(EntityState2D ent, CanvasState rc, Rect aabb) {
+                    if (canvas is not SKCanvas c2) {
+                        Debug.Error("SkiaRenderer: canvas matrix is null");
+                        break;
+                    }
                     var curMat = canvas.TotalMatrix;
                     var local = GetLocalTransform(sprite, rc, new Rect(0.0f, 0.0f, sprite.width, sprite.height), css.Entities, rb.Size).PreConcat(new SKMatrix(1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f)).PostConcat(curMat);
-                    canvas.SetMatrix(local);
+                    canvas?.SetMatrix(local);
                     var rect = new SKRect(-sprite.width/2.0f, -sprite.height/2.0f, sprite.width/2.0f, sprite.height/2.0f);
                     using(var paint = new SKPaint()) {
                         paint.FilterQuality = SKFilterQuality.High;
                         paint.BlendMode = SKBlendMode.SrcOver;
-                        paint.Color = sprite.color.ToSKColor();
-                        canvas.DrawImage(image, rect, paint);
+                        paint.ColorF = sprite.color.ToSKColorF();
+                        c2.DrawImage(image, rect, paint);
                     }
-                    canvas.SetMatrix(curMat);
+                    c2.SetMatrix(curMat);
                 }
                 break;
             case SvgSpriteState svgsprite:
-                SKSvg svg = null;
+                SKSvg? svg = null;
                 if(svgsprite.svg.handle > 0) {
                     svg = LoadedSvgs[svgsprite.svg.handle];
                 } else {
                     svg = LoadSvg(svgsprite.svg);
                 }
-                if(svg != null && mat != null) {
+                if(svg != null && mat != null && svg.Picture != null) {
                     var bounds = svg.Picture.CullRect;
                     var curMat = canvas.TotalMatrix;
                     var rect = new SKRect(-svgsprite.width/2.0f, -svgsprite.height/2.0f, svgsprite.width/2.0f, svgsprite.height/2.0f);
@@ -488,7 +492,7 @@ internal partial class SkiaRenderer
                     // TODO: scale svg to fit rect
                     using(var paint = new SKPaint()) {
                         paint.BlendMode = SKBlendMode.SrcOver;
-                        paint.Color = svgsprite.color.ToSKColor();
+                        paint.ColorF = svgsprite.color.ToSKColorF();
                         canvas.DrawPicture(svg.Picture, paint);
                     }
                     canvas.SetMatrix(curMat);
@@ -554,6 +558,10 @@ internal partial class SkiaRenderer
         // TODO: blit entityId in OpenGL mode
         else if(mode == RenderMode.OpenGL) {
             var src = glBuffer as DepthPeelRenderBuffer;
+            if(src == null) {
+                Debug.Error("SkiaRenderer: glBuffer is not DepthPeelRenderBuffer");
+                return;
+            }
             _texture = src.Texture();
         }
     }

@@ -15,8 +15,8 @@ internal static class SkiaExtensions
         return new Vector2(v.X, v.Y);
     }
 
-    public static SKColor ToSKColor(this Color c) {
-        return new SKColor(c.r, c.g, c.b, c.a);
+    public static SKColorF ToSKColorF(this Color c) {
+        return new SKColorF(c.r, c.g, c.b, c.a);
     }
 
     public static SKMatrix ToSKMatrix(this M3x3 m) {
