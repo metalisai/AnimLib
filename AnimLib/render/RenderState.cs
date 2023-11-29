@@ -10,17 +10,54 @@ internal interface IRenderer {
     bool BufferValid(IBackendRenderBuffer buf);
 }
 
+/// <summary>
+/// Legacy shaders, probably will be replaced/removed.
+/// </summary>
 public enum BuiltinShader {
+    /// <summary> No shader </summary>
     None, 
+    /// <summary> Shader for rendering lines </summary>
     LineShader,
+    /// <summary> Shader for rendering arrows </summary>
     ArrowShader,
+    /// <summary> Shader for rendering cubes </summary>
     CubeShader,
+    /// <summary> Shader for rendering generic meshes </summary>
     MeshShader,
 }
 
 internal class RenderState 
 {
-    public static IPlatform currentPlatform;
+    public static IPlatform? currentPlatform;
+
+    readonly internal IPlatform platform;
+    IRenderer? renderer;
+    string guid = Guid.NewGuid().ToString();
+    bool _renderGizmos = true;
+    IBackendRenderBuffer uiRenderBuffer;
+    FontCache _fr;
+    ITypeSetter ts = new FreetypeSetting();
+    bool mouseLeft;
+    bool mouseRight;
+    Vector2 mousePos;
+    float scrollValue;
+    float scrollDelta;
+    List<SceneView> views = new List<SceneView>();
+    Vector2 debugCamRot;
+    System.Diagnostics.Stopwatch sw = new();
+    WorldSnapshot? currentScene;
+
+    public ColoredTriangleMeshGeometry? cubeGeometry;
+    public bool overrideCamera = false;
+    public PerspectiveCameraState? debugCamera;
+    public Imgui imgui;
+
+    public delegate void OnUpdateDelegate(double dt);
+    public OnUpdateDelegate? OnUpdate;
+    public delegate void OnRenderSceneDelegate();
+    public delegate void OnEndRenderSceneDelegate();
+    public OnRenderSceneDelegate? OnPreRender;
+    public OnEndRenderSceneDelegate? OnPostRender;
 
     public RenderState(IPlatform platform) {
         currentPlatform = platform;
@@ -36,51 +73,15 @@ internal class RenderState
         platform.PRenderFrame += RenderFrame;
 
         imgui = new Imgui((int)uiRenderBuffer.Size.Item1, (int)uiRenderBuffer.Size.Item2, platform);
+
+        _fr = new FontCache(ts, platform);
     }
 
-    readonly internal IPlatform platform;
-
-    string guid = Guid.NewGuid().ToString();
-
-    IRenderer renderer;
-
-    public delegate void OnUpdateDelegate(double dt);
-    public OnUpdateDelegate OnUpdate;
-    public delegate void OnRenderSceneDelegate();
-    public delegate void OnEndRenderSceneDelegate();
-
-    bool _renderGizmos = true;
     public bool RenderGizmos {
         set {
             _renderGizmos = value;
         }
     }
-
-    public OnRenderSceneDelegate OnPreRender;
-    public OnEndRenderSceneDelegate OnPostRender;
-
-    private List<SceneView> views = new List<SceneView>();
-
-    public ColoredTriangleMeshGeometry cubeGeometry;
-
-    IBackendRenderBuffer uiRenderBuffer;
-
-    FontCache _fr;
-    ITypeSetter ts = new FreetypeSetting();
-
-    bool mouseLeft;
-    bool mouseRight;
-    Vector2 mousePos;
-    float scrollValue;
-    float scrollDelta;
-
-    public bool overrideCamera = false;
-    public PerspectiveCameraState debugCamera;
-    Vector2 debugCamRot;
-
-    System.Diagnostics.Stopwatch sw;
-
-    public Imgui imgui = null;
 
     public AnimationPlayer.FrameStatus frameStatus;
     public AnimationPlayer.FrameStatus SceneStatus {
@@ -112,10 +113,8 @@ internal class RenderState
         }
     }
 
-    public void Load(object sender, EventArgs args) {
+    public void Load(object? sender, EventArgs args) {
         CreateMeshes();
-
-        sw = new System.Diagnostics.Stopwatch();
 
         var glPlatform = platform as OpenTKPlatform;
         if(glPlatform == null) {
@@ -124,7 +123,6 @@ internal class RenderState
         renderer = new GlWorldRenderer(glPlatform, this);
         //renderer = new TessallationRenderer(platform as OpenTKPlatform, this);
         Debug.TLog($"Renderer implementation: {renderer}");
-        _fr = new FontCache(ts, platform);
         uiRenderBuffer.Resize(1024, 1024);
 
         platform.PKeyDown += (object? sender, KeyboardKeyEventArgs args) => {
@@ -150,7 +148,7 @@ internal class RenderState
         this.OnUpdate += (double dtd) => {
             float dt = (float)dtd;
             var kstate = Keyboard.GetState();
-            if(overrideCamera) {
+            if(overrideCamera && debugCamera != null) {
                 float s = 5.0f;
                 if(kstate.IsKeyDown(Key.ShiftLeft)) {
                     s = 0.01f;
@@ -179,7 +177,9 @@ internal class RenderState
                 this.debugCamRot.y %= 2*MathF.PI;
                 var qx = Quaternion.AngleAxis(debugCamRot.x, Vector3.UP);
                 var qy = Quaternion.AngleAxis(debugCamRot.y, Vector3.RIGHT);
-                debugCamera.rotation = qy * qx;
+                if (debugCamera != null) {
+                    debugCamera.rotation = qy * qx;
+                }
             }
         };
     }
@@ -204,7 +204,7 @@ internal class RenderState
         views.Remove(view);
     }
 
-    private void mouseDown(object sender, MouseButtonEventArgs args) {
+    private void mouseDown(object? sender, MouseButtonEventArgs args) {
         if(args.Button == MouseButton.Left) {
             mouseLeft = true;
         }
@@ -213,7 +213,7 @@ internal class RenderState
         }
     }
 
-    private void mouseUp(object sender, MouseButtonEventArgs args) {
+    private void mouseUp(object? sender, MouseButtonEventArgs args) {
         if(args.Button == MouseButton.Left) {
             mouseLeft = false;
         }
@@ -222,11 +222,11 @@ internal class RenderState
         }
     }
 
-    private void mouseMove(object sender, MouseMoveEventArgs args) {
+    private void mouseMove(object? sender, MouseMoveEventArgs args) {
         mousePos = new Vector2(args.Position.X, args.Position.Y);
     }
 
-    private void mouseScroll(object sender, MouseWheelEventArgs args) {
+    private void mouseScroll(object? sender, MouseWheelEventArgs args) {
         scrollValue = args.ValuePrecise;
         scrollDelta = args.DeltaPrecise;
     }
@@ -277,14 +277,13 @@ internal class RenderState
         };
     }
 
-    WorldSnapshot currentScene;
     public void SetScene(WorldSnapshot ss) {
         currentScene = ss;
     }
 
     bool wasOverridden = false;
 
-    private void RenderFrame(object sender, FrameEventArgs args) {
+    private void RenderFrame(object? sender, FrameEventArgs args) {
         Performance.BeginFrame();
 
         // TODO: use actual frame rate
@@ -315,7 +314,7 @@ internal class RenderState
         }
         
         // Render scene
-        if(currentScene != null)
+        if(currentScene != null && renderer != null)
         {
             using var _ = new Performance.Call("Render views");
             Performance.views = views.Count;
@@ -353,7 +352,6 @@ internal class RenderState
         // Render UI
         {
             using var _ = new Performance.Call("Render UI");
-            //var uiData = UserInterface.EndFrame();
             var drawList = imgui.Render();
             platform.RenderGUI(drawList, views, uiRenderBuffer);
         }
