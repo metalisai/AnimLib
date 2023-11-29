@@ -325,8 +325,8 @@ internal class WorldMachine {
                 var state = _entities[worldProperty.entityId];
                 // move 2D entity from 1 canvas to another if its changed
                 if(state is EntityState2D && worldProperty.property.ToLower() == "canvasid") {
-                    var oldCanvas = _canvases[(int)worldProperty.oldvalue];
-                    var newCanvas = _canvases[(int)worldProperty.newvalue];
+                    var oldCanvas = _canvases[(int)(worldProperty.oldvalue ?? throw new Exception("oldvalue is null"))];
+                    var newCanvas = _canvases[(int)(worldProperty.newvalue ?? throw new Exception("newvalue is null"))];
                     switch(state) {
                         case ShapeState:
                         case MorphShapeState:
@@ -390,8 +390,8 @@ internal class WorldMachine {
                 var lower = char.ToLower(worldProperty.property[0]) + worldProperty.property.Substring(1);
                 var state = _entities[worldProperty.entityId];
                 if(state is EntityState2D && worldProperty.property.ToLower() == "canvasid") {
-                    var newCanvas = _canvases[(int)worldProperty.oldvalue];
-                    var oldCanvas = _canvases[(int)worldProperty.newvalue];
+                    var newCanvas = _canvases[(int)(worldProperty.oldvalue ?? throw new Exception("oldvalue is null"))];
+                    var oldCanvas = _canvases[(int)(worldProperty.newvalue ?? throw new Exception("newvalue is null"))];
                     switch(state) {
                         case ShapeState:
                         case MorphShapeState:

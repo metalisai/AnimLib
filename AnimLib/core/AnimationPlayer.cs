@@ -35,7 +35,7 @@ internal class AnimationPlayer {
     internal class PlayerProperties {
         public IDictionary<string, Vector2> VectorHandleMap { get; set; } = new Dictionary<string, Vector2>();
         public IDictionary<string, Vector3> VectorHandleMap3D { get; set; } = new Dictionary<string, Vector3>();
-        public PlayerValues Values { get; set; }
+        public PlayerValues Values { get; set; } = new PlayerValues();
     };
 
     object handleLock = new object();
@@ -44,22 +44,23 @@ internal class AnimationPlayer {
     PlayerValues Values = new PlayerValues(); 
 
     AnimationSettings settings;
-    public PlayerScene Scene;
+    public PlayerScene Scene = PlayerScene.Empty;
 
     TrackPlayer trackPlayer;
 
-    volatile BakedAnimation preparedAnimation;
+    volatile BakedAnimation? preparedAnimation;
 
     AnimationBehaviour currentBehaviour;
-    volatile BakedAnimation currentAnimation;
+    readonly AnimationBehaviour defaultBehaviour;
+    volatile BakedAnimation? currentAnimation;
 
     internal delegate void BakeD();
     internal delegate void ErrorD(string error, string stackTrace);
-    internal event ErrorD OnError;
-    internal event BakeD OnAnimationBaked;
+    internal event ErrorD? OnError;
+    internal event BakeD? OnAnimationBaked;
 
-    public event EventHandler<bool> OnPlayStateChanged;
-    public event EventHandler<float> OnProgressUpdate;
+    public event EventHandler<bool>? OnPlayStateChanged;
+    public event EventHandler<float>? OnProgressUpdate;
 
     // must rebake animation?
     volatile bool mustUpdate = false;
@@ -81,7 +82,7 @@ internal class AnimationPlayer {
 
     public ResourceManager ResourceManager = new ResourceManager();
 
-    AnimationExport export = null;
+    AnimationExport? export = null;
 
     public float? ExportProgress {
         get {
@@ -128,15 +129,16 @@ internal class AnimationPlayer {
         }
     }
 
-    public void SetBehaviour(AnimationBehaviour behaviour) {
+    public AnimationSettings SetBehaviour(AnimationBehaviour behaviour) {
         var settings = new AnimationSettings();
         behaviour.Init(settings);
         this.settings = settings;
         this.currentBehaviour = behaviour;
-        Scene = ResourceManager.GetScene();
+        Scene = ResourceManager.GetScene() ?? PlayerScene.Empty;
         DeserializeHandles();
         SetAnimationDirty(true);
         Debug.TLog($"Behaviour reload {settings.Width}x{settings.Height} FPS: {settings.FPS} MaxLength: {settings.MaxLength}");
+        return settings;
     }
 
     public void BakeProc() {
@@ -149,7 +151,11 @@ internal class AnimationPlayer {
                 animationDirty = false;
                 mustUpdate = false;
                 // create clean instance
-                beh = (AnimationBehaviour)Activator.CreateInstance(currentBehaviour.GetType());
+                var newbeh = (AnimationBehaviour?)Activator.CreateInstance(currentBehaviour.GetType());
+                if(newbeh == null) {
+                    Debug.Warning("Failed to create new behaviour instance");
+                    continue;
+                }
                 PlayerProperties props;
                 lock(handleLock) {
                     props = new PlayerProperties() {
@@ -158,7 +164,7 @@ internal class AnimationPlayer {
                         Values = Values.Clone(),
                     };
                 }
-                var animation = baker.BakeAnimation(beh, settings, props, Scene);
+                var animation = baker.BakeAnimation(newbeh, settings, props, Scene);
                 preparedAnimation = animation;
             }
             Thread.Sleep(50);
@@ -176,7 +182,15 @@ internal class AnimationPlayer {
         }
     }
 
-    public AnimationPlayer() {
+    public AnimationPlayer(AnimationBehaviour defaultBehaviour) {
+        this.defaultBehaviour = defaultBehaviour;
+        currentBehaviour = defaultBehaviour;
+        var settings = new AnimationSettings();
+        defaultBehaviour.Init(settings);
+        this.settings = settings;
+
+        SetBehaviour(defaultBehaviour);
+
         trackPlayer = new TrackPlayer();
 
         running = true;
@@ -272,8 +286,6 @@ internal class AnimationPlayer {
     }
 
     internal PlayerValues GetValues() {
-        if(!haveProject) 
-            return null;
         return Values;
     }
 
@@ -283,7 +295,7 @@ internal class AnimationPlayer {
         Still,
     }
 
-    public FrameStatus NextFrame(double dt, out WorldSnapshot ss) {
+    public FrameStatus NextFrame(double dt, out WorldSnapshot? ss) {
         frameId++;
 
         if(!haveProject)
@@ -377,12 +389,14 @@ internal class AnimationPlayer {
             var frame = machine.GetWorldSnapshot();
             if(machine.GetPlaybackTime() >= endTime) {
                 export.exporter.Stop();
-                var sound = currentAnimation.SoundTrack;
-                var lengthSeconds = machine.GetPlaybackTime();
-                var count = Math.Min(sound.samples[0].Length, (int)Math.Round(lengthSeconds * sound.sampleRate));
-                var samples = sound.samples[0].Take(count).ToArray();
-                export.exporter.AddAudio(export.fileName, samples, sound.sampleRate);
-                export = null;
+                var sound = currentAnimation?.SoundTrack;
+                if (sound != null) {
+                    var lengthSeconds = machine.GetPlaybackTime();
+                    var count = Math.Min(sound.samples[0].Length, (int)Math.Round(lengthSeconds * sound.sampleRate));
+                    var samples = sound.samples[0].Take(count).ToArray();
+                    export.exporter.AddAudio(export.fileName, samples, sound.sampleRate);
+                    export = null;
+                }
             }
             ss = frame;
             return FrameStatus.New;

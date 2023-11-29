@@ -73,6 +73,7 @@ internal class PlayerControls {
 
     public PlayerControls(RenderState renderer, AnimationPlayer player) {
         this.renderer = renderer;
+
         view = new SceneView(0, 0, 100, 100, 1920, 1080);
         renderer.AddSceneView(view);
         renderer.imgui.DrawMenuEvent += DrawMainMenu;
@@ -148,6 +149,9 @@ internal class PlayerControls {
     public void Paste() {
         if(Clipboard.Object != null) {
             var cam = view.LastCamera as PerspectiveCameraState;
+            if (cam == null) {
+                return;
+            }
             var plane = new Plane() {
                 n = new Vector3(0.0f, 0.0f, -1.0f),
                 o = 0.0f,
@@ -299,7 +303,7 @@ internal class PlayerControls {
                 if(payloadPtr != IntPtr.Zero) {
                     Debug.TLog("Attempt drop 2D object");
                     // intersect canvases
-                    CanvasState canvas = null;
+                    CanvasState canvas ;
                     // normalized canvas coordinates
                     var canvases = player.Machine.Entities.Where(x => x is CanvasState).Select(x  => (CanvasState)x).ToArray();
                     var canvasPos = view.TryIntersectCanvases(canvases, dropPos, out canvas);
@@ -387,134 +391,6 @@ internal class PlayerControls {
         Imgui.PopStyleVar();
         Imgui.End();
     }
-
-    //var dockNodeFlags = ImguiContext.ImGuiDockNodeFlags.PassthruCentralNode;
-
-    /*private void ShowDock() {
-        var vp = ImguiContext.GetMainViewport();
-
-        var menuSize = new ImVec2(0.0f, 0.0f);
-
-        ImGuiWindowFlags wflags = ImGuiWindowFlags.MenuBar | ImGuiWindowFlags.NoDocking;
-        ImguiContext.SetNextWindowPos(new ImVec2(0.0f, menuSize.Y));
-        ImguiContext.SetNextWindowSize(vp.Size - new ImVec2(0.0f, menuSize.Y));
-        ImguiContext.SetNextWindowViewport(vp.ID);
-        ImguiContext.PushStyleVar(ImGuiStyleVar.WindowRounding, 0.0f);
-        ImguiContext.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f);
-        wflags |= ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove;
-        wflags |= ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoNavFocus;
-        ImguiContext.PushStyleVar(ImGuiStyleVar.WindowPadding, new ImVec2(0.0f, 0.0f));
-        ImguiContext.Begin("DockSpace", wflags);
-        ImguiContext.PopStyleVar(3);
-
-        ImguiContext.BeginMenuBar();
-        if(ImguiContext.BeginMenu("File")) {
-            if(ImguiContext.MenuItem("New project..."))
-            {
-                var result = FileChooser.ChooseDirectory("Choose a directory for new project...", "");
-                System.Console.WriteLine($"new project: {result}");
-                if(!string.IsNullOrEmpty(result)) {
-                    player.ResourceManager.CreateProject(result);
-                }
-            }
-            if(ImguiContext.MenuItem("Open project..."))
-            {
-                var result = FileChooser.ChooseFile("Choose a project file to open...", "", new string[] {"*.animproj"});
-                System.Console.WriteLine($"open project: {result}");
-                if(!string.IsNullOrEmpty(result)) {
-                    player.ResourceManager.SetProject(result);
-                } else {
-                    Debug.Warning("Failed to choose project file");
-                }
-            }
-            if(ImguiContext.MenuItem("Update"))
-            {
-                player.SetAnimationDirty(true);
-            }
-            if(ImguiContext.MenuItem("Export video..."))
-            {
-                _showExport = !_showExport;
-                if(_showExport) {
-                    exportfileName = "animation-"+DateTime.Now.ToString("yyyy_MM_dd_HHmmss")+".mp4";
-                }
-            }
-            ImguiContext.EndMenu();
-        }
-        if(ImguiContext.BeginMenu("Window")) {
-            if(ImguiContext.MenuItem("Resources..."))
-            {
-                _showResources = true;
-            }
-            if(ImguiContext.MenuItem("Values..."))
-            {
-                _showProperties = true;
-            }
-            if(ImguiContext.MenuItem("Preferences")) {
-            }
-            if(ImguiContext.MenuItem("Debug")) {
-                _showPerformance = true;
-            }
-            ImguiContext.EndMenu();
-        }
-        if(ImguiContext.BeginMenu("Create")) {
-            var cam = view.LastCamera as PerspectiveCameraState;
-            if(cam != null) 
-            {
-                ImguiContext.PushStyleColor(ImGuiCol.Text, new Vector4(0.5f, 0.5f, 0.5f, 1.0f));
-                ImguiContext.Text("(Drag and drop)");
-                ImguiContext.PopStyleColor();
-                Action<string, int, bool> createItem = (string name, int idx, bool is2d) => {
-                    ImguiContext.Selectable(name);
-
-                    ImGuiDragDropFlags src_flags = 0;
-                    src_flags |= ImGuiDragDropFlags.SourceNoDisableHover;     // Keep the source displayed as hovered
-                    src_flags |= ImGuiDragDropFlags.SourceNoHoldToOpenOthers; // Because our dragging is local, we disable the feature of opening foreign treenodes/tabs while dragging
-                    //src_flags |= ImGuiDragDropFlags_SourceNoPreviewTooltip; // Hide the tooltip
-                    if (ImguiContext.BeginDragDropSource(src_flags))
-                    {
-                        if((src_flags & ImGuiDragDropFlags.SourceNoPreviewTooltip) == 0)
-                            ImguiContext.Text("Creating " + name.ToLower());
-                        var mem = Marshal.AllocHGlobal(4);
-                        Marshal.WriteInt32(mem, idx);
-                        ImguiContext.SetDragDropPayload(is2d ? "DND_CREATE_ITEM_2D" : "DND_CREATE_ITEM_3D", mem, sizeof(int));
-                        Marshal.FreeHGlobal(mem);
-                        ImguiContext.EndDragDropSource();
-                    }
-                };
-                createItem("Circle", (int)DragDropObject.Circle, true);
-                createItem("Rectangle", (int)DragDropObject.Rectangle, true);
-                createItem("Shape", (int)DragDropObject.Shape, true);
-                createItem("Line", (int)DragDropObject.Line, false);
-                createItem("Arrow", (int)DragDropObject.Arrow, false);
-                createItem("Text", (int)DragDropObject.Text, false);
-                createItem("Quadratic spline", (int)DragDropObject.Spline, false);
-            }
-            ImguiContext.EndMenu();
-        }
-
-        menuSize = ImguiContext.GetWindowSize();
-        ImguiContext.EndMenuBar();
-
-        uint dockspaceId = 0;
-
-        // DockSpace
-        var io = ImguiContext.GetIO();
-        if ((io.ConfigFlags & ImGuiConfigFlags.DockingEnable) != 0)
-        {
-            dockspaceId = ImguiContext.GetID("MyDockSpace");
-            ImguiContext.DockSpace(dockspaceId, new ImVec2(0.0f, 0.0f), dockNodeFlags);
-
-            var firstTime = true;
-            if (firstTime)
-            {
-                firstTime = false;
-            }
-        }
-
-        ImguiContext.End();
-        
-        ImguiContext.SetNextWindowDockID(dockspaceId, ImGuiCond.FirstUseEver);
-    }*/
 
     public void ShowResourceInterface() {
         Imgui.ImGuiWindowFlags wflags = Imgui.ImGuiWindowFlags.NoDocking | Imgui.ImGuiWindowFlags.AlwaysAutoResize;
@@ -634,7 +510,7 @@ internal class PlayerControls {
             bool open = true;
             Imgui.Begin("Animation error", ref open, wf);
             Imgui.Text(currentError);
-            Imgui.Text(currentStackTrace);
+            Imgui.Text(currentStackTrace ?? "No stack trace");
             Imgui.End();
         }
     }
@@ -671,21 +547,25 @@ internal class PlayerControls {
         Imgui.End();
     }
 
-    private void ShowItemSelection() {
+    private void ShowItemSelection(SceneObject selection) {
         var values = player.GetValues();
         lock(player.Scene.sceneLock) {
             // Object specific 2D handles (resizing etc)
-            switch(Selection) {
+            switch(selection) {
                 case SceneObject2D s2:
                 var h2 = s2.GetHandles2D();
                 if(h2 != null) {
                     int i = 0;
-                    var canvas = player.Machine.Entities.Where(x => x is CanvasState).Select(x => x as CanvasState).Where(x => x.name == s2.CanvasName).FirstOrDefault();
+                    var canvas = player.Machine.Entities.Where(x => x is CanvasState).Select(x => (CanvasState)x).Where(x => x.name == s2.CanvasName).FirstOrDefault();
+                    if (canvas == null) {
+                        Debug.Warning("Mouse on 2D object, but its' lcanvas was not found. Selecting failed.");
+                        break;
+                    }
                     var mat = canvas.CanvasToWorld;
                     var mat2 = canvas.WorldToNormalizedCanvas;
                     if(canvas != null) {
                         foreach(var hnd in h2) {
-                            var uid = "obj"+Selection.GetHashCode()+"-"+i;
+                            var uid = "obj"+selection.GetHashCode()+"-"+i;
                             bool endupdate;
                             // canvas to world
                             var worldp = mat * new Vector4(s2.transform.Pos+hnd, 0.0f, 1.0f);
@@ -767,7 +647,7 @@ internal class PlayerControls {
 
             Imgui.Text("Object properties");
             Imgui.Spacing();
-            foreach(var propF in Selection.Properties) {
+            foreach(var propF in selection.Properties) {
                 var prop = propF.Item2();
                 switch(prop) {
                     case Vector3 v1:
@@ -821,11 +701,12 @@ internal class PlayerControls {
                     }
                     break;
                     default:
-                        if(prop.GetType().IsEnum) {
-                            if(Imgui.BeginCombo(propF.Item1, prop.ToString())) {
+                        if(prop != null && prop.GetType().IsEnum) {
+                            var name = prop.ToString() ?? "unknown";
+                            if(Imgui.BeginCombo(propF.Item1, name)) {
                                 var enumValues = Enum.GetValues(prop.GetType());
                                 foreach(var val in enumValues) {
-                                    if(Imgui.Selectable(val.ToString(), false)) {
+                                    if(Imgui.Selectable(val.ToString() ?? "enum option", false)) {
                                         propF.Item3(val);
                                         player.SetAnimationDirty();
                                     }
@@ -850,8 +731,7 @@ internal class PlayerControls {
     }
 
     public Vector3 Show3DHandle(string uid, Vector3 pos, out bool updateDone) {
-        Gizmo3DObj state;
-        if(!gizmoStates.TryGetValue(uid, out state)) {
+        if(!gizmoStates.TryGetValue(uid, out var state)) {
             state = new Gizmo3DObj() {
                 transform = new SceneTransform3D(pos, Quaternion.IDENTITY),
                 timeslice = (0.0, 99999.0),
@@ -864,8 +744,7 @@ internal class PlayerControls {
             Selection = state;
         }
         updateDone = false;
-        if(Selection is Gizmo3DObj && Selection.name == uid) {
-            var g3d = Selection as Gizmo3DObj;
+        if(Selection is Gizmo3DObj g3d && Selection.name == uid) {
             //updateDone = g3d.position != pos && !ImGuizmo.IsUsing();
             return g3d.position;
         }
@@ -936,8 +815,8 @@ internal class PlayerControls {
                 && UserInterface.MouseEntityId >= 0 
                 && player.Scene != null) 
         {
-            SceneObject obj = null;
-            EntityState ent;
+            SceneObject? obj = null;
+            EntityState? ent;
             lock(player.Scene.sceneLock) {
                 var entId = UserInterface.MouseEntityId;
                 ent = player.Machine.GetEntityState(entId);
@@ -953,11 +832,10 @@ internal class PlayerControls {
             }
             if(obj != null) {
                 Selection = obj;
-            } else if(ent is CanvasState) {
-                var c = ent as CanvasState;
+            } else if(ent is CanvasState c) {
                 var mat = c.WorldToNormalizedCanvas;
                 Vector2 normPos;
-                if(view.TryIntersectCanvas(c, Imgui.GetMousePos(), out normPos)) {
+                if(player.Scene != null && view.TryIntersectCanvas(c, Imgui.GetMousePos(), out normPos)) {
                     Vector2 canvasPos = (normPos)*new Vector2(c.width, c.height);
                     Debug.TLog($"Found canvas {c.name} {normPos} {canvasPos}");
                     lock(player.Scene.sceneLock) {
@@ -979,7 +857,7 @@ internal class PlayerControls {
         }
 
         if(Selection != null) {
-            ShowItemSelection();
+            ShowItemSelection(Selection!);
         }
 
         // update once nothing is being changed anymore

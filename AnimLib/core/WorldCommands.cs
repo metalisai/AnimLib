@@ -25,8 +25,8 @@ internal record WorldDynPropertyCommand (
 internal record WorldPropertyCommand (
     int entityId,
     string property,
-    object newvalue,
-    object oldvalue,
+    object? newvalue,
+    object? oldvalue,
     double time
 ) : WorldCommand(time);
 

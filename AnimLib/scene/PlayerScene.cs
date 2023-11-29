@@ -31,6 +31,8 @@ internal class PlayerScene {
         }
     }
 
+    public static readonly PlayerScene Empty = new PlayerScene();
+
     /// <summary>
     /// Creates a new empty scene.
     /// </summary>

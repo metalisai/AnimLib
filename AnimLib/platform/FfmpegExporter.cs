@@ -7,14 +7,13 @@ namespace AnimLib;
 
 internal class FfmpegExporter {
 
-    Process ffmpegProcess;
-    BinaryWriter ffmpegStdin;
+    Process? ffmpegProcess;
+    BinaryWriter? ffmpegStdin;
 
     public FfmpegExporter() {
-
     }
 
-    private void FfmpegOnExit(object sender, System.EventArgs e) { 
+    private void FfmpegOnExit(object? sender, System.EventArgs e) { 
         Console.WriteLine("ffmpeg has exited!");
     }
 
@@ -34,6 +33,10 @@ internal class FfmpegExporter {
         info.RedirectStandardError = true;
 
         ffmpegProcess = Process.Start(info);
+        if (ffmpegProcess == null) {
+            Debug.Error("Failed to start ffmpeg process!");
+            return;
+        }
         ffmpegProcess.Exited += FfmpegOnExit;
         ffmpegStdin = new BinaryWriter(ffmpegProcess.StandardInput.BaseStream);
         
@@ -61,7 +64,7 @@ internal class FfmpegExporter {
 
     public void TestStream() {
         Start("test"+Guid.NewGuid().ToString()+".mp4", 1920, 1080, 60);
-        if(ffmpegProcess != null) {
+        if(ffmpegProcess != null && ffmpegStdin != null) {
             for(int k = 0; k < 60*10; k++) {
                 for(int i = 0; i < 1080; i++) {
                     for(int j = 0; j < 1920; j++) {
@@ -125,6 +128,10 @@ internal class FfmpegExporter {
         info.RedirectStandardError = true;
 
         ffmpegProcess = Process.Start(info);
+        if (ffmpegProcess == null) {
+            Debug.Error("Failed to start ffmpeg process!");
+            return;
+        }
         ffmpegProcess.Exited += FfmpegOnExit;
         ffmpegStdin = new BinaryWriter(ffmpegProcess.StandardInput.BaseStream);
         

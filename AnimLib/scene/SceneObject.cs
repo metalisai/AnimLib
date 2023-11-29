@@ -89,7 +89,7 @@ internal abstract class SceneObject {
     }
     public abstract object Clone();
     [JsonIgnore]
-    public (string, Func<object>, Action<object>)[] Properties { get; protected set;} = new (string, Func<object>, Action<object>)[]{};
+    public (string name, Func<object> getter, Action<object> setter)[] Properties { get; protected set;} = new (string, Func<object>, Action<object>)[]{};
 
     public SceneObject() {
         var props = this.GetType().GetProperties();

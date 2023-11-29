@@ -118,12 +118,12 @@ internal class Program
         var platform = new OpenTKPlatform(1024, 1024);
         var renderState = new RenderState(platform);
 
-        AnimationPlayer player = new ();
+        AnimationPlayer player = new (new NoProjectBehaviour());
         PlayerControls pctrl = new (renderState, player);
+
+
         player.ResourceManager.OnAssemblyChanged += (path) => AssemblyPathChanged(path, player);
         pctrl.SetPlayer(player);
-
-        player.SetBehaviour(new NoProjectBehaviour());
         
         SynchronizationContext.SetSynchronizationContext(mainCtx);
 

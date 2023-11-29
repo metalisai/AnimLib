@@ -341,11 +341,11 @@ public class World
         Resources.Textures.Add(texture);
     }
 
-    internal delegate void OnPropertyChangedD(VisualEntity ent, string prop, object newValue);
+    internal delegate void OnPropertyChangedD(VisualEntity ent, string prop, object? newValue);
     internal event OnPropertyChangedD OnPropertyChanged;
 
-    internal void SetProperty<T>(VisualEntity entity, string propert, T value, T oldvalue) where T : notnull {
-        if(value.Equals(oldvalue))
+    internal void SetProperty<T>(VisualEntity entity, string propert, T value, T oldvalue) {
+        if(value != null && value.Equals(oldvalue))
             return;
         if(entity.created) {
             if(OnPropertyChanged != null) {
