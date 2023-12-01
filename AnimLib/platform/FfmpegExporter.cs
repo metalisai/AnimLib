@@ -64,6 +64,7 @@ internal class FfmpegExporter {
 
     public void TestStream() {
         Start("test"+Guid.NewGuid().ToString()+".mp4", 1920, 1080, 60);
+        // anyone got an elevator?
         if(ffmpegProcess != null && ffmpegStdin != null) {
             for(int k = 0; k < 60*10; k++) {
                 for(int i = 0; i < 1080; i++) {

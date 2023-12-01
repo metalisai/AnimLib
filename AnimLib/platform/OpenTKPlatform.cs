@@ -20,18 +20,18 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         public List<int> textures = new List<int>();
     }
 
-    public event IPlatform.OnSizeChangedDelegate OnSizeChanged;
-    public event IPlatform.OnDisplayChangedDelegate OnDisplayChanged;
-    public event EventHandler OnLoaded;
-    public event EventHandler<MouseButtonEventArgs> mouseDown;
-    public event EventHandler<MouseButtonEventArgs> mouseUp;
-    public event EventHandler<MouseMoveEventArgs> mouseMove;
-    public event EventHandler<MouseWheelEventArgs> mouseScroll;
-    public event EventHandler<KeyboardKeyEventArgs> PKeyDown;
-    public event EventHandler<KeyboardKeyEventArgs> PKeyUp;
-    public event EventHandler<KeyPressEventArgs> PKeyPress;
-    public event EventHandler<OpenTK.Input.FileDropEventArgs> PFileDrop;
-    public event EventHandler<FrameEventArgs> PRenderFrame;
+    public event IPlatform.OnSizeChangedDelegate? OnSizeChanged;
+    public event IPlatform.OnDisplayChangedDelegate? OnDisplayChanged;
+    public event EventHandler? OnLoaded;
+    public event EventHandler<MouseButtonEventArgs>? mouseDown;
+    public event EventHandler<MouseButtonEventArgs>? mouseUp;
+    public event EventHandler<MouseMoveEventArgs>? mouseMove;
+    public event EventHandler<MouseWheelEventArgs>? mouseScroll;
+    public event EventHandler<KeyboardKeyEventArgs>? PKeyDown;
+    public event EventHandler<KeyboardKeyEventArgs>? PKeyUp;
+    public event EventHandler<KeyPressEventArgs>? PKeyPress;
+    public event EventHandler<OpenTK.Input.FileDropEventArgs>? PFileDrop;
+    public event EventHandler<FrameEventArgs>? PRenderFrame;
 
     System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
 
@@ -40,7 +40,7 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
 
     private int imguiVao, imguiVbo, imguiEbo;
 
-    public SkiaRenderer Skia;
+    public SkiaRenderer? Skia;
 
     public int rectVao;
     public int dynVao, dynVbo;
