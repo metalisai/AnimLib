@@ -45,8 +45,13 @@ layout(location = 0) out vec4 outColor;
 
 uniform sampler2D _MainTex;
 uniform ivec2 _ViewportSize;
+uniform float _Threshold = 1.0f;
 
 vec4 sample(vec4 p1, vec4 p2, vec4 p3, vec4 p4) {
+    p1.rgb = max(p1.rgb - _Threshold, 0.0);
+    p2.rgb = max(p2.rgb - _Threshold, 0.0);
+    p3.rgb = max(p3.rgb - _Threshold, 0.0);
+    p4.rgb = max(p4.rgb - _Threshold, 0.0);
     return (p1 + p2 + p3 + p4) / 4.0;
 }
 

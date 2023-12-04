@@ -97,6 +97,7 @@ internal partial class GlKawaseBlur : IDisposable
         var viewportLoc = GL.GetUniformLocation(_kawaseDownProgram, "_ViewportSize");
         var texLoc = GL.GetUniformLocation(_kawaseDownProgram, "_MainTex");
         var usePrevTexLoc = GL.GetUniformLocation(_kawaseDownProgram, "_UsePrevTex");
+        var thresholdLoc = GL.GetUniformLocation(_kawaseDownProgram, "_Threshold");
         GL.Uniform2(viewportLoc, selfW, selfH);
         GL.Uniform1(texLoc, 0);
         GL.BindTextureUnit(0, rb.Texture());
@@ -109,13 +110,15 @@ internal partial class GlKawaseBlur : IDisposable
         GL.BindVertexArray(platform.blitvao);
         GL.DrawBuffers(1, new DrawBuffersEnum[] { DrawBuffersEnum.ColorAttachment0 });
 
+        GL.Uniform1(thresholdLoc, 1.0f);
+
         // down pass 1 (from source to mip level 0)
         GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, _colorTex1, 0);
         GL.Viewport(0, 0, selfW, selfH);
         GL.Uniform2(viewportLoc, selfW, selfH);
         GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
 
-        GL.DebugMessageInsert(DebugSourceExternal.DebugSourceApplication, DebugType.DebugTypeMarker, 0, DebugSeverity.DebugSeverityNotification, -1, "Render kawase 0");
+        GL.Uniform1(thresholdLoc, 0.0f);
 
         GL.BindTexture(TextureTarget.Texture2D, _colorTex1);
         GL.BindTextureUnit(0, _colorTex1);
@@ -131,8 +134,6 @@ internal partial class GlKawaseBlur : IDisposable
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBaseLevel, i);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, i);
             GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
-
-            GL.DebugMessageInsert(DebugSourceExternal.DebugSourceApplication, DebugType.DebugTypeMarker, 0, DebugSeverity.DebugSeverityNotification, -1, $"Render kawase {i+1}");
         }
 
         // restore state
@@ -151,7 +152,6 @@ internal partial class GlKawaseBlur : IDisposable
         GL.BindSampler(0, _sampler);
         GL.Uniform1(texLoc, 0);
         GL.Uniform1(prevTexLoc, 1);
-        //GL.DrawBuffers(1, new DrawBuffersEnum[] { DrawBuffersEnum.ColorAttachment1 });
 
         // up passes
         for (int i = passes ; i >= 0; i--) {
@@ -173,9 +173,6 @@ internal partial class GlKawaseBlur : IDisposable
             GL.BindTextureUnit(0, _colorTex1);
 
             GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
-
-
-            GL.DebugMessageInsert(DebugSourceExternal.DebugSourceApplication, DebugType.DebugTypeMarker, 0, DebugSeverity.DebugSeverityNotification, -1, $"Render kawase up {i}");
         }
 
         GL.BindTexture(TextureTarget.Texture2D, _colorTex2);
@@ -183,11 +180,20 @@ internal partial class GlKawaseBlur : IDisposable
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, 1000);
 
         rb.Bind();
+        GL.UseProgram(platform.BlitProgram);
+
+        viewportLoc = GL.GetUniformLocation(platform.BlitProgram, "_ViewportSize");
+        texLoc = GL.GetUniformLocation(platform.BlitProgram, "_MainTex");
+        GL.Uniform1(texLoc, 0);
+        GL.Uniform2(viewportLoc, w, h);
+        GL.Enable(EnableCap.Blend);
+        GL.BlendFuncSeparate(BlendingFactorSrc.One, BlendingFactorDest.One, BlendingFactorSrc.Zero, BlendingFactorDest.One);
+        GL.BlendEquationSeparate(BlendEquationMode.FuncAdd, BlendEquationMode.FuncAdd);
+
         GL.Viewport(0, 0, w, h);
         GL.Uniform2(viewportLoc, w, h);
         GL.Uniform1(lodLoc, 0);
-        GL.BindTextureUnit(0, rb.Texture());
-        GL.BindTextureUnit(1, _colorTex2);
+        GL.BindTextureUnit(0, _colorTex2);
         GL.BindSampler(0, _sampler);
         GL.BindVertexArray(platform.blitvao);
         GL.DrawArrays(PrimitiveType.Triangles, 0, 6);

@@ -41,6 +41,7 @@ in vec2 v_texCoord;
 uniform vec4 _Color;
 uniform sampler2D _AtlasTex;
 uniform sampler2D _depthPeelTex;
+uniform bool _correctGamma = true;
 uniform int _entityId;
 void main() {
 float depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), 0).x;
@@ -52,6 +53,10 @@ vec3 outColorRGB = _Color.rgb*v_color.rgb;
 float alpha = _Color.a*v_color.a;
 //outColor = vec4(outColorRGB*alpha, alpha);
 outColor = v_color*texture(_AtlasTex, v_texCoord);
+if(_correctGamma) {
+    outColor.rgb = pow(outColor.rgb, vec3(2.2));
+}
+
 outEntityId = _entityId;
 }";
 

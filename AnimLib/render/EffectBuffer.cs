@@ -4,12 +4,28 @@ using System;
 namespace AnimLib;
 
 internal partial class EffectBuffer : IDisposable {
-    int _colorTex1;
+    int _colorTex1 = -1;
     int _fbo = -1;
+    int _sampler = -1;
+
+    int _acesProgram = -1;
 
     int _width;
     int _height;
     private bool disposedValue;
+
+    OpenTKPlatform platform;
+
+    public EffectBuffer(OpenTKPlatform platform) {
+        _sampler = GL.GenSampler();
+        GL.SamplerParameter(_sampler, SamplerParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+        GL.SamplerParameter(_sampler, SamplerParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+        GL.SamplerParameter(_sampler, SamplerParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+        GL.SamplerParameter(_sampler, SamplerParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+
+        _acesProgram = platform.AddShader(effectVert, acesFrag, null);
+        this.platform = platform;
+    }
 
     public void Resize(int width, int height) {
         int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);
@@ -27,7 +43,7 @@ internal partial class EffectBuffer : IDisposable {
 
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment2, TextureTarget.Texture2D, _colorTex1, 0);
+        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, _colorTex1, 0);
 
         var err = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
         if(err != FramebufferErrorCode.FramebufferComplete) {
@@ -46,8 +62,49 @@ internal partial class EffectBuffer : IDisposable {
             Debug.Error("EffectBuffer not initialized");
         }
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fbo);
-        GL.DrawBuffer(DrawBufferMode.ColorAttachment2);
+        GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
         GL.Viewport(0, 0, _width, _height);
+    }
+
+    public void ApplyAcesColorMap(IBackendRenderBuffer rb) {
+        int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);
+        int rbuf = GL.GetInteger(GetPName.ReadFramebufferBinding);
+
+        var (w, h) = rb.Size;
+        if (w != _width || h != _height) {
+            Resize(w, h);
+        }
+
+        GL.Disable(EnableCap.Blend);
+        GL.Disable(EnableCap.DepthTest);
+        GL.Disable(EnableCap.CullFace);
+        GL.Disable(EnableCap.ScissorTest);
+        GL.Disable(EnableCap.StencilTest);
+
+        GL.BindVertexArray(platform.blitvao);
+        this.Bind();
+        GL.UseProgram(_acesProgram);
+        int mainTexLoc = GL.GetUniformLocation(_acesProgram, "_MainTex");
+        int viewportSizeLoc = GL.GetUniformLocation(_acesProgram, "_ViewportSize");
+        GL.Uniform1(mainTexLoc, 0);
+        GL.Uniform2(viewportSizeLoc, _width, _height);
+        GL.BindTextureUnit(0, rb.Texture());
+        GL.BindSampler(0, _sampler);
+        GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
+        
+        rb.Bind();
+        GL.UseProgram(platform.BlitProgram);
+        mainTexLoc = GL.GetUniformLocation(platform.BlitProgram, "_MainTex");
+        viewportSizeLoc = GL.GetUniformLocation(_acesProgram, "_ViewportSize");
+        GL.Uniform2(viewportSizeLoc, _width, _height);
+        GL.Uniform1(mainTexLoc, 0);
+        GL.BindTextureUnit(0, _colorTex1);
+        GL.BindSampler(0, _sampler);
+        GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
+
+        GL.BindVertexArray(0);
+        GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, dbuf);
+        GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, rbuf);
     }
 
     public int Width => _width;
@@ -74,6 +131,8 @@ internal partial class EffectBuffer : IDisposable {
                 GL.DeleteTexture(_colorTex1);
                 _colorTex1 = -1;
             }
+            GL.DeleteSampler(_sampler);
+            GL.DeleteProgram(_acesProgram);
             Debug.Log("EffectBuffer disposed");
             disposedValue = true;
         }

@@ -32,7 +32,7 @@ internal partial class GlWorldRenderer : IRenderer {
 
     System.Diagnostics.Stopwatch sw;
     EffectBuffer effectBuffer;
-    //GlKawaseBlur kawaseBlur;
+    GlKawaseBlur kawaseBlur;
 
     public GlWorldRenderer(OpenTKPlatform platform, RenderState rs) {
         this.platform = platform;
@@ -50,9 +50,8 @@ internal partial class GlWorldRenderer : IRenderer {
         _textProgram = platform.AddShader(textVert, textFrag, null);
 
         // TODO: dispose
-        effectBuffer = new EffectBuffer();
-
-        //kawaseBlur = new GlKawaseBlur(platform);
+        effectBuffer = new EffectBuffer(platform);
+        kawaseBlur = new GlKawaseBlur(platform);
 
         sw = new System.Diagnostics.Stopwatch();
     }
@@ -372,7 +371,7 @@ internal partial class GlWorldRenderer : IRenderer {
     public IBackendRenderBuffer CreateBuffer(int w, int h, int id) {
         var buf = new DepthPeelRenderBuffer(platform);
         buf.Resize(w, h);
-        effectBuffer.Resize(w/2, h/2);
+        effectBuffer.Resize(w, h);
         // TODO: this is wrong!
         platform.Skia.SetBuffer(buf);
         Debug.TLog($"Created new DepthPeelRenderBuffer with size {w}x{h}");
@@ -570,8 +569,9 @@ internal partial class GlWorldRenderer : IRenderer {
             RenderCanvases(mainBuffer, ss.Canvases, worldToClip);
 
         //pb.ApplyEffect(effectBuffer, true);
-        //kawaseBlur.ApplyBlur(pb);
+        kawaseBlur.ApplyBlur(pb);
         //pb.ApplyEffect(effectBuffer, false);
+        //effectBuffer.ApplyAcesColorMap(pb);
 
         sw.Stop();
         Performance.TimeToRenderCanvases = sw.Elapsed.TotalSeconds;

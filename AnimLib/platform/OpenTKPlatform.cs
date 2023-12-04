@@ -148,6 +148,8 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         GL.DepthFunc(DepthFunction.Lequal);
         GL.Enable(EnableCap.DepthTest);
 
+        GL.Enable(EnableCap.FramebufferSrgb);
+
         mipmapSampler = GL.GenSampler();
         GL.SamplerParameter(mipmapSampler, SamplerParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
         GL.SamplerParameter(mipmapSampler, SamplerParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
@@ -366,6 +368,8 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         GL.UniformMatrix4(matLoc, 1, false, ref mat.m11);
         var texLoc = GL.GetUniformLocation(_imguiProgram, "_AtlasTex");
         var entIdLoc = GL.GetUniformLocation(_imguiProgram, "_entityId");
+        var correctGammaLoc = GL.GetUniformLocation(_imguiProgram, "_correctGamma");
+        GL.Uniform1(correctGammaLoc, 1);
 
         GL.ActiveTexture(TextureUnit.Texture0);
         GL.Uniform1(texLoc, 0);
@@ -380,7 +384,10 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
                 GL.BindSampler(0, linearSampler);
             }
             // rendering a view within gui
+            bool enabledCorrectGamma = false;
             if(views.Any(x => x.TextureHandle == (int)dc.texture)) {
+                GL.Uniform1(correctGammaLoc, 0); // don't correct gamma for views
+                enabledCorrectGamma = true; 
                 GL.Uniform1(entIdLoc, -1);
                 GL.Disable(EnableCap.Blend);
             } else { // rendering gui
@@ -389,6 +396,9 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
             GL.Scissor((int)dc.clipRect.Item1, Height - (int)dc.clipRect.Item4, (int)(dc.clipRect.Item3-dc.clipRect.Item1), (int)(dc.clipRect.Item4-dc.clipRect.Item2));
             GL.DrawElementsBaseVertex(PrimitiveType.Triangles, (int)dc.elemCount, DrawElementsType.UnsignedShort, new IntPtr(dc.idxOffset*sizeof(ushort)), (int)dc.vOffset);
             GL.Enable(EnableCap.Blend);
+            if(enabledCorrectGamma) {
+                GL.Uniform1(correctGammaLoc, 1);
+            }
         }
         GL.BindSampler(0, 0);
         GL.Disable(EnableCap.ScissorTest);
