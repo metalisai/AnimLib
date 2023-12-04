@@ -20,6 +20,8 @@ internal partial class GlKawaseBlur : IDisposable
 
     OpenTKPlatform platform;
 
+    public float Radius { get; set; } = 1.0f;
+
     public GlKawaseBlur(OpenTKPlatform platform) {
         _kawaseDownProgram = platform.AddShader(effectVert, kawaseBlurDown13Frag, null);
         _kawaseUpProgram = platform.AddShader(effectVert, kawaseBlurUpFrag, null);
@@ -118,7 +120,7 @@ internal partial class GlKawaseBlur : IDisposable
         GL.BindTexture(TextureTarget.Texture2D, _colorTex1);
         GL.BindTextureUnit(0, _colorTex1);
 
-        int passes = 5;
+        int passes = 3;
 
         // down passes
         for (int i = 0; i < passes; i++) {
@@ -142,6 +144,8 @@ internal partial class GlKawaseBlur : IDisposable
         usePrevTexLoc = GL.GetUniformLocation(_kawaseUpProgram, "_UsePrevTex");
         int prevTexLoc = GL.GetUniformLocation(_kawaseUpProgram, "_PrevTex");
         int lodLoc = GL.GetUniformLocation(_kawaseUpProgram, "_MipLevel");
+        int radiusLoc = GL.GetUniformLocation(_kawaseUpProgram, "_Radius");
+        GL.Uniform1(radiusLoc, this.Radius);
 
         GL.BindSampler(1, _sampler);
         GL.BindSampler(0, _sampler);
