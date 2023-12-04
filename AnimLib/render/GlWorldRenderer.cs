@@ -32,6 +32,7 @@ internal partial class GlWorldRenderer : IRenderer {
 
     System.Diagnostics.Stopwatch sw;
     EffectBuffer effectBuffer;
+    //GlKawaseBlur kawaseBlur;
 
     public GlWorldRenderer(OpenTKPlatform platform, RenderState rs) {
         this.platform = platform;
@@ -50,6 +51,8 @@ internal partial class GlWorldRenderer : IRenderer {
 
         // TODO: dispose
         effectBuffer = new EffectBuffer();
+
+        //kawaseBlur = new GlKawaseBlur(platform);
 
         sw = new System.Diagnostics.Stopwatch();
     }
@@ -566,7 +569,8 @@ internal partial class GlWorldRenderer : IRenderer {
         if(ss.Canvases != null)
             RenderCanvases(mainBuffer, ss.Canvases, worldToClip);
 
-        pb.ApplyEffect(effectBuffer, true);
+        //pb.ApplyEffect(effectBuffer, true);
+        //kawaseBlur.ApplyBlur(pb);
         //pb.ApplyEffect(effectBuffer, false);
 
         sw.Stop();

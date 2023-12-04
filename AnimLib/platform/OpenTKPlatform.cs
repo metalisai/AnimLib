@@ -44,6 +44,7 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
 
     public int rectVao;
     public int dynVao, dynVbo;
+    public int blitvao = -1, blitvbo = -1;
 
     int blitSampler, mipmapSampler, linearSampler;
 
@@ -215,7 +216,7 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         // skia
         Skia = new SkiaRenderer(this);
         Skia.CreateGL(true); // messes up render state when scene has textures, arc rendering buggy
-        //Skia.CreateSW(false); // HDR is very slow
+        //Skia.CreateSW(true); // HDR is very slow
 
         if(OnLoaded != null) {
             OnLoaded(this, new());
@@ -451,6 +452,10 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
     }
 
+    public void DeleteShader(int shader) {
+        GL.DeleteShader(shader);
+    }
+
     /// <summary>
     /// Add a shader program.
     /// </summary>
@@ -609,6 +614,27 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         GL.VertexAttribPointer(0, 4, VertexAttribPointerType.Float, false, 0, 0);
         GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, 0, 6*4*4);
         GL.BindVertexArray(0);
+
+        // blit VAO (used to blit textures)
+        // blit VAO hasn't been created yet
+        if(blitvao == -1) {
+            blitvao = GL.GenVertexArray();
+            GL.BindVertexArray(blitvao);
+            blitvbo = GL.GenBuffer();
+            float[] quad = new float[] {
+                -1.0f, -1.0f, 0.0f, 1.0f,
+                1.0f, -1.0f, 0.0f, 1.0f,
+                -1.0f,  1.0f, 0.0f, 1.0f,
+                1.0f, -1.0f, 0.0f, 1.0f,
+                1.0f,  1.0f, 0.0f, 1.0f,
+                -1.0f,  1.0f, 0.0f, 1.0f,
+            };
+            GL.BindBuffer(BufferTarget.ArrayBuffer, blitvbo);
+            GL.BufferData(BufferTarget.ArrayBuffer, quad.Length * sizeof(float), quad, BufferUsageHint.StaticDraw);
+            GL.EnableVertexAttribArray(0);
+            GL.VertexAttribPointer(0, 4, VertexAttribPointerType.Float, false, 0, IntPtr.Zero);
+            GL.BindVertexArray(0);
+        }
     }
     
     private void CompileShaders() {
@@ -621,5 +647,16 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         if(type == DebugType.DebugTypeOther)
             return;
         Debug.Warning($"OpenGL debug ({type}) src:{source} message: {Marshal.PtrToStringAnsi(message)}");
+    }
+
+    protected override void Dispose(bool dispose) {
+        // TODO: a lot of stuf needs to be disposed here
+        if (!IsDisposed) {
+            GL.DeleteVertexArray(blitvao);
+            GL.DeleteBuffer(blitvbo);
+            blitvao = -1;
+            blitvbo = -1;
+        }
+        base.Dispose(dispose);
     }
 }

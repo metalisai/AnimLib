@@ -14,8 +14,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
     int _bloomProgram = -1;
     bool _isHDR = true;
 
-    int _blitvao = -1, _blitvbo = -1;
-    IPlatform platform;
+    OpenTKPlatform platform;
 
     public (int w, int h) Size {
         get {
@@ -30,7 +29,8 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
     }
 
     public DepthPeelRenderBuffer(IPlatform platform) {
-        this.platform = platform;            
+        // this is an OpenGL implementation and requires an OpenGL platform
+        this.platform = (OpenTKPlatform)platform;            
         _entBlitProgram = platform.AddShader(canvasBlitVert, canvasBlitFrag, null);
         _bloomProgram = platform.AddShader(effectVert, bloomFrag, null);
     }
@@ -96,26 +96,6 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
         // don't need to resize
         if(this._width == width && this._height == height)
             return;
-
-        // blit VAO hasn't been created yet
-        if(_blitvao == -1) {
-            _blitvao = GL.GenVertexArray();
-            GL.BindVertexArray(_blitvao);
-            _blitvbo = GL.GenBuffer();
-            float[] quad = new float[] {
-                -1.0f, -1.0f, 0.0f, 1.0f,
-                1.0f, -1.0f, 0.0f, 1.0f,
-                -1.0f,  1.0f, 0.0f, 1.0f,
-                1.0f, -1.0f, 0.0f, 1.0f,
-                1.0f,  1.0f, 0.0f, 1.0f,
-                -1.0f,  1.0f, 0.0f, 1.0f,
-            };
-            GL.BindBuffer(BufferTarget.ArrayBuffer, _blitvbo);
-            GL.BufferData(BufferTarget.ArrayBuffer, quad.Length * sizeof(float), quad, BufferUsageHint.StaticDraw);
-            GL.EnableVertexAttribArray(0);
-            GL.VertexAttribPointer(0, 4, VertexAttribPointerType.Float, false, 0, IntPtr.Zero);
-            GL.BindVertexArray(0);
-        }
 
         // store current state to restore it later
         int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);
@@ -207,7 +187,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
         int rbuf = GL.GetInteger(GetPName.ReadFramebufferBinding);
 
         GL.UseProgram(_bloomProgram);
-        GL.BindVertexArray(_blitvao);
+        GL.BindVertexArray(platform.blitvao);
         GL.BindTextureUnit(0, _colorTex);
         GL.BindSampler(0, 0);
         var loc = GL.GetUniformLocation(_bloomProgram, "_MainTex");
@@ -257,7 +237,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
         int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);
         int rbuf = GL.GetInteger(GetPName.ReadFramebufferBinding);
         Bind();
-        GL.BindVertexArray(_blitvao);
+        GL.BindVertexArray(platform.blitvao);
         var bp = blitProgram ?? platform.BlitProgram;
         var loc = GL.GetUniformLocation(bp, "_MainTex");
         var vpsLoc = GL.GetUniformLocation(bp, "_ViewportSize");
@@ -293,7 +273,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
 
         //GL.BlitFramebuffer(0, 0, Width, Height, 0, 0, Width, Height, ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Linear);
 
-        GL.BindVertexArray(_blitvao);
+        GL.BindVertexArray(platform.blitvao);
         var loc = GL.GetUniformLocation(platform.BlitProgram, "_MainTex");
         var vpsLoc = GL.GetUniformLocation(platform.BlitProgram, "_ViewportSize");
         GL.UseProgram(platform.BlitProgram);
@@ -344,10 +324,6 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
         Debug.TLogWithTrace("DepthPeelRenderBuffer Disposing");
         DeleteBuffers();
         GL.DeleteFramebuffer(_fbo);
-        GL.DeleteVertexArray(_blitvao);
-        GL.DeleteBuffer(_blitvbo);
-        _blitvao = -1;
-        _blitvbo = -1;
         _fbo = -1;
     }
 
