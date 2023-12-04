@@ -21,6 +21,7 @@ internal partial class GlKawaseBlur : IDisposable
     OpenTKPlatform platform;
 
     public float Radius { get; set; } = 1.0f;
+    public float Threshold { get; set; } = 1.0f;
 
     public GlKawaseBlur(OpenTKPlatform platform) {
         _kawaseDownProgram = platform.AddShader(effectVert, kawaseBlurDown13Frag, null);
@@ -85,6 +86,7 @@ internal partial class GlKawaseBlur : IDisposable
         int rbuf = GL.GetInteger(GetPName.ReadFramebufferBinding);
 
         var (w, h) = rb.Size;
+        // first mip level of target is half the size of the source
         var selfW = w / 2;
         var selfH = h / 2;
 
@@ -110,7 +112,7 @@ internal partial class GlKawaseBlur : IDisposable
         GL.BindVertexArray(platform.blitvao);
         GL.DrawBuffers(1, new DrawBuffersEnum[] { DrawBuffersEnum.ColorAttachment0 });
 
-        GL.Uniform1(thresholdLoc, 1.0f);
+        GL.Uniform1(thresholdLoc, this.Threshold);
 
         // down pass 1 (from source to mip level 0)
         GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, _colorTex1, 0);
@@ -136,9 +138,10 @@ internal partial class GlKawaseBlur : IDisposable
             GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
         }
 
-        // restore state
+        // restore mip state
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBaseLevel, 0);
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, 1000);
+
         GL.UseProgram(_kawaseUpProgram);
         viewportLoc = GL.GetUniformLocation(_kawaseUpProgram, "_ViewportSize");
         texLoc = GL.GetUniformLocation(_kawaseUpProgram, "_MainTex");
@@ -153,7 +156,8 @@ internal partial class GlKawaseBlur : IDisposable
         GL.Uniform1(texLoc, 0);
         GL.Uniform1(prevTexLoc, 1);
 
-        // up passes
+        // up passes _colorTex1 -> _colorTex2
+        // blur current mip level and add to previous mip level (if any)
         for (int i = passes ; i >= 0; i--) {
             if (i == passes) {
                 GL.Uniform1(usePrevTexLoc, 0);
@@ -182,6 +186,7 @@ internal partial class GlKawaseBlur : IDisposable
         rb.Bind();
         GL.UseProgram(platform.BlitProgram);
 
+        // blit back onto source with additive blending
         viewportLoc = GL.GetUniformLocation(platform.BlitProgram, "_ViewportSize");
         texLoc = GL.GetUniformLocation(platform.BlitProgram, "_MainTex");
         GL.Uniform1(texLoc, 0);
