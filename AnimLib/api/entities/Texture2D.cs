@@ -46,6 +46,10 @@ public class Texture2D : IRendererResource {
         /// float16/half, 2 bytes per channel, 8 bytes per pixel.
         /// </summary>
         RGBA16F,
+        /// <summary>
+        /// 16 bit normalized integer, 2 bytes per channel, 6 bytes per pixel.
+        /// </summary>
+        RGB16,
     }
 
     /// <summary>

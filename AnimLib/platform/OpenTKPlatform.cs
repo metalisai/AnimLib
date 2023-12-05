@@ -63,6 +63,8 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         }
     }
 
+    public FrameColorSpace PresentedColorSpace { get; private set; }
+
     static DebugProc? proc;
 
     public static ConcurrentBag<string> destroyedOwners = new ConcurrentBag<string>();
@@ -148,6 +150,7 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         GL.DepthFunc(DepthFunction.Lequal);
         GL.Enable(EnableCap.DepthTest);
 
+        this.PresentedColorSpace = FrameColorSpace.Linear;
         GL.Enable(EnableCap.FramebufferSrgb);
 
         mipmapSampler = GL.GenSampler();

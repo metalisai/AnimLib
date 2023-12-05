@@ -369,7 +369,7 @@ internal partial class GlWorldRenderer : IRenderer {
     }
 
     public IBackendRenderBuffer CreateBuffer(int w, int h, int id) {
-        var buf = new DepthPeelRenderBuffer(platform);
+        var buf = new DepthPeelRenderBuffer(platform, platform.PresentedColorSpace);
         buf.Resize(w, h);
         effectBuffer.Resize(w, h);
         // TODO: this is wrong!

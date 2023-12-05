@@ -14,7 +14,10 @@ internal class MultisampleRenderBuffer : IBackendRenderBuffer, IDisposable{
     int _blitvao = -1, _blitvbo = -1;
     IPlatform platform;
 
-    public MultisampleRenderBuffer(IPlatform platform) {
+    public FrameColorSpace ColorSpace { get; private set; }
+
+    public MultisampleRenderBuffer(IPlatform platform, FrameColorSpace colorSpace) {
+        ColorSpace = colorSpace;
         this.platform = platform;
     }
 
@@ -171,8 +174,10 @@ internal class MultisampleRenderBuffer : IBackendRenderBuffer, IDisposable{
 
     public (int, int) Size { get { return (_width, _height); } }
 
-    public void ReadPixels(ref byte data)
+    public void ReadPixels(ref byte data, Texture2D.TextureFormat format = Texture2D.TextureFormat.RGB8)
     {
+        if(format != Texture2D.TextureFormat.RGB8)
+            throw new NotImplementedException();
         GL.BindTexture(TextureTarget.Texture2D, _blitTex);
         GL.GetTexImage(TextureTarget.Texture2D, 0, PixelFormat.Rgb, PixelType.UnsignedByte, ref data);
     }

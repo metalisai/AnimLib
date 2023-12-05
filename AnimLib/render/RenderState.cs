@@ -62,7 +62,7 @@ internal class RenderState
     public RenderState(IPlatform platform) {
         currentPlatform = platform;
         this.platform = platform;
-        uiRenderBuffer = new DepthPeelRenderBuffer(platform);
+        uiRenderBuffer = new DepthPeelRenderBuffer(platform, platform.PresentedColorSpace);
 
         platform.OnSizeChanged += UpdateSize;
         platform.OnLoaded += Load;

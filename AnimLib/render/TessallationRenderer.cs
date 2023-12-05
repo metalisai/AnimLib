@@ -255,7 +255,7 @@ partial class TessallationRenderer : IRenderer, IDisposable {
     }
 
     public IBackendRenderBuffer CreateBuffer(int w, int h) {
-        var buf = new MultisampleRenderBuffer(platform);
+        var buf = new MultisampleRenderBuffer(platform, platform.PresentedColorSpace);
         buf.Resize(w, h);
         // TODO: this is wrong!
         platform.Skia.SetBuffer(buf);

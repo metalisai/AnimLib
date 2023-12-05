@@ -450,12 +450,14 @@ internal class SceneView
         }
     }
 
-    public CapturedFrame CaptureScene()
+    public CapturedFrame CaptureScene(Texture2D.TextureFormat format)
     {
         var guid = Guid.NewGuid().ToString();
-        var tex = new CapturedFrame(renderBuffer.Size.Item1, renderBuffer.Size.Item2, Texture2D.TextureFormat.RGB8);
+        var tex = new CapturedFrame(renderBuffer.Size.Item1, renderBuffer.Size.Item2, format) { 
+            colorSpace = renderBuffer.ColorSpace,
+        };
         renderBuffer.Bind();
-        renderBuffer.ReadPixels(ref tex.data[0]);
+        renderBuffer.ReadPixels(ref tex.data[0], format);
         return tex;
     }
 }

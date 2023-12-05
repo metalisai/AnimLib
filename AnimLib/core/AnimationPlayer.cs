@@ -203,7 +203,7 @@ internal class AnimationPlayer {
     public void OnEndRenderScene(IEnumerable<SceneView> views) {
         if(Exporting) {
             //var tex = controls.MainView.CaptureScene();
-            var tex = views.FirstOrDefault()?.CaptureScene();
+            var tex = views.FirstOrDefault()?.CaptureScene(Texture2D.TextureFormat.RGB16);
             if (tex != null) {
                 FrameCaptured(tex.Value);
             }
@@ -221,12 +221,14 @@ internal class AnimationPlayer {
         if(!string.IsNullOrEmpty(root)) {
             Directory.CreateDirectory(root);
         }
-        export.exporter.Start(path, settings.Width, settings.Height, (int)Math.Round(settings.FPS));
     }
 
     internal void FrameCaptured(CapturedFrame cap)
     {
         if(export != null) {
+            if (!export.exporter.IsRunning) {
+                export.exporter.Start(export.fileName, settings.Width, settings.Height, (int)Math.Round(settings.FPS), colorSpace: cap.colorSpace, format: cap.format);
+            }
             export.exporter.PushData(cap.data);
             Console.WriteLine($"Pushed {cap.data.Length} bytes of data to exporter");
         }

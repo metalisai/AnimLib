@@ -6,6 +6,7 @@ namespace AnimLib;
 /// A render buffer is a framebuffer object that can be used to render a scene to a texture.
 /// </summary>
 internal interface IBackendRenderBuffer : IDisposable{
+    FrameColorSpace ColorSpace { get; }
     void OnPreRender();
     void OnPostRender();
     void Bind();
@@ -17,5 +18,5 @@ internal interface IBackendRenderBuffer : IDisposable{
     bool IsHDR { get; }
     (int w, int h) Size { get; }
     int FBO { get; }
-    void ReadPixels(ref byte data);
+    void ReadPixels(ref byte data, Texture2D.TextureFormat format = Texture2D.TextureFormat.RGB8);
 }

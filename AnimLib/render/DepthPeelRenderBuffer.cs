@@ -28,8 +28,11 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
         }
     }
 
-    public DepthPeelRenderBuffer(IPlatform platform) {
+    public FrameColorSpace ColorSpace { get; private set; }
+
+    public DepthPeelRenderBuffer(IPlatform platform, FrameColorSpace colorSpace) {
         // this is an OpenGL implementation and requires an OpenGL platform
+        ColorSpace = colorSpace;
         this.platform = (OpenTKPlatform)platform;            
         _entBlitProgram = platform.AddShader(canvasBlitVert, canvasBlitFrag, null);
         _bloomProgram = platform.AddShader(effectVert, bloomFrag, null);
@@ -343,11 +346,25 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
         GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, dbuf);
     }
 
-    public void ReadPixels(ref byte data)
+    public void ReadPixels(ref byte data, Texture2D.TextureFormat format = Texture2D.TextureFormat.RGB8)
     {
         //GL.ReadPixels(0, 0, Width, Height, PixelFormat.Rgb, PixelType.UnsignedByte, ref data);
         GL.BindTexture(TextureTarget.Texture2D, _colorTex);
-        GL.GetTexImage(TextureTarget.Texture2D, 0, PixelFormat.Rgb, PixelType.UnsignedByte, ref data);
+        PixelFormat fmt;
+        PixelType type;
+        switch(format) {
+            case Texture2D.TextureFormat.RGB8:
+            fmt = PixelFormat.Rgb;
+            type = PixelType.UnsignedByte;
+            break;
+            case Texture2D.TextureFormat.RGB16:
+            fmt = PixelFormat.Rgb;
+            type = PixelType.UnsignedShort;
+            break;
+            default:
+            throw new Exception("Unsupported texture format");
+        }
+        GL.GetTexImage(TextureTarget.Texture2D, 0, fmt, type, ref data);
     }
 
     public void OnPreRender() {

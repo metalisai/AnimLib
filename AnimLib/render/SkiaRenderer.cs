@@ -107,7 +107,7 @@ internal partial class SkiaRenderer
             var colorType = this.hdr ? SKColorType.RgbaF16 : SKColorType.Rgba8888;
             // TODO: don't need a buffer this complex (only need color and stencil)
             if(glBuffer == null) {
-                glBuffer = new DepthPeelRenderBuffer(platform);
+                glBuffer = new DepthPeelRenderBuffer(platform, platform.PresentedColorSpace);
             }
             if(buf.Size.Item1 != glBuffer.Size.Item1 || buf.Size.Item2 != glBuffer.Size.Item2) {
                 glBuffer.Resize(buf.Size.Item1, buf.Size.Item2);

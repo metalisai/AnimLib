@@ -15,6 +15,13 @@ internal enum PlatformTextureSampler {
 /// Platform interface for AnimLib that isn't provided by the C# runtime. This is the interface that the platform-specific code must implement.
 /// </summary>
 internal interface IPlatform {
+    /// <summary>
+    /// The color space of the presented frame.
+    /// If your platform supports gamma correction then you present in linear color space and this value is FrameColorSpace.Linear.
+    /// Desktop OpenGL supports hardware gamma correction, but a lot of platforms don't.
+    /// </summary>
+    FrameColorSpace PresentedColorSpace { get; }
+
     delegate void OnSizeChangedDelegate(int width, int height);
     event OnSizeChangedDelegate OnSizeChanged;
     delegate void OnDisplayChangedDelegate(int w, int h, double rate);

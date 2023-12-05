@@ -164,7 +164,7 @@ internal partial class GlKawaseBlur : IDisposable
         int radiusLoc = GL.GetUniformLocation(_kawaseUpProgram, "_Radius");
         GL.Uniform1(radiusLoc, this.Radius);
 
-        GL.BindSampler(1, _linearSampler); // can't have mip here
+        GL.BindSampler(1, _mipSampler);
         GL.BindSampler(0, _mipSampler);
         GL.Uniform1(texLoc, 0);
         GL.Uniform1(prevTexLoc, 1);
@@ -216,7 +216,10 @@ internal partial class GlKawaseBlur : IDisposable
         GL.BindVertexArray(platform.blitvao);
         GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
 
+        // reset/restore state
         GL.BindVertexArray(0);
+        GL.BindSampler(0, 0);
+        GL.BindSampler(1, 0);
         GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, dbuf);
         GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, rbuf);
     }

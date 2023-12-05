@@ -17,10 +17,32 @@ internal class FfmpegExporter {
         Console.WriteLine("ffmpeg has exited!");
     }
 
-    public void Start(string filename, int width, int height, int framerate, int crf = 15) {
-        string outputOpt = "-c:v libvpx-vp9 -lossless 1";
+    public bool IsRunning { 
+        get => ffmpegProcess != null;
+    }
 
-        var opt = $"-y -f rawvideo -vcodec rawvideo -pixel_format rgb24 -video_size {width}x{height} -r {framerate} -i - -vf vflip {outputOpt} \"{filename}\"";
+    public void Start(string filename, int width, int height, int framerate, int crf = 15, FrameColorSpace colorSpace = FrameColorSpace.sRGB, Texture2D.TextureFormat format = Texture2D.TextureFormat.RGB8) {
+        string outputOpt = "-c:v libvpx-vp9 -lossless 1";
+        string vfOpt = "vflip";
+        string pixFmt = "";
+
+        if(format == Texture2D.TextureFormat.RGB8) {
+            pixFmt = "rgb24";
+            Debug.Log("Ffmpeg using 8 bit color depth.");
+        } else if(format == Texture2D.TextureFormat.RGB16) {
+            pixFmt = "rgb48le";
+            Debug.Log("Ffmpeg using 16 bit color depth.");
+        } else {
+            throw new Exception("Only RGB8 or RGB16 supported");
+        }
+
+        // NOTE: this causes banding for darker colors if the input is only 8 bit
+        if(colorSpace == FrameColorSpace.Linear) {
+            vfOpt = "vflip, colorspace=all=bt709:iprimaries=1:itrc=8:ispace=1";
+            Debug.Log("Ffmpeg applying conversion to sRGB color space.");
+        }
+
+        var opt = $"-y -f rawvideo -vcodec rawvideo  -pixel_format {pixFmt} -video_size {width}x{height} -r {framerate} -i - -vf \"{vfOpt}\" {outputOpt} \"{filename}\"";
 
         Debug.Log($"ffmpeg command: {"ffmpeg "+ opt}");
         Debug.Log($"Working directory: {Directory.GetCurrentDirectory()}");
