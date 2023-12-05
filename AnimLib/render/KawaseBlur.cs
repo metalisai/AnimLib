@@ -16,7 +16,8 @@ internal partial class GlKawaseBlur : IDisposable
     int _width;
     int _height;
 
-    int _sampler = -1;
+    int _linearSampler = -1;
+    int _mipSampler = -1;
 
     OpenTKPlatform platform;
 
@@ -27,11 +28,17 @@ internal partial class GlKawaseBlur : IDisposable
         _kawaseDownProgram = platform.AddShader(effectVert, kawaseBlurDown13Frag, null);
         _kawaseUpProgram = platform.AddShader(effectVert, kawaseBlurUpFrag, null);
 
-        _sampler = GL.GenSampler();
-        GL.SamplerParameter(_sampler, SamplerParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-        GL.SamplerParameter(_sampler, SamplerParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-        GL.SamplerParameter(_sampler, SamplerParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
-        GL.SamplerParameter(_sampler, SamplerParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+        _linearSampler = GL.GenSampler();
+        GL.SamplerParameter(_linearSampler, SamplerParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+        GL.SamplerParameter(_linearSampler, SamplerParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+        GL.SamplerParameter(_linearSampler, SamplerParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
+        GL.SamplerParameter(_linearSampler, SamplerParameterName.TextureWrapT, (int)TextureWrapMode.ClampToBorder);
+
+        _mipSampler = GL.GenSampler();
+        GL.SamplerParameter(_mipSampler, SamplerParameterName.TextureMinFilter, (int)TextureMinFilter.LinearMipmapLinear);
+        GL.SamplerParameter(_mipSampler, SamplerParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+        GL.SamplerParameter(_mipSampler, SamplerParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
+        GL.SamplerParameter(_mipSampler, SamplerParameterName.TextureWrapT, (int)TextureWrapMode.ClampToBorder);
 
         this.platform = platform;
     }
@@ -100,11 +107,13 @@ internal partial class GlKawaseBlur : IDisposable
         var texLoc = GL.GetUniformLocation(_kawaseDownProgram, "_MainTex");
         var usePrevTexLoc = GL.GetUniformLocation(_kawaseDownProgram, "_UsePrevTex");
         var thresholdLoc = GL.GetUniformLocation(_kawaseDownProgram, "_Threshold");
+        int lodLoc = GL.GetUniformLocation(_kawaseDownProgram, "_MipLevel");
         GL.Uniform2(viewportLoc, selfW, selfH);
         GL.Uniform1(texLoc, 0);
+        GL.BindSampler(0, _linearSampler);
         GL.BindTextureUnit(0, rb.Texture());
-        GL.BindSampler(0, _sampler);
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fbo);
+        GL.Uniform1(lodLoc, 0);
         GL.Disable(EnableCap.Blend);
         GL.Disable(EnableCap.DepthTest);
         GL.Disable(EnableCap.ScissorTest);
@@ -122,10 +131,10 @@ internal partial class GlKawaseBlur : IDisposable
 
         GL.Uniform1(thresholdLoc, 0.0f);
 
-        GL.BindTexture(TextureTarget.Texture2D, _colorTex1);
-        GL.BindTextureUnit(0, _colorTex1);
-
-        int passes = 3;
+        int logW = (int)Math.Log(selfW, 2);
+        int logH = (int)Math.Log(selfH, 2);
+        int passes = Math.Min(logW-4, logH-4);
+        passes = Math.Max(passes, 1);
 
         // down passes
         for (int i = 0; i < passes; i++) {
@@ -133,8 +142,12 @@ internal partial class GlKawaseBlur : IDisposable
             int div = 2 << i;
             GL.Viewport(0, 0, selfW/div, selfH/div);
             GL.Uniform2(viewportLoc, selfW/div, selfH/div);
+            GL.BindTexture(TextureTarget.Texture2D, _colorTex1);
+            GL.BindSampler(0, _mipSampler);
+            GL.Uniform1(lodLoc, i);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBaseLevel, i);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, i);
+            GL.BindTextureUnit(0, _colorTex1);
             GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
         }
 
@@ -146,13 +159,13 @@ internal partial class GlKawaseBlur : IDisposable
         viewportLoc = GL.GetUniformLocation(_kawaseUpProgram, "_ViewportSize");
         texLoc = GL.GetUniformLocation(_kawaseUpProgram, "_MainTex");
         usePrevTexLoc = GL.GetUniformLocation(_kawaseUpProgram, "_UsePrevTex");
+        lodLoc = GL.GetUniformLocation(_kawaseUpProgram, "_MipLevel");
         int prevTexLoc = GL.GetUniformLocation(_kawaseUpProgram, "_PrevTex");
-        int lodLoc = GL.GetUniformLocation(_kawaseUpProgram, "_MipLevel");
         int radiusLoc = GL.GetUniformLocation(_kawaseUpProgram, "_Radius");
         GL.Uniform1(radiusLoc, this.Radius);
 
-        GL.BindSampler(1, _sampler);
-        GL.BindSampler(0, _sampler);
+        GL.BindSampler(1, _linearSampler); // can't have mip here
+        GL.BindSampler(0, _mipSampler);
         GL.Uniform1(texLoc, 0);
         GL.Uniform1(prevTexLoc, 1);
 
@@ -199,7 +212,7 @@ internal partial class GlKawaseBlur : IDisposable
         GL.Uniform2(viewportLoc, w, h);
         GL.Uniform1(lodLoc, 0);
         GL.BindTextureUnit(0, _colorTex2);
-        GL.BindSampler(0, _sampler);
+        GL.BindSampler(0, _linearSampler);
         GL.BindVertexArray(platform.blitvao);
         GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
 
@@ -220,7 +233,8 @@ internal partial class GlKawaseBlur : IDisposable
             // unmanaged state
             platform.DeleteShader(_kawaseDownProgram);
             platform.DeleteShader(_kawaseUpProgram);
-            GL.DeleteSampler(_sampler);
+            GL.DeleteSampler(_linearSampler);
+            GL.DeleteSampler(_mipSampler);
 
             if (_colorTex1 != -1) {
                 GL.DeleteTexture(_colorTex1);

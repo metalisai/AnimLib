@@ -15,6 +15,16 @@ layout(location = 0) out vec4 outColor;
 uniform sampler2D _MainTex;
 uniform ivec2 _ViewportSize;
 
+uniform float _Threshold = 1.0f;
+
+vec4 sample(vec4 p1, vec4 p2, vec4 p3, vec4 p4) {
+    p1.rgb = max(p1.rgb - _Threshold, 0.0);
+    p2.rgb = max(p2.rgb - _Threshold, 0.0);
+    p3.rgb = max(p3.rgb - _Threshold, 0.0);
+    p4.rgb = max(p4.rgb - _Threshold, 0.0);
+    return (p1 + p2 + p3 + p4) / 4.0;
+}
+
 void main() {
     // half pixel size in normalized texture coordinates
     vec2 halfPixel = vec2(1) / (2.0 * _ViewportSize.xy);
@@ -35,7 +45,7 @@ void main() {
     vec4 color3 = texture(_MainTex, sampleCoord3, 0);
     vec4 color4 = texture(_MainTex, sampleCoord4, 0);
 
-    outColor = (color1 + color2 + color3 + color4) / 4.0;
+    outColor = sample(color1, color2, color3, color4);
 }
 ";
 
@@ -46,6 +56,7 @@ layout(location = 0) out vec4 outColor;
 uniform sampler2D _MainTex;
 uniform ivec2 _ViewportSize;
 uniform float _Threshold = 1.0f;
+uniform int _MipLevel = 0;
 
 vec4 sample(vec4 p1, vec4 p2, vec4 p3, vec4 p4) {
     p1.rgb = max(p1.rgb - _Threshold, 0.0);
@@ -61,19 +72,25 @@ void main() {
     // coordinate of current pixel (gl_FragCoord is pixel center)
     vec2 texCoord = gl_FragCoord.xy / _ViewportSize;
 
-    vec4 AC = texture(_MainTex, texCoord + texelSize*vec2(-1.0, -1.0), 0);
-    vec4 BC = texture(_MainTex, texCoord + texelSize*vec2( 0.0, -1.0), 0);
-    vec4 CC = texture(_MainTex, texCoord + texelSize*vec2( 1.0, -1.0), 0);
-    vec4 DC = texture(_MainTex, texCoord + texelSize*vec2(-0.5, -0.5), 0);
-    vec4 EC = texture(_MainTex, texCoord + texelSize*vec2( 0.5, -0.5), 0);
-    vec4 FC = texture(_MainTex, texCoord + texelSize*vec2(-1.0,  0.0), 0);
-    vec4 GC = texture(_MainTex, texCoord                             , 0);
-    vec4 HC = texture(_MainTex, texCoord + texelSize*vec2( 1.0,  0.0), 0);
-    vec4 IC = texture(_MainTex, texCoord + texelSize*vec2(-0.5,  0.5), 0);
-    vec4 JC = texture(_MainTex, texCoord + texelSize*vec2( 0.5,  0.5), 0);
-    vec4 KC = texture(_MainTex, texCoord + texelSize*vec2(-1.0,  1.0), 0);
-    vec4 LC = texture(_MainTex, texCoord + texelSize*vec2( 0.0,  1.0), 0);
-    vec4 MC = texture(_MainTex, texCoord + texelSize*vec2( 1.0,  1.0), 0);
+    // K L M
+    //  I J
+    // F G H
+    //  D E
+    // A B C
+
+    vec4 AC = textureLod(_MainTex, texCoord + texelSize*vec2(-1.0, -1.0), _MipLevel);
+    vec4 BC = textureLod(_MainTex, texCoord + texelSize*vec2( 0.0, -1.0), _MipLevel);
+    vec4 CC = textureLod(_MainTex, texCoord + texelSize*vec2( 1.0, -1.0), _MipLevel);
+    vec4 DC = textureLod(_MainTex, texCoord + texelSize*vec2(-0.5, -0.5), _MipLevel);
+    vec4 EC = textureLod(_MainTex, texCoord + texelSize*vec2( 0.5, -0.5), _MipLevel);
+    vec4 FC = textureLod(_MainTex, texCoord + texelSize*vec2(-1.0,  0.0), _MipLevel);
+    vec4 GC = textureLod(_MainTex, texCoord                             , _MipLevel);
+    vec4 HC = textureLod(_MainTex, texCoord + texelSize*vec2( 1.0,  0.0), _MipLevel);
+    vec4 IC = textureLod(_MainTex, texCoord + texelSize*vec2(-0.5,  0.5), _MipLevel);
+    vec4 JC = textureLod(_MainTex, texCoord + texelSize*vec2( 0.5,  0.5), _MipLevel);
+    vec4 KC = textureLod(_MainTex, texCoord + texelSize*vec2(-1.0,  1.0), _MipLevel);
+    vec4 LC = textureLod(_MainTex, texCoord + texelSize*vec2( 0.0,  1.0), _MipLevel);
+    vec4 MC = textureLod(_MainTex, texCoord + texelSize*vec2( 1.0,  1.0), _MipLevel);
 
     vec4 LL = sample(BC, AC, FC, GC);
     vec4 LR = sample(CC, BC, GC, HC);

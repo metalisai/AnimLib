@@ -571,7 +571,7 @@ internal partial class GlWorldRenderer : IRenderer {
         //pb.ApplyEffect(effectBuffer, true);
         kawaseBlur.ApplyBlur(pb);
         //pb.ApplyEffect(effectBuffer, false);
-        //effectBuffer.ApplyAcesColorMap(pb);
+        effectBuffer.ApplyAcesColorMap(pb);
 
         sw.Stop();
         Performance.TimeToRenderCanvases = sw.Elapsed.TotalSeconds;
