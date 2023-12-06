@@ -28,7 +28,7 @@ internal class SceneView
         public bool dragging;
     }
 
-    private IBackendRenderBuffer renderBuffer;
+    private IBackendRenderBuffer? renderBuffer;
     private Dictionary<string, PointGizmoState> pointGizmos = new Dictionary<string, PointGizmoState>();
     int x, y, width, height; // coordnates inside window 
     int bufferWidth, bufferHeight;
@@ -82,14 +82,16 @@ internal class SceneView
         }
     }
 
-    public IBackendRenderBuffer Buffer {
+    public IBackendRenderBuffer? Buffer {
         get {
             return renderBuffer;
         }
         set {
             renderBuffer = value;
-            this.bufferWidth = value.Size.w;
-            this.bufferHeight = value.Size.h;
+            if (value != null) {
+                this.bufferWidth = value.Size.w;
+                this.bufferHeight = value.Size.h;
+            }
         }
     }
 
@@ -104,7 +106,7 @@ internal class SceneView
     }
 
     public void PostRender(CameraState cam, WorldSnapshot ss) {
-        this.lastCam = cam.Clone() as CameraState;
+        this.lastCam = (CameraState)cam.Clone();
     }
 
     // calculate target area for renderbuffer, preserving aspect ratio
@@ -155,9 +157,9 @@ internal class SceneView
             usingGizmo = true;
         }*/
         var cam = lastCam as PerspectiveCameraState;
-        if(cam != null) {
+        if(cam != null && renderBuffer != null) {
             var viewM = cam.CreateWorldToViewMatrix();
-            var projM = cam.CreateViewToClipMatrix((float)renderBuffer.Size.Item1/(float)renderBuffer.Size.Item2);
+            var projM = cam.CreateViewToClipMatrix((float)renderBuffer.Size.w/(float)renderBuffer.Size.h);
             var trans = M4x4.Translate(pos);
             var canvasM = canvas.CanvasToWorld*trans;
             /*var op = OPERATION.TRANSLATE;
@@ -190,7 +192,7 @@ internal class SceneView
         ImGuizmo.Enable(!usingGizmo);
         ImGuizmo.SetOrthographic(false);*/
         var cam = lastCam as PerspectiveCameraState;
-        if (cam != null) {
+        if (cam != null && renderBuffer != null) {
             var viewM = cam.CreateWorldToViewMatrix();
             var projM = cam.CreateViewToClipMatrix((float)renderBuffer.Size.Item1/(float)renderBuffer.Size.Item2);
             var mat = M4x4.TRS(pos, rot, scale);
@@ -199,8 +201,8 @@ internal class SceneView
             //if(ImGuizmo.Manipulate(ref viewM.m11, ref projM.m11, op, mode, ref mat.m11))
             if (true)
             {
-                Vector3 translation = new Vector3(), s = new Vector3();
-                M3x3 r = new M3x3();
+                //Vector3 translation = new Vector3(), s = new Vector3();
+                //M3x3 r = new M3x3();
                 /*ImGuizmo.DecomposeMatrixToComponents(ref mat.m11, ref translation.x, ref r.m11, ref s.x);
                 switch(op) {
                 case OPERATION.TRANSLATE:
@@ -221,8 +223,11 @@ internal class SceneView
         return ret;
     }
 
-    public Ray RaycastBuffer(Vector2 coord) {
+    public Ray? RaycastBuffer(Vector2 coord) {
         var cam = lastCam as PerspectiveCameraState;
+        if(cam == null || renderBuffer == null) {
+            return null;
+        }
         float w = renderBuffer.Size.Item1;
         float h = renderBuffer.Size.Item2;
         var r = cam.RayFromClip(new Vector2((coord.x/w)*2.0f - 1.0f, ((h-coord.y)/h)*2.0f - 1.0f), w/h);
@@ -241,10 +246,14 @@ internal class SceneView
         // mouse not in render buffer
         if(!onBuffer) return null;
         var bufCoord = screenToBuffer(screenPosition);
-        return RaycastBuffer(bufCoord);
+        return bufCoord != null ? RaycastBuffer(bufCoord.Value) : null;
     }
 
     public bool TryIntersectCanvas(CanvasState canvas, Vector2 screenPos, out Vector2 normPos) {
+        if (renderBuffer == null) {
+            normPos = Vector2.ZERO;
+            return false;
+        }
         float w = renderBuffer.Size.Item1;
         float h = renderBuffer.Size.Item2;
         CameraState cam;
@@ -252,7 +261,12 @@ internal class SceneView
             cam = new OrthoCameraState(w, h);
         else
             cam = lastCam;
-        var bufPos = screenToBuffer(screenPos);
+        var bufPosR = screenToBuffer(screenPos);
+        if(bufPosR == null) {
+            normPos = Vector2.ZERO;
+            return false;
+        }
+        var bufPos = bufPosR ?? Vector2.ZERO;
         bufPos.x = ((bufPos.x/w) * 2.0f) - 1.0f;
         bufPos.y = (((h-bufPos.y)/h) * 2.0f) - 1.0f;
         var worldRay = cam.RayFromClip(bufPos, w/h);
@@ -274,7 +288,7 @@ internal class SceneView
         return false;
     }
 
-    public Vector2? TryIntersectCanvases(CanvasState[] canvases, Vector2 screenPos, out CanvasState cout) {
+    public Vector2? TryIntersectCanvases(CanvasState[] canvases, Vector2 screenPos, out CanvasState? cout) {
         foreach(var canvas in canvases) {
             // skip 2D for now (required using orthographic camera)
             if(!canvas.is2d) {
@@ -301,7 +315,10 @@ internal class SceneView
     }
 
     // buffer position to screen (UI) position
-    protected Vector2 bufferToScreen(Vector2 bufP) {
+    protected Vector2? bufferToScreen(Vector2 bufP) {
+        if(lastArea == null || renderBuffer == null) {
+            return null;
+        }
         var rect = lastArea.Value;
         var viewOrigin = new Vector2(rect.Item1, rect.Item2);
         var viewSize = new Vector2(rect.Item3, rect.Item4);
@@ -312,7 +329,10 @@ internal class SceneView
     }
 
     // screen (UI) position to buffer position
-    protected Vector2 screenToBuffer(Vector2 screenP) {
+    protected Vector2? screenToBuffer(Vector2 screenP) {
+        if(lastArea == null || renderBuffer == null) {
+            return null;
+        }
         var rect = lastArea.Value;
         var viewOrigin = new Vector2(rect.Item1, rect.Item2);
         var mposView = screenP - viewOrigin;
@@ -323,20 +343,27 @@ internal class SceneView
         return newp;
     }
 
-    public bool DoScreenCircleButton(Vector2 pos, Vector2 anchor, uint color, string label = null) {
-        if(lastArea == null)
+    public bool DoScreenCircleButton(Vector2 pos, Vector2 anchor, uint color, string? label = null) {
+        if(lastArea == null) {
             return false;
-        var screenP = bufferToScreen(pos);
+        }
+        var screenPR = bufferToScreen(pos);
+        if(screenPR == null) {
+            return false;
+        }
+        var screenP = screenPR ?? Vector2.ZERO;
         var inGizmo = ((Vector2)Imgui.GetMousePos() - screenP).Length < 5.0f;
         Imgui.FgCircleFilled(screenP, 6.0f, 0xFF000000);
         Imgui.FgCircleFilled(screenP, 5.0f, inGizmo ? 0xFF5555FF : color);
 
         if (label != null && inGizmo)
             Imgui.FgText(screenP-new Vector2(0.0f, 20.0f), 0xFF000000, label);
-        if (inGizmo && Imgui.IsMouseClicked(0))
+        if (inGizmo && Imgui.IsMouseClicked(0)) {
             return true;
-        else
+        }
+        else {
             return false;
+        }
     }
 
     public Vector2? DoScreenPointGizmo(string uid, Vector2 pos, Vector2 anchor, out bool endupdate, uint color = 0xFF0000FF, bool showlabel = false) {
@@ -345,7 +372,11 @@ internal class SceneView
             return null;
 
         var newp = pos;
-        var screenP = bufferToScreen(pos);
+        var screenPR = bufferToScreen(pos);
+        if(screenPR == null) {
+            return null;
+        }
+        var screenP = screenPR ?? Vector2.ZERO;
         var inGizmo = !usingGizmo && ((Vector2)Imgui.GetMousePos() - screenP).Length < 5.0f;
         PointGizmoState state = new PointGizmoState { dragging = false };
         if(!pointGizmos.TryGetValue(uid, out state)) {
@@ -365,11 +396,11 @@ internal class SceneView
         }
 
         if(state.dragging) {
-            newp = screenToBuffer((Vector2)Imgui.GetMousePos());
+            newp = screenToBuffer((Vector2)Imgui.GetMousePos()) ?? newp;
         }
         bool active = inGizmo || state.dragging;
         // use new coordinates for drawing (if it got overriden)
-        screenP = bufferToScreen(newp);
+        screenP = bufferToScreen(newp) ?? screenP;
         Imgui.FgCircleFilled(screenP, 6.0f, 0xFF000000);
         Imgui.FgCircleFilled(screenP, 5.0f, active ? 0xFF5555FF : color);
         if (active && showlabel)
@@ -415,7 +446,7 @@ internal class SceneView
         else
         {
             var r = RaycastBuffer(in2d.Value);
-            var newwp = r.Intersect(plane);
+            var newwp = r?.Intersect(plane);
             return newwp;
         }
     }
@@ -440,7 +471,9 @@ internal class SceneView
             return 0;
         var area = this.LastArea;
         if (area == null) return -2;
-        var coord = screenToBuffer(pixel);
+        var coordR = screenToBuffer(pixel);
+        if(coordR == null) return -2;
+        var coord = coordR ?? Vector2.ZERO;
         var bufW = this.BufferWidth;
         var bufH = this.BufferHeight;
         if(coord.x >= 0.0f && coord.x < bufW && coord.y >= 0.0f && coord.y < bufH) {
@@ -450,8 +483,10 @@ internal class SceneView
         }
     }
 
-    public CapturedFrame CaptureScene(Texture2D.TextureFormat format)
+    public CapturedFrame? CaptureScene(Texture2D.TextureFormat format)
     {
+        if (renderBuffer == null)
+            return null;
         var guid = Guid.NewGuid().ToString();
         var tex = new CapturedFrame(renderBuffer.Size.Item1, renderBuffer.Size.Item2, format) { 
             colorSpace = renderBuffer.ColorSpace,

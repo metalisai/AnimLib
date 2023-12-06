@@ -522,7 +522,7 @@ internal partial class GlWorldRenderer : IRenderer {
                     meshes[i] = new ColoredTriangleMesh {
                         //Transform = cube.Transform,
                         modelToWorld = cube.ModelToWorld(ctx.entRes),
-                        Geometry = rs.cubeGeometry,
+                        Geometry = rs.cubeGeometry!,
                         Tint = cube.color,
                         Shader = BuiltinShader.CubeShader,
                         entityId = cube.entityId,
