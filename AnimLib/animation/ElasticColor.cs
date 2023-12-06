@@ -8,8 +8,13 @@ namespace AnimLib;
 /// Animated color that can be set and returns to a default color
 /// </summary>
 public class ElasticColor {
+    /// <summary>
+    /// The mode of the elastic color.
+    /// </summary>
     public enum Mode {
+        /// <summary> Immediate change on set, returns elasticly </summary>
         EaseOut,
+        /// <summary> Elasticly change on set, returns elasticly </summary>
         EaseInOut,
     }
 
@@ -28,6 +33,9 @@ public class ElasticColor {
     Action<Color> setAction = (x) => {
     };
 
+    /// <summary>
+    /// The action to be called when the color is changed.
+    /// </summary>
     public Action<Color> Action {
         set {
             this.setAction = value;
@@ -44,6 +52,13 @@ public class ElasticColor {
         return ret;
     }
 
+    /// <summary>
+    /// Create a new elastic color.
+    /// </summary>
+    /// <param name="setAction"> The action to set the color </param>
+    /// <param name="returnColor"> The default color </param>
+    /// <param name="returnSpeed"> The speed at which the color returns to the default color </param>
+    /// <param name="mode"> The mode of the elastic color </param>
     public ElasticColor(Action<Color> setAction, Color returnColor, float returnSpeed, Mode mode = Mode.EaseOut) {
         this.mode = mode;
         this.setAction = setAction;
@@ -77,6 +92,9 @@ public class ElasticColor {
             }, src.Token);
     }
 
+    /// <summary>
+    /// The current color value.
+    /// </summary>
     public Color Color {
         get {
             return new Color(currentColor);
@@ -92,12 +110,18 @@ public class ElasticColor {
         }
     }
 
+    /// <summary>
+    /// The speed at which the color returns to the default color.
+    /// </summary>
     public float ReturnSpeed {
         set {
             this.speed = value;
         }
     }
 
+    /// <summary>
+    /// Stop being elastic.
+    /// </summary>
     public void Stop() {
         src.Cancel();
     }

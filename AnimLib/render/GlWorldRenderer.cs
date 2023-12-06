@@ -22,7 +22,6 @@ internal partial class GlWorldRenderer : IRenderer {
 
     int drawId = 0;
 
-    private EntityStateResolver entRes;
     private OpenTKPlatform platform;
     private RenderState rs;
 
@@ -33,6 +32,10 @@ internal partial class GlWorldRenderer : IRenderer {
     System.Diagnostics.Stopwatch sw;
     EffectBuffer effectBuffer;
     GlKawaseBlur kawaseBlur;
+
+    private struct FrameContext {
+        public required EntityStateResolver entRes;
+    }
 
     public GlWorldRenderer(OpenTKPlatform platform, RenderState rs) {
         this.platform = platform;
@@ -58,11 +61,9 @@ internal partial class GlWorldRenderer : IRenderer {
 
     public void RenderCanvases(IBackendRenderBuffer buffer, CanvasSnapshot[] canvases, M4x4 mat) {
         using var _ = new Performance.Call("WorldRenderer.RenderCanvases");
-        // with software rendering the canvas has to be cleared manually
-        // with OpenGL the renderbuffer is cleared by our renderer
-        /*if(platform.Skia.Mode == SkiaRenderer.RenderMode.Software) {
-            platform.Skia.Clear();
-        }*/
+        if (platform.Skia == null) {
+            return;
+        }
         // save OpenGL state (Skia might modify it in HW rendering mode)
         PushState();
         // draw 2D last so that they are always in front
@@ -78,7 +79,7 @@ internal partial class GlWorldRenderer : IRenderer {
         }
     }
 
-    public void RenderBeziers(BezierState[] beziers, M4x4 mat, M4x4 orthoMat, IBackendRenderBuffer buf) {
+    private void RenderBeziers(BezierState[] beziers, M4x4 mat, M4x4 orthoMat, IBackendRenderBuffer buf, in FrameContext ctx) {
         if(beziers.Length > 0) {
             GL.Disable(EnableCap.CullFace);
             GL.Disable(EnableCap.DepthTest);
@@ -99,7 +100,7 @@ internal partial class GlWorldRenderer : IRenderer {
                 M4x4 modelToWorld, modelToClip;
                 if(bz.points == null || bz.points.Length < 3)
                     continue;
-                modelToWorld = bz.ModelToWorld(entRes);
+                modelToWorld = bz.ModelToWorld(ctx.entRes);
                 modelToClip = mat * modelToWorld;
                 GL.UniformMatrix4(loc, 1, false, ref modelToClip.m11);
                 var col4 = Vector4.FromInt32(bz.color.ToU32());
@@ -217,10 +218,10 @@ internal partial class GlWorldRenderer : IRenderer {
         }
     }
 
-    public void RenderGlyphs(Vector2 screenSize, GlyphState[] gs, CameraState worldCamera) {
+    private void RenderGlyphs(Vector2 screenSize, GlyphState[] gs, CameraState worldCamera, in FrameContext ctx) {
         var mat = M4x4.Ortho(0.0f, screenSize.x, 0.0f, screenSize.y, -1.0f, 1.0f);
         foreach(var ch in gs) {
-            var modelToWorld = ch.ModelToWorld(entRes);
+            var modelToWorld = ch.ModelToWorld(ctx.entRes);
             //Vector2 anchorPos = ch.anchor * screenSize;
             Vector3 pos = new Vector3(modelToWorld.m14, modelToWorld.m24, modelToWorld.m34);
             //pos += (Vector3)anchorPos;
@@ -373,7 +374,7 @@ internal partial class GlWorldRenderer : IRenderer {
         buf.Resize(w, h);
         effectBuffer.Resize(w, h);
         // TODO: this is wrong!
-        platform.Skia.SetBuffer(buf);
+        platform.Skia?.SetBuffer(buf);
         Debug.TLog($"Created new DepthPeelRenderBuffer with size {w}x{h}");
 
         renderBuffers.Add(id, buf);
@@ -384,8 +385,11 @@ internal partial class GlWorldRenderer : IRenderer {
         using var _ = new Performance.Call("WorldRenderer.RenderScene");
 
         this.gizmo = gizmo;
-        entRes = ss.resolver;
         long passedcount = 0;
+
+        var ctx = new FrameContext {
+            entRes = ss.resolver
+        };
 
         var rb0 = ss.RenderBuffers[0];
         var w = rb0.Width;
@@ -493,7 +497,7 @@ internal partial class GlWorldRenderer : IRenderer {
                     }
                     mbg.UpdateMesh(geom);
                     meshes[i] = new ColoredTriangleMesh {
-                        modelToWorld = mbg.ModelToWorld(entRes),
+                        modelToWorld = mbg.ModelToWorld(ctx.entRes),
                         Geometry = geom, 
                         /*Outline = mbg.Outline,
                         OutlineWidth = mbg.OutlineWidth,*/
@@ -517,7 +521,7 @@ internal partial class GlWorldRenderer : IRenderer {
                 foreach(var cube in ss.Cubes) {
                     meshes[i] = new ColoredTriangleMesh {
                         //Transform = cube.Transform,
-                        modelToWorld = cube.ModelToWorld(entRes),
+                        modelToWorld = cube.ModelToWorld(ctx.entRes),
                         Geometry = rs.cubeGeometry,
                         Tint = cube.color,
                         Shader = BuiltinShader.CubeShader,
@@ -531,7 +535,7 @@ internal partial class GlWorldRenderer : IRenderer {
                 RenderMeshes(ss.Meshes, worldToClip, smat);
             }
             if(ss.Beziers != null) {
-                RenderBeziers(ss.Beziers, worldToClip, smat, mainBuffer);
+                RenderBeziers(ss.Beziers, worldToClip, smat, mainBuffer, in ctx);
             }
 
             GL.EndQuery(QueryTarget.SamplesPassed);
@@ -552,7 +556,7 @@ internal partial class GlWorldRenderer : IRenderer {
         }
 
         if(ss.Glyphs != null) {
-            RenderGlyphs(new Vector2(pbSize.w, pbSize.h), ss.Glyphs, cam);
+            RenderGlyphs(new Vector2(pbSize.w, pbSize.h), ss.Glyphs, cam, in ctx);
         }
 
         GL.DeleteQuery(query);

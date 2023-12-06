@@ -22,7 +22,11 @@ internal class BezierState : EntityState3D {
     }
 }
 
+/// <summary>
+/// A bezier spline in 3D space. Not volumetric.
+/// </summary>
 public class BezierSpline : VisualEntity3D {
+    /// <summary> Line width of the spline </summary>
     public float Width {
         get {
             return ((BezierState)state).width;
@@ -33,6 +37,7 @@ public class BezierSpline : VisualEntity3D {
         }
     }
 
+    /// <summary> Color of the spline </summary>
     public Color Color {
         get {
             return ((BezierState)state).color;
@@ -43,12 +48,13 @@ public class BezierSpline : VisualEntity3D {
         }
     }
 
+    /// <summary> The points of the spline </summary>
     public Vector3[] Points {
         get {
             return ((BezierState)state).points;
         }
         set {
-            if((value?.Length ?? 0) < 3) {
+            if((value.Length) < 3) {
                 Debug.Error("Bezier spline must have at least 3 points");
                 return;
             }
@@ -57,6 +63,8 @@ public class BezierSpline : VisualEntity3D {
         }
     }
 
+    /// <summary> Make the spline c1 continuous </summary>
+    /// <param name="ps"> The points of the spline </param>
     public static void MakeContinuous(Vector3[] ps) {
         int count = (ps.Length - 1)/2 - 1;
         for(int i = 0; i < count; i++) {
@@ -64,18 +72,22 @@ public class BezierSpline : VisualEntity3D {
         }
     }
 
+    /// <summary> Make this spline c1 continuous </summary>
     public void MakeContinuous() {
         var ps = Points.ToArray();
         MakeContinuous(ps);
         Points = ps; // force update command
     }
 
+    /// <summary> Create a new bezier spline </summary>
     public BezierSpline() : base(new BezierState()) {
     }
 
+    /// <summary> Copy constructor </summary>
     public BezierSpline(BezierSpline bs) : base(bs) {
     }
 
+    /// <summary> Clone this spline </summary>
     public override object Clone() {
         return new BezierSpline(this);
     }

@@ -4,7 +4,7 @@ using System.Linq;
 namespace AnimLib;
 
 internal class SolidLineState : MeshBackedGeometry {
-    public Vector3[] points;
+    public Vector3[] points = Array.Empty<Vector3>();
     public Color color;
     public float width;
     // this is used to animate lines (from 0 to 1, how much of the line is visible)
@@ -41,7 +41,8 @@ internal class SolidLineState : MeshBackedGeometry {
     }
 }
 
-public class SolidLine : VisualEntity3D {
+// TODO: refactor
+internal class SolidLine : VisualEntity3D {
     public Vector3[] Points { 
         get {
             return ((SolidLineState)state).points;

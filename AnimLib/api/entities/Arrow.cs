@@ -83,7 +83,8 @@ internal class ArrowState : MeshBackedGeometry
     }
 }
 
-public class Arrow2D : VisualEntity3D
+// TODO: refactor
+internal class Arrow2D : VisualEntity3D
 {
     public Vector3 StartPoint {
         get {

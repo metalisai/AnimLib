@@ -1,4 +1,3 @@
-
 namespace AnimLib;
 
 internal class CubeState : EntityState3D
@@ -17,7 +16,12 @@ internal class CubeState : EntityState3D
         return new CubeState(this);
     }
 }
+
+/// <summary>
+/// A 3D cube.
+/// </summary>
 public class Cube : VisualEntity3D/*, ICloneable*/ {
+    /// <summary> Color of the cube </summary>
     public Color Color { 
         get {
             return ((CubeState)state).color;
@@ -28,12 +32,21 @@ public class Cube : VisualEntity3D/*, ICloneable*/ {
         }
     }
 
+    /// <summary>
+    /// Create a new cube.
+    /// </summary>
     public Cube() : base(new CubeState()) {
     }
 
+    /// <summary>
+    /// Copy constructor.
+    /// </summary>
     public Cube(Cube cube) : base(cube) {
     }
 
+    /// <summary>
+    /// Clone this cube.
+    /// </summary>
     public override object Clone() {
         return new Cube(this);
     }

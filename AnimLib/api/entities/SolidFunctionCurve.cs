@@ -4,7 +4,7 @@ using System.Linq;
 namespace AnimLib;
 
 internal class SolidFunctionCurveState : MeshBackedGeometry {
-    public Vector2[] handles;
+    public Vector2[] handles = Array.Empty<Vector2>();
     public Color color;
     public float width;
     public float startX;
@@ -19,8 +19,6 @@ internal class SolidFunctionCurveState : MeshBackedGeometry {
     public SolidFunctionCurveState(Func<float,float> f, RendererHandle handle, string owner) : base(handle, owner) {
         func = f;
     }
-
-    public SolidFunctionCurveState(RendererHandle handle, string owner) : base(handle, owner) { }
 
     public SolidFunctionCurveState(SolidFunctionCurveState sfcs) : base(sfcs) {
         this.handles = sfcs.handles.ToArray();
@@ -50,7 +48,8 @@ internal class SolidFunctionCurveState : MeshBackedGeometry {
     }
 }
 
-public class SolidFunctionCurve : VisualEntity3D {
+/// TODO: refactor
+internal class SolidFunctionCurve : VisualEntity3D {
     public Vector2[] Handles {
         get {
             return ((SolidFunctionCurveState)state).handles;
