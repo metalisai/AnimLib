@@ -50,6 +50,7 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
 
     private int _defaultProgram;
     private int _blitProgram, _imguiProgram;
+    private bool _useSkiaSoftware;
 
     List<int> _programs = new List<int>();
 
@@ -70,9 +71,10 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
     public static ConcurrentBag<string> destroyedOwners = new ConcurrentBag<string>();
     public Dictionary<string, AllocatedResources> allocatedResources = new Dictionary<string, AllocatedResources>();
 
-    public OpenTKPlatform(int width, int height) : base(width, height, new OpenTK.Graphics.GraphicsMode(), "Test", 0 , DisplayDevice.Default, 3, 3, OpenTK.Graphics.GraphicsContextFlags.ForwardCompatible) {
+    public OpenTKPlatform(int width, int height, bool skiaSoftware = false) : base(width, height, new OpenTK.Graphics.GraphicsMode(), "Test", 0 , DisplayDevice.Default, 3, 3, OpenTK.Graphics.GraphicsContextFlags.ForwardCompatible) {
         Width = width;
         Height = height;
+        _useSkiaSoftware = skiaSoftware;
 
         FileDrop += (object? sender, OpenTK.Input.FileDropEventArgs args) => {
             if(PFileDrop != null) {
@@ -220,8 +222,12 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
 
         // skia
         Skia = new SkiaRenderer(this);
-        Skia.CreateGL(true); // messes up render state when scene has textures, arc rendering buggy
-        //Skia.CreateSW(true); // HDR is very slow
+        if (!_useSkiaSoftware) {
+            Skia.CreateGL(true);
+        } else {
+            // FYI this is unusably slow with HDR backbuffer
+            Skia.CreateSW(true);
+        }
 
         if(OnLoaded != null) {
             OnLoaded(this, new());

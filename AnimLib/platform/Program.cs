@@ -5,6 +5,7 @@ using System.Runtime.Loader;
 using System.Linq;
 using System.Threading;
 using System.Collections.Concurrent;
+using System.CommandLine;
 
 namespace AnimLib;
 
@@ -18,8 +19,7 @@ class SyncCtx : SynchronizationContext {
     }
 
     public void InvokeAllPosted() {
-        (SendOrPostCallback, object) d;
-        while(postedCallbacks.TryTake(out d)) {
+        while(postedCallbacks.TryTake(out var d)) {
             d.Item1.Invoke(d.Item2);
         }
     }
@@ -62,8 +62,12 @@ internal class Program
         }
     }
 
-    static AnimationBehaviour LoadBehaviour(string fullpath) {
+    static AnimationBehaviour? LoadBehaviour(string fullpath) {
         System.Console.WriteLine($"Trying to load animation assembly {fullpath}");
+        if (watcher == null)
+        {
+            Debug.Warning($"Behaviour watch not started when loading a behaviour, automatic hot reload will not work.");
+        }
         var assemblyLoadContext = new AssemblyLoadContext("asmloadctx", true);
         try {
             using (var fs = new FileStream(fullpath, FileMode.Open, FileAccess.Read))
@@ -81,19 +85,23 @@ internal class Program
                 }
                 var instance = Activator.CreateInstance(animPlugins[0]);
                 //assemblyLoadContext.Unload();
-                watcher.EnableRaisingEvents = true;
+                if (watcher != null) {
+                    watcher.EnableRaisingEvents = true;
+                }
                 System.Console.WriteLine($"Animation behaviour loaded");
-                return (AnimationBehaviour)instance;
+                return instance as AnimationBehaviour;
             }
         }
         catch (Exception e) {
             Debug.Error($"Exception when loading behaviour: {e}\nUsing empty behaviour");
-            watcher.EnableRaisingEvents = true;
+            if (watcher != null) {
+                watcher.EnableRaisingEvents = true;
+            }
             return new EmptyBehaviour();
         }
     }
 
-    static AnimationBehaviour LoadAndWatchBehaviour(string fullpath, AnimationPlayer player) {
+    static AnimationBehaviour? LoadAndWatchBehaviour(string fullpath, AnimationPlayer player) {
         if (watcher != null)
         {
             Debug.Log($"Current behaviour watch disposed");
@@ -101,8 +109,13 @@ internal class Program
             watcher = null;
         }
         Debug.Log($"Starting new behaviour watch on {fullpath}");
+        var path = Path.GetDirectoryName(fullpath);
+        if (path == null) { 
+            Debug.Error($"Could not get directory name of {fullpath}");
+            return null;
+        }
         watcher = new FileSystemWatcher();
-        watcher.Path = Path.GetDirectoryName(fullpath);
+        watcher.Path = path;
         watcher.NotifyFilter = NotifyFilters.LastWrite;
         watcher.Filter = Path.GetFileName(fullpath);
         watcher.Changed += (s, args) => OnChanged(s, args, player);
@@ -110,12 +123,12 @@ internal class Program
         return LoadBehaviour(fullpath);
     }
 
-    static FileSystemWatcher watcher;
+    static FileSystemWatcher? watcher;
 
-    [STAThread]
-    static void Main(string[] args)
-    {
-        var platform = new OpenTKPlatform(1024, 1024);
+    static void LaunchEditor(bool useSkiaSoftware = false) {
+        var platform = new OpenTKPlatform(1024, 1024, 
+            skiaSoftware: useSkiaSoftware
+        );
         var renderState = new RenderState(platform);
 
         AnimationPlayer player = new (new NoProjectBehaviour());
@@ -154,7 +167,6 @@ internal class Program
         };
 
         renderState.OnPreRender += () => {
-            WorldSnapshot ret;
             mainCtx.InvokeAllPosted();
 
             // render animation handle UI
@@ -187,10 +199,10 @@ internal class Program
 
             // render editor UI
             pctrl.DoInterface();
-            var frameStatus = player.NextFrame(1.0/refreshRate, out ret);
+            var frameStatus = player.NextFrame(1.0/refreshRate, out var ret);
             i++;
             if(frameStatus == AnimationPlayer.FrameStatus.New) {
-                renderState.SetScene(ret);
+                renderState.SetScene(ret!);
             }
             renderState.SceneStatus = frameStatus;
             renderState.RenderGizmos = !player.Exporting;
@@ -202,6 +214,32 @@ internal class Program
         player.Close();
         Console.WriteLine("Application closing");
         if(watcher != null) watcher.Dispose();
+    }
+
+    [STAThread]
+    static void Main(string[] args)
+    {
+        // Please don't let interns write system libraries
+        // Why is System.CommandLine so bad?
+        // Something this trivial should be intuitive to write
+        // Don't force me to read the docs
+        // Don't force me to use your control flow
+        // Just parse the damn args and give me the values
+        //
+        var skiaSoftwareOption = new Option<bool>(
+            "--skia-software", 
+            "Use SkiaSharp software rendering"
+        );
+        var rootCommand = new RootCommand("Animation editor");
+        rootCommand.AddOption(skiaSoftwareOption);
+        skiaSoftwareOption.IsRequired = false;
+        rootCommand.SetHandler( (useSw) => {
+                Debug.Log($"Using SkiaSharp software rendering: {useSw}");
+                LaunchEditor(useSw);
+            }, skiaSoftwareOption
+        );
+        var code = rootCommand.Invoke(args);
+        Debug.Log($"Root command returned {code}. Exiting");
     }
 
     static void ExHandler(object sender, UnobservedTaskExceptionEventArgs args) {

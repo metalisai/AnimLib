@@ -523,11 +523,15 @@ internal partial class SkiaRenderer
 
     public void Flush(int entityId) {
         ctx?.ResetContext();
-        canvas.Flush();
+        canvas?.Flush();
 
         // blit software buffer to scren
         if(mode == RenderMode.Software) {
-            using(var img = surface.Snapshot()) {
+            using(var img = surface?.Snapshot()) {
+                if(img == null) {
+                    Debug.Error("SkiaRenderer: surface snapshot failed");
+                    return;
+                }
                 if(tex == null) {
                     tex = new Texture2D("SkiaRenderer"); 
                 }
@@ -553,6 +557,7 @@ internal partial class SkiaRenderer
                 } else {
                     Debug.Error("Failed to read Skia surface pixels");
                 }
+                pinned.Free();
             }
         }
         // TODO: blit entityId in OpenGL mode
