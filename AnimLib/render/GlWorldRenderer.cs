@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Linq;
 using OpenTK.Graphics.OpenGL4;
 using System.Collections.Generic;
@@ -122,6 +123,9 @@ internal partial class GlWorldRenderer : IRenderer {
     }
 
     public void RenderMeshes(ColoredTriangleMesh[] meshes, M4x4 camMat, M4x4 screenMat) {
+        var colorSize = Marshal.SizeOf(typeof(Color));
+        var vertSize = Marshal.SizeOf(typeof(Vector3));
+        var edgeSize = Marshal.SizeOf(typeof(Vector2));
         using var _ = new Performance.Call("WorldRenderer.RenderMeshes");
         if(meshes.Length > 0) {
             // TODO: winding order is wrong?
@@ -168,11 +172,16 @@ internal partial class GlWorldRenderer : IRenderer {
                         GL.BindBuffer(BufferTarget.ElementArrayBuffer, ebo);
                         GL.EnableVertexAttribArray(0);
                         GL.EnableVertexAttribArray(1);
-                        GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 12, 0);
-                        GL.VertexAttribPointer(1, 4, VertexAttribPointerType.UnsignedByte, true, 4, new IntPtr(vertCount*12));
-                        if(m.Geometry.edgeCoordinates != null) {
+                        GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, vertSize, 0);
+                        GL.VertexAttribPointer(1, 4, VertexAttribPointerType.Float, false, colorSize, new IntPtr(vertCount*vertSize));
+#if DEBUG
+                        if ((new Color()).r.GetType() != typeof(float)) {
+                            throw new Exception("Color.r is not float, VertexAttribPointer expects float!");
+                        }
+#endif
+                        if(m.Geometry.edgeCoordinates != null && m.Geometry.edgeCoordinates.Length > 0) {
                             GL.EnableVertexAttribArray(2);
-                            GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, 0, new IntPtr(vertCount*(12+4)));
+                            GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, 0, new IntPtr(vertCount*(vertSize+colorSize)));
                         }
                         m.Geometry.VAOHandle = vao;
                         m.Geometry.VBOHandle = vbo;
@@ -193,12 +202,18 @@ internal partial class GlWorldRenderer : IRenderer {
                         vao = m.Geometry.VAOHandle;    
                         GL.BindVertexArray(vao);
                     }
+
+                    IntPtr colorOffset = new IntPtr(vertCount*vertSize);
+                    IntPtr edgeOffset = new IntPtr(vertCount*(vertSize+colorSize));
+
+                    Debug.TLog($"colsize: {colorSize}, vertsize: {vertSize}, edgesize: {edgeSize}");
+
                     GL.BindBuffer(BufferTarget.ArrayBuffer, m.Geometry.VBOHandle);
-                    GL.BufferData(BufferTarget.ArrayBuffer, vertCount*(12+4+8), IntPtr.Zero, BufferUsageHint.DynamicDraw);
-                    GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, vertCount*12, ref m.Geometry.vertices[0].x);
-                    GL.BufferSubData(BufferTarget.ArrayBuffer, new IntPtr(vertCount*12), vertCount*4, ref m.Geometry.colors[0]);
-                    if(m.Geometry.edgeCoordinates != null) {
-                        GL.BufferSubData(BufferTarget.ArrayBuffer, new IntPtr(vertCount*(12+4)), vertCount*8, ref m.Geometry.edgeCoordinates[0]);
+                    GL.BufferData(BufferTarget.ArrayBuffer, vertCount*(vertSize+colorSize+edgeSize), IntPtr.Zero, BufferUsageHint.DynamicDraw);
+                    GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, vertCount*vertSize, ref m.Geometry.vertices[0].x);
+                    GL.BufferSubData(BufferTarget.ArrayBuffer, colorOffset, vertCount*colorSize, ref m.Geometry.colors[0]);
+                    if(m.Geometry.edgeCoordinates != null && m.Geometry.edgeCoordinates.Length > 0) {
+                        GL.BufferSubData(BufferTarget.ArrayBuffer, edgeOffset, vertCount*edgeSize, ref m.Geometry.edgeCoordinates[0]);
                     }
                     GL.BindBuffer(BufferTarget.ElementArrayBuffer, m.Geometry.EBOHandle);
                     GL.BufferData(BufferTarget.ElementArrayBuffer, m.Geometry.indices.Length*4, ref m.Geometry.indices[0], BufferUsageHint.StaticDraw);
@@ -209,7 +224,7 @@ internal partial class GlWorldRenderer : IRenderer {
                 M4x4 modelToClip;
                 modelToClip = !m.is2d ? camMat*m.modelToWorld : screenMat;
                 GL.UniformMatrix4(loc, 1, false, ref modelToClip.m11);
-                var col4 = Vector4.FromInt32(m.Tint.ToU32());
+                var col4 = m.Tint.ToVector4();
                 GL.Uniform4(colLoc, col4.x, col4.y, col4.z, col4.w);
                 GL.Uniform1(entLoc, m.entityId);
                 GL.DrawElements(PrimitiveType.Triangles, m.Geometry.indices.Length, DrawElementsType.UnsignedInt, 0);
