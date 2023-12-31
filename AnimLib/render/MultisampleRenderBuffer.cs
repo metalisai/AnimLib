@@ -21,7 +21,7 @@ internal class MultisampleRenderBuffer : IBackendRenderBuffer, IDisposable{
         this.platform = platform;
     }
 
-    public void Bind()
+    public void BindForRender()
     {
         if(_fbo != -1)
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fbo);
@@ -240,6 +240,8 @@ internal class MultisampleRenderBuffer : IBackendRenderBuffer, IDisposable{
         GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, rbuf);
     }
 
+    public bool IsMultisampled { get { return true; } }
+
     public void Dispose() {
         DeleteBuffers();
         GL.DeleteFramebuffer(_fbo);
@@ -255,4 +257,12 @@ internal class MultisampleRenderBuffer : IBackendRenderBuffer, IDisposable{
     }
 
     public bool IsHDR { get { return false; } }
+
+    public void MakePresentable() {
+        throw new NotImplementedException();
+    }
+
+    public void BindForPostProcess() {
+        throw new NotImplementedException();
+    }
 }

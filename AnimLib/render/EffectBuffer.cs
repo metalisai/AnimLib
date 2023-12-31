@@ -92,7 +92,7 @@ internal partial class EffectBuffer : IDisposable {
         GL.BindSampler(0, _sampler);
         GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
         
-        rb.Bind();
+        rb.BindForPostProcess();
         GL.UseProgram(platform.BlitProgram);
         mainTexLoc = GL.GetUniformLocation(platform.BlitProgram, "_MainTex");
         viewportSizeLoc = GL.GetUniformLocation(_acesProgram, "_ViewportSize");

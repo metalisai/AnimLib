@@ -215,7 +215,7 @@ internal partial class GlWorldRenderer : IRenderer {
                         GL.BufferSubData(BufferTarget.ArrayBuffer, edgeOffset, vertCount*edgeSize, ref m.Geometry.edgeCoordinates[0]);
                     }
                     GL.BindBuffer(BufferTarget.ElementArrayBuffer, m.Geometry.EBOHandle);
-                    GL.BufferData(BufferTarget.ElementArrayBuffer, m.Geometry.indices.Length*4, ref m.Geometry.indices[0], BufferUsageHint.StaticDraw);
+                    GL.BufferData(BufferTarget.ElementArrayBuffer, m.Geometry.indices.Length*4, ref m.Geometry.indices[0], BufferUsageHint.DynamicDraw);
                     GL.BindVertexArray(0);
                     m.Geometry.Dirty = false;
                 }
@@ -386,7 +386,7 @@ internal partial class GlWorldRenderer : IRenderer {
     }
 
     public IBackendRenderBuffer CreateBuffer(int w, int h, int id) {
-        var buf = new DepthPeelRenderBuffer(platform, platform.PresentedColorSpace);
+        var buf = new DepthPeelRenderBuffer(platform, platform.PresentedColorSpace, true);
         buf.Resize(w, h);
         effectBuffer.Resize(w, h);
         // TODO: this is wrong!
@@ -440,7 +440,15 @@ internal partial class GlWorldRenderer : IRenderer {
         GL.Viewport(0, 0, mainBuffer.Size.w, mainBuffer.Size.h);
         GL.Enable(EnableCap.PolygonOffsetFill);
 
-        mainBuffer.Bind();
+        // combination of depth peeling and multisampling requires sample shading
+        if (pb.IsMultisampled) {
+            GL.Enable(EnableCap.SampleShading);
+            GL.MinSampleShading(1.0f);
+        } else {
+            GL.Disable(EnableCap.SampleShading);
+        }
+
+        mainBuffer.BindForRender();
         GL.DepthMask(true);
         GL.ClearDepth(1.0f);
         GL.Clear(ClearBufferMask.DepthBufferBit);
@@ -494,7 +502,7 @@ internal partial class GlWorldRenderer : IRenderer {
             GL.BeginQuery(QueryTarget.SamplesPassed, query);
             //GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
 
-            if(ss.MeshBackedGeometries != null) {
+            if(ss.MeshBackedGeometries != null && ss.MeshBackedGeometries.Length > 0) {
                 int i = 0;
                 ColoredTriangleMesh[] meshes = new ColoredTriangleMesh[ss.MeshBackedGeometries.Length];
                 var throwawayGeometries = new List<ColoredTriangleMeshGeometry>();
@@ -523,6 +531,9 @@ internal partial class GlWorldRenderer : IRenderer {
                         entityId = mbg.entityId
                     };
                     i++;
+                }
+                if (!pb.IsMultisampled) {
+                    throw new Exception("need to use sampler2D instead of sampler2DMS");
                 }
                 RenderMeshes(meshes, worldToClip, smat);
                 foreach(var geom in throwawayGeometries) {
@@ -582,6 +593,10 @@ internal partial class GlWorldRenderer : IRenderer {
             Debug.Warning($"Rendering frame took {p} depth peels. Samples passed: {passedcount}");
         }
 
+        if (pb.IsMultisampled) {
+            GL.Disable(EnableCap.SampleShading);
+        }
+
         // skia
 
         // render skia (all skia GL commands get executed here)
@@ -590,17 +605,18 @@ internal partial class GlWorldRenderer : IRenderer {
         if(ss.Canvases != null)
             RenderCanvases(mainBuffer, ss.Canvases, worldToClip);
 
-        //pb.ApplyEffect(effectBuffer, true);
+        pb.MakePresentable(); // make presentable so blur can read it
         kawaseBlur.ApplyBlur(pb);
-        //pb.ApplyEffect(effectBuffer, false);
+        //pb.MakePresentable(); // make presentable so color map can read it
         effectBuffer.ApplyAcesColorMap(pb);
+        //pb.MakePresentable(); // make presentable with blur applied
 
         sw.Stop();
         Performance.TimeToRenderCanvases = sw.Elapsed.TotalSeconds;
         // render skia (all skia GL commands get executed here)
         //platform.Skia.Flush();
         // render skia (all skia GL commands get executed here)
-        
+
         foreach (var buf in this.renderBuffers.Values) {
             buf.OnPostRender();
         }

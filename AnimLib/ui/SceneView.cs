@@ -70,6 +70,12 @@ internal class SceneView
         }
     }
 
+    public bool IsTextureMultisampled {
+        get {
+            return renderBuffer?.IsMultisampled ?? false;
+        }
+    }
+
     public int BufferWidth {
         get {
             return this.bufferWidth;
@@ -493,7 +499,7 @@ internal class SceneView
         var tex = new CapturedFrame(renderBuffer.Size.Item1, renderBuffer.Size.Item2, format) { 
             colorSpace = renderBuffer.ColorSpace,
         };
-        renderBuffer.Bind();
+        renderBuffer.BindForRender();
         renderBuffer.ReadPixels(ref tex.data[0], format);
         return tex;
     }

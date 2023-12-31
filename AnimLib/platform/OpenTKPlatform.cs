@@ -385,7 +385,6 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
 
         foreach (var dc in data.commands)
         {
-            GL.BindTexture(TextureTarget.Texture2D, (int)dc.texture);
             int haveMipmap = 0;
             if(haveMipmap > 0 && (int)dc.texture>= 0) {
                 GL.BindSampler(0, mipmapSampler);
@@ -394,6 +393,7 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
             }
             // rendering a view within gui
             bool enabledCorrectGamma = false;
+                GL.BindTexture(TextureTarget.Texture2D, (int)dc.texture);
             if(views.Any(x => x.TextureHandle == (int)dc.texture)) {
                 GL.Uniform1(correctGammaLoc, 0); // don't correct gamma for views
                 enabledCorrectGamma = true; 
@@ -403,6 +403,8 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
                 GL.Uniform1(entIdLoc, 0xAAAAAAA);
             }
             GL.Scissor((int)dc.clipRect.Item1, Height - (int)dc.clipRect.Item4, (int)(dc.clipRect.Item3-dc.clipRect.Item1), (int)(dc.clipRect.Item4-dc.clipRect.Item2));
+#warning remove
+            GL.BindSampler(0, linearSampler);
             GL.DrawElementsBaseVertex(PrimitiveType.Triangles, (int)dc.elemCount, DrawElementsType.UnsignedShort, new IntPtr(dc.idxOffset*sizeof(ushort)), (int)dc.vOffset);
             GL.Enable(EnableCap.Blend);
             if(enabledCorrectGamma) {
@@ -424,7 +426,7 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         GL.Enable(EnableCap.PolygonOffsetFill);
         System.Diagnostics.Debug.Assert(pb is DepthPeelRenderBuffer);
 
-        pb.Bind();
+        pb.BindForRender();
         GL.DepthMask(true);
         GL.ClearDepth(1.0f);
         GL.Clear(ClearBufferMask.DepthBufferBit);
@@ -455,6 +457,7 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
             GL.UseProgram(prog);
             GL.ProgramUniform1(prog, loc, 1);
             GL.BindTextureUnit(1, pb.PeelTex);
+            GL.BindSampler(1, blitSampler);
         }
         RenderImGui(data, views, rb);
         pb.NextLayer();

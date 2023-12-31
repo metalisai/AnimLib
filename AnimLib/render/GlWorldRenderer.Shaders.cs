@@ -391,16 +391,17 @@ void main() {
 }";
 
 string cubeFrag = @"#version 330
+#extension GL_ARB_sample_shading : enable
 layout(location = 0) out vec4 outColor;
 layout(location = 1) out int outEntityId;
 in vec4 v_color;
 in vec3 v_modelPos;
 uniform vec4 _Color;
 uniform vec4 _Outline;
-uniform sampler2D _depthPeelTex;
+uniform sampler2DMS _depthPeelTex;
 uniform int _EntityId;
 void main() {
-    float depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), 0).x;
+    float depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), gl_SampleID).x;
     if(gl_FragCoord.z >= depth) {
         discard;
     }
@@ -461,16 +462,17 @@ void main() {
 ";
 
 string meshFrag = @"#version 330
+#extension GL_ARB_sample_shading : enable
 layout(location = 0) out vec4 outColor;
 layout(location = 1) out int outEntityId;
 in vec4 g_color;
 in vec3 g_bary;
 uniform vec4 _Color;
 uniform vec4 _Outline;
-uniform sampler2D _depthPeelTex;
+uniform sampler2DMS _depthPeelTex;
 uniform int _EntityId;
 void main() {
-    float depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), 0).x;
+    float depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), gl_SampleID).x;
     if(gl_FragCoord.z >= depth) {
         discard;
     }

@@ -196,7 +196,7 @@ internal partial class GlKawaseBlur : IDisposable
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBaseLevel, 0);
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, 1000);
 
-        rb.Bind();
+        rb.BindForPostProcess();
         GL.UseProgram(platform.BlitProgram);
 
         // blit back onto source with additive blending
@@ -209,8 +209,6 @@ internal partial class GlKawaseBlur : IDisposable
         GL.BlendEquationSeparate(BlendEquationMode.FuncAdd, BlendEquationMode.FuncAdd);
 
         GL.Viewport(0, 0, w, h);
-        GL.Uniform2(viewportLoc, w, h);
-        GL.Uniform1(lodLoc, 0);
         GL.BindTextureUnit(0, _colorTex2);
         GL.BindSampler(0, _linearSampler);
         GL.BindVertexArray(platform.blitvao);

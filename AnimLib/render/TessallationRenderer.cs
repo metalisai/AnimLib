@@ -83,41 +83,6 @@ partial class TessallationRenderer : IRenderer, IDisposable {
         GL.BindVertexArray(0);
     }
 
-    /*public void RenderCircles(CircleState[] circles)
-    {
-        GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
-        if(circles.Length > 0) {
-            GL.Disable(EnableCap.CullFace);
-            GL.Enable(EnableCap.DepthTest);
-            GL.UseProgram(_circleProgram);
-            GL.PatchParameter(PatchParameterInt.PatchVertices, 1);
-            var m2wL = GL.GetUniformLocation(_circleProgram, "_ModelToWorld");
-            var w2cL = GL.GetUniformLocation(_circleProgram, "_WorldToClip");
-            var cwpL = GL.GetUniformLocation(_circleProgram, "_CamPosWorld");
-            var rL = GL.GetUniformLocation(_circleProgram, "_Radius");
-            //var loc = GL.GetUniformLocation(_standardProgram, "_ModelToClip");
-            var colLoc = GL.GetUniformLocation(_circleProgram, "_Color");
-            var entLoc = GL.GetUniformLocation(_circleProgram, "_EntityId");
-            GL.VertexAttrib4(1, 1.0f, 1.0f, 1.0f, 1.0f);
-            GL.BindVertexArray(_circleVao);
-            foreach(var c in circles) {
-                M4x4 modelToWorld;
-                modelToWorld = c.ModelToWorld(entRes) * M4x4.Scale(new Vector3(c.radius, c.radius, c.radius));
-                //modelToClip = (c.is2d ? orthoMat : mat)*modelToWorld;
-                GL.UniformMatrix4(m2wL, 1, false, ref modelToWorld.m11);
-                GL.UniformMatrix4(w2cL, 1, false, ref ctx.worldToClip.m11);
-                GL.Uniform3(cwpL, ctx.camPosWorld.x, ctx.camPosWorld.y, ctx.camPosWorld.z);
-                GL.Uniform1(rL, c.radius);
-                var col4 = Vector4.FromInt32(c.color.ToU32());
-                GL.Uniform4(colLoc, col4.x, col4.y, col4.z, col4.w);
-                GL.Uniform1(entLoc, c.entityId);
-                //GL.DrawArrays(PrimitiveType.TriangleFan, 0, circleSegments+2);
-                GL.DrawArrays(PrimitiveType.Patches, 0, 1); 
-            }
-        }
-        GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
-    }*/
-
     public void RenderCubes(CubeState[] cubes, M4x4 mat)
     {
         if(cubes.Length > 0) {
