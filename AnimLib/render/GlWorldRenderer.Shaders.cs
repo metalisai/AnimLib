@@ -351,42 +351,23 @@ void main() {
 }";
 
 string staticLineFrag = @"#version 330
+#extension GL_ARB_sample_shading : enable
 layout(location = 0) out vec4 outColor;
 layout(location = 1) out int outEntityId;
 in vec4 v_color;
 in vec2 v_edgeCoord;
 uniform vec4 _Color;
 uniform vec4 _Outline;
-uniform sampler2D _depthPeelTex;
+uniform sampler2DMS _depthPeelTex;
 uniform int _EntityId;
 void main() {
-    float depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), 0).x;
+    float depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), gl_SampleID).x;
     if(gl_FragCoord.z >= depth) {
         discard;
     }
 
     vec3 outColorRGB = _Color.rgb*v_color.rgb;
-    //vec3 outColorRGB = vec3(abs(v_edgeCoord.y),0.0f, 0.0f);
-    float alpha = _Color.a*v_color.a;
-
-    const float r = 1.0;
-    const float smoothAmount = 2.0;
-    float dist = abs(v_edgeCoord.y);
-    float xdy = abs(dFdx(v_edgeCoord.y));
-    float ydy = abs(dFdy(v_edgeCoord.y));
-    float dy = length(vec2(xdy, ydy));
-    float b = 1.0 - smoothAmount*dy;
-    float a = smoothstep(r, r*b, dist);
-    alpha *= a;
-
-    float bcs = 1.0 - smoothAmount*dy*_Outline.w;
-    float bcmix = smoothstep(r*bcs, r*b*bcs, dist);
-    if(_Outline.w == 0.0) {
-        bcmix = 1.0;
-    }
-    vec3 oc = mix(_Outline.rgb, outColorRGB, bcmix);
-
-    outColor = vec4(oc, alpha);
+    outColor = vec4(outColorRGB, 1.0);
     outEntityId = _EntityId;
 }";
 

@@ -189,6 +189,7 @@ internal class WorldMachine {
             // TODO: populate these
             Rectangles = Array.Empty<RectangleState>(),
             Meshes = Array.Empty<ColoredTriangleMesh>(),
+            DynamicProperties = _dynamicProperties.ToDictionary(),
         };
         return ret;
     }
@@ -253,6 +254,9 @@ internal class WorldMachine {
             _beziers.RemoveAll(x => x.entityId == entityId);
             break;
             case SolidLineState l2:
+            _mbgeoms.RemoveAll(x => x.entityId == entityId);
+            break;
+            case MeshBackedGeometry mb1:
             _mbgeoms.RemoveAll(x => x.entityId == entityId);
             break;
             case CameraState c3:

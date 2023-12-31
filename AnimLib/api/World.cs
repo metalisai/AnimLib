@@ -85,15 +85,14 @@ public class ColoredTriangleMeshGeometry : IRendererResource {
     }
 }
 
-public class ColoredTriangleMesh/* : VisualEntity*/ {
+public class ColoredTriangleMesh {
     public BuiltinShader Shader = BuiltinShader.LineShader;
     public Color Tint = Color.WHITE;
     public Color Outline = Color.BLACK;
-    /*public Color Outline = Color.BLACK;
-    public float OutlineWidth = 0.0f;*/
     public M4x4 modelToWorld;
     public ColoredTriangleMeshGeometry Geometry;
     public List<(string, object)> shaderProperties = new List<(string, object)>();
+    internal Dictionary<string, DynProperty> properties = new ();
     public bool is2d = false;
     public int entityId = -1;
 }
@@ -129,6 +128,7 @@ internal class WorldSnapshot {
     public required CanvasSnapshot[] Canvases;
     // NOTE: the first renderbuffer is always the main one
     public required RenderBufferState[] RenderBuffers;
+    public Dictionary<int, object> DynamicProperties = new ();
     public double Time;
 }
 

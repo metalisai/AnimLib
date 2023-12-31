@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 
 namespace AnimLib {
-    internal abstract class MeshBackedGeometry : EntityState3D/*, ICloneable*/, IRendererResource {
-        //public Transform2 Transform;
+    internal abstract class MeshBackedGeometry : EntityState3D, IRendererResource {
         public Color Outline = Color.BLACK;
-        //public float OutlineWidth = 0.0f;
         public BuiltinShader Shader = BuiltinShader.LineShader;
+
+        public Dictionary<string, DynProperty> properties = new ();
 
         public readonly RendererHandle RendererHandle = new RendererHandle();
         /*public abstract object Clone();*/
@@ -21,6 +21,7 @@ namespace AnimLib {
             this.ownerGuid = mbg.ownerGuid;
             this.Shader = mbg.Shader;
             this.shaderProperties = mbg.shaderProperties;
+            this.properties = mbg.properties;
         }
 
         public string GetOwnerGuid() {

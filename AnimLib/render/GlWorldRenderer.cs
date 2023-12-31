@@ -122,7 +122,7 @@ internal partial class GlWorldRenderer : IRenderer {
         }
     }
 
-    public void RenderMeshes(ColoredTriangleMesh[] meshes, M4x4 camMat, M4x4 screenMat) {
+    public void RenderMeshes(ColoredTriangleMesh[] meshes, M4x4 camMat, M4x4 screenMat, Dictionary<int, object> dynProps) {
         var colorSize = Marshal.SizeOf(typeof(Color));
         var vertSize = Marshal.SizeOf(typeof(Vector3));
         var edgeSize = Marshal.SizeOf(typeof(Vector2));
@@ -159,8 +159,6 @@ internal partial class GlWorldRenderer : IRenderer {
                     }
                 }
 
-                if(m.Geometry.indices.Length == 0)
-                    continue;
                 if(m.Geometry.Dirty) {
                     int vao;
                     int vertCount = m.Geometry.vertices.Length;
@@ -170,7 +168,9 @@ internal partial class GlWorldRenderer : IRenderer {
                         int ebo = GL.GenBuffer();
                         GL.BindVertexArray(vao);
                         GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
-                        GL.BindBuffer(BufferTarget.ElementArrayBuffer, ebo);
+                        if (m.Geometry.indices.Length > 0) {
+                            GL.BindBuffer(BufferTarget.ElementArrayBuffer, ebo);
+                        }
                         GL.EnableVertexAttribArray(0);
                         GL.EnableVertexAttribArray(1);
                         GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, vertSize, 0);
@@ -215,7 +215,9 @@ internal partial class GlWorldRenderer : IRenderer {
                         GL.BufferSubData(BufferTarget.ArrayBuffer, edgeOffset, vertCount*edgeSize, ref m.Geometry.edgeCoordinates[0]);
                     }
                     GL.BindBuffer(BufferTarget.ElementArrayBuffer, m.Geometry.EBOHandle);
-                    GL.BufferData(BufferTarget.ElementArrayBuffer, m.Geometry.indices.Length*4, ref m.Geometry.indices[0], BufferUsageHint.DynamicDraw);
+                    if (m.Geometry.indices.Length > 0) {
+                        GL.BufferData(BufferTarget.ElementArrayBuffer, m.Geometry.indices.Length*4, ref m.Geometry.indices[0], BufferUsageHint.DynamicDraw);
+                    }
                     GL.BindVertexArray(0);
                     m.Geometry.Dirty = false;
                 }
@@ -228,7 +230,38 @@ internal partial class GlWorldRenderer : IRenderer {
                 var outline4 = m.Outline.ToVector4();
                 GL.Uniform4(outlineLoc, outline4.x, outline4.y, outline4.z, outline4.w);
                 GL.Uniform1(entLoc, m.entityId);
-                GL.DrawElements(PrimitiveType.Triangles, m.Geometry.indices.Length, DrawElementsType.UnsignedInt, 0);
+                PrimitiveType primType;
+                switch (m.Shader) {
+                    case BuiltinShader.LineShader:
+                        primType = PrimitiveType.Lines;
+                        break;
+                    default:
+                        primType = PrimitiveType.Triangles;
+                        break;
+                }
+                if (m.Geometry.indices.Length > 0) {
+                    GL.DrawElements(primType, m.Geometry.indices.Length, DrawElementsType.UnsignedInt, 0);
+                } else {
+                    float range = 1.0f;
+
+                    if (m.Shader == BuiltinShader.LineShader) {
+                        float setWidth = 1.0f;
+                        if (m.properties.TryGetValue("Width", out var widthProp)) {
+                            dynProps.TryGetValue(widthProp.Id, out var fwidth);
+                            if (fwidth is float f) {
+                                setWidth = f;
+                            }
+                        }
+                        GL.GetFloat(GetPName.SmoothLineWidthRange, out range);
+                        GL.Enable(EnableCap.LineSmooth);
+                        GL.LineWidth(setWidth);
+                    }
+                    GL.DrawArrays(primType, 0, m.Geometry.vertices.Length);
+                    if (m.Shader == BuiltinShader.LineShader) {
+                        GL.Disable(EnableCap.LineSmooth);
+                        GL.LineWidth(range);
+                    }
+                }
                 drawId++;
             }
         }
@@ -528,14 +561,15 @@ internal partial class GlWorldRenderer : IRenderer {
                         OutlineWidth = mbg.OutlineWidth,*/
                         Shader = mbg.Shader,
                         shaderProperties = mbg.shaderProperties,
-                        entityId = mbg.entityId
+                        entityId = mbg.entityId,
+                        properties = mbg.properties,
                     };
                     i++;
                 }
                 if (!pb.IsMultisampled) {
                     throw new Exception("need to use sampler2D instead of sampler2DMS");
                 }
-                RenderMeshes(meshes, worldToClip, smat);
+                RenderMeshes(meshes, worldToClip, smat, ss.DynamicProperties);
                 foreach(var geom in throwawayGeometries) {
                     GL.DeleteBuffer(geom.EBOHandle);
                     GL.DeleteBuffer(geom.VBOHandle);
@@ -558,10 +592,10 @@ internal partial class GlWorldRenderer : IRenderer {
                     };
                     i++;
                 }
-                RenderMeshes(meshes, worldToClip, smat);
+                RenderMeshes(meshes, worldToClip, smat, ss.DynamicProperties);
             }
             if(ss.Meshes != null) {
-                RenderMeshes(ss.Meshes, worldToClip, smat);
+                RenderMeshes(ss.Meshes, worldToClip, smat, ss.DynamicProperties);
             }
             if(ss.Beziers != null) {
                 RenderBeziers(ss.Beziers, worldToClip, smat, mainBuffer, in ctx);
