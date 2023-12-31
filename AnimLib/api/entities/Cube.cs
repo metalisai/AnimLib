@@ -3,12 +3,14 @@ namespace AnimLib;
 internal class CubeState : EntityState3D
 {
     public Color color = Color.WHITE;
+    public Color outline = Color.BLACK;
 
     public CubeState() {
     }
 
     public CubeState(CubeState c) : base(c) {
         this.color = c.color;
+        this.outline = c.outline;
     }
 
     public override object Clone()
@@ -29,6 +31,17 @@ public class Cube : VisualEntity3D/*, ICloneable*/ {
         set {
             World.current.SetProperty(this, "Color", value, ((CubeState)state).color);
             ((CubeState)state).color = value;
+        }
+    }
+
+    /// <summary> Outline color of the cube </summary>
+    public Color Outline { 
+        get {
+            return ((CubeState)state).outline;
+        }
+        set {
+            World.current.SetProperty(this, "Outline", value, ((CubeState)state).outline);
+            ((CubeState)state).outline = value;
         }
     }
 

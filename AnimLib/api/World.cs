@@ -88,6 +88,7 @@ public class ColoredTriangleMeshGeometry : IRendererResource {
 public class ColoredTriangleMesh/* : VisualEntity*/ {
     public BuiltinShader Shader = BuiltinShader.LineShader;
     public Color Tint = Color.WHITE;
+    public Color Outline = Color.BLACK;
     /*public Color Outline = Color.BLACK;
     public float OutlineWidth = 0.0f;*/
     public M4x4 modelToWorld;

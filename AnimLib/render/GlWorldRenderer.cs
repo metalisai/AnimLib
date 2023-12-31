@@ -138,6 +138,7 @@ internal partial class GlWorldRenderer : IRenderer {
                 GL.UseProgram(program);
                 var loc = GL.GetUniformLocation(program, "_ModelToClip");
                 var colLoc = GL.GetUniformLocation(program, "_Color");
+                var outlineLoc = GL.GetUniformLocation(program, "_Outline");
                 var entLoc = GL.GetUniformLocation(program, "_EntityId");
 
                 foreach(var prop in m.shaderProperties) {
@@ -206,8 +207,6 @@ internal partial class GlWorldRenderer : IRenderer {
                     IntPtr colorOffset = new IntPtr(vertCount*vertSize);
                     IntPtr edgeOffset = new IntPtr(vertCount*(vertSize+colorSize));
 
-                    Debug.TLog($"colsize: {colorSize}, vertsize: {vertSize}, edgesize: {edgeSize}");
-
                     GL.BindBuffer(BufferTarget.ArrayBuffer, m.Geometry.VBOHandle);
                     GL.BufferData(BufferTarget.ArrayBuffer, vertCount*(vertSize+colorSize+edgeSize), IntPtr.Zero, BufferUsageHint.DynamicDraw);
                     GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, vertCount*vertSize, ref m.Geometry.vertices[0].x);
@@ -226,6 +225,8 @@ internal partial class GlWorldRenderer : IRenderer {
                 GL.UniformMatrix4(loc, 1, false, ref modelToClip.m11);
                 var col4 = m.Tint.ToVector4();
                 GL.Uniform4(colLoc, col4.x, col4.y, col4.z, col4.w);
+                var outline4 = m.Outline.ToVector4();
+                GL.Uniform4(outlineLoc, outline4.x, outline4.y, outline4.z, outline4.w);
                 GL.Uniform1(entLoc, m.entityId);
                 GL.DrawElements(PrimitiveType.Triangles, m.Geometry.indices.Length, DrawElementsType.UnsignedInt, 0);
                 drawId++;
@@ -514,6 +515,7 @@ internal partial class GlWorldRenderer : IRenderer {
                     meshes[i] = new ColoredTriangleMesh {
                         modelToWorld = mbg.ModelToWorld(ctx.entRes),
                         Geometry = geom, 
+                        Outline = mbg.Outline,
                         /*Outline = mbg.Outline,
                         OutlineWidth = mbg.OutlineWidth,*/
                         Shader = mbg.Shader,
@@ -539,6 +541,7 @@ internal partial class GlWorldRenderer : IRenderer {
                         modelToWorld = cube.ModelToWorld(ctx.entRes),
                         Geometry = rs.cubeGeometry!,
                         Tint = cube.color,
+                        Outline = cube.outline,
                         Shader = BuiltinShader.CubeShader,
                         entityId = cube.entityId,
                     };

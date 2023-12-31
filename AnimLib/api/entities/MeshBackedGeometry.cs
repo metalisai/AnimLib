@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace AnimLib {
     internal abstract class MeshBackedGeometry : EntityState3D/*, ICloneable*/, IRendererResource {
         //public Transform2 Transform;
-        //public Color Outline = Color.BLACK;
+        public Color Outline = Color.BLACK;
         //public float OutlineWidth = 0.0f;
         public BuiltinShader Shader = BuiltinShader.LineShader;
 

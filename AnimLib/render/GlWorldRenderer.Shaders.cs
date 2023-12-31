@@ -396,6 +396,7 @@ layout(location = 1) out int outEntityId;
 in vec4 v_color;
 in vec3 v_modelPos;
 uniform vec4 _Color;
+uniform vec4 _Outline;
 uniform sampler2D _depthPeelTex;
 uniform int _EntityId;
 void main() {
@@ -430,7 +431,7 @@ void main() {
     float ddist = 1.0 - 3.0*length(vec2(dFdx(dist),dFdy(dist)));
     float mul = smoothstep(0.49*ddist, 0.49, dist);
 
-    outColor = vec4(outColorRGB*alpha*(1.0-mul), alpha);
+    outColor = mix(vec4(outColorRGB, alpha), _Outline, mul);
     outEntityId = _EntityId;
 }";
 
@@ -465,6 +466,7 @@ layout(location = 1) out int outEntityId;
 in vec4 g_color;
 in vec3 g_bary;
 uniform vec4 _Color;
+uniform vec4 _Outline;
 uniform sampler2D _depthPeelTex;
 uniform int _EntityId;
 void main() {
@@ -487,10 +489,10 @@ void main() {
     float dd = length(vec2(dx, dy));
 
     float edgeLocation = min(min(dd, dd1), 0.1);
-    vec3 edge = vec3(smoothstep(edgeLocation-1.5*dd, edgeLocation+1.5*dd, d));
-    vec3 outColorRGB = _Color.rgb*g_color.rgb*edge;
+    float edge = smoothstep(edgeLocation-2.0*dd, edgeLocation+2.0*dd, d);
+    vec3 outColorRGB = _Color.rgb*g_color.rgb;
     float alpha = _Color.a*g_color.a;
-    outColor = vec4(outColorRGB, alpha);
+    outColor = mix(vec4(outColorRGB, alpha), _Outline, 1.0-edge);
     outEntityId = _EntityId;
 }";
 
