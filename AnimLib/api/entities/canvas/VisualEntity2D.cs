@@ -1,3 +1,5 @@
+using System;
+
 namespace AnimLib;
 
 /// <summary>
@@ -25,8 +27,6 @@ internal abstract class EntityState2D : EntityState {
     // NOTE: pivot and anchor always use CanvasNormalized coordinates
     public Entity2DCoordinateSystem csystem = Entity2DCoordinateSystem.CanvasOrientedWorld;
 
-    internal CanvasState canvas; // resolved by WorldMachine before redering
-
     public EntityState2D() {}
 
     public EntityState2D(EntityState2D e2d) : base(e2d) {
@@ -41,28 +41,22 @@ internal abstract class EntityState2D : EntityState {
     }
 
     // normalized coordinates -0.5..0.5
-    internal M4x4 NormalizedCanvasToWorld {
-        get {
-            // TODO: cache
-            var anchorWorld = canvas.NormalizedCanvasToWorld*new Vector4(anchor.x, anchor.y, 0.0f, 1.0f);
-            var c1 = new Vector4(canvas.width*Vector3.Cross(canvas.normal, canvas.up), 0.0f);
-            var c2 = new Vector4(canvas.height*canvas.up, 0.0f);
-            var c3 = new Vector4(-canvas.normal, 0.0f);
-            var mat = M4x4.FromColumns(c1, c2, c3, anchorWorld);
-            return mat;
-        }
+    internal M4x4 NormalizedCanvasToWorld(CanvasState canvas) {
+        var anchorWorld = canvas.NormalizedCanvasToWorld*new Vector4(anchor.x, anchor.y, 0.0f, 1.0f);
+        var c1 = new Vector4(canvas.width*Vector3.Cross(canvas.normal, canvas.up), 0.0f);
+        var c2 = new Vector4(canvas.height*canvas.up, 0.0f);
+        var c3 = new Vector4(-canvas.normal, 0.0f);
+        var mat = M4x4.FromColumns(c1, c2, c3, anchorWorld);
+        return mat;
     }
 
     // oriented world coordinates (x - left, y - up, z - forward)
-    internal M4x4 CanvasToWorld {
-        get {
-            // TODO: cache
-            var anchorWorld = canvas.NormalizedCanvasToWorld*new Vector4(anchor.x, anchor.y, 0.0f, 1.0f);
-            var c1 = new Vector4(Vector3.Cross(canvas.normal, canvas.up), 0.0f);
-            var c2 = new Vector4(canvas.up, 0.0f);
-            var c3 = new Vector4(-canvas.normal, 0.0f);
-            return M4x4.FromColumns(c1, c2, c3, anchorWorld);
-        }
+    internal M4x4 CanvasToWorld(CanvasState canvas) {
+        var anchorWorld = canvas.NormalizedCanvasToWorld*new Vector4(anchor.x, anchor.y, 0.0f, 1.0f);
+        var c1 = new Vector4(Vector3.Cross(canvas.normal, canvas.up), 0.0f);
+        var c2 = new Vector4(canvas.up, 0.0f);
+        var c3 = new Vector4(-canvas.normal, 0.0f);
+        return M4x4.FromColumns(c1, c2, c3, anchorWorld);
     }
 
     // TODO: this doesn't belong here
@@ -70,7 +64,7 @@ internal abstract class EntityState2D : EntityState {
         if(parentId == 0) {
             return M4x4.TRS(position, Quaternion.IDENTITY, scale);
         } else { 
-            var parent = (EntityState2D)resolver.GetEntityState(parentId);
+            var parent = (EntityState2D?)resolver.GetEntityState(parentId);
             if(parent == null) {
                 Debug.Error($"Entity {this} did not find parent {parentId}");
                 return M4x4.IDENTITY;
@@ -98,14 +92,14 @@ public abstract class VisualEntity2D : VisualEntity {
         if (World.current.ActiveCanvas.created)
         {
             // this is here to make the compiler happy
-            _canvas = Canvas.Default;
+            _canvas = Canvas.Default ?? throw new Exception("Can't find default canvas");
             Canvas = World.current.ActiveCanvas;
         }
         else
         {
             Debug.Error("World.ActiveCanvas is set to a canvas entity that isn't created. Using default canvas.");
             // this is here to make the compiler happy
-            _canvas = Canvas.Default;
+            _canvas = Canvas.Default ?? throw new Exception("Can't find default canvas");
             Canvas = Canvas.Default;
         }
     }
@@ -133,7 +127,7 @@ public abstract class VisualEntity2D : VisualEntity {
 
     internal new EntityState2D state {
         get {
-            return base.state as EntityState2D;
+            return (EntityState2D)base.state;
         }
     }
 
@@ -143,7 +137,7 @@ public abstract class VisualEntity2D : VisualEntity {
     public Canvas Canvas 
     {
         get {
-            return _canvas ?? Canvas.Default;
+            return _canvas;
         }
         set {
             World.current.SetProperty(this, "canvasId", value.EntityId, Canvas.EntityId);
@@ -194,6 +188,10 @@ public abstract class VisualEntity2D : VisualEntity {
         }
     }
 
+    /// <summary>
+    /// The coordinate system used for the entity.
+    /// A coordinate system changes the meaning of position.
+    /// </summary>
     public Entity2DCoordinateSystem CSystem {
         get {
             return ((EntityState2D)state).csystem;

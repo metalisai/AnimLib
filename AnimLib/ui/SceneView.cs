@@ -416,6 +416,9 @@ internal class SceneView
 
     // raycast screen ray in world space
     protected Vector2? worldToBuffer(CameraState cam, Vector3 pos) {
+        if(renderBuffer == null) {
+            return null;
+        }
         var s = renderBuffer.Size;
         var w2c = cam.CreateWorldToClipMatrix((float)s.Item1/s.Item2);
         var clipPos = w2c * new Vector4(pos, 1.0f);
@@ -451,12 +454,11 @@ internal class SceneView
         }
     }
 
-    public bool DoWorldCircleButton(Vector3 pos, string label = null) {
+    public bool DoWorldCircleButton(Vector3 pos, string? label = null) {
         if(lastArea == null)
             return false;
         // TODO: have camera in view
-        var cam = lastCam as PerspectiveCameraState;
-        if(cam == null)
+        var cam = lastCam as PerspectiveCameraState; if(cam == null)
             return false;
         var screenP = worldToBuffer(cam, pos);
         if(screenP != null) {

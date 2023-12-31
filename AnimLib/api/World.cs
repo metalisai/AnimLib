@@ -483,7 +483,7 @@ public class World
         var c = entity.Color;
         var alpha = c.a;
         return Animate.InterpF(x => {
-                c.a = (byte)Math.Round(x*((float)alpha));
+                c.a = x*alpha;
                 entity.Color = c;
             }, 0.0f, 1.0f, duration);
     }
@@ -523,7 +523,7 @@ public class World
         var c = startColor;
         var alpha = c.a;
         return Animate.InterpF(x => {
-                c.a = (byte)Math.Round(x*((float)alpha));
+                c.a = MathF.Round(x*alpha);
                 setColor(c);
             }, 0.0f, 1.0f, duration);
     }

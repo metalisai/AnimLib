@@ -9,15 +9,14 @@ namespace AnimLib;
 /// </summary>
 internal class BakedAnimation {
     public bool haveError;
-    public string error;
-    public string stackTrace;
+    public string? error;
+    public string? stackTrace;
 
-    public World World;
-    public WorldCommand[] Commands;
-    public List<Animator.AnimationHandle2D> Handles2D;
-    public List<Animator.AnimationHandle3D> Handles3D;
+    public required WorldCommand[] Commands;
+    public required List<Animator.AnimationHandle2D> Handles2D;
+    public required List<Animator.AnimationHandle3D> Handles3D;
     public float FPS;
-    public SoundTrack SoundTrack;
+    public required SoundTrack SoundTrack;
 }
 
 /// <summary>
@@ -28,9 +27,9 @@ internal class AnimationBaker {
     ResourceManager resourceManager;
 
     bool haveError;
-    string error;
-    string stackTrace;
-    System.Threading.Tasks.Task anim = null;
+    string? error;
+    string? stackTrace;
+    System.Threading.Tasks.Task? anim = null;
     System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
 
     TextPlacement text = new TextPlacement("/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf", "Ubuntu");
@@ -62,7 +61,7 @@ internal class AnimationBaker {
         animator.EndAnimate();
     }
 
-    public BakedAnimation BakeAnimation(AnimationBehaviour behaviour1, AnimationSettings settings, AnimationPlayer.PlayerProperties props, PlayerScene scene) {
+    public BakedAnimation BakeAnimation(AnimationBehaviour behaviour1, AnimationSettings settings, AnimationPlayer.PlayerProperties props, PlayerScene? scene) {
         Time.Reset();
         var world = new World(settings);
         world.Reset();
@@ -72,15 +71,13 @@ internal class AnimationBaker {
         error = "";
         stackTrace = "";
 
-        bool dummy = scene == null;
-
         sw.Restart();
 
         double t = 0.0;
         double dt = 1.0 / settings.FPS;
         double start = 0.0;
         double end = settings.MaxLength;
-        if(!dummy) { // scene can be null for dummy behaviour
+        if(scene != null) { // scene can be null for dummy behaviour
             lock(scene.sceneLock) {
                 scene.LastTime = start;
                 scene.UpdateEvents();
@@ -96,24 +93,24 @@ internal class AnimationBaker {
         try {
             anim = behaviour1.Animation(world, animator);
             End(world, animator);
-        } catch (Exception e) {
+        } catch (Exception ex1) {
             // TODO: print error to user
             Debug.Warning("Exception during baking before first yield");
             End(world, animator);
-            BakeError(e, world, animator);
+            BakeError(ex1, world, animator);
         }
 
-        if(anim.Exception != null) {
+        if(anim?.Exception?.InnerException is Exception e) {
             Debug.Warning("Exception during baking after first yield");
-            var cap = ExceptionDispatchInfo.Capture(anim.Exception.InnerException);
+            var cap = ExceptionDispatchInfo.Capture(e);
             BakeError(cap.SourceException, world, animator);
         }
-        terminator = $"synchronous (state: {anim.Status} c: {anim.IsCompleted})";
+        terminator = $"synchronous (state: {anim?.Status} c: {anim?.IsCompleted})";
 
-        while(t <= end && !anim.IsCompleted) {
-            if(anim.Exception != null) {
+        while(t <= end && !(anim?.IsCompleted ?? false)) {
+            if(anim?.Exception?.InnerException is Exception exception) {
                 Debug.Warning("Exception in the middle of animation");
-                var cap = ExceptionDispatchInfo.Capture(anim.Exception.InnerException);
+                var cap = ExceptionDispatchInfo.Capture(exception);
                 BakeError(cap.SourceException, world, animator);
                 terminator = "exception";
                 break;
@@ -125,7 +122,7 @@ internal class AnimationBaker {
             End(world, animator);
 
             if(t >= start) {
-                if(!dummy) {
+                if(scene != null) {
                     lock(scene.sceneLock) {
                         scene.ManageSceneObjects(world);
                     }
@@ -135,10 +132,10 @@ internal class AnimationBaker {
         }
         if(t > end)
             terminator = "max length";
-        else if(anim.IsCompleted) {
+        else if(anim?.IsCompleted ?? false) {
             terminator = $"completed (state: {anim.Status} c: {anim.IsCompleted})";
-            if(anim.Status == System.Threading.Tasks.TaskStatus.Faulted) {
-                var cap = ExceptionDispatchInfo.Capture(anim.Exception.InnerException);
+            if(anim.Status == System.Threading.Tasks.TaskStatus.Faulted && anim.Exception?.InnerException is Exception excp) {
+                var cap = ExceptionDispatchInfo.Capture(excp);
                 BakeError(cap.SourceException, world, animator);
             }
         }

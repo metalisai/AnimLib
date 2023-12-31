@@ -170,7 +170,7 @@ internal class WorldMachine {
             };
             Array.Sort(css.Entities, new EntComparer());
             l.Add(css);
-            foreach(var s in css.Entities) s.canvas = canvas;
+            //foreach(var s in css.Entities) s.canvas = canvas;
         }
 
         var ret = new WorldSnapshot() {

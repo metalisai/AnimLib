@@ -140,8 +140,8 @@ internal class TrackPlayer : IDisposable {
         if(_playing)
             Bass.ChannelPlay(bassStream);
         var pos = Bass.ChannelGetPosition(bassStream, PositionFlags.Relative);
-        Debug.TLog($"position {pos}");
-        Debug.TLog($"Track seek {progress}");
+        //Debug.TLog($"position {pos}");
+        //Debug.TLog($"Track seek {progress}");
         double seconds = progress * currentTrack.Duration;
         int sample = (int)Math.Round(seconds * currentTrack.sampleRate);
         SampleIndex = sample;
