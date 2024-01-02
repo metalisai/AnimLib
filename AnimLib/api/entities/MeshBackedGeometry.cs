@@ -2,8 +2,15 @@ using System.Collections.Generic;
 
 namespace AnimLib {
     internal abstract class MeshBackedGeometry : EntityState3D, IRendererResource {
-        public Color Outline = Color.BLACK;
+        public Color outline = Color.BLACK;
         public BuiltinShader Shader = BuiltinShader.LineShader;
+
+        int _version = 0;
+        public int Version { get => _version; }
+        
+        public void Dirty() {
+            _version++;
+        } 
 
         public Dictionary<string, DynProperty> properties = new ();
 
@@ -22,6 +29,7 @@ namespace AnimLib {
             this.Shader = mbg.Shader;
             this.shaderProperties = mbg.shaderProperties;
             this.properties = mbg.properties;
+            this._version = mbg._version;
         }
 
         public string GetOwnerGuid() {

@@ -248,6 +248,7 @@ void main() {
     v_color_hsv = rgb2hsv(color.rgb);
 }";
 string rectangleFrag = @"#version 330 core
+#extension GL_ARB_sample_shading : enable
 layout(location = 0) out vec4 outColor;
 layout(location = 1) out int outEntityId;
 in vec4 v_color;
@@ -255,9 +256,9 @@ in vec2 v_texCoord;
 uniform vec4 _Color;
 uniform vec4 _Outline;
 uniform int _EntityId;
-uniform sampler2D _depthPeelTex;
+uniform sampler2DMS _depthPeelTex;
 void main() {
-    float depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), 0).x;
+    float depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), gl_SampleID).x;
     if(gl_FragCoord.z >= depth) {
         discard;
     }
@@ -274,19 +275,15 @@ void main() {
     float by = 1.0 - smoothAmount*ldy;
     vec2 b = vec2(bx, by);
     vec2 a = smoothstep(vec2(r), r*b, dist);
-    float alpha = min(a.x, a.y)*v_color.a*_Color.a;
 
     // outline
-    float ow = _Outline.w*3;
-    vec2 bcs = vec2(1-ow*ldx, 1-ow*ldy);
+    vec2 bcs = vec2(1-3.0*ldx, 1-3.0*ldy);
     vec2 blendColor = smoothstep(r*bcs, r*b*bcs, dist);
     float blendColorm = min(blendColor.x, blendColor.y);
-    if(_Outline.w == 0.0f) {
-        blendColorm = 1.0f;
-    }
 
-    vec3 oc = mix(_Outline.rgb, (_Color*v_color).rgb, blendColorm);
-    outColor = vec4(oc, alpha);
+    float alpha = _Color.a*v_color.a;
+    vec3 colorRGB = _Color.rgb*v_color.rgb * alpha;
+    outColor = mix(_Outline, vec4(colorRGB, alpha), blendColorm);
     outEntityId = _EntityId;
 }";
 
@@ -367,7 +364,7 @@ void main() {
     }
 
     vec3 outColorRGB = _Color.rgb*v_color.rgb;
-    outColor = vec4(outColorRGB, 1.0);
+    outColor = vec4(outColorRGB, _Color.a*v_color.a);
     outEntityId = _EntityId;
 }";
 
@@ -413,7 +410,7 @@ void main() {
     float ddist = 1.0 - 3.0*length(vec2(dFdx(dist),dFdy(dist)));
     float mul = smoothstep(0.49*ddist, 0.49, dist);
 
-    outColor = mix(vec4(outColorRGB, alpha), _Outline, mul);
+    outColor = mix(vec4(outColorRGB*alpha, alpha), _Outline, mul);
     outEntityId = _EntityId;
 }";
 
@@ -465,17 +462,13 @@ void main() {
     float dxd = min(min(dxbary.x, dxbary.y), dxbary.z);
     vec3 dybary = dFdy(g_bary);
     float dyd = min(min(dybary.x, dybary.y), dybary.z);
-    float dd1 = length(vec2(dxd, dyd));
+    float dd = length(vec2(dxd, dyd));
 
-    float dx = abs(dFdx(d));
-    float dy = abs(dFdy(d));
-    float dd = length(vec2(dx, dy));
-
-    float edgeLocation = min(min(dd, dd1), 0.1);
-    float edge = smoothstep(edgeLocation-2.0*dd, edgeLocation+2.0*dd, d);
+    float edgeLocation = dd;
+    float edge = smoothstep(edgeLocation, edgeLocation+2.0*dd, d);
     vec3 outColorRGB = _Color.rgb*g_color.rgb;
     float alpha = _Color.a*g_color.a;
-    outColor = mix(vec4(outColorRGB, alpha), _Outline, 1.0-edge);
+    outColor = mix(vec4(outColorRGB*alpha, alpha), _Outline, 1.0-edge);
     outEntityId = _EntityId;
 }";
 
@@ -508,8 +501,7 @@ void main() {
     float alpha = min(a.x, a.y)*v_color.a*_Color.a;
 
     // outline
-    float ow = _Outline.w*3;
-    vec2 bcs = vec2(1-ow*ldx, 1-ow*ldy);
+    vec2 bcs = vec2(1-2.0*ldx, 1-2.0*ldy);
     vec2 blendColor = smoothstep(r*bcs, r*b*bcs, dist);
     float blendColorm = min(blendColor.x, blendColor.y);
 

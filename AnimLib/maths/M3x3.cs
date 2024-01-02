@@ -43,7 +43,7 @@ public struct M3x3 {
     /// <param name="c1">The first column.</param>
     /// <param name="c2">The second column.</param>
     /// <param name="c3">The third column.</param>
-    public M3x3 FromColumns(Vector3 c1, Vector3 c2, Vector3 c3) {
+    public static M3x3 FromColumns(Vector3 c1, Vector3 c2, Vector3 c3) {
         M3x3 ret;
         ret.m11 = c1.x; ret.m21 = c1.y; ret.m31 = c1.z;
         ret.m12 = c2.x; ret.m22 = c2.y; ret.m32 = c2.z;

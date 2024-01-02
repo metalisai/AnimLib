@@ -50,7 +50,7 @@ internal class Line3DState : MeshBackedGeometry
         this._vertices = ms.vertices.ToArray();
         this.color = ms.color;
         this._colors = ms.colors.ToArray();
-        this.Outline = ms.Outline;
+        this.outline = ms.outline;
         dirty = true;
     }
 
@@ -65,7 +65,7 @@ internal class Line3DState : MeshBackedGeometry
             if (_colors.Length > 0 && colors.Length == vertices.Length) {
                 mesh.colors = _colors;
             } else {
-                if (colors.Length != vertices.Length) {
+                if (_colors.Length > 0) {
                     Debug.Error("Line3DState: colors.Length != vertices.Length");
                 }
                 mesh.colors = vertices.Select(x => color).ToArray();

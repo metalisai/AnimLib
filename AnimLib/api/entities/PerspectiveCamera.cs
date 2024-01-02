@@ -58,7 +58,7 @@ internal class PerspectiveCameraState : CameraState
 
     public Vector2 WorldToScreenPos(Vector3 pos, Vector2 screenSize) {
         var clip = WorldToClipPos(screenSize.x/screenSize.y, pos);
-        return new Vector2((clip.x+1.0f)*0.5f*screenSize.x, screenSize.y - (clip.y+1.0f)*0.5f*screenSize.y);
+        return new Vector2((clip.x)*0.5f*screenSize.x, (clip.y)*0.5f*screenSize.y);
     }   
 
     public M4x4 CreateClipToWorldMatrix(float aspect) {
@@ -128,6 +128,23 @@ public class PerspectiveCamera : Camera {
             World.current.SetProperty(this, "ZFar", value, ((PerspectiveCameraState)state).zFar);
             ((PerspectiveCameraState)state).zFar = value;
         }
+    }
+
+    /// <summary>
+    /// Converts a world-space position to a normalized screen-space position.
+    /// </summary>
+    public Vector2 WorldToNormScreenPos(Vector3 pos, float aspect) {
+        return ((PerspectiveCameraState)state).WorldToNormScreenPos(pos, aspect);
+    }
+
+    /// <summary>
+    /// Converts a world-space position to a screen-space position.
+    /// </summary>
+    /// <param name="pos">The world-space position.</param>
+    /// <param name="screenSize">The size of the screen in pixels.</param>
+    /// <returns>Screen-space coordinates relative to screen center.</returns>
+    public Vector2 WorldToScreenPos(Vector3 pos, Vector2 screenSize) {
+        return ((PerspectiveCameraState)state).WorldToScreenPos(pos, screenSize);
     }
 
     /// <summary>

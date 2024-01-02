@@ -48,7 +48,7 @@ internal class MeshState : MeshBackedGeometry
         this._vertices = ms.vertices.ToArray();
         this._indices = ms.indices.ToArray();
         this.color = ms.color;
-        this.Outline = ms.Outline;
+        this.outline = ms.outline;
         dirty = true;
     }
 
@@ -80,7 +80,7 @@ public class Mesh : VisualEntity3D
             return ((MeshState)state).color;
         }
         set {
-            World.current.SetProperty(this, "StartPoint", value, ((MeshState)state).color);
+            World.current.SetProperty(this, "Color", value, ((MeshState)state).color);
             ((MeshState)state).color = value;
         }
     }
@@ -90,11 +90,11 @@ public class Mesh : VisualEntity3D
     /// </summary>
     public Color Outline {
         get {
-            return ((MeshState)state).Outline;
+            return ((MeshState)state).outline;
         }
         set {
-            World.current.SetProperty(this, "Outline", value, ((MeshState)state).Outline);
-            ((MeshState)state).Outline = value;
+            World.current.SetProperty(this, "Outline", value, ((MeshState)state).outline);
+            ((MeshState)state).outline = value;
         }
     }
 

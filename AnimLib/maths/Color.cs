@@ -50,6 +50,13 @@ public struct Color {
     }
 
     /// <summary>
+    /// Overload to multiply a color by a scalar. Component-wise.
+    /// </summary>
+    public static Color operator*(Color l, float r) {
+        return new Color(l.r*r, l.g*r, l.b*r, l.a*r);
+    }
+
+    /// <summary>
     /// Get Color with the alpha channel overridden.
     /// </summary>
     public Color WithA(byte a) {

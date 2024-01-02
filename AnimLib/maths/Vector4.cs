@@ -12,6 +12,16 @@ public struct Vector4 {
     public float x, y, z, w;
 
     /// <summary>
+    /// Broadcast a single value to all components of the vector.
+    /// </summary>
+    public Vector4(float v) {
+        this.x = v;
+        this.y = v;
+        this.z = v;
+        this.w = v;
+    }
+
+    /// <summary>
     /// Create a new vector from individual components.
     /// </summary>
     public Vector4(float x, float y, float z, float w) {
@@ -171,6 +181,13 @@ public struct Vector4 {
     }
 
     /// <summary>
+    /// Linearly interpolate between two vectors.
+    /// </summary>
+    public static Vector4 Lerp(Vector4 a, Vector4 b, float t) {
+        return a * (1.0f - t) + b * t;
+    }
+
+    /// <summary>
     /// Dot product of two vectors.
     /// </summary>
     public static float Dot(Vector4 a, Vector4 b) {
@@ -185,5 +202,10 @@ public struct Vector4 {
     /// Implicit conversion from Vector4 to System.Numerics.Vector4.
     /// </summary>
     public static implicit operator System.Numerics.Vector4(Vector4 v) => new System.Numerics.Vector4(v.x, v.y, v.z, v.w);
+
+    /// <summary>
+    /// Implicit conversion from (float x, float y, float z, float w) to Vector4.
+    /// </summary>
+    public static implicit operator (float x, float y, float z, float w)(Vector4 v) => (v.x, v.y, v.z, v.w);
 
 }

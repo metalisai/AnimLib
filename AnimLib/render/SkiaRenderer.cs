@@ -302,8 +302,8 @@ internal partial class SkiaRenderer
         var topRightClip = canvasToClip * topRight;
         topRightClip /= topRightClip.w;
 
-        if(MathF.Abs(topRightClip.x - bottomLeftClip.x) < 0.001f
-                || MathF.Abs(topRightClip.y - bottomLeftClip.y) < 0.001f)
+        if(!css.Canvas.is2d && (MathF.Abs(topRightClip.x - bottomLeftClip.x) < 0.001f
+                || MathF.Abs(topRightClip.y - bottomLeftClip.y) < 0.001f))
             return;
 
         // NOTE: ctx.ResetContext() will be called here

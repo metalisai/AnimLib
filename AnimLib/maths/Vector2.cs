@@ -41,6 +41,14 @@ public struct Vector2 : IEquatable<Vector2>,
     public static readonly Vector2 RIGHT = new Vector2(1.0f, 0.0f);
 
     /// <summary>
+    /// Broadcasts a scalar to a vector.
+    /// </summary>
+    public Vector2(float v) {
+        this.x = v;
+        this.y = v;
+    }
+
+    /// <summary>
     /// Creates a new vector with the given components.
     /// </summary>
     public Vector2(float x, float y) {

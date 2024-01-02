@@ -122,6 +122,13 @@ internal partial class GlWorldRenderer : IRenderer {
         }
     }
 
+    Vector2[] quadTex = new Vector2[] {
+        new Vector2(0.0f, 0.0f),
+        new Vector2(1.0f, 0.0f),
+        new Vector2(1.0f, 1.0f),
+        new Vector2(0.0f, 1.0f)
+    };
+
     public void RenderMeshes(ColoredTriangleMesh[] meshes, M4x4 camMat, M4x4 screenMat, Dictionary<int, object> dynProps) {
         var colorSize = Marshal.SizeOf(typeof(Color));
         var vertSize = Marshal.SizeOf(typeof(Vector3));
@@ -178,6 +185,10 @@ internal partial class GlWorldRenderer : IRenderer {
 #if DEBUG
                         if ((new Color()).r.GetType() != typeof(float)) {
                             throw new Exception("Color.r is not float, VertexAttribPointer expects float!");
+                        }
+
+                        if (m.Shader == BuiltinShader.QuadShader) {
+                            m.Geometry.edgeCoordinates = quadTex;
                         }
 #endif
                         if(m.Geometry.edgeCoordinates != null && m.Geometry.edgeCoordinates.Length > 0) {
@@ -290,6 +301,8 @@ internal partial class GlWorldRenderer : IRenderer {
                 return _cubeProgram;
             case BuiltinShader.MeshShader:
                 return _meshProgram;
+            case BuiltinShader.QuadShader:
+                return _rectangleProgram;
             default:
                 return 0;
         }
@@ -556,7 +569,7 @@ internal partial class GlWorldRenderer : IRenderer {
                     meshes[i] = new ColoredTriangleMesh {
                         modelToWorld = mbg.ModelToWorld(ctx.entRes),
                         Geometry = geom, 
-                        Outline = mbg.Outline,
+                        Outline = mbg.outline,
                         /*Outline = mbg.Outline,
                         OutlineWidth = mbg.OutlineWidth,*/
                         Shader = mbg.Shader,

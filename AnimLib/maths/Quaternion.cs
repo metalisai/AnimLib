@@ -109,4 +109,65 @@ public struct Quaternion {
         return ret;
     }
 
+    /// <summary>
+    /// Get a quaternion representing a rotation that rotates from one vector to another, given an up vector.
+    /// </summary>
+    public static Quaternion LookRotation(Vector3 forward, Vector3 up) {
+        forward = forward.Normalized;
+        up = up.Normalized;
+
+        Vector3 right = Vector3.Cross(up, forward).Normalized;
+        Vector3 newUp = Vector3.Cross(forward, right).Normalized;
+        var mat = new M3x3();
+        mat.m11 = right.x;
+        mat.m21 = right.y;
+        mat.m31 = right.z;
+        mat.m12 = newUp.x;
+        mat.m22 = newUp.y;
+        mat.m32 = newUp.z;
+        mat.m13 = forward.x;
+        mat.m23 = forward.y;
+        mat.m33 = forward.z;
+        return new Quaternion(ref mat);
+    }
+
+    /// <summary>
+    /// Interpolate between two quaternions using normalized linear interpolation.
+    /// This method does not guarantee constant angular velocity.
+    /// </summary>
+    public static Quaternion Slerp(Quaternion a, Quaternion b, float t) {
+        float cosHalfTheta = a.w * b.w + a.x * b.x + a.y * b.y + a.z * b.z;
+        if (MathF.Abs(cosHalfTheta) >= 1.0f) {
+            return a;
+        }
+        float halfTheta = MathF.Acos(cosHalfTheta);
+        float sinHalfTheta = MathF.Sqrt(1.0f - cosHalfTheta * cosHalfTheta);
+        if (MathF.Abs(sinHalfTheta) < 0.001f) {
+            return new Quaternion(
+                a.w * 0.5f + b.w * 0.5f,
+                a.x * 0.5f + b.x * 0.5f,
+                a.y * 0.5f + b.y * 0.5f,
+                a.z * 0.5f + b.z * 0.5f
+            );
+        }
+        float ratioA = MathF.Sin((1.0f - t) * halfTheta) / sinHalfTheta;
+        float ratioB = MathF.Sin(t * halfTheta) / sinHalfTheta;
+        return new Quaternion(
+            a.w * ratioA + b.w * ratioB,
+            a.x * ratioA + b.x * ratioB,
+            a.y * ratioA + b.y * ratioB,
+            a.z * ratioA + b.z * ratioB
+        );
+    }
+
+    /// <summary>
+    /// Interpolate between two quaternions using normalized linear interpolation.
+    /// This method does not guarantee constant angular velocity.
+    /// </summary>
+    public static Quaternion Nlerp(Quaternion a, Quaternion b, float t) {
+        Vector4 v = new Vector4(a.x, a.y, a.z, a.w);
+        Vector4 u = new Vector4(b.x, b.y, b.z, b.w);
+        Vector4 r = Vector4.Lerp(v, u, t).Normalized;
+        return new Quaternion(r.w, r.x, r.y, r.z);
+    }
 }

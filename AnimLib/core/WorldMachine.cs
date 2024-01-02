@@ -312,7 +312,12 @@ internal class WorldMachine {
                         }
                     }
                     var field = state.GetType().GetField(lower);
-                    field?.SetValue(state, wpm.newvalue);
+                    if (field != null) {
+                        field.SetValue(state, wpm.newvalue);
+                    } else {
+                        var prop = state.GetType().GetProperty(lower);
+                        prop?.SetValue(state, wpm.newvalue);
+                    }
                 }
             }
             break;
@@ -340,7 +345,12 @@ internal class WorldMachine {
                     }
                 }
                 var field = state.GetType().GetField(lower);
-                field?.SetValue(state, worldProperty.newvalue);
+                if (field != null) {
+                    field.SetValue(state, worldProperty.newvalue);
+                } else {
+                    var prop = state.GetType().GetProperty(lower);
+                    prop?.SetValue(state, worldProperty.newvalue);
+                }
             }
             break;
             case WorldSetActiveCameraCommand setActiveCameraCommand:
@@ -385,7 +395,12 @@ internal class WorldMachine {
                         }
                     }
                     var field = state.GetType().GetField(lower);
-                    field?.SetValue(state, oval);
+                    if (field != null) {
+                        field.SetValue(state, oval);
+                    } else {
+                        var prop = state.GetType().GetProperty(lower);
+                        prop?.SetValue(state, oval);
+                    }
                 }
             }
             break;
@@ -405,7 +420,12 @@ internal class WorldMachine {
                     }
                 }
                 var field = state.GetType().GetField(lower);
-                field?.SetValue(state, worldProperty.oldvalue);
+                if (field != null) {
+                    field.SetValue(state, worldProperty.oldvalue);
+                } else {
+                    var prop = state.GetType().GetProperty(lower);
+                    prop?.SetValue(state, worldProperty.oldvalue);
+                }
             }
             break;
             case WorldSetActiveCameraCommand setActiveCameraCommand:

@@ -75,6 +75,15 @@ namespace AnimLib
         public static readonly Vector3 RIGHT = new Vector3(1.0f, 0.0f, 0.0f);
 
         /// <summary>
+        /// Broadcast a scalar to a vector.
+        /// </summary>
+        public Vector3(float xyz) {
+            this.x = xyz;
+            this.y = xyz;
+            this.z = xyz;
+        }
+
+        /// <summary>
         /// Construct vector from components.
         /// </summary>
         public Vector3(float x, float y, float z) {
@@ -315,6 +324,10 @@ namespace AnimLib
         /// </summary>
         public static implicit operator System.Numerics.Vector3(Vector3 v) => new System.Numerics.Vector3(v.x, v.y, v.z);
 
+        /// <summary>
+        /// Implicit conversion from float tuple.
+        /// </summary>
+        public static implicit operator Vector3((float x, float y, float z) v) => new Vector3(v.x, v.y, v.z);
 
         /// <summary>
         /// Component-wise equality.

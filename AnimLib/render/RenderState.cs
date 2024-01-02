@@ -24,6 +24,8 @@ public enum BuiltinShader {
     CubeShader,
     /// <summary> Shader for rendering generic meshes </summary>
     MeshShader,
+    /// <summary> Shader for rendering quads </summary>
+    QuadShader,
 }
 
 internal class RenderState 
