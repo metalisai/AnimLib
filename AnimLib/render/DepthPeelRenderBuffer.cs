@@ -170,23 +170,26 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
 
             _presentTex = _colorTex;
         } else {
+            // this seems to be the max on most (even recent) hardware
+            // some drivers fake 16x with supersampling
+            int samples = 8;
             GL.BindTexture(TextureTarget.Texture2DMultisample, _colorTex);
-            GL.TexImage2DMultisample(TextureTargetMultisample.Texture2DMultisample, 4, internalFormat, width, height, true);
+            GL.TexImage2DMultisample(TextureTargetMultisample.Texture2DMultisample, samples, internalFormat, width, height, true);
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2DMultisample, _colorTex, 0);
 
             /*GL.BindTexture(TextureTarget.Texture2D, _entityIdTex);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.R32i, width, height, 0, PixelFormat.RedInteger, PixelType.Int, IntPtr.Zero);
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2D, _entityIdTex, 0);*/
             GL.BindTexture(TextureTarget.Texture2DMultisample, _entityIdTex);
-            GL.TexImage2DMultisample(TextureTargetMultisample.Texture2DMultisample, 4, PixelInternalFormat.R32i, width, height, true);
+            GL.TexImage2DMultisample(TextureTargetMultisample.Texture2DMultisample, samples, PixelInternalFormat.R32i, width, height, true);
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2DMultisample, _entityIdTex, 0);
             
             GL.BindTexture(TextureTarget.Texture2DMultisample, _depthTex1);
-            GL.TexImage2DMultisample(TextureTargetMultisample.Texture2DMultisample, 4, PixelInternalFormat.Depth24Stencil8, width, height, true);
+            GL.TexImage2DMultisample(TextureTargetMultisample.Texture2DMultisample, samples, PixelInternalFormat.Depth24Stencil8, width, height, true);
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, TextureTarget.Texture2DMultisample, _depthTex1, 0);
 
             GL.BindTexture(TextureTarget.Texture2DMultisample, _depthTex2);
-            GL.TexImage2DMultisample(TextureTargetMultisample.Texture2DMultisample, 4, PixelInternalFormat.Depth24Stencil8, width, height, true);
+            GL.TexImage2DMultisample(TextureTargetMultisample.Texture2DMultisample, samples, PixelInternalFormat.Depth24Stencil8, width, height, true);
             //GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, TextureTarget.Texture2DMultisample, _depthTex2, 0);
 
             // make a non-multisampled for presentable texture
