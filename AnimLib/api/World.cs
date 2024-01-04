@@ -129,6 +129,7 @@ internal class WorldSnapshot {
     // NOTE: the first renderbuffer is always the main one
     public required RenderBufferState[] RenderBuffers;
     public Dictionary<DynPropertyId, object> DynamicProperties = new ();
+
     public double Time;
 }
 
@@ -177,6 +178,8 @@ public class World
     private Dictionary<int, VisualEntity> _parents = new ();
 
     private Dictionary<int, VisualEntity> _entities = new ();
+
+    private Dictionary<int, DynVisualEntity> _dynEntities = new ();
 
     private Dictionary<DynPropertyId, object?> _dynamicProperties = new ();
 
@@ -386,6 +389,26 @@ public class World
         _commands.Add(cmd);
     }
 
+    private void DynEntityCreated(DynVisualEntity entity) {
+        entity.Id = GetUniqueId();
+        if(currentEditor == null) {
+            Debug.Error("Entity created when no one is editing!? Use StartEditing() before modifying world.");
+        }
+        /*if (currentEditor != null) {
+            entity.state.creator = currentEditor;
+        }
+        else {
+            Debug.Warning("Entity created without creator. This is not a problem but might make debugging harder.");
+        }*/
+        var cmd = new WorldDynCreateCommand(
+            entity: entity,
+            time: Time.T
+        );
+        _commands.Add(cmd);
+        entity.Created = true;
+        _dynEntities.Add(entity.Id, entity);
+    }
+
     private void EntityCreated(VisualEntity entity) {
         entity.state.entityId = GetUniqueId();
         if(currentEditor == null) {
@@ -453,6 +476,7 @@ public class World
 
     internal DynPropertyId CreateDynProperty(object? vl) {
         var id = GetUniqueDynId();
+        Debug.TLog("Creating dyn property " + id);
         _dynamicProperties.Add(id, vl);
         var cmd = new WorldCreateDynPropertyCommand(
             propertyId: id,
@@ -469,6 +493,7 @@ public class World
     }
 
     internal void SetDynProperty(DynPropertyId id, object? value) {
+        Debug.TLog("Setting dyn property " + id + " to " + value);
         var cmd = new WorldDynPropertyCommand(
             propertyId: id,
             newvalue: value,
@@ -486,6 +511,11 @@ public class World
         EntityCreated(ent);
         return ent;
     } 
+
+    public T CreateDynInstantly<T>(T ent) where T : DynVisualEntity {
+        DynEntityCreated(ent);
+        return ent;
+    }
 
     /// <summary>
     /// Create an <c>IColored</c> entity with a fade in animation.

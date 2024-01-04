@@ -39,6 +39,8 @@ internal record WorldCreateDynPropertyCommand (
     double time
 ) : WorldCommand(time);
 
+internal record WorldDynCreateCommand(DynVisualEntity entity, double time) : WorldCommand(time);
+
 internal record WorldCreateCommand(object entity, double time) : WorldCommand(time);
 
 internal record WorldDestroyCommand (int entityId, double time) : WorldCommand(time);

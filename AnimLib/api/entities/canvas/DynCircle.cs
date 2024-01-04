@@ -1,29 +1,39 @@
+using System;
+
 namespace AnimLib;
 
 public abstract class DynVisualEntity {
     public int Id { get; internal set; }
-    DynProperty<int> Parent;
-    DynProperty<bool> Active;
-    DynProperty<int> SortKey;
+    public DynProperty<int> Parent;
+    public DynProperty<bool> Active;
+    public DynProperty<int> SortKey;
+    public DynProperty<bool> Created;
+
+    abstract public object GetState(Func<DynPropertyId, object?> evaluator);
 }
 
 public abstract class DynVisualEntity2D : DynVisualEntity {
-    DynProperty<Vector2> Position;
-    DynProperty<float> Rotation;
-    DynProperty<Vector2> Scale;
-    DynProperty<Vector2> Anchor;
-    DynProperty<Vector2> Pivot;
-    DynProperty<M3x3> Homography;
+    public DynProperty<Vector2> Position;
+    public DynProperty<float> Rotation;
+    public DynProperty<Vector2> Scale;
+    public DynProperty<Vector2> Anchor;
+    public DynProperty<Vector2> Pivot;
+    public DynProperty<M3x3> Homography;
 }
 
 /// <summary>
 /// A shape defined by path.
 /// </summary>
 public class DynShape : DynVisualEntity2D {
-    DynProperty<ShapePath> Path { get; set; }
+    protected DynProperty<ShapePath> Path { get; set; }
 
     public DynShape(ShapePath path) {
         Path = new DynProperty<ShapePath>("path", path);
+    }
+
+    public override object GetState(Func<DynPropertyId, object?> evaluator) {
+        return new ShapeState(Path.Value) {
+        };
     }
 }
 
@@ -52,5 +62,12 @@ public class DynCircle : DynShape {
         set {
             radiusP.Value = value.Value;
         }
+    }
+
+    public override object GetState(Func<DynPropertyId, object?> evaluator) {
+        float val = evaluator(radiusP.Id) as float? ?? default(float);
+        return new CircleState(CreateCirclePath(val)) {
+            radius = val as float? ?? default(float),
+        };
     }
 }
