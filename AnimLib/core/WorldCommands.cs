@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace AnimLib;
 
 internal record WorldCommand(double time);
@@ -15,9 +18,9 @@ internal record WorldPropertyMultiCommand (
 ) : WorldCommand(time);
 
 internal record WorldDynPropertyCommand (
-    int entityId,
-    object newvalue,
-    object oldvalue,
+    DynPropertyId propertyId,
+    object? newvalue,
+    object? oldvalue,
     double time
 ) : WorldCommand(time);
 
@@ -31,8 +34,8 @@ internal record WorldPropertyCommand (
 ) : WorldCommand(time);
 
 internal record WorldCreateDynPropertyCommand (
-    int propertyId,
-    object value,
+    DynPropertyId propertyId,
+    object? value,
     double time
 ) : WorldCommand(time);
 

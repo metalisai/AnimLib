@@ -9,7 +9,8 @@ public class CanvasBlurEffect : CanvasEffect {
     /// </summary>
     public float Radius {
         get {
-            return (float)properties["radiusX"].Value;
+            var val = properties["radiusX"].Value;
+            return (val as float?) ?? default(float);
         }
         set {
             properties["radiusX"].Value = value;
@@ -22,7 +23,8 @@ public class CanvasBlurEffect : CanvasEffect {
     /// </summary>
     public float RadiusX {
         get {
-            return (float)properties["radiusX"].Value;
+            var val = properties["radiusX"].Value;
+            return (val as float?) ?? 0.0f;
         }
         set {
             properties["radiusX"].Value = value;
@@ -34,7 +36,8 @@ public class CanvasBlurEffect : CanvasEffect {
     /// </summary>
     public float RadiusY {
         get {
-            return (float)properties["radiusY"].Value;
+            var val = properties["radiusY"].Value;
+            return (val as float?) ?? default(float);
         }
         set {
             properties["radiusY"].Value = value;

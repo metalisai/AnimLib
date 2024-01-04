@@ -85,12 +85,12 @@ public class ColoredTriangleMeshGeometry : IRendererResource {
     }
 }
 
-public class ColoredTriangleMesh {
+internal class ColoredTriangleMesh {
     public BuiltinShader Shader = BuiltinShader.LineShader;
     public Color Tint = Color.WHITE;
     public Color Outline = Color.BLACK;
     public M4x4 modelToWorld;
-    public ColoredTriangleMeshGeometry Geometry;
+    public required ColoredTriangleMeshGeometry Geometry;
     public List<(string, object)> shaderProperties = new List<(string, object)>();
     internal Dictionary<string, DynProperty> properties = new ();
     public bool is2d = false;
@@ -98,7 +98,7 @@ public class ColoredTriangleMesh {
 }
 
 internal class RendererHandle {
-    public ColoredTriangleMeshGeometry Handle;
+    public ColoredTriangleMeshGeometry? Handle;
 }
 
 internal class RendererAnimation {
@@ -128,7 +128,7 @@ internal class WorldSnapshot {
     public required CanvasSnapshot[] Canvases;
     // NOTE: the first renderbuffer is always the main one
     public required RenderBufferState[] RenderBuffers;
-    public Dictionary<int, object> DynamicProperties = new ();
+    public Dictionary<DynPropertyId, object> DynamicProperties = new ();
     public double Time;
 }
 
@@ -178,12 +178,17 @@ public class World
 
     private Dictionary<int, VisualEntity> _entities = new ();
 
-    private Dictionary<int, object> _dynamicProperties = new ();
+    private Dictionary<DynPropertyId, object?> _dynamicProperties = new ();
 
     internal ITypeSetter ts = new FreetypeSetting();
     object? currentEditor = null; // who edits things right now (e.g. scene or animationbehaviour)
     internal EntityResolver EntityResolver;
     Color background = Color.WHITE;
+
+    /// <summary>
+    /// The time dynamic property.
+    /// </summary>
+    public DynProperty<float> CurrentTime;
 
     /// <summary>
     /// Id of the world.
@@ -253,6 +258,10 @@ public class World
         return entityId++;
     }
 
+    internal DynPropertyId GetUniqueDynId() {
+        return new DynPropertyId(entityId++);
+    }
+
     internal void Update(double dt) {
         /*foreach(var label in _labels) {
             LabelState state = ((LabelState)label.state);
@@ -306,6 +315,8 @@ public class World
         Canvas.Default = defaultCanvas;
 
         this.ActiveCanvas = defaultCanvas;
+
+        this.CurrentTime = new DynProperty<float>("time", 0.0f);
 
         CreateInstantly(cam);
         ActiveCamera = cam;
@@ -440,8 +451,8 @@ public class World
         return ent;
     }
 
-    internal int CreateDynProperty(object vl) {
-        var id = GetUniqueId();
+    internal DynPropertyId CreateDynProperty(object? vl) {
+        var id = GetUniqueDynId();
         _dynamicProperties.Add(id, vl);
         var cmd = new WorldCreateDynPropertyCommand(
             propertyId: id,
@@ -452,14 +463,14 @@ public class World
         return id;
     }
 
-    internal object? GetDynProperty(int id) {
+    internal object? GetDynProperty(DynPropertyId id) {
         _dynamicProperties.TryGetValue(id, out var ret);
         return ret;
     }
 
-    internal void SetDynProperty(int id, object value) {
+    internal void SetDynProperty(DynPropertyId id, object? value) {
         var cmd = new WorldDynPropertyCommand(
-            entityId: id,
+            propertyId: id,
             newvalue: value,
             oldvalue: _dynamicProperties[id],
             time: Time.T

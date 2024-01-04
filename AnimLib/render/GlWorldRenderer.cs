@@ -129,7 +129,7 @@ internal partial class GlWorldRenderer : IRenderer {
         new Vector2(0.0f, 1.0f)
     };
 
-    public void RenderMeshes(ColoredTriangleMesh[] meshes, M4x4 camMat, M4x4 screenMat, Dictionary<int, object> dynProps) {
+    public void RenderMeshes(ColoredTriangleMesh[] meshes, M4x4 camMat, M4x4 screenMat, Dictionary<DynPropertyId, object> dynProps) {
         var colorSize = Marshal.SizeOf(typeof(Color));
         var vertSize = Marshal.SizeOf(typeof(Vector3));
         var edgeSize = Marshal.SizeOf(typeof(Vector2));
@@ -137,7 +137,7 @@ internal partial class GlWorldRenderer : IRenderer {
         if(meshes.Length > 0) {
             // TODO: winding order is wrong?
             GL.Disable(EnableCap.CullFace);
-            GL.FrontFace(FrontFaceDirection.Ccw);
+            GL.FrontFace(FrontFaceDirection.Cw);
             GL.Enable(EnableCap.DepthTest);
 
             foreach(var m in meshes) {
@@ -533,7 +533,7 @@ internal partial class GlWorldRenderer : IRenderer {
 
         M4x4 worldToClip = cam.CreateWorldToClipMatrix((float)pbSize.w/(float)pbSize.h);
         int p = 0;
-        for(p = 0; p < 16; p++) {
+        for(p = 0; p < 24; p++) {
             drawId = 0;
             GL.ColorMask(true, true, true, true);
             GL.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);

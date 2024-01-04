@@ -24,7 +24,7 @@ internal class WorldMachine {
     Dictionary<int, EntityState> _destroyedEntities = new Dictionary<int, EntityState>();
     List<RenderBufferState> _renderBuffers = new();
 
-    Dictionary<int, object> _dynamicProperties = new Dictionary<int, object>();
+    Dictionary<DynPropertyId, object?> _dynamicProperties = new ();
 
     public double fps = 60.0;
     string _lastAction = ""; // this is for debug
@@ -360,7 +360,7 @@ internal class WorldMachine {
             _dynamicProperties.Add(createDynPropertyCommand.propertyId, createDynPropertyCommand.value);
             break;
             case WorldDynPropertyCommand dynPropertyCommand:
-            _dynamicProperties[dynPropertyCommand.entityId] = dynPropertyCommand.newvalue;
+            _dynamicProperties[dynPropertyCommand.propertyId] = dynPropertyCommand.newvalue;
             break;
         }
     }
@@ -435,7 +435,7 @@ internal class WorldMachine {
             _dynamicProperties.Remove(createDynPropertyCommand.propertyId);
             break;
             case WorldDynPropertyCommand dynPropertyCommand:
-            _dynamicProperties[dynPropertyCommand.entityId] = dynPropertyCommand.oldvalue;
+            _dynamicProperties[dynPropertyCommand.propertyId] = dynPropertyCommand.oldvalue;
             break;
         }
     }
