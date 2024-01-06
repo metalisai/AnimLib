@@ -193,7 +193,7 @@ public class World
     /// <summary>
     /// The time dynamic property.
     /// </summary>
-    public DynProperty<float> CurrentTime;
+    public DynProperty<double> CurrentTime;
 
     /// <summary>
     /// Id of the world.
@@ -322,7 +322,13 @@ public class World
 
         this.ActiveCanvas = defaultCanvas;
 
-        this.CurrentTime = new DynProperty<float>("time", 0.0f);
+        this.CurrentTime = new DynProperty<double>("time", 0.0f);
+        var sprop = new WorldSpecialPropertyCommand(
+            propertyId: CurrentTime.Id,
+            SpecialWorldPropertyType.Time,
+            time: Time.T
+        );
+        _commands.Add(sprop);
 
         CreateInstantly(cam);
         ActiveCamera = cam;
@@ -363,6 +369,9 @@ public class World
     internal event OnPropertyChangedD OnPropertyChanged;
 
     internal void BeginDynEvaluator(DynPropertyId id, Func<Dictionary<DynPropertyId, object?>, object?> evaluator) {
+        if (id.Id == 0) {
+            return;
+        }
         if (_activeDynEvaluators.ContainsKey(id)) {
             Debug.Error($"Dyn property {id} already has active evaluator. Make sure you don't evaluate a property from multiple places at the same time.");
             return;
@@ -379,6 +388,9 @@ public class World
     }
 
     internal void EndDynEvaluator(DynPropertyId id) {
+        if (id.Id == 0) {
+            return;
+        }
         if (!_activeDynEvaluators.ContainsKey(id)) {
             Debug.Error($"Dyn property {id} does not have active evaluator. Maybe it was ignored due to race condition?");
             return;
@@ -437,7 +449,7 @@ public class World
             time: Time.T
         );
         _commands.Add(cmd);
-        entity.Created = true;
+        entity.OnCreated();
         _dynEntities.Add(entity.Id, entity);
     }
 
@@ -508,7 +520,6 @@ public class World
 
     internal DynPropertyId CreateDynProperty(object? vl) {
         var id = GetUniqueDynId();
-        Debug.TLog("Creating dyn property " + id);
         _dynamicProperties.Add(id, vl);
         var cmd = new WorldCreateDynPropertyCommand(
             propertyId: id,
@@ -525,6 +536,9 @@ public class World
     }
 
     internal void SetDynProperty(DynPropertyId id, object? value) {
+        if (id.Id == 0) {
+            return;
+        }
         if (_activeDynEvaluators.ContainsKey(id)) {
             Debug.Error("Can't set dyn property while it has an evaluator. SetDynProperty ignored. Make sure you don't control single property from multiple places.");
             return;

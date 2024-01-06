@@ -45,8 +45,8 @@ public class CanvasDilateEffect : CanvasEffect {
     /// Create a new blur effect.
     /// </summary>
     public CanvasDilateEffect(float radius = 0.0f) {
-        properties["radiusX"] = new DynProperty("radiusX", radius);
-        properties["radiusY"] = new DynProperty("radiusY", radius);
+        properties["radiusX"] = new DynProperty<float>("radiusX", radius);
+        properties["radiusY"] = new DynProperty<float>("radiusY", radius);
     }
 }
 

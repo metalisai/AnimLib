@@ -22,7 +22,6 @@ public class Time
 
     internal static void NewFrame(double dt) {
         _currentTime += dt;
-        World.current.CurrentTime.Value = (float)_currentTime;
         _dt = dt;
 
         // NOTE: items can be added to the list when SetResult is called!

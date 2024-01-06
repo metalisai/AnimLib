@@ -4,36 +4,63 @@ namespace AnimLib;
 
 public abstract class DynVisualEntity {
     public int Id { get; internal set; }
-    public DynProperty<int> Parent;
-    public DynProperty<bool> Active;
-    public DynProperty<int> SortKey;
-    public DynProperty<bool> Created;
+    public DynProperty<int> Parent = DynProperty<int>.CreateEmpty(-1);
+    public DynProperty<bool> Active = DynProperty<bool>.CreateEmpty(true);
+    public DynProperty<int> SortKey = DynProperty<int>.CreateEmpty(0);
+    public DynProperty<bool> Created = DynProperty<bool>.CreateEmpty(false);
+
+    public DynVisualEntity() {
+    }
 
     abstract public object GetState(Func<DynPropertyId, object?> evaluator);
+
+    internal virtual void OnCreated() {
+        Parent = new DynProperty<int>("parent", -1);
+        Active = new DynProperty<bool>("active", true);
+        SortKey = new DynProperty<int>("sortKey", 0);
+        Created = new DynProperty<bool>("created", false);
+        this.Created = true;
+    }
 }
 
 public abstract class DynVisualEntity2D : DynVisualEntity {
-    public DynProperty<Vector2> Position;
-    public DynProperty<float> Rotation;
-    public DynProperty<Vector2> Scale;
-    public DynProperty<Vector2> Anchor;
-    public DynProperty<Vector2> Pivot;
-    public DynProperty<M3x3> Homography;
+    public DynProperty<Vector2> Position = DynProperty<Vector2>.CreateEmpty(Vector2.ZERO);
+    public DynProperty<float> Rotation = DynProperty<float>.CreateEmpty(0.0f);
+    public DynProperty<Vector2> Scale = DynProperty<Vector2>.CreateEmpty(Vector2.ONE);
+    public DynProperty<Vector2> Anchor = DynProperty<Vector2>.CreateEmpty(Vector2.ZERO);
+    public DynProperty<Vector2> Pivot = DynProperty<Vector2>.CreateEmpty(Vector2.ZERO);
+    public DynProperty<M3x3?> Homography = DynProperty<M3x3?>.CreateEmpty(null);
+
+    internal override void OnCreated() {
+        base.OnCreated();
+        Position = new DynProperty<Vector2>("position", Vector2.ZERO);
+        Rotation = new DynProperty<float>("rotation", 0.0f);
+        Scale = new DynProperty<Vector2>("scale", Vector2.ONE);
+        Anchor = new DynProperty<Vector2>("anchor", Vector2.ZERO);
+        Pivot = new DynProperty<Vector2>("pivot", Vector2.ZERO);
+        Homography = new DynProperty<M3x3?>("homography", null);
+    }
 }
 
 /// <summary>
 /// A shape defined by path.
 /// </summary>
 public class DynShape : DynVisualEntity2D {
-    protected DynProperty<ShapePath> Path { get; set; }
+    protected ShapePath path;
+    public DynProperty<ShapePath> Path;
 
     public DynShape(ShapePath path) {
-        Path = new DynProperty<ShapePath>("path", path);
+        this.path = path;
     }
 
     public override object GetState(Func<DynPropertyId, object?> evaluator) {
         return new ShapeState(Path.Value) {
         };
+    }
+
+    internal override void OnCreated() {
+        base.OnCreated();
+        Path = new DynProperty<ShapePath>("path", path);
     }
 }
 
@@ -51,7 +78,7 @@ public class DynCircle : DynShape {
     /// Creates a new circle with the given radius.
     /// </summary>
     public DynCircle(float radius) : base(CreateCirclePath(radius)) {
-        radiusP = new DynProperty<float>("radius", radius);
+        radiusP = DynProperty<float>.CreateEmpty(radius);
     }
 
     internal DynProperty<float> radiusP;
@@ -67,8 +94,17 @@ public class DynCircle : DynShape {
 
     public override object GetState(Func<DynPropertyId, object?> evaluator) {
         float val = evaluator(radiusP.Id) as float? ?? default(float);
+        var pos = evaluator(Position.Id) as Vector2? ?? default(Vector2);
+        var scale = evaluator(Scale.Id) as Vector2? ?? default(Vector2);
         return new CircleState(CreateCirclePath(val)) {
             radius = val as float? ?? default(float),
+            position = pos,
+            scale = scale,
         };
+    }
+
+    internal override void OnCreated() {
+        base.OnCreated();
+        radiusP = new DynProperty<float>("radius", radiusP.Value);
     }
 }

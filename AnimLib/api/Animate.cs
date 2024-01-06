@@ -180,7 +180,7 @@ public static class Animate {
         double startT = AnimLib.Time.T;
         var timePropertyId = World.current.CurrentTime.Id;
         Func<Dictionary<DynPropertyId, object?>, object?> timeEvaluator = (dict) => {
-            var time = dict[timePropertyId] as float? ?? default(float);
+            var time = dict[timePropertyId] as double? ?? default(float);
             var relativeTime = (double)time - startT;
             var t = (float)Math.Clamp(relativeTime / duration, 0.0f, 1.0f);
             if (relativeTime < duration) {

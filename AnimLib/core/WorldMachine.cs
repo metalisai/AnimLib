@@ -31,6 +31,8 @@ internal class WorldMachine {
 
     Dictionary<DynPropertyId, Func<Dictionary<DynPropertyId, object?>, object?>> _propertyEvaluators = new ();
 
+    List<(DynPropertyId propId, SpecialWorldPropertyType type)> _specialProperties = new ();
+
     public double fps = 60.0;
     string _lastAction = ""; // this is for debug
 
@@ -63,6 +65,7 @@ internal class WorldMachine {
         _cameras.Clear();
         _playCursorCmd = 0;
         _currentPlaybackTime = 0.0;
+        _specialProperties.Clear();
         _entities.Clear();
         _dynamicProperties.Clear();
         _propertyEvaluators.Clear();
@@ -110,6 +113,12 @@ internal class WorldMachine {
                 Undo(program[_playCursorCmd-1]);
                 _playCursorCmd--;
             }
+        }
+        foreach (var sp in _specialProperties) {
+            _dynamicProperties[sp.propId] = sp.type switch {
+                SpecialWorldPropertyType.Time => _currentPlaybackTime,
+                _ => throw new NotImplementedException(),
+            };
         }
         foreach(var kvp in _propertyEvaluators) {
             try {
@@ -185,6 +194,9 @@ internal class WorldMachine {
             };
 
             Func<DynPropertyId, object?> getDynProp = (id) => {
+                if (id == DynProperty.Invalid.Id) {
+                    throw new Exception("DynProperty.Invalid.Id is not a valid DynPropertyId! Don't reference it.");
+                }
                 if (_dynamicProperties.TryGetValue(id, out var val)) {
                     return val;
                 } else {
@@ -412,6 +424,9 @@ internal class WorldMachine {
             break;
             case WorldPropertyEvaluatorDestroy evaluatorDestroy:
             _propertyEvaluators.Remove(evaluatorDestroy.propertyId);
+            break;
+            case WorldSpecialPropertyCommand specialPropertyCommand:
+            _specialProperties.Add((specialPropertyCommand.propertyId, specialPropertyCommand.property));
             break;
             default:
             Debug.Warning($"Unknown world command {cmd}");
