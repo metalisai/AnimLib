@@ -96,6 +96,15 @@ internal class WorldMachine {
         Reset();
     }
 
+    protected void EvaluateSpecialProperties() {
+        foreach(var sp in _specialProperties) {
+            _dynamicProperties[sp.propId] = sp.type switch {
+                SpecialWorldPropertyType.Time => _currentPlaybackTime,
+                _ => throw new NotImplementedException(),
+            };
+        }
+    }
+
     // returns true if done playing
     public bool Step(double dt) {
         var program = Program;
@@ -114,12 +123,7 @@ internal class WorldMachine {
                 _playCursorCmd--;
             }
         }
-        foreach (var sp in _specialProperties) {
-            _dynamicProperties[sp.propId] = sp.type switch {
-                SpecialWorldPropertyType.Time => _currentPlaybackTime,
-                _ => throw new NotImplementedException(),
-            };
-        }
+        EvaluateSpecialProperties();
         foreach(var kvp in _propertyEvaluators) {
             try {
                 _dynamicProperties[kvp.Key] = kvp.Value(_dynamicProperties);
@@ -421,9 +425,11 @@ internal class WorldMachine {
             break;
             case WorldPropertyEvaluatorCreate evaluatorCreate:
             _propertyEvaluators.Add(evaluatorCreate.propertyId, evaluatorCreate.evaluator);
+            _dynamicProperties[evaluatorCreate.propertyId] = evaluatorCreate.oldValue;
             break;
             case WorldPropertyEvaluatorDestroy evaluatorDestroy:
             _propertyEvaluators.Remove(evaluatorDestroy.propertyId);
+            _dynamicProperties[evaluatorDestroy.propertyId] = evaluatorDestroy.finalValue;
             break;
             case WorldSpecialPropertyCommand specialPropertyCommand:
             _specialProperties.Add((specialPropertyCommand.propertyId, specialPropertyCommand.property));
@@ -514,9 +520,13 @@ internal class WorldMachine {
             break;
             case WorldPropertyEvaluatorCreate evaluatorCreate:
                 _propertyEvaluators.Remove(evaluatorCreate.propertyId);
+                _dynamicProperties[evaluatorCreate.propertyId] = evaluatorCreate.oldValue;
             break;
             case WorldPropertyEvaluatorDestroy evaluatorDestroy:
                 _propertyEvaluators.Add(evaluatorDestroy.propertyId, evaluatorDestroy.evaluator);
+                EvaluateSpecialProperties();
+                // TODO: this is bugged when the evaluator depends on other non-special properties
+                _dynamicProperties[evaluatorDestroy.propertyId] = evaluatorDestroy.finalValue;
                 break;
         }
     }

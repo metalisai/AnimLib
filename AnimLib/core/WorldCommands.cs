@@ -43,6 +43,7 @@ internal record WorldPropertyEvaluatorCreate (
 internal record WorldPropertyEvaluatorDestroy (
     DynPropertyId propertyId,
     Func<Dictionary<DynPropertyId, object?>, object?> evaluator,
+    object? finalValue, // value after last evaluation
     double time
 ) : WorldCommand(time);
 

@@ -93,7 +93,7 @@ public class ShapePath {
     /// <summary>
     /// The path verbs.
     /// </summary>
-    public (PathVerb verb, VerbData data)[] path;
+    public (PathVerb verb, VerbData data)[] path = Array.Empty<(PathVerb verb, VerbData data)>();
 
     /// <summary>
     /// A (single) path that consists of only straight lines.

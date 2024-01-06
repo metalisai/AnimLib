@@ -30,11 +30,6 @@ public enum TextCreationMode {
 /// Helper class to animate entities. Part of the AnimLib user API.
 /// </summary>
 public static class Animate {
-    static CubicBezier<float,float> bouncy1 = new (0.0f, 0.0f, 1.5f, 1.0f);
-    static CubicBezier<float,float> smooth1 = new (0.0f, 0.0f, 1.0f, 1.0f);
-
-    static CubicBezier<Vector2,float> smooth = new CubicBezier<Vector2,float>(new Vector2(0.0f, 0.0f), new Vector2(0.33f, 0.0f), new Vector2 (0.66f, 1.0f), new Vector2(1.0f, 1.0f));
-
     /// <summary>
     /// Orbits a transform perpendicular to the given axis. Movement starts at the current position and orbits the specified angle during the given duration.
     /// </summary>
@@ -175,7 +170,17 @@ public static class Animate {
         action.Invoke(end);
     }
 
-    public static async Task InterpF<T>(DynProperty<T> property, Func<float, T> evaluator, float start, float end, double duration, EaseType curve = EaseType.EaseInOut) {
+    /// <summary>
+    /// Interpolate a property using an evaluator that takes time-dependent value as input
+    /// </summary>
+    /// <param name="property">The property to interpolate.</param>
+    /// <param name="evaluator">The evaluator that takes time-dependent value as input. Evaluators with captures or side-effects should be avoided.</param>
+    /// <param name="start">The start value of the input parameter.</param>
+    /// <param name="end">The end value of the input parameter.</param>
+    /// <param name="duration">The duration of the interpolation.</param>
+    /// <param name="curve">The interpolation curve to use.</param>
+    /// <typeparam name="T">The type of the property.</typeparam>
+    public static async Task InterpF<T>(DynProperty<T> property, Func<float, T> evaluator, double duration, float start = 0.0f, float end = 1.0f, EaseType curve = EaseType.EaseInOut) {
         double endTime = AnimLib.Time.T + duration;
         double startT = AnimLib.Time.T;
         var timePropertyId = World.current.CurrentTime.Id;
@@ -183,6 +188,7 @@ public static class Animate {
             var time = dict[timePropertyId] as double? ?? default(float);
             var relativeTime = (double)time - startT;
             var t = (float)Math.Clamp(relativeTime / duration, 0.0f, 1.0f);
+            t = Ease.Evaluate(t, curve);
             if (relativeTime < duration) {
                 return evaluator.Invoke(start + (end - start) * t);
             } else {
@@ -190,8 +196,8 @@ public static class Animate {
             }
         };
         World.current.BeginDynEvaluator(property.Id, timeEvaluator);
-        await AnimLib.Time.WaitSeconds(duration);
-        World.current.EndDynEvaluator(property.Id);
+        await AnimLib.Time.WaitUntilT(endTime);
+        World.current.EndDynEvaluator(property.Id, evaluator.Invoke(end));
     }
 
     /// <summary>

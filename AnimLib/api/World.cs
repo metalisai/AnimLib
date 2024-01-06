@@ -387,7 +387,7 @@ public class World
         _activeDynEvaluators.Add(id, evaluator);
     }
 
-    internal void EndDynEvaluator(DynPropertyId id) {
+    internal void EndDynEvaluator(DynPropertyId id, object? finalValue) {
         if (id.Id == 0) {
             return;
         }
@@ -398,6 +398,7 @@ public class World
         var cmd = new WorldPropertyEvaluatorDestroy(
             propertyId: id,
             evaluator: _activeDynEvaluators[id],
+            finalValue: finalValue,
             time: Time.T
         );
         _commands.Add(cmd);
