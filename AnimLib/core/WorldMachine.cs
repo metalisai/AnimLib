@@ -29,6 +29,8 @@ internal class WorldMachine {
 
     Dictionary<DynPropertyId, object?> _dynamicProperties = new ();
 
+    Dictionary<DynPropertyId, Func<Dictionary<DynPropertyId, object?>, object?>> _propertyEvaluators = new ();
+
     public double fps = 60.0;
     string _lastAction = ""; // this is for debug
 
@@ -62,6 +64,9 @@ internal class WorldMachine {
         _playCursorCmd = 0;
         _currentPlaybackTime = 0.0;
         _entities.Clear();
+        _dynamicProperties.Clear();
+        _propertyEvaluators.Clear();
+        _dynShapes.Clear();
         _beziers.Clear();
         _canvases.Clear();
         //var cam = new PerspectiveCamera();
@@ -104,6 +109,13 @@ internal class WorldMachine {
             while(_playCursorCmd-1 > 0 && program[_playCursorCmd-1].time > _currentPlaybackTime) {
                 Undo(program[_playCursorCmd-1]);
                 _playCursorCmd--;
+            }
+        }
+        foreach(var kvp in _propertyEvaluators) {
+            try {
+                _dynamicProperties[kvp.Key] = kvp.Value(_dynamicProperties);
+            } catch(Exception e) {
+                Debug.Error($"Error evaluating property {kvp.Key}: {e.Message}");
             }
         }
         return _currentPlaybackTime == 0.0 || _currentPlaybackTime == GetEndTime();
@@ -395,6 +407,12 @@ internal class WorldMachine {
             case WorldDynPropertyCommand dynPropertyCommand:
             _dynamicProperties[dynPropertyCommand.propertyId] = dynPropertyCommand.newvalue;
             break;
+            case WorldPropertyEvaluatorCreate evaluatorCreate:
+            _propertyEvaluators.Add(evaluatorCreate.propertyId, evaluatorCreate.evaluator);
+            break;
+            case WorldPropertyEvaluatorDestroy evaluatorDestroy:
+            _propertyEvaluators.Remove(evaluatorDestroy.propertyId);
+            break;
             default:
             Debug.Warning($"Unknown world command {cmd}");
             break;
@@ -479,6 +497,12 @@ internal class WorldMachine {
             case WorldDynPropertyCommand dynPropertyCommand:
             _dynamicProperties[dynPropertyCommand.propertyId] = dynPropertyCommand.oldvalue;
             break;
+            case WorldPropertyEvaluatorCreate evaluatorCreate:
+                _propertyEvaluators.Remove(evaluatorCreate.propertyId);
+            break;
+            case WorldPropertyEvaluatorDestroy evaluatorDestroy:
+                _propertyEvaluators.Add(evaluatorDestroy.propertyId, evaluatorDestroy.evaluator);
+                break;
         }
     }
 

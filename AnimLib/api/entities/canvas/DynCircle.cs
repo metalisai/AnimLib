@@ -51,9 +51,10 @@ public class DynCircle : DynShape {
     /// Creates a new circle with the given radius.
     /// </summary>
     public DynCircle(float radius) : base(CreateCirclePath(radius)) {
+        radiusP = new DynProperty<float>("radius", radius);
     }
 
-    internal DynProperty<float> radiusP = new DynProperty<float>("radius", 0.0f);
+    internal DynProperty<float> radiusP;
 
     public DynProperty<float> Radius {
         get {

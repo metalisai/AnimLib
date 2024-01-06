@@ -781,6 +781,14 @@ internal class PlayerControls {
         Imgui.Text($"  Canvas rendering: {Performance.TimeToRenderCanvases*1000.0:N3}ms");
         Imgui.Text($"Number of scene views: {Performance.views}");
         Imgui.Text($"Number of commands in animation: {Performance.CommandCount}");
+        if (Imgui.TreeNode("Commands")) {
+            for (int i = 0; i < Performance.CommandCount; i++) {
+                var cmd = Performance.Commands[i];
+                Imgui.Text($"{cmd.GetType().Name} {cmd.time}");
+            }
+            Imgui.TreePop();
+        }
+
         Imgui.Text($"Last bake time: {Performance.TimeToBake*1000:N3}ms");
 
         TraversePerfTree(Performance.lastRoot);

@@ -36,6 +36,7 @@ internal static class Performance {
     public static double TimeToBake = 0.0;
     public static int CommandCount = 0;
     public static int CachedGlyphPaths = 0;
+    public static WorldCommand[] Commands = new WorldCommand[0];
 
     static Call root = null;
 

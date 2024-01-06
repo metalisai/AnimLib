@@ -173,6 +173,8 @@ public class World
     List<WorldSoundCommand> _soundCommands = new ();
     List<Func<VisualEntity, bool>> CreationListeners = new ();
 
+    Dictionary<DynPropertyId, Func<Dictionary<DynPropertyId, object?>, object?>> _activeDynEvaluators = new ();
+
     // used by EntityCollection to keep track of children
     private Dictionary<int, List<VisualEntity>> _children = new ();
     private Dictionary<int, VisualEntity> _parents = new ();
@@ -302,6 +304,7 @@ public class World
         Resources = new WorldResources();
         _entities.Clear();
         _commands.Clear();
+        _activeDynEvaluators.Clear();
         var cam = new PerspectiveCamera();
         cam.Fov = 60.0f;
         cam.ZNear = 0.1f;
@@ -358,6 +361,35 @@ public class World
 
     internal delegate void OnPropertyChangedD(VisualEntity ent, string prop, object? newValue);
     internal event OnPropertyChangedD OnPropertyChanged;
+
+    internal void BeginDynEvaluator(DynPropertyId id, Func<Dictionary<DynPropertyId, object?>, object?> evaluator) {
+        if (_activeDynEvaluators.ContainsKey(id)) {
+            Debug.Error($"Dyn property {id} already has active evaluator. Make sure you don't evaluate a property from multiple places at the same time.");
+            return;
+        }
+
+        var cmd = new WorldPropertyEvaluatorCreate(
+            propertyId: id,
+            evaluator: evaluator,
+            oldValue: _dynamicProperties[id],
+            time: Time.T
+        );
+        _commands.Add(cmd);
+        _activeDynEvaluators.Add(id, evaluator);
+    }
+
+    internal void EndDynEvaluator(DynPropertyId id) {
+        if (!_activeDynEvaluators.ContainsKey(id)) {
+            Debug.Error($"Dyn property {id} does not have active evaluator. Maybe it was ignored due to race condition?");
+            return;
+        }
+        var cmd = new WorldPropertyEvaluatorDestroy(
+            propertyId: id,
+            evaluator: _activeDynEvaluators[id],
+            time: Time.T
+        );
+        _commands.Add(cmd);
+    }
 
     internal void SetProperty<T>(VisualEntity entity, string propert, T value, T oldvalue) {
         if(value != null && value.Equals(oldvalue))
@@ -493,7 +525,10 @@ public class World
     }
 
     internal void SetDynProperty(DynPropertyId id, object? value) {
-        Debug.TLog("Setting dyn property " + id + " to " + value);
+        if (_activeDynEvaluators.ContainsKey(id)) {
+            Debug.Error("Can't set dyn property while it has an evaluator. SetDynProperty ignored. Make sure you don't control single property from multiple places.");
+            return;
+        }
         var cmd = new WorldDynPropertyCommand(
             propertyId: id,
             newvalue: value,

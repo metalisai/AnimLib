@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Numerics;
+using System.Collections.Generic;
 
 using EaseType = AnimLib.Ease.EaseType;
 
@@ -172,6 +173,25 @@ public static class Animate {
             await AnimLib.Time.WaitFrame();
         }
         action.Invoke(end);
+    }
+
+    public static async Task InterpF<T>(DynProperty<T> property, Func<float, T> evaluator, float start, float end, double duration, EaseType curve = EaseType.EaseInOut) {
+        double endTime = AnimLib.Time.T + duration;
+        double startT = AnimLib.Time.T;
+        var timePropertyId = World.current.CurrentTime.Id;
+        Func<Dictionary<DynPropertyId, object?>, object?> timeEvaluator = (dict) => {
+            var time = dict[timePropertyId] as float? ?? default(float);
+            var relativeTime = (double)time - startT;
+            var t = (float)Math.Clamp(relativeTime / duration, 0.0f, 1.0f);
+            if (relativeTime < duration) {
+                return evaluator.Invoke(start + (end - start) * t);
+            } else {
+                return evaluator.Invoke(end);
+            }
+        };
+        World.current.BeginDynEvaluator(property.Id, timeEvaluator);
+        await AnimLib.Time.WaitSeconds(duration);
+        World.current.EndDynEvaluator(property.Id);
     }
 
     /// <summary>

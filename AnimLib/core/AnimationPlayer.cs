@@ -333,6 +333,7 @@ internal class AnimationPlayer {
             } else {
                 currentAnimation = prep;
                 Performance.CommandCount = prep.Commands.Length;
+                Performance.Commands = prep.Commands.ToArray();
                 frameChanged = true;
             }
 
