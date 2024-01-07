@@ -27,6 +27,15 @@ public abstract class DynVisualEntity {
     /// </summary>
     public DynProperty<bool> Created = DynProperty<bool>.CreateEmpty(false);
 
+    /// <summary>
+    /// Creates a new visual entity.
+    /// </summary>
+    internal DynVisualEntity(DynVisualEntity other) {
+        this.Parent = other.Parent;
+        this.Active = other.Active;
+        this.SortKey = other.SortKey;
+    }
+
     internal DynVisualEntity() {
     }
 
@@ -39,12 +48,14 @@ public abstract class DynVisualEntity {
     }
 
     internal virtual void OnCreated() {
-        Parent = new DynProperty<int>("parent", -1);
-        Active = new DynProperty<bool>("active", true);
-        SortKey = new DynProperty<int>("sortKey", 0);
-        Created = new DynProperty<bool>("created", false);
+        Parent = new DynProperty<int>("parent", Parent.Value);
+        Active = new DynProperty<bool>("active", Active.Value);
+        SortKey = new DynProperty<int>("sortKey", SortKey.Value);
+        Created = new DynProperty<bool>("created", Created.Value);
         this.Created = true;
     }
+
+    abstract internal object Clone();
 }
 
 

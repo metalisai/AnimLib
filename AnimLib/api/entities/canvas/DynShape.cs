@@ -8,7 +8,7 @@ namespace AnimLib;
 public class DynShape : DynVisualEntity2D {
     protected ShapePath path;
 
-    private protected DynProperty<ShapePath> PathP;
+    private protected DynProperty<ShapePath> PathP = DynProperty<ShapePath>.CreateEmpty(new ShapePath());
     public DynProperty<ShapePath> Path {
         get {
             return PathP;
@@ -19,7 +19,7 @@ public class DynShape : DynVisualEntity2D {
         }
     }
 
-    private protected DynProperty<Color> FillColorP;
+    private protected DynProperty<Color> FillColorP = DynProperty<Color>.CreateEmpty(Color.RED);
     public DynProperty<Color> FillColor {
         get {
             return FillColorP;
@@ -30,7 +30,7 @@ public class DynShape : DynVisualEntity2D {
         }
     }
 
-    private protected DynProperty<Color> ContourColorP;
+    private protected DynProperty<Color> ContourColorP = DynProperty<Color>.CreateEmpty(Color.BLACK);
     public DynProperty<Color> ContourColor {
         get {
             return ContourColorP;
@@ -41,7 +41,7 @@ public class DynShape : DynVisualEntity2D {
         }
     }
 
-    private protected DynProperty<float> ContourSizeP;
+    private protected DynProperty<float> ContourSizeP = DynProperty<float>.CreateEmpty(1.0f);
     public DynProperty<float> ContourSize {
         get {
             return ContourSizeP;
@@ -52,7 +52,7 @@ public class DynShape : DynVisualEntity2D {
         }
     }
 
-    private protected DynProperty<ShapeMode> ModeP;
+    private protected DynProperty<ShapeMode> ModeP = DynProperty<ShapeMode>.CreateEmpty(ShapeMode.FilledContour);
     public DynProperty<ShapeMode> Mode {
         get {
             return ModeP;
@@ -63,7 +63,7 @@ public class DynShape : DynVisualEntity2D {
         }
     }
 
-    private protected DynProperty<(float, float)> TrimP;
+    private protected DynProperty<(float, float)> TrimP = DynProperty<(float, float)>.CreateEmpty((0.0f, 1.0f));
     public DynProperty<(float, float)> Trim {
         get {
             return TrimP;
@@ -72,6 +72,16 @@ public class DynShape : DynVisualEntity2D {
         set {
             Trim.Value = value.Value;
         }
+    }
+
+    internal DynShape(DynShape other) : base(other) {
+        this.path = other.path;
+        this.PathP.Value = other.PathP.Value;
+        this.FillColorP.Value = other.FillColorP.Value;
+        this.ContourColorP.Value = other.ContourColorP.Value;
+        this.ContourSizeP.Value = other.ContourSizeP.Value;
+        this.ModeP.Value = other.ModeP.Value;
+        this.TrimP.Value = other.TrimP.Value;
     }
 
     public DynShape(ShapePath path) {
@@ -97,11 +107,15 @@ public class DynShape : DynVisualEntity2D {
     internal override void OnCreated() {
         base.OnCreated();
         PathP = new DynProperty<ShapePath>("path", path);
-        FillColorP = new DynProperty<Color>("fillColor", Color.RED);
-        ContourColorP = new DynProperty<Color>("contourColor", Color.BLACK);
-        ContourSizeP = new DynProperty<float>("contourSize", 1.0f);
-        ModeP = new DynProperty<ShapeMode>("mode", ShapeMode.FilledContour);
-        TrimP = new DynProperty<(float, float)>("trim", (0.0f, 1.0f));
+        FillColorP = new DynProperty<Color>("fillColor", this.FillColorP.Value);
+        ContourColorP = new DynProperty<Color>("contourColor", this.ContourColorP.Value);
+        ContourSizeP = new DynProperty<float>("contourSize", this.ContourSizeP.Value);
+        ModeP = new DynProperty<ShapeMode>("mode", this.ModeP.Value);
+        TrimP = new DynProperty<(float, float)>("trim", this.TrimP.Value);
+    }
+
+    internal override object Clone() {
+        return new DynShape(this);
     }
 }
 

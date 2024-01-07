@@ -195,9 +195,9 @@ public static class Animate {
                 return evaluator.Invoke(end);
             }
         };
-        World.current.BeginDynEvaluator(property.Id, timeEvaluator);
+        World.current.BeginDynEvaluator(property, timeEvaluator);
         await AnimLib.Time.WaitUntilT(endTime);
-        World.current.EndDynEvaluator(property.Id, evaluator.Invoke(end));
+        World.current.EndDynEvaluator(property, evaluator.Invoke(end));
     }
 
     /// <summary>

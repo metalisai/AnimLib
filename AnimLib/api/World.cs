@@ -368,7 +368,8 @@ public class World
     internal delegate void OnPropertyChangedD(VisualEntity ent, string prop, object? newValue);
     internal event OnPropertyChangedD OnPropertyChanged;
 
-    internal void BeginDynEvaluator(DynPropertyId id, Func<Dictionary<DynPropertyId, object?>, object?> evaluator) {
+    internal void BeginDynEvaluator(DynProperty prop, Func<Dictionary<DynPropertyId, object?>, object?> evaluator) {
+        var id = prop.Id;
         if (id.Id == 0) {
             return;
         }
@@ -385,9 +386,13 @@ public class World
         );
         _commands.Add(cmd);
         _activeDynEvaluators.Add(id, evaluator);
+        prop.Evaluator = () => {
+            return evaluator(_dynamicProperties);
+        };
     }
 
-    internal void EndDynEvaluator(DynPropertyId id, object? finalValue) {
+    internal void EndDynEvaluator(DynProperty prop, object? finalValue) {
+        var id = prop.Id;
         if (id.Id == 0) {
             return;
         }
@@ -402,6 +407,10 @@ public class World
             time: Time.T
         );
         _commands.Add(cmd);
+        prop.Evaluator = null;
+        _dynamicProperties[id] = finalValue;
+        // use the internal version to avoid queueing another command
+        prop._value = finalValue;
     }
 
     internal void SetProperty<T>(VisualEntity entity, string propert, T value, T oldvalue) {
@@ -650,6 +659,14 @@ public class World
     public T Clone<T>(T e) where T : VisualEntity {
         var ret = (T)e.Clone();
         return ret;
+    }
+
+    /// <summary>
+    /// Clone a dynamic entity. Only state will be copied, the entity will not be created implicitly.
+    /// </summary>
+    public T CloneDyn<T>(T e) where T : DynVisualEntity {
+        var ret = e.Clone();
+        return (T)ret;
     }
 
     /// <summary>

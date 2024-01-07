@@ -12,15 +12,20 @@ public class DynCircle : DynShape {
         return pb;
     }
 
+    internal DynCircle(DynCircle other) : base(other) {
+        this.radiusP.Value = other.radiusP.Value;
+    }
+
     /// <summary>
     /// Creates a new circle with the given radius.
     /// </summary>
     public DynCircle(float radius) : base(CreateCirclePath(radius)) {
-        radiusP = DynProperty<float>.CreateEmpty(radius);
+        Debug.Log("Create with radius2 " + radius);
+        radiusP.Value = radius;
+        Debug.Log("Create with radius3 " + radiusP.Value);
     }
 
-    private protected DynProperty<float> radiusP;
-
+    private protected DynProperty<float> radiusP = DynProperty<float>.CreateEmpty(0.0f);
     /// <summary>
     /// The radius of this circle.
     /// </summary>
@@ -47,6 +52,11 @@ public class DynCircle : DynShape {
 
     internal override void OnCreated() {
         base.OnCreated();
+        Debug.Log("Create with radius " + radiusP.Value);
         radiusP = new DynProperty<float>("radius", radiusP.Value);
+    }
+
+    internal override object Clone() {
+        return new DynCircle(this);
     }
 }

@@ -8,9 +8,6 @@ namespace AnimLib;
 public record DynProperty {
     internal object? _value;
 
-    public static Action<DynProperty, object?>? OnSet;
-    public static Func<object?, DynPropertyId>? OnCreate;
-
     /// <summary>
     /// An invalid property setting which will be ignored.
     /// </summary>
@@ -31,11 +28,16 @@ public record DynProperty {
     /// </summary>
     public Type ExpectedType { get; internal set; } = typeof(object);
 
+    internal Func<object?>? Evaluator { get; set; }
+
     /// <summary>
     /// The current value.
     /// </summary>
     public object? Value { 
         get {
+            if (Evaluator != null) {
+                return Evaluator();
+            }
             return this._value;
         }
         set {
@@ -44,12 +46,13 @@ public record DynProperty {
                 throw new Exception($"Expected {ExpectedType} but got {value.GetType()}");
             }
 #endif
-            OnSet?.Invoke(this, value);
+            World.current.SetDynProperty(this.Id, value);
+            _value = value;
         }
     }
 
     internal DynProperty(string name, object? initialValue, Type expectedType) {
-        this.Id = OnCreate?.Invoke(initialValue) ?? DynProperty.Invalid.Id;
+        this.Id = World.current.CreateDynProperty(initialValue);
         this.Name = name;
         this._value = initialValue;
         this.ExpectedType = expectedType;
