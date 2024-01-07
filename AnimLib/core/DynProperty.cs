@@ -3,29 +3,13 @@ using System;
 namespace AnimLib;
 
 /// <summary>
-/// A handle to a dynamic property.
-/// </summary>
-public record struct DynPropertyId(int Id) {
-    /// <summary>
-    /// Compare two IDs.
-    /// </summary>
-    public readonly bool Equals(DynPropertyId other) {
-        return Id == other.Id;
-    }
-
-    /// <summary>
-    /// Get hash code.
-    /// </summary>
-    public override int GetHashCode() {
-        return Id;
-    }
-}
-
-/// <summary>
 /// A dynamic property that can be animated or evaluated.
 /// </summary>
 public record DynProperty {
     internal object? _value;
+
+    public static Action<DynProperty, object?>? OnSet;
+    public static Func<object?, DynPropertyId>? OnCreate;
 
     /// <summary>
     /// An invalid property setting which will be ignored.
@@ -60,12 +44,12 @@ public record DynProperty {
                 throw new Exception($"Expected {ExpectedType} but got {value.GetType()}");
             }
 #endif
-            World.current.SetDynProperty(Id, value);
+            OnSet?.Invoke(this, value);
         }
     }
 
     internal DynProperty(string name, object? initialValue, Type expectedType) {
-        this.Id = World.current.CreateDynProperty(initialValue);
+        this.Id = OnCreate?.Invoke(initialValue) ?? DynProperty.Invalid.Id;
         this.Name = name;
         this._value = initialValue;
         this.ExpectedType = expectedType;

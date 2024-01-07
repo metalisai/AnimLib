@@ -9,7 +9,7 @@ namespace AnimLib;
 /// </summary>
 public class CubicSpline {
     internal class BezierNode {
-        public BezierNode Left, Right;
+        public BezierNode? Left, Right;
         public CubicBezier<Vector2, float> Bezier;
 
         BezierNode(CubicBezier<Vector2, float> bezier)
