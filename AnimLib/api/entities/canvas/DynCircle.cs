@@ -20,9 +20,7 @@ public class DynCircle : DynShape {
     /// Creates a new circle with the given radius.
     /// </summary>
     public DynCircle(float radius) : base(CreateCirclePath(radius)) {
-        Debug.Log("Create with radius2 " + radius);
         radiusP.Value = radius;
-        Debug.Log("Create with radius3 " + radiusP.Value);
     }
 
     private protected DynProperty<float> radiusP = DynProperty<float>.CreateEmpty(0.0f);
@@ -52,7 +50,6 @@ public class DynCircle : DynShape {
 
     internal override void OnCreated() {
         base.OnCreated();
-        Debug.Log("Create with radius " + radiusP.Value);
         radiusP = new DynProperty<float>("radius", radiusP.Value);
     }
 

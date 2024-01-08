@@ -411,6 +411,7 @@ public class World
         _dynamicProperties[id] = finalValue;
         // use the internal version to avoid queueing another command
         prop._value = finalValue;
+        _activeDynEvaluators.Remove(id);
     }
 
     internal void SetProperty<T>(VisualEntity entity, string propert, T value, T oldvalue) {

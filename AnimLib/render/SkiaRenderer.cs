@@ -320,18 +320,34 @@ internal partial class SkiaRenderer
             // NOTE: using typeof to make sure that if someone changes the name of the effect, it can be caught at compile time
             if (eff.Name == typeof (CanvasBlurEffect).Name) {
                 using var _x = new Performance.Call("SkiaRenderer.RenderCanvas.Blur");
-                float radiusX = getValue<float>(eff, "radiusX");
-                float radiusY = getValue<float>(eff, "radiusY");
-                using var filter = SKImageFilter.CreateBlur(radiusY, radiusY);
+                float radius = getValue<float>(eff, "radius");
+                using var filter = SKImageFilter.CreateBlur(radius, radius);
                 using var paint = new SKPaint() { ImageFilter = filter };
                 canvas?.SaveLayer(paint);
                 restoreCount++;
             }
             else if (eff.Name == typeof (CanvasDilateEffect).Name) {
                 using var _x = new Performance.Call("SkiaRenderer.RenderCanvas.Dilate");
-                float radiusX = getValue<float>(eff, "radiusX");
-                float radiusY = getValue<float>(eff, "radiusY");
-                using var filter = SKImageFilter.CreateDilate(radiusX, radiusY);
+                float radius = getValue<float>(eff, "radius");
+                using var filter = SKImageFilter.CreateDilate(radius, radius);
+                using var paint = new SKPaint() { ImageFilter = filter };
+                canvas?.SaveLayer(paint);
+                restoreCount++;
+            }
+            else if (eff.Name == typeof (CanvasAlphaThresholdEffect).Name) {
+                float lower = getValue<float>(eff, "lower");
+                float upper = getValue<float>(eff, "upper");
+                Vector4 rect = getValue<Vector4>(eff, "rect");
+                SKRegion clip = new SKRegion();
+                clip.SetRect(new SKRectI((int)rect.x, (int)rect.y, (int)rect.z, (int)rect.w));
+                using var filter = SKImageFilter.CreateAlphaThreshold(clip, lower, upper);
+                using var paint = new SKPaint() { ImageFilter = filter };
+                canvas?.SaveLayer(paint);
+                restoreCount++;
+            }
+            else if (eff.Name == typeof (CanvasErodeEffect).Name) {
+                float radius = getValue<float>(eff, "radius");
+                using var filter = SKImageFilter.CreateErode(radius, radius);
                 using var paint = new SKPaint() { ImageFilter = filter };
                 canvas?.SaveLayer(paint);
                 restoreCount++;

@@ -4,49 +4,25 @@ namespace AnimLib;
 /// A blur effect applied to a canvas.
 /// </summary>
 public class CanvasDilateEffect : CanvasEffect {
+    private protected DynProperty<float> RadiusP;
     /// <summary>
-    /// The radius of the blur. Setting this will set both the X and Y radius.
+    /// The radius of the dilate effect.
     /// </summary>
-    public float Radius {
+    public DynProperty<float> Radius {
         get {
-            return (float)properties["radiusX"].Value;
+            return RadiusP;
         }
         set {
-            properties["radiusX"].Value = value;
-            properties["radiusY"].Value = value;
+            RadiusP.Value = value.Value;
         }
     }
 
     /// <summary>
-    /// The X radius of the blur.
-    /// </summary>
-    public float RadiusX {
-        get {
-            return (float)properties["radiusX"].Value;
-        }
-        set {
-            properties["radiusX"].Value = value;
-        }
-    }
-
-    /// <summary>
-    /// The Y radius of the blur.
-    /// </summary>
-    public float RadiusY {
-        get {
-            return (float)properties["radiusY"].Value;
-        }
-        set {
-            properties["radiusY"].Value = value;
-        }
-    }
-
-    /// <summary>
-    /// Create a new blur effect.
+    /// Create a new dilate effect.
     /// </summary>
     public CanvasDilateEffect(float radius = 0.0f) {
-        properties["radiusX"] = new DynProperty<float>("radiusX", radius);
-        properties["radiusY"] = new DynProperty<float>("radiusY", radius);
+        this.RadiusP = new DynProperty<float>("radius", radius);
+        properties["radius"] = this.RadiusP;
     }
 }
 
