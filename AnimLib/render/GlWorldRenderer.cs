@@ -13,6 +13,7 @@ internal partial class GlWorldRenderer : IRenderer {
     
     int _circleProgram;
     int _rectangleProgram;
+    int _solidColorProgram;
     int _bezierProgram;
     int _texRectProgram;
     int _staticLineProgram;
@@ -44,6 +45,7 @@ internal partial class GlWorldRenderer : IRenderer {
         _circleProgram = platform.AddShader(circleVert, circleFrag, null);
         _bezierProgram = platform.AddShader(quadBezierVert, quadBezierFrag, quadBezierGeo);
         _rectangleProgram = platform.AddShader(rectangleVert, rectangleFrag, null);
+        _solidColorProgram = platform.AddShader(solidColorVert, solidColorFrag, null);
         _texRectProgram = platform.AddShader(rectangleVert, texRectFrag, null);
         _arrowProgram = platform.AddShader(rectangleVert, arrowFrag, null);
         _staticLineProgram = platform.AddShader(staticLineVert, staticLineFrag, null);
@@ -242,9 +244,12 @@ internal partial class GlWorldRenderer : IRenderer {
                 GL.Uniform4(outlineLoc, outline4.x, outline4.y, outline4.z, outline4.w);
                 GL.Uniform1(entLoc, m.entityId);
                 PrimitiveType primType;
-                switch (m.Shader) {
-                    case BuiltinShader.LineShader:
+                switch(m.Geometry.vertexMode) {
+                    case MeshVertexMode.Segments:
                         primType = PrimitiveType.Lines;
+                        break;
+                    case MeshVertexMode.Strip:
+                        primType = PrimitiveType.LineStrip;
                         break;
                     default:
                         primType = PrimitiveType.Triangles;
@@ -303,6 +308,8 @@ internal partial class GlWorldRenderer : IRenderer {
                 return _meshProgram;
             case BuiltinShader.QuadShader:
                 return _rectangleProgram;
+            case BuiltinShader.SolidColorShader:
+                return _solidColorProgram;
             default:
                 return 0;
         }

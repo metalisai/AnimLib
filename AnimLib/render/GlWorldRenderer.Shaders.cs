@@ -287,6 +287,41 @@ void main() {
     outEntityId = _EntityId;
 }";
 
+string solidColorVert = @"#version 330 core
+layout(location = 0) in vec4 position;
+layout(location = 1) in vec4 color;
+out vec4 v_color;
+out vec3 v_modelPos;
+out vec2 v_texCoord;
+uniform mat4 _ModelToClip;
+
+void main() {
+    gl_Position = _ModelToClip*position;
+    v_modelPos = position.xyz;
+    v_color = color;
+}";
+string solidColorFrag = @"#version 330 core
+#extension GL_ARB_sample_shading : enable
+layout(location = 0) out vec4 outColor;
+layout(location = 1) out int outEntityId;
+in vec4 v_color;
+uniform vec4 _Color;
+uniform vec4 _Outline;
+uniform int _EntityId;
+uniform sampler2DMS _depthPeelTex;
+void main() {
+    float depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), gl_SampleID).x;
+    if(gl_FragCoord.z >= depth) {
+        discard;
+    }
+
+    float alpha = _Color.a*v_color.a;
+    vec3 colorRGB = _Color.rgb*v_color.rgb * alpha;
+    outColor = vec4(colorRGB, alpha);
+    outEntityId = _EntityId;
+}";
+
+
 string circleVert = @"#version 330 core
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec4 color;

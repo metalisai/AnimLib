@@ -68,6 +68,8 @@ public class ColoredTriangleMeshGeometry : IRendererResource {
     /// </summary>
     public Vector2[] edgeCoordinates = Array.Empty<Vector2>();
 
+    internal MeshVertexMode vertexMode = MeshVertexMode.Triangles;
+
     internal int VAOHandle = -1;
     internal int VBOHandle = -1;
     internal int EBOHandle = -1;

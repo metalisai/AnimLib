@@ -133,7 +133,7 @@ public struct Quaternion {
 
     /// <summary>
     /// Interpolate between two quaternions using normalized linear interpolation.
-    /// This method does not guarantee constant angular velocity.
+    /// This method has constant angular velocity.
     /// </summary>
     public static Quaternion Slerp(Quaternion a, Quaternion b, float t) {
         float cosHalfTheta = a.w * b.w + a.x * b.x + a.y * b.y + a.z * b.z;
@@ -162,7 +162,7 @@ public struct Quaternion {
 
     /// <summary>
     /// Interpolate between two quaternions using normalized linear interpolation.
-    /// This method does not guarantee constant angular velocity.
+    /// This method does not have constant angular velocity.
     /// </summary>
     public static Quaternion Nlerp(Quaternion a, Quaternion b, float t) {
         Vector4 v = new Vector4(a.x, a.y, a.z, a.w);

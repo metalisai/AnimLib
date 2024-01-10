@@ -26,6 +26,8 @@ public enum BuiltinShader {
     MeshShader,
     /// <summary> Shader for rendering quads </summary>
     QuadShader,
+    /// <summary> Shader to render a triangle mesh with a single color </summary>
+    SolidColorShader,
 }
 
 internal class RenderState 

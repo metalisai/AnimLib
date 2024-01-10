@@ -1,6 +1,25 @@
 using System.Collections.Generic;
 
 namespace AnimLib {
+
+    /// <summary>
+    /// The mode of a line.
+    /// </summary>
+    public enum MeshVertexMode {
+        /// <summary>
+        /// Each pair of vertices are a single line segment.
+        /// </summary>
+        Segments,
+        /// <summary>
+        /// The vertices are a continuous line strip.
+        /// </summary>
+        Strip,
+        /// <summary>
+        /// The vertices are trialngle list.
+        /// </summary>
+        Triangles,
+    };
+
     internal abstract class MeshBackedGeometry : EntityState3D, IRendererResource {
         public Color outline = Color.BLACK;
         public BuiltinShader Shader = BuiltinShader.LineShader;

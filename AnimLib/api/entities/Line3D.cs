@@ -5,6 +5,8 @@ namespace AnimLib;
 
 internal class Line3DState : MeshBackedGeometry
 {
+    internal MeshVertexMode VertexMode = MeshVertexMode.Strip;
+
     bool dirty = true;
     Vector3[] _vertices;
     public Vector3[] vertices {
@@ -51,6 +53,7 @@ internal class Line3DState : MeshBackedGeometry
         this.color = ms.color;
         this._colors = ms.colors.ToArray();
         this.outline = ms.outline;
+        this.VertexMode = ms.VertexMode;
         dirty = true;
     }
 
@@ -61,6 +64,7 @@ internal class Line3DState : MeshBackedGeometry
     public override void UpdateMesh(ColoredTriangleMeshGeometry mesh) {
         mesh.Dirty = dirty;
         if(dirty) {
+            mesh.vertexMode = VertexMode;
             mesh.vertices = vertices;
             if (_colors.Length > 0 && colors.Length == vertices.Length) {
                 mesh.colors = _colors;
@@ -137,9 +141,10 @@ public class Line3D : VisualEntity3D
     /// <summary>
     /// Creates a new Mesh.
     /// </summary>
-    public Line3D(float width = 1.0f) : this(World.current.Resources.GetGuid()) {
+    public Line3D(float width = 1.0f, MeshVertexMode mode = MeshVertexMode.Segments) : this(World.current.Resources.GetGuid()) {
         var state = (Line3DState)this.state;
         state.properties.Add("Width", new DynProperty("Width", width));
+        state.VertexMode = mode;
     }
 
     /// <summary>

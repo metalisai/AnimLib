@@ -296,6 +296,20 @@ namespace AnimLib
         }
 
         /// <summary>
+        /// Component-wise max.
+        /// </summary>
+        public static Vector3 Max(Vector3 a, Vector3 b) {
+            return new Vector3(MathF.Max(a.x, b.x), MathF.Max(a.y, b.y), MathF.Max(a.z, b.z));
+        }
+
+        /// <summary>
+        /// Component-wise min.
+        /// </summary>
+        public static Vector3 Min(Vector3 a, Vector3 b) {
+            return new Vector3(MathF.Min(a.x, b.x), MathF.Min(a.y, b.y), MathF.Min(a.z, b.z));
+        }
+
+        /// <summary>
         /// A vector with clamped components.
         /// </summary>
         public Vector3 Clamped(float min, float max) {
