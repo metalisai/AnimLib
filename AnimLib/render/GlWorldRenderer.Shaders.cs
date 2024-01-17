@@ -500,7 +500,7 @@ void main() {
     float dd = length(vec2(dxd, dyd));
 
     float edgeLocation = dd;
-    float edge = smoothstep(edgeLocation, edgeLocation+2.0*dd, d);
+    float edge = smoothstep(edgeLocation-dd, edgeLocation, d);
     vec3 outColorRGB = _Color.rgb*g_color.rgb;
     float alpha = _Color.a*g_color.a;
     outColor = mix(vec4(outColorRGB*alpha, alpha), _Outline, 1.0-edge);

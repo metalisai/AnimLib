@@ -644,7 +644,7 @@ internal partial class GlWorldRenderer : IRenderer {
 
         GL.DeleteQuery(query);
         if(p >= 10) {
-            Debug.Warning($"Rendering frame took {p} depth peels. Samples passed: {passedcount}");
+            Debug.Warning($"Rendering frame took {p} depth peels. Samples passed: {passedcount}", rate: 1.0f/60.0f);
         }
 
         if (pb.IsMultisampled) {

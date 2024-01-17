@@ -125,7 +125,7 @@ internal class Program
 
     static FileSystemWatcher? watcher;
 
-    static void LaunchEditor(bool useSkiaSoftware = false) {
+    static void LaunchEditor(bool useSkiaSoftware = false, string? projectPath = null) {
         var platform = new OpenTKPlatform(1024, 1024, 
             skiaSoftware: useSkiaSoftware
         );
@@ -210,6 +210,11 @@ internal class Program
            
         renderState.OnPostRender += player.OnEndRenderScene;
 
+        if(projectPath != null) {
+            Debug.Log($"Loading project {projectPath}");
+            player.ResourceManager.SetProject(projectPath);
+        }
+
         platform.Run(144.0, 144.0);
         player.Close();
         Console.WriteLine("Application closing");
@@ -219,24 +224,23 @@ internal class Program
     [STAThread]
     static void Main(string[] args)
     {
-        // Please don't let interns write system libraries
-        // Why is System.CommandLine so bad?
-        // Something this trivial should be intuitive to write
-        // Don't force me to read the docs
-        // Don't force me to use your control flow
-        // Just parse the damn args and give me the values
-        //
         var skiaSoftwareOption = new Option<bool>(
             "--skia-software", 
             "Use SkiaSharp software rendering"
         );
+        var projectOption = new Option<string>(
+            "--project", 
+            "Project file to load"
+        );
         var rootCommand = new RootCommand("Animation editor");
         rootCommand.AddOption(skiaSoftwareOption);
         skiaSoftwareOption.IsRequired = false;
-        rootCommand.SetHandler( (useSw) => {
+        rootCommand.AddOption(projectOption);
+        projectOption.IsRequired = false;
+        rootCommand.SetHandler( (useSw, project) => {
                 Debug.Log($"Using SkiaSharp software rendering: {useSw}");
-                LaunchEditor(useSw);
-            }, skiaSoftwareOption
+                LaunchEditor(useSw, project);
+            }, skiaSoftwareOption, projectOption
         );
         var code = rootCommand.Invoke(args);
         Debug.Log($"Root command returned {code}. Exiting");

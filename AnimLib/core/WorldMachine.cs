@@ -61,6 +61,7 @@ internal class WorldMachine {
         _entities.Clear();
         _beziers.Clear();
         _canvases.Clear();
+        _dynamicProperties.Clear();
         //var cam = new PerspectiveCamera();
         //cam.Position = new Vector3(0.0f, 0.0f, -13.0f);
         //_activeCamera = cam;

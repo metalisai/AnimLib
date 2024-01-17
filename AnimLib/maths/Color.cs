@@ -240,4 +240,21 @@ public struct Color {
         var r = Color.HSV2RGB(c1v + x*(c2v-c1v));
         return new Color(r.x, r.y, r.z, r.w);
     }
+
+    [ThreadStatic]
+    static Random? random;
+
+    /// <summary>
+    /// Get a random color.
+    /// </summary>
+    public static Color Random() {
+        if(random == null) {
+            random = new Random();
+        }
+        float h = random.NextSingle();
+        float s = 0.4f + 0.6f*random.NextSingle();
+        float v = 0.1f + 0.9f*random.NextSingle();
+        var c4 = Color.HSV2RGB(new Vector4(h, s, v, 1.0f));
+        return new Color(c4.x, c4.y, c4.z, c4.w);
+    }
 }

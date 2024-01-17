@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <PackageReference Include="CairoSharp" Version="3.24.24.38" />
+    <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.2.2" />
     <PackageReference Include="HarfBuzzSharp" Version="2.8.2.2" />
     <PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="2.8.2.2" />
     <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
