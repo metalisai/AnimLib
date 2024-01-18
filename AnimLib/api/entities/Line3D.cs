@@ -15,6 +15,7 @@ internal class Line3DState : MeshBackedGeometry
         }
         set {
             _vertices = value;
+            _colors = vertices.Select(x => color).ToArray();
             dirty = true;
         }
     }
@@ -26,6 +27,7 @@ internal class Line3DState : MeshBackedGeometry
         } 
         set {
             _color = value;
+            _colors = vertices.Select(x => color).ToArray();
             dirty = true;
         }
     }
@@ -82,7 +84,7 @@ internal class Line3DState : MeshBackedGeometry
 /// <summary>
 /// A 3D triangle mesh.
 /// </summary>
-public class Line3D : VisualEntity3D
+public class Line3D : VisualEntity3D, IColored
 {
     /// <summary>
     /// The color of the mesh.
@@ -151,9 +153,6 @@ public class Line3D : VisualEntity3D
     /// Copy constructor.
     /// </summary>
     public Line3D(Line3D mesh) : base(mesh) {
-        var state = (Line3DState)this.state;
-        var ostate = (Line3DState)mesh.state;
-        state.properties.Add("Width", new DynProperty("Width", ostate.properties["Width"].Value));
     }
 
     /// <summary>

@@ -19,7 +19,11 @@ internal abstract class EntityState3D : EntityState {
         if(parentId == 0) {
             return M4x4.TRS(position, rotation, scale);
         } else { 
-            var parent = (EntityState3D)resolver.GetEntityState(parentId);
+            var parent = (EntityState3D?)resolver.GetEntityState(parentId);
+            if (parent == null) {
+                Debug.Error($"Parent entity {parentId} not found");
+                return M4x4.TRS(position, rotation, scale);
+            }
             return parent.ModelToWorld(resolver) * M4x4.TRS(position, rotation, scale);
         }
     }

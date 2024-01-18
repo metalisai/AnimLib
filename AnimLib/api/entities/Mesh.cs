@@ -70,7 +70,7 @@ internal class MeshState : MeshBackedGeometry
 /// <summary>
 /// A 3D triangle mesh.
 /// </summary>
-public class Mesh : VisualEntity3D
+public class Mesh : VisualEntity3D, IColored
 {
     /// <summary>
     /// The color of the mesh.

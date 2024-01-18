@@ -70,6 +70,10 @@ public class ColoredTriangleMeshGeometry : IRendererResource {
 
     internal MeshVertexMode vertexMode = MeshVertexMode.Triangles;
 
+    internal int copiedVertices = 0;
+    internal int copiedIndices = 0;
+    internal int copiedColors = 0;
+
     internal int VAOHandle = -1;
     internal int VBOHandle = -1;
     internal int EBOHandle = -1;
@@ -471,6 +475,16 @@ public class World
     }
 
     /// <summary>
+    /// Create entities without any animations.
+    /// </summary>
+    public T[] CreateInstantly<T>(params T[] ents) where T : VisualEntity {
+        foreach(var ent in ents) {
+            EntityCreated(ent);
+        }
+        return ents;
+    }
+
+    /// <summary>
     /// Create an entity without any animations.
     /// </summary>
     public T CreateInstantly<T>(T ent) where T : VisualEntity {
@@ -570,6 +584,15 @@ public class World
         var ret = (T)e.Clone();
         CreateInstantly(ret);
         return ret;
+    }
+
+    /// <summary>
+    /// Remove entities from the world.
+    /// </summary>
+    public void Destroy(params VisualEntity[] ents) {
+        foreach(var ent in ents) {
+            Destroy(ent);
+        }
     }
 
     /// <summary>

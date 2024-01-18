@@ -108,7 +108,7 @@ internal class SphereState : MeshBackedGeometry {
 /// <summary>
 /// A 3D sphere
 /// </summary>
-public class Sphere : VisualEntity3D {
+public class Sphere : VisualEntity3D, IColored {
     /// <summary>
     /// Radius of the sphere
     /// </summary>

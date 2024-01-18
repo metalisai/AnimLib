@@ -180,10 +180,6 @@ internal partial class GlWorldRenderer : IRenderer {
                         if (m.Geometry.indices.Length > 0) {
                             GL.BindBuffer(BufferTarget.ElementArrayBuffer, ebo);
                         }
-                        GL.EnableVertexAttribArray(0);
-                        GL.EnableVertexAttribArray(1);
-                        GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, vertSize, 0);
-                        GL.VertexAttribPointer(1, 4, VertexAttribPointerType.Float, false, colorSize, new IntPtr(vertCount*vertSize));
 #if DEBUG
                         if ((new Color()).r.GetType() != typeof(float)) {
                             throw new Exception("Color.r is not float, VertexAttribPointer expects float!");
@@ -222,14 +218,39 @@ internal partial class GlWorldRenderer : IRenderer {
 
                     GL.BindBuffer(BufferTarget.ArrayBuffer, m.Geometry.VBOHandle);
                     GL.BufferData(BufferTarget.ArrayBuffer, vertCount*(vertSize+colorSize+edgeSize), IntPtr.Zero, BufferUsageHint.DynamicDraw);
-                    GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, vertCount*vertSize, ref m.Geometry.vertices[0].x);
-                    GL.BufferSubData(BufferTarget.ArrayBuffer, colorOffset, vertCount*colorSize, ref m.Geometry.colors[0]);
+
+                    if (m.Geometry.vertices.Length > 0) {
+                        var handle = GCHandle.Alloc(m.Geometry.vertices, GCHandleType.Pinned);
+                        IntPtr ptr = handle.AddrOfPinnedObject();
+                        var colorHandle = GCHandle.Alloc(m.Geometry.colors, GCHandleType.Pinned);
+                        if (m.Geometry.colors.Length != m.Geometry.vertices.Length) {
+                            Debug.Error("MeshState: color.Length != vertices.Length");
+                        }
+                        IntPtr colorPtr = colorHandle.AddrOfPinnedObject();
+
+                        GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, vertCount*vertSize, ptr);
+                        GL.BufferSubData(BufferTarget.ArrayBuffer, colorOffset, vertCount*colorSize, colorPtr);
+                        handle.Free();
+                        colorHandle.Free();
+                        m.Geometry.copiedVertices = m.Geometry.vertices.Length;
+                        m.Geometry.copiedColors = m.Geometry.colors.Length;
+
+                        GL.EnableVertexAttribArray(0);
+                        GL.EnableVertexAttribArray(1);
+                        GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, vertSize, 0);
+                        GL.VertexAttribPointer(1, 4, VertexAttribPointerType.Float, false, colorSize, new IntPtr(vertCount*vertSize));
+                    }
+
                     if(m.Geometry.edgeCoordinates != null && m.Geometry.edgeCoordinates.Length > 0) {
                         GL.BufferSubData(BufferTarget.ArrayBuffer, edgeOffset, vertCount*edgeSize, ref m.Geometry.edgeCoordinates[0]);
                     }
                     GL.BindBuffer(BufferTarget.ElementArrayBuffer, m.Geometry.EBOHandle);
                     if (m.Geometry.indices.Length > 0) {
-                        GL.BufferData(BufferTarget.ElementArrayBuffer, m.Geometry.indices.Length*4, ref m.Geometry.indices[0], BufferUsageHint.DynamicDraw);
+                        var handle = GCHandle.Alloc(m.Geometry.indices, GCHandleType.Pinned);
+                        IntPtr ptr = handle.AddrOfPinnedObject();
+                        GL.BufferData(BufferTarget.ElementArrayBuffer, m.Geometry.indices.Length*4, ptr, BufferUsageHint.DynamicDraw);
+                        handle.Free();
+                        m.Geometry.copiedIndices = m.Geometry.indices.Length;
                     }
                     GL.BindVertexArray(0);
                     m.Geometry.Dirty = false;
@@ -256,7 +277,7 @@ internal partial class GlWorldRenderer : IRenderer {
                         break;
                 }
                 if (m.Geometry.indices.Length > 0) {
-                    GL.DrawElements(primType, m.Geometry.indices.Length, DrawElementsType.UnsignedInt, 0);
+                    GL.DrawElements(primType, m.Geometry.copiedIndices, DrawElementsType.UnsignedInt, 0);
                 } else {
                     float range = 1.0f;
 
@@ -272,7 +293,8 @@ internal partial class GlWorldRenderer : IRenderer {
                         GL.Enable(EnableCap.LineSmooth);
                         GL.LineWidth(setWidth);
                     }
-                    GL.DrawArrays(primType, 0, m.Geometry.vertices.Length);
+                    GL.DrawArrays(primType, 0, m.Geometry.copiedVertices);
+                    Debug.Assert(m.Geometry.copiedVertices == m.Geometry.copiedColors);
                     if (m.Shader == BuiltinShader.LineShader) {
                         GL.Disable(EnableCap.LineSmooth);
                         GL.LineWidth(range);
