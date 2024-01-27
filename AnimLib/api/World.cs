@@ -186,6 +186,8 @@ public class World
 
     private Dictionary<int, object> _dynamicProperties = new ();
 
+    private Stack<List<VisualEntity>> _captureStack = new ();
+
     internal ITypeSetter ts = new FreetypeSetting();
     object? currentEditor = null; // who edits things right now (e.g. scene or animationbehaviour)
     internal EntityResolver EntityResolver;
@@ -400,7 +402,20 @@ public class World
         entity.created = true;
         _entities.Add(entity.EntityId, entity);
         entity.EntityCreated();
+
+        if(_captureStack.Count > 0) {
+            foreach(var capture in _captureStack) {
+                capture.Add(entity);
+            }
+        }
+
         CheckDependantEntities(entity);
+    }
+
+    private void EntityDestroyed(VisualEntity entity) {
+        foreach(var list in _captureStack) {
+            list.RemoveAll(x => x.EntityId == entity.EntityId);
+        }
     }
 
     private void CheckDependantEntities(VisualEntity newent) {
@@ -472,6 +487,22 @@ public class World
         );
         _commands.Add(cmd);
         _dynamicProperties[id] = value;
+    }
+
+    /// <summary>
+    /// Begin capturing creation of entities. All entities created after this call will be added to the returned list.
+    /// </summary>
+    public List<VisualEntity> BeginCapture() {
+        var ret = new List<VisualEntity>();
+        _captureStack.Push(ret);
+        return ret;
+    }
+
+    /// <summary>
+    /// End capturing creation of entities.
+    /// </summary>
+    public void EndCapture() {
+        _captureStack.Pop();
     }
 
     /// <summary>
@@ -621,6 +652,8 @@ public class World
         );
         obj.created = false;
         _commands.Add(cmd);
+
+        EntityDestroyed(obj);
     }
 
     internal WorldCommand[] GetCommands() {

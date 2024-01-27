@@ -40,4 +40,35 @@ public static class AMath {
         var t = (d2.y*(p2.x-p1.x) - d1.x*(p2.y-p1.y)) / det;
         return det <= float.Epsilon ? null : p1 + t * d1;
     }
+
+    // https://github.com/chengkehan/Line-Triangle-Intersection/blob/master/Assets/LineTriangleIntersection.cs
+    // TODO: write tests for this
+    /// <summary>
+    /// Intersect a 3D ray and a line segment.
+    /// </summary>
+    public static Vector3? IntersectSegmentTriangle(Vector3 start, Vector3 end, Vector3 p1, Vector3 p2, Vector3 p3) {
+        var n = Vector3.Cross(p2-p1, p3-p1).Normalized;
+        float d = Vector3.Dot(p1, n);
+        Plane plane = new(n, p1);
+        float l0 = Vector3.Dot(start, n) - d;
+        float l1 = Vector3.Dot(end, n) - d;
+        if (l0 * l1 >= 0.0f) {
+            return null;
+        }
+        float t = l0 / (l0 - l1);
+        Vector3 ld = end - start;
+        Vector3 p = start + t * ld;
+
+        Vector3[] points = new[] { p1, p2, p3 };
+        for (int i = 0; i < 3; i++) {
+            var edge = points[(i + 1) % 3] - points[i];
+            var sd = Vector3.Cross(n, edge);
+            var vd = p - points[i];
+            float d2 = Vector3.Dot(vd, sd);
+            if (d2 < 0.0f) {
+                return null;
+            }
+        }
+        return p;
+    }
 }
