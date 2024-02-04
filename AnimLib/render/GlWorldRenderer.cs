@@ -190,8 +190,11 @@ internal partial class GlWorldRenderer : IRenderer {
                         }
 #endif
                         if(m.Geometry.edgeCoordinates != null && m.Geometry.edgeCoordinates.Length > 0) {
+                            Debug.Log("edge coordinates");
                             GL.EnableVertexAttribArray(2);
-                            GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, 0, new IntPtr(vertCount*(vertSize+colorSize)));
+                            GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, 0, new IntPtr(m.Geometry.copiedVertices*(vertSize+colorSize)));
+                        } else {
+                            GL.DisableVertexAttribArray(2);
                         }
                         m.Geometry.VAOHandle = vao;
                         m.Geometry.VBOHandle = vbo;
@@ -240,6 +243,9 @@ internal partial class GlWorldRenderer : IRenderer {
 
                         handle.Free();
                         colorHandle.Free();
+                    } else {
+                        GL.DisableVertexAttribArray(0);
+                        GL.DisableVertexAttribArray(1);
                     }
 
                     if(m.Geometry.edgeCoordinates != null && m.Geometry.edgeCoordinates.Length > 0) {
@@ -297,8 +303,8 @@ internal partial class GlWorldRenderer : IRenderer {
                         GL.Enable(EnableCap.LineSmooth);
                         GL.LineWidth(setWidth);
                     }
-                    GL.DrawArrays(primType, 0, m.Geometry.copiedVertices);
                     Debug.Assert(m.Geometry.copiedVertices == m.Geometry.copiedColors);
+                    GL.DrawArrays(primType, 0, m.Geometry.copiedVertices);
                     if (m.Shader == BuiltinShader.LineShader) {
                         GL.Disable(EnableCap.LineSmooth);
                         GL.LineWidth(range);
