@@ -59,7 +59,7 @@ public static class AMath {
         Vector3 ld = end - start;
         Vector3 p = start + t * ld;
 
-        Vector3[] points = new[] { p1, p2, p3 };
+        Vector3[] points = [ p1, p2, p3 ];
         for (int i = 0; i < 3; i++) {
             var edge = points[(i + 1) % 3] - points[i];
             var sd = Vector3.Cross(n, edge);

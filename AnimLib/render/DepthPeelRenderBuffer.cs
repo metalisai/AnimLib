@@ -152,6 +152,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
         var internalFormat = _isHDR ? PixelInternalFormat.Rgba16f : PixelInternalFormat.Rgba;
 
         if (!_multisample) {
+            Debug.Log("Creating non-multisampled render buffer");
             GL.BindTexture(TextureTarget.Texture2D, _colorTex);
             GL.TexImage2D(TextureTarget.Texture2D, 0, internalFormat, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, _colorTex, 0);
@@ -170,6 +171,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
 
             _presentTex = _colorTex;
         } else {
+            Debug.Log("Creating multisampled render buffer");
             // this seems to be the max on most (even recent) hardware
             // some drivers fake 16x with supersampling
             int samples = 8;

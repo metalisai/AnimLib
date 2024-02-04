@@ -230,8 +230,6 @@ internal partial class GlWorldRenderer : IRenderer {
 
                         GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, vertCount*vertSize, ptr);
                         GL.BufferSubData(BufferTarget.ArrayBuffer, colorOffset, vertCount*colorSize, colorPtr);
-                        handle.Free();
-                        colorHandle.Free();
                         m.Geometry.copiedVertices = m.Geometry.vertices.Length;
                         m.Geometry.copiedColors = m.Geometry.colors.Length;
 
@@ -239,18 +237,24 @@ internal partial class GlWorldRenderer : IRenderer {
                         GL.EnableVertexAttribArray(1);
                         GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, vertSize, 0);
                         GL.VertexAttribPointer(1, 4, VertexAttribPointerType.Float, false, colorSize, new IntPtr(vertCount*vertSize));
+
+                        handle.Free();
+                        colorHandle.Free();
                     }
 
                     if(m.Geometry.edgeCoordinates != null && m.Geometry.edgeCoordinates.Length > 0) {
-                        GL.BufferSubData(BufferTarget.ArrayBuffer, edgeOffset, vertCount*edgeSize, ref m.Geometry.edgeCoordinates[0]);
+                        var edgeHandle = GCHandle.Alloc(m.Geometry.edgeCoordinates, GCHandleType.Pinned);
+                        var edgePtr = edgeHandle.AddrOfPinnedObject();
+                        GL.BufferSubData(BufferTarget.ArrayBuffer, edgeOffset, vertCount*edgeSize, edgePtr);
+                        edgeHandle.Free();
                     }
                     GL.BindBuffer(BufferTarget.ElementArrayBuffer, m.Geometry.EBOHandle);
                     if (m.Geometry.indices.Length > 0) {
                         var handle = GCHandle.Alloc(m.Geometry.indices, GCHandleType.Pinned);
                         IntPtr ptr = handle.AddrOfPinnedObject();
                         GL.BufferData(BufferTarget.ElementArrayBuffer, m.Geometry.indices.Length*4, ptr, BufferUsageHint.DynamicDraw);
-                        handle.Free();
                         m.Geometry.copiedIndices = m.Geometry.indices.Length;
+                        handle.Free();
                     }
                     GL.BindVertexArray(0);
                     m.Geometry.Dirty = false;
@@ -609,7 +613,7 @@ internal partial class GlWorldRenderer : IRenderer {
                     i++;
                 }
                 if (!pb.IsMultisampled) {
-                    throw new Exception("need to use sampler2D instead of sampler2DMS");
+                    Debug.Error("need to use sampler2D instead of sampler2DMS");
                 }
                 RenderMeshes(meshes, worldToClip, smat, ss.DynamicProperties);
                 foreach(var geom in throwawayGeometries) {
