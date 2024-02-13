@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using ExceptionDispatchInfo = System.Runtime.ExceptionServices.ExceptionDispatchInfo;
 
 namespace AnimLib;
@@ -32,8 +33,8 @@ internal class AnimationBaker {
     System.Threading.Tasks.Task? anim = null;
     System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
 
-    TextPlacement text = new TextPlacement("/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf", "Ubuntu");
-
+    TextPlacement text = new TextPlacement(TextPlacement.DefaultFontPath, Path.GetFileNameWithoutExtension(TextPlacement.DefaultFontPath));
+    
     private void BakeError(Exception e, World world, Animator animator) {
         world.Reset();
         haveError = true;

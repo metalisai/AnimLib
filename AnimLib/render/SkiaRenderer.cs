@@ -53,7 +53,7 @@ internal partial class SkiaRenderer
 
     public SkiaRenderer(IPlatform platform) {
         this.platform = platform;
-        textPlacement = new TextPlacement("/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf", "Ubuntu");
+        textPlacement = new TextPlacement(TextPlacement.DefaultFontPath, System.IO.Path.GetFileNameWithoutExtension(TextPlacement.DefaultFontPath));
     }
 
     private SKImage? LoadTexture(Texture2D texture) {

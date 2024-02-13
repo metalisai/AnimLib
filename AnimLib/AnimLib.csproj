@@ -27,13 +27,11 @@
     <PackageReference Include="CairoSharp" Version="3.24.24.38" />
     <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.2.2" />
     <PackageReference Include="HarfBuzzSharp" Version="2.8.2.2" />
-    <PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="2.8.2.2" />
     <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
     <PackageReference Include="OpenTK.NetStandard" Version="1.0.4" />
     <PackageReference Include="ppy.ManagedBass" Version="3.1.3-alpha" />
     <PackageReference Include="SkiaSharp" Version="2.88.6" />
         <!-- <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.88.1" /> -->
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.1" />
     <PackageReference Include="Stride.SharpFont" Version="1.0.0" />
     <PackageReference Include="Svg.Skia" Version="0.5.16" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
@@ -43,11 +41,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\AnimLib.Native\fontawesome-webfont.ttf">
+     <Content Include="..\AnimLib.Native\fontawesome-webfont.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
     </Content>
-    <Content Include="..\AnimLib.Native\linux-x64\libimgui_animlib.so">
+ </ItemGroup>
+
+  <ItemGroup Condition="'$(IsLinux)'=='true'">
+    <PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="2.8.2.2" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.1" />
+     <Content Include="..\AnimLib.Native\linux-x64\libimgui_animlib.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <PackagePath>runtimes/linux-x64/native/libimgui_animlib.so</PackagePath>
       <Pack>true</Pack>
@@ -67,6 +70,9 @@
       <PackagePath>runtimes/linux-x64/native/libbass.so</PackagePath>
       <Pack>true</Pack>
     </Content>
+ </ItemGroup>
+
+  <ItemGroup Condition="'$(IsWindows)'=='true'">
     <Content Include="..\AnimLib.Native\win-x64\freetype.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <PackagePath>runtimes/win-x64/native/freetype.dll</PackagePath>
@@ -85,6 +91,11 @@
     <Content Include="..\AnimLib.Native\win-x64\cimguizmo.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <PackagePath>runtimes/win-x64/native/cimguizmo.dll</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+     <Content Include="..\AnimLib.Native\win-x64\imgui_animlib.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <PackagePath>runtimes/win-x64/native/imgui_animlib.dll</PackagePath>
       <Pack>true</Pack>
     </Content>
   </ItemGroup>
