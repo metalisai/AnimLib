@@ -27,9 +27,9 @@ jobs:
       run: dotnet restore
     - name: Configure CMake Project
       uses: threeal/cmake-action@v1.3.0
-      source-dir: ./AnimLib.ImGui/src
-      build-dir: ./AnimLib.ImGui/src/build
       with:
+        source-dir: ./AnimLib.ImGui/src
+        build-dir: ./AnimLib.ImGui/src/build
         run-build: true
     - name: Copy native lib
       shell: bash
