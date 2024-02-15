@@ -1,10 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <IsWindows Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">true</IsWindows>
+    <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(IsWindows)'=='true'">
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <DefineConstants>Windows</DefineConstants>
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(IsLinux)'=='true'">
     <TargetFramework>net8.0</TargetFramework>
+    <DefineConstants>Linux</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
