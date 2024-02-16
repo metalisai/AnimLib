@@ -30,10 +30,11 @@ jobs:
       with:
         source-dir: ./AnimLib.ImGui/src
         build-dir: ./AnimLib.ImGui/src/build
+        build-args: --config Release
         run-build: true
     - name: Copy native lib
       shell: bash
-      run: cp ./AnimLib.ImGui/src/build/libimgui_animlib.dll ./AnimLib.Native/win-x64/
+      run: cp ./AnimLib.ImGui/src/build/Release/imgui_animlib.dll ./AnimLib.Native/win-x64/
     - name: Build
       run: dotnet build --no-restore
     - name: Test
