@@ -166,6 +166,10 @@ public class Animator {
         string fileName;
         try {
             using (var res = resourceManager.GetResource(name, out fileName)) {
+                if(res == null) {
+                    Debug.Error($"Failed to load SVG resource {name}");
+                    throw new System.Exception($"Failed to load SVG resource {name}");
+                }
                 var reader = new StreamReader(res);
                 var data = reader.ReadToEnd();
                 return new SvgData() {
@@ -175,8 +179,8 @@ public class Animator {
             }
         } catch (NullReferenceException) {
             Debug.Error($"Failed to load SVG resource {name}");
+            throw new System.Exception($"Failed to load SVG resource {name}");
         }
-        return null;
     }
 
     /// <summary>

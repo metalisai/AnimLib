@@ -10,7 +10,6 @@ internal class ArrowState : MeshBackedGeometry
     public Color endColor = Color.BLACK;
     public float width = 1.0f;
     public float outlineWidth = 1.0f;
-    public Color outline = Color.BLACK;
 
     public override object Clone()
     {

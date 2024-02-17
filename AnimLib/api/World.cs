@@ -139,7 +139,7 @@ internal class WorldSnapshot {
 }
 
 internal class EntityResolver {
-    public Func<int, VisualEntity> GetEntity;
+    public required Func<int, VisualEntity> GetEntity;
 }
 
 /// <summary>
@@ -156,7 +156,7 @@ public class World
     /// Currently active world.
     /// </summary>
     [ThreadStatic]
-    public static World current;
+    public static World current = new World(new AnimationSettings());
 
     Canvas _activeCanvas;
 

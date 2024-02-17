@@ -10,12 +10,12 @@ namespace AnimLib;
 public class Time 
 {
     private class WaitTask {
-        public TaskCompletionSource<bool> TaskCompletion;
+        public required TaskCompletionSource<bool> TaskCompletion;
         public double EndTime;
     }
 
     private class FrameTask {
-        public TaskCompletionSource<bool> TCS;
+        public required TaskCompletionSource<bool> TCS;
         public long StartFrame;
         public string GUID = Guid.NewGuid().ToString();
     }

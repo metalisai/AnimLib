@@ -1,7 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+      <!--
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+      -->
     <Nullable>enable</Nullable>
   </PropertyGroup>
 

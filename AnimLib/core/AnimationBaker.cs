@@ -9,9 +9,7 @@ namespace AnimLib;
 /// A baked animation that can be played back in the WorldMachine.
 /// </summary>
 internal class BakedAnimation {
-    public bool haveError;
-    public string? error;
-    public string? stackTrace;
+    public (string msg, string stackTrace)? error;
 
     public required WorldCommand[] Commands;
     public required List<Animator.AnimationHandle2D> Handles2D;
@@ -163,9 +161,7 @@ internal class AnimationBaker {
         Performance.TimeToBake = sw.Elapsed.TotalSeconds;
 
         return new BakedAnimation() {
-            haveError = haveError,
-            error = error,
-            stackTrace = stackTrace,
+            error = haveError ? (error, stackTrace) : null,
             Commands = cmds,
             FPS = (float)settings.FPS,
             Handles2D = animator.VectorHandles,

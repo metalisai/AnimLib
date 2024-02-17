@@ -43,7 +43,7 @@ public class Star : Shape, IColored {
     /// Creates a new star with the given inner, outer radius and number of points.
     /// </summary>
     public Star(float outerR, float innerR, int points = 5) : base(new StarState(CreateStarPath(outerR, innerR, points))) {
-        var s = this.state as StarState;
+        var s = (StarState)this.state;
         s.points = points;
         s.innerRadius = innerR;
         s.outerRadius = outerR;

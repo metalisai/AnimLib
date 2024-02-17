@@ -322,9 +322,9 @@ internal class AnimationPlayer {
             if(OnAnimationBaked != null) {
                 OnAnimationBaked();
             }
-            if(prep.haveError) {
+            if(prep.error != null) {
                 if(OnError != null) {
-                    OnError(prep.error, prep.stackTrace);
+                    OnError(prep.error.Value.msg, prep.error.Value.stackTrace);
                 }
                 if (currentAnimation == null) {
                     currentAnimation = prep;

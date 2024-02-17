@@ -28,7 +28,7 @@ internal class SceneView
         public bool dragging;
     }
 
-    private IBackendRenderBuffer? renderBuffer;
+    private IBackendRenderBuffer renderBuffer;
     private Dictionary<string, PointGizmoState> pointGizmos = new Dictionary<string, PointGizmoState>();
     int x, y, width, height; // coordnates inside window 
     int bufferWidth, bufferHeight;
@@ -62,6 +62,7 @@ internal class SceneView
         this.height = height;
         this.bufferWidth = bufferWidth;
         this.bufferHeight = bufferHeight;
+        renderBuffer = new NullRenderBuffer(bufferWidth, bufferHeight);
     }
 
     public int TextureHandle {
@@ -88,7 +89,7 @@ internal class SceneView
         }
     }
 
-    public IBackendRenderBuffer? Buffer {
+    public IBackendRenderBuffer Buffer {
         get {
             return renderBuffer;
         }

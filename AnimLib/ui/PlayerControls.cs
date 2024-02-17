@@ -747,7 +747,7 @@ internal class PlayerControls {
         return pos;
     }
 
-    void TraversePerfTree(Performance.Call node)
+    void TraversePerfTree(Performance.Call? node)
     {
         if (node == null)
             return;

@@ -98,17 +98,17 @@ internal class TrackPlayer : IDisposable {
         get { return sampleIndex; }
         set {
             int safeUp = Math.Max(value, 0);
-            int safe = Math.Min(safeUp, currentTrack.SamplesPerChannel);
+            int safe = Math.Min(safeUp, currentTrack?.SamplesPerChannel ?? 0);
             sampleIndex = safe;
         }
     }
 
-    SoundTrack currentTrack;
+    SoundTrack? currentTrack;
     bool _playing = false;
 
     int bassStream;
 
-    public SoundTrack Track {
+    public SoundTrack? Track {
         get {
             return currentTrack;
         } set {
@@ -152,7 +152,8 @@ internal class TrackPlayer : IDisposable {
         if(currentTrack != null) {
             samplesLeft = currentTrack.SamplesPerChannel - sampleIndex;
         } else {
-            samplesLeft = 0;
+            Marshal.Copy(new short[len/2], 0, buffer, len/2);
+            return len;
         }
         int copyCount = Math.Min(samplesLeft, len/2);
         int zeroCount = len/2 - copyCount;

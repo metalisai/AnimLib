@@ -11,7 +11,7 @@ internal class Text2DState : EntityState2D
     public float size = 22.0f;
     public Color color = Color.BLACK;
     public string text;
-    public string font = null;
+    public string? font = null;
 
     public Text2DState(string text = "") {
         this.text = text;
@@ -49,7 +49,7 @@ public class Text2D : EntityCollection2D, IColored
     /// </summary>
     public Text2D(string text = "", 
         float size = 22.0f, 
-        string font = null, 
+        string? font = null, 
         Color? color = null
     ) : base(new Text2DState(text)) {
         var state = (Text2DState)this.state;
@@ -73,7 +73,7 @@ public class Text2D : EntityCollection2D, IColored
         foreach(var g in Glyphs) {
             DestroyChild(g.s);
         }
-        var placedShapes = Animator.Current.ShapeText(Text, Vector2.ZERO, (int)Size, Font);
+        var placedShapes = Animator.Current?.ShapeText(Text, Vector2.ZERO, (int)Size, Font) ?? new List<(Shape s, char c)>();
         foreach(var g in placedShapes) {
             g.s.Color = Color;
             g.s.SortKey = SortKey;
@@ -124,7 +124,7 @@ public class Text2D : EntityCollection2D, IColored
     /// <summary>
     /// Name of the font used to generate the text.
     /// </summary>
-    public string Font {
+    public string? Font {
         get {
             return ((Text2DState)state).font;
         }
