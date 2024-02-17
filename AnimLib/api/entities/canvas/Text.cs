@@ -118,7 +118,7 @@ public class Text2D : EntityCollection2D, IColored
             var range = Glyphs.GetRange(idx, str.Length).Select(x => x.s).ToArray();
             return range;
         }
-        return null;
+        return Array.Empty<Shape>();
     }
 
     /// <summary>

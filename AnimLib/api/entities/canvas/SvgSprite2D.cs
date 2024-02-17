@@ -7,7 +7,7 @@ public class SvgData {
     /// <summary>
     /// SVG code.
     /// </summary>
-    public string svg;
+    public required string svg;
     /// <summary>
     /// internal handle.
     /// </summary>

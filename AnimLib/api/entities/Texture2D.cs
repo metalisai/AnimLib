@@ -85,7 +85,7 @@ public class Texture2D : IRendererResource {
     /// <summary>
     /// The GUID of the owner of this texture.
     /// </summary>
-    public string ownerGuid = null;
+    public string ownerGuid;
 
     /// <summary>
     /// Whether to generate mipmaps for this texture.
@@ -94,6 +94,7 @@ public class Texture2D : IRendererResource {
 
     internal Texture2D(string guid) {
         this.ownerGuid = guid;
+        RawData = Array.Empty<byte>();
     }
 
     string IRendererResource.GetOwnerGuid() {

@@ -299,13 +299,12 @@ internal class PlayerControls {
                 if(payloadPtr != IntPtr.Zero) {
                     Debug.TLog("Attempt drop 2D object");
                     // intersect canvases
-                    CanvasState canvas ;
                     // normalized canvas coordinates
                     var canvases = player.Machine.Entities.Where(x => x is CanvasState).Select(x  => (CanvasState)x).ToArray();
-                    var canvasPos = view.TryIntersectCanvases(canvases, dropPos, out canvas);
+                    var canvasPos = view.TryIntersectCanvases(canvases, dropPos, out var canvas);
                     // drop
                     DragDropObject obj = (DragDropObject)Marshal.ReadInt32(payloadPtr + 0);
-                    if(canvasPos != null) {
+                    if(canvas != null && canvasPos != null) {
                         var canvasPosW = new Vector2(canvas.width, canvas.height)*canvasPos.Value;
                         if(canvasPos != null) {
                             Debug.TLog($"Dropped object on canvas, canvas: {canvas}, pos: {canvasPosW}");

@@ -42,7 +42,7 @@ internal class WorldResources : IDisposable {
         Textures.Clear();
         MeshBackedGeometries.Clear();
         // make sure renderer knows that everything we allocated is no longer needed
-        RenderState.currentPlatform.DestroyOwner(hash);
+        RenderState.currentPlatform?.DestroyOwner(hash);
         Debug.Log("World resources destroyed " + GetGuid());
     }
 }
@@ -91,20 +91,31 @@ public class ColoredTriangleMeshGeometry : IRendererResource {
     }
 }
 
+/// <summary>
+/// A colored triangle mesh.
+/// </summary>
 public class ColoredTriangleMesh {
+    /// <summary> Shader to use for rendering. </summary>
     public BuiltinShader Shader = BuiltinShader.LineShader;
+    /// <summary> The color of the mesh. </summary>
     public Color Tint = Color.WHITE;
+    /// <summary> The outline color of the mesh. </summary>
     public Color Outline = Color.BLACK;
+    /// <summary> The homogeneous transformation matrix. </summary>
     public M4x4 modelToWorld;
-    public ColoredTriangleMeshGeometry Geometry;
+    /// <summary> The geometry of the mesh. </summary>
+    public required ColoredTriangleMeshGeometry Geometry;
+    /// <summary> The properties of the shader.</summary>
     public List<(string, object)> shaderProperties = new List<(string, object)>();
     internal Dictionary<string, DynProperty> properties = new ();
+    /// <summary> Whether the mesh is 2D or 3D. </summary>
     public bool is2d = false;
+    /// <summary> The entity id of the mesh. </summary>
     public int entityId = -1;
 }
 
 internal class RendererHandle {
-    public ColoredTriangleMeshGeometry Handle;
+    public ColoredTriangleMeshGeometry? Handle;
 }
 
 internal class RendererAnimation {
@@ -253,6 +264,8 @@ public class World
             }
         };
         Id = worldId++;
+        _activeCanvas = new Canvas(CanvasState.DEFAULTNAME, new OrthoCamera());
+        Resources = new WorldResources();
         //this._activeCamera.Position = new Vector3(0.0f, 0.0f, 13.0f);
         Reset();
     }
@@ -351,7 +364,7 @@ public class World
     }
 
     internal delegate void OnPropertyChangedD(VisualEntity ent, string prop, object? newValue);
-    internal event OnPropertyChangedD OnPropertyChanged;
+    internal event OnPropertyChangedD? OnPropertyChanged;
 
     internal void SetProperty<T>(VisualEntity entity, string propert, T value, T oldvalue) {
         if(value != null && value.Equals(oldvalue))
