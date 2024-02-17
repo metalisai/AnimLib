@@ -72,7 +72,7 @@ internal abstract class SceneObject3D : SceneObject {
             transform.Pos = value;
         }
     }
-    public SceneTransform3D transform {get; set;}
+    public required SceneTransform3D transform {get; set;}
 }
 [Serializable]
 internal abstract class SceneObject {
@@ -98,9 +98,10 @@ internal abstract class SceneObject {
         int i = 0;
         foreach(var prop in showProps) {
             (string, Func<object>, Action<object>) cprop = (prop.Name, () => {
-                return prop.GetGetMethod().Invoke(this, new object[]{});
+                var getF = prop?.GetGetMethod()?.Invoke(this, new object[]{});
+                return getF ?? (() => (object?)null);
             }, (newvalue) => {
-                prop.GetSetMethod().Invoke(this, new object[] {newvalue});
+                prop.GetSetMethod()?.Invoke(this, new object[] {newvalue});
             });
             propsArr[i] = cprop;
             i++;

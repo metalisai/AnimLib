@@ -133,7 +133,7 @@ public struct Vector4 {
     /// <summary>
     /// Checks if object is a vector and performs component-wise comparison.
     /// </summary>
-    public override bool Equals(object obj) {
+    public override bool Equals(object? obj) {
         return obj is Vector4 && ((Vector4)obj).x == x && ((Vector4)obj).y == y && ((Vector4)obj).z == z;
     }
 

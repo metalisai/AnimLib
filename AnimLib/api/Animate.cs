@@ -265,6 +265,7 @@ public static class Animate {
     /// <typeparam name="T">The type of the values. Scalar or a vector.</typeparam>
     public static async Task Accelerate<T>(Action<T> action, T x0, T a, float duration, T v0 = default(T))
         where T : 
+            struct,
             IAdditionOperators<T, T, T>,
             ISubtractionOperators<T, T, T>,
             IMultiplyOperators<T, float, T>

@@ -9,8 +9,8 @@ internal static class Performance {
         public string Name;
         public long Time;
 
-        internal Call firstChild;
-        internal Call nextSibling;
+        internal Call? firstChild;
+        internal Call? nextSibling;
 
         public Call(string name) {
 #if DEBUG
@@ -37,11 +37,11 @@ internal static class Performance {
     public static int CommandCount = 0;
     public static int CachedGlyphPaths = 0;
 
-    static Call root = null;
+    static Call? root = null;
 
     static Stack<Call> CallStack = new();
 
-    public static Call lastRoot = null;
+    public static Call? lastRoot = null;
 
     internal static void BeginBlock(Call call) {
         if (CallStack.Count > 0) {

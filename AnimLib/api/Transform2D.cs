@@ -8,18 +8,24 @@ public class Transform2D {
     /// The entity this transform belongs to.
     /// </summary>
     protected VisualEntity2D entity;
-    internal Transform2D _parent;
+    internal Transform2D? _parent;
 
     /// <summary>
     /// The parent transform.
     /// </summary>
-    public Transform2D parent {
+    public Transform2D? parent {
         get {
-            return entity.state.parentId == 0 ? null : ((VisualEntity2D)World.current.EntityResolver.GetEntity(entity.state.parentId)).Transform;
+            if (entity.state.parentId == 0) {
+                return null;
+            }
+            var e = World.current.EntityResolver.GetEntity(entity.state.parentId);
+            return ((VisualEntity2D)e)?.Transform;
         } set {
             _parent = value;
-            World.current.SetProperty(entity, "parentId", value.entity.state.entityId, entity.state.parentId);
-            entity.state.parentId = value.entity.state.entityId;
+            if (value != null) {
+                World.current.SetProperty(entity, "parentId", value.entity.state.entityId, entity.state.parentId);
+                entity.state.parentId = value.entity.state.entityId;
+            }
         }
     }
 

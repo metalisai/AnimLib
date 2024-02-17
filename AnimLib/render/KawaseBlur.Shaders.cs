@@ -9,6 +9,7 @@ void main() {
 }";
 
 // 4-tap Kawase blur
+/*
 string kawaseBlurDown4Frag = @"#version 330 core
 layout(location = 0) out vec4 outColor;
 
@@ -48,6 +49,7 @@ void main() {
     outColor = sample(color1, color2, color3, color4);
 }
 ";
+*/
 
 // 13-tap Kawase blur
 string kawaseBlurDown13Frag = @"#version 330 core

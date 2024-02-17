@@ -28,7 +28,6 @@ internal partial class SkiaRenderer
     }
 
     int textureId = 0;
-    int svgId = 0;
     Dictionary<int, SKImage> LoadedImages = new ();
     Dictionary<int, SKSvg> LoadedSvgs = new ();
 
@@ -463,7 +462,7 @@ internal partial class SkiaRenderer
                 } else {
                     svg = LoadSvg(svgsprite.svg);
                 }
-                if(svg != null && mat != null && svg.Picture != null) {
+                if(svg != null && mat != null && svg.Picture != null && canvas != null) {
                     var bounds = svg.Picture.CullRect;
                     var curMat = canvas.TotalMatrix;
                     var rect = new SKRect(-svgsprite.width/2.0f, -svgsprite.height/2.0f, svgsprite.width/2.0f, svgsprite.height/2.0f);
@@ -503,7 +502,7 @@ internal partial class SkiaRenderer
 
         for (int i = 0; i < restoreCount; i++)
         {
-            canvas.Restore();
+            canvas?.Restore();
         }
         {
             using var aaa = new Performance.Call("SkiaRenderer.RenderText");

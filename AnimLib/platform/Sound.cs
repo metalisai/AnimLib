@@ -256,8 +256,7 @@ public struct SoundSample {
     /// <summary>
     /// Load a sound sample from a file. Can parse most formats supported by BASS.
     /// </summary>
-    public static SoundSample? GetFromStream(Stream file) {
-        if(file == null) return null;
+    public static SoundSample GetFromStream(Stream file) {
         var ms = new MemoryStream();
         file.CopyTo(ms);
         var data = ms.ToArray();

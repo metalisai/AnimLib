@@ -147,17 +147,16 @@ public class Animator {
     /// <summary>
     /// Get a sound sample stored within the project.
     /// </summary>
-    public SoundSample? GetSoundResource(string name) {
+    public SoundSample GetSoundResource(string name) {
         string fileName;
-        try {
-            using (var res = resourceManager.GetResource(name, out fileName)) {
-                var sample = SoundSample.GetFromStream(res);
-                return sample;
+        using (var res = resourceManager.GetResource(name, out fileName)) {
+            if(res == null) {
+                Debug.Error($"Failed to load sound resource {name}");
+                throw new System.Exception($"Failed to load sound resource {name}");
             }
-        } catch (NullReferenceException) {
-            Debug.Error($"Failed to load resource {name}");
+            var sample = SoundSample.GetFromStream(res);
+            return sample;
         }
-        return null;
     }
 
     /// <summary>
@@ -187,63 +186,66 @@ public class Animator {
         string fileName;
         try {
             using (var res = resourceManager.GetResource(name, out fileName)) {
-                if(res != null) {
-                    var ext = Path.GetExtension(fileName);
-                    switch(ext.ToLower()) {
-                        case ".jpg":
-                        case ".png":
-                        case ".bmp":
-                        case ".gif":
-                        case ".exif":
-                        case ".tiff":
-                        var image = new Bitmap(res);
-                        var pxsize = Image.GetPixelFormatSize(image.PixelFormat);
-                        System.Drawing.Imaging.PixelFormat outFmt = default;
-                        Texture2D.TextureFormat outFmtGl = default;
-                        switch(pxsize) {
-                            case 8:
-                                outFmt = System.Drawing.Imaging.PixelFormat.Alpha;
-                                outFmtGl = Texture2D.TextureFormat.R8;
-                                break;
-                            case 24:
-                                outFmt = System.Drawing.Imaging.PixelFormat.Format24bppRgb;
-                                outFmtGl = Texture2D.TextureFormat.BGR8;
-                                break;
-                            case 32:
-                                outFmt = System.Drawing.Imaging.PixelFormat.Format32bppArgb;
-                                outFmtGl = Texture2D.TextureFormat.BGRA8;
-                                break;
-                            default:
-                                System.Console.WriteLine("Unsupported pixel format " + image.PixelFormat);
-                                return null;
-                        }
-                        var data = image.LockBits(
-                            new System.Drawing.Rectangle(new Point(0, 0), new Size(image.Width, image.Height)), 
-                            System.Drawing.Imaging.ImageLockMode.ReadOnly, 
-                            outFmt
-                        );
-                        var len = data.Stride * data.Height;
-
-                        byte[] bytes = new byte[len];
-                        Marshal.Copy(data.Scan0, bytes, 0, len);
-                        image.UnlockBits(data);
-
-                        // TODO: some image formats (and opengl by default) add padding for alignment
-                        System.Diagnostics.Debug.Assert(bytes.Length >= image.Width * image.Height * (pxsize/8));
-
-                        var ret = new Texture2D(world.Resources.GetGuid()) {
-                            RawData = bytes,
-                            Format = outFmtGl,
-                            Width = image.Width,
-                            Height = image.Height,
-                        };
-                        world.AddResource(ret);
-                        return ret;
-                    }
+                if (res == null) {
+                    Debug.Error($"Failed to load texture resource {name}");
+                    throw new System.Exception($"Failed to load texture resource {name}");
                 }
-                return null;
+                var ext = Path.GetExtension(fileName);
+                switch(ext.ToLower()) {
+                    case ".jpg":
+                    case ".png":
+                    case ".bmp":
+                    case ".gif":
+                    case ".exif":
+                    case ".tiff":
+                    var image = new Bitmap(res);
+                    var pxsize = Image.GetPixelFormatSize(image.PixelFormat);
+                    System.Drawing.Imaging.PixelFormat outFmt = default;
+                    Texture2D.TextureFormat outFmtGl = default;
+                    switch(pxsize) {
+                        case 8:
+                            outFmt = System.Drawing.Imaging.PixelFormat.Alpha;
+                            outFmtGl = Texture2D.TextureFormat.R8;
+                            break;
+                        case 24:
+                            outFmt = System.Drawing.Imaging.PixelFormat.Format24bppRgb;
+                            outFmtGl = Texture2D.TextureFormat.BGR8;
+                            break;
+                        case 32:
+                            outFmt = System.Drawing.Imaging.PixelFormat.Format32bppArgb;
+                            outFmtGl = Texture2D.TextureFormat.BGRA8;
+                            break;
+                        default:
+                            System.Console.WriteLine("Unsupported pixel format " + image.PixelFormat);
+                            throw new NotSupportedException("Unsupported pixel format " + image.PixelFormat);
+                    }
+                    var data = image.LockBits(
+                        new System.Drawing.Rectangle(new Point(0, 0), new Size(image.Width, image.Height)), 
+                        System.Drawing.Imaging.ImageLockMode.ReadOnly, 
+                        outFmt
+                    );
+                    var len = data.Stride * data.Height;
+
+                    byte[] bytes = new byte[len];
+                    Marshal.Copy(data.Scan0, bytes, 0, len);
+                    image.UnlockBits(data);
+
+                    // TODO: some image formats (and opengl by default) add padding for alignment
+                    System.Diagnostics.Debug.Assert(bytes.Length >= image.Width * image.Height * (pxsize/8));
+
+                    var ret = new Texture2D(world.Resources.GetGuid()) {
+                        RawData = bytes,
+                        Format = outFmtGl,
+                        Width = image.Width,
+                        Height = image.Height,
+                    };
+                    world.AddResource(ret);
+                    return ret;
+                }
+                throw new NotSupportedException("Unsupported image format " + ext);
             }
-        } catch (NullReferenceException)
+        } 
+        catch (NullReferenceException)
         {
             // TODO: use fallback texture instead of failing?
             System.Diagnostics.Debug.Fail($"Resource {name} doesn't exist or no project loaded!");

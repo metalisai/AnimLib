@@ -15,6 +15,7 @@ public static class BuiltinFont {
         var ret = EmbeddedResources.GetResource("font", path);
         if(ret == null) {
             Debug.Error($"Failed to get builtin font {path}");
+            throw new System.Exception($"Failed to get builtin font {path}");
         }
         return ret;
     }

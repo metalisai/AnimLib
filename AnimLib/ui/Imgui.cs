@@ -355,7 +355,7 @@ internal class Imgui {
     public extern static void KeyEdge(uint key, bool newstate);
     //EXPORT void imgui_animlib_progress_bar(float fraction, const ImVec2 *size_arg, const char *overlay);
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_progress_bar")]
-    public extern static void ProgressBarInternal(float fraction, IntPtr size_arg, [MarshalAs(UnmanagedType.LPStr)] string overlay = null);
+    public extern static void ProgressBarInternal(float fraction, IntPtr size_arg, [MarshalAs(UnmanagedType.LPStr)] string? overlay = null);
     //EXPORT void imgui_animlib_begin_popup(const char *str_id, ImGuiWindowFlags flags);
     //EXPORT void imgui_animlib_begin_popup_modal(const char *name, bool *p_open, ImGuiWindowFlags flags);
     //EXPORT void imgui_animlib_end_popup();
@@ -366,7 +366,7 @@ internal class Imgui {
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "imgui_animlib_end_popup")]
     public extern static void EndPopup();
 
-    public static void ProgressBar(float fraction, Vector2? size, string overlay = null)
+    public static void ProgressBar(float fraction, Vector2? size, string? overlay = null)
     {
         var sizePtr = IntPtr.Zero;
         if(size.HasValue) {

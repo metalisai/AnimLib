@@ -41,7 +41,7 @@ public class Rectangle : Shape, IColored {
     /// Creates a new rectangle with the given width and height.
     /// </summary>
     public Rectangle(float w, float h) : base(new RectangleState(CreateRectanglePath(w, h))) {
-        var s = this.state as RectangleState;
+        var s = (RectangleState)this.state;
         s.width = w;
         s.height = h;
     }

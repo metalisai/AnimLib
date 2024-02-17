@@ -83,6 +83,13 @@ public struct Color {
     }
 
     /// <summary>
+    /// Get a hash code for this color.
+    /// </summary>
+    public override int GetHashCode() {
+        return ToU32().GetHashCode();
+    }
+
+    /// <summary>
     /// Compare two colors.
     /// </summary>
     public static bool operator== (Color a, Color b) {

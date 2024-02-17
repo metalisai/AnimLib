@@ -22,10 +22,6 @@ internal class PlayerControls {
     public delegate void StopD();
     public delegate void SeekD(double progress);
 
-    public event PlayD? OnPlay;
-    public event StopD? OnStop;
-    public event SeekD? OnSeek;
-
     // scene has been changed, but change is not finished (e.g. gizmos still being used)
     bool changePending = false;
 

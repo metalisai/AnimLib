@@ -192,8 +192,7 @@ internal class FontCache {
             c = ch.glyph,
             size = ch.size   
         };
-        CachedGlyph g;
-        if(!_cachedGlyphs.TryGetValue(key, out g)) {
+        if(!_cachedGlyphs.TryGetValue(key, out var g)) {
             var surface = RenderSurface((char)key.c, key.size);
             g = _cachedGlyphs[key];
         }
@@ -246,8 +245,7 @@ internal class FontCache {
                 c = c,
                 size = size    
             };
-            CachedGlyph g;
-            if(!_cachedGlyphs.TryGetValue(key, out g)) {
+            if(!_cachedGlyphs.TryGetValue(key, out var g)) {
                 var surface = RenderSurface((char)c, size);
                 g = _cachedGlyphs[key];
             }

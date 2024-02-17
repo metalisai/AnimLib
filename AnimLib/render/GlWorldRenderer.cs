@@ -190,7 +190,6 @@ internal partial class GlWorldRenderer : IRenderer {
                         }
 #endif
                         if(m.Geometry.edgeCoordinates != null && m.Geometry.edgeCoordinates.Length > 0) {
-                            Debug.Log("edge coordinates");
                             GL.EnableVertexAttribArray(2);
                             GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, 0, new IntPtr(m.Geometry.copiedVertices*(vertSize+colorSize)));
                         } else {
