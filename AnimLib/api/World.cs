@@ -167,9 +167,14 @@ public class World
     /// Currently active world.
     /// </summary>
     [ThreadStatic]
-    public static World current = new World(new AnimationSettings());
+    public static World current;
 
     Canvas _activeCanvas;
+
+    static World() {
+        current = new World(new AnimationSettings());
+        current.VoidWorld = true;
+    }
 
     /// <summary>
     /// The canvas that entities are created on by default.
@@ -203,6 +208,11 @@ public class World
     object? currentEditor = null; // who edits things right now (e.g. scene or animationbehaviour)
     internal EntityResolver EntityResolver;
     Color background = Color.WHITE;
+
+    /// <summary>
+    /// Fake world.
+    /// </summary>
+    public bool VoidWorld = false;
 
     /// <summary>
     /// Id of the world.

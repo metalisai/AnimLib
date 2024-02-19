@@ -136,7 +136,9 @@ internal class RenderState
                     debugCamera = new PerspectiveCameraState();
                     debugCamera.position.z = -13.0f;
                 } else {
-                    debugCamera.position = Vector3.ZERO;
+                    if (debugCamera != null) {
+                        debugCamera.position = Vector3.ZERO;
+                    }
                     this.debugCamRot = Vector2.ZERO;
                 }
             }

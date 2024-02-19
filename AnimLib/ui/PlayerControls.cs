@@ -168,14 +168,6 @@ internal class PlayerControls {
                             player.Scene.UpdateEvents();
                         }
                         player.SetAnimationDirty(true);
-                    } else {
-                        var obj = (SceneObject2D) s1.Clone();
-                        obj.transform.Pos = mpos;
-                        lock(player.Scene.sceneLock) {
-                            player.Scene.Add(obj);
-                            player.Scene.UpdateEvents();
-                        }
-                        player.SetAnimationDirty(true);
                     }
                     break;
                 }
@@ -242,17 +234,6 @@ internal class PlayerControls {
                 });
             }
             break;
-            case DragDropObject.Arrow:
-            lock(player.Scene.sceneLock) {
-                player.Scene.Add(new PlayerArrow() {
-                    start = Vector3.ZERO,
-                    end = Vector3.RIGHT,
-                    width = 0.1f,
-                    transform = new SceneTransform2D(pos3.xy, 0.0f),
-                    timeslice = (0.0, 99999.0),
-                });
-            }
-            break;
             case DragDropObject.Text:
             var text = new Player2DText() {
                 text = "New text",
@@ -266,16 +247,6 @@ internal class PlayerControls {
             }
             break;
             case DragDropObject.Spline:
-            var qs = new PlayerQSpline() {
-                width = 1.0f,
-                color = Color.BLACK,
-                transform = new SceneTransform2D(pos3.xy, 0.0f),
-                timeslice = (0.0, 9999999.0),
-                points = new Vector2[] { Vector2.ZERO, new Vector2(1.0f, 0.0f), new Vector2(2.0f, 1.0f) },
-            };
-            lock(player.Scene.sceneLock) {
-                player.Scene.Add(qs);
-            }
             break;
         }
 
@@ -483,6 +454,8 @@ internal class PlayerControls {
                 Action<string, int, bool> createItem = (string name, int idx, bool is2d) => {
                     Imgui.DragDropItem(name);
                 };
+                /*
+                // commented because it doesn't really work after all the changes that have happened
                 createItem("Circle", (int)DragDropObject.Circle, true);
                 createItem("Rectangle", (int)DragDropObject.Rectangle, true);
                 createItem("Shape", (int)DragDropObject.Shape, true);
@@ -490,6 +463,7 @@ internal class PlayerControls {
                 createItem("Arrow", (int)DragDropObject.Arrow, false);
                 createItem("Text", (int)DragDropObject.Text, false);
                 createItem("Quadratic spline", (int)DragDropObject.Spline, false);
+                */
             }
             else
             {

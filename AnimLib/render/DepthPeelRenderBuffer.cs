@@ -11,7 +11,6 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
     int _boundDepthTexture;
 
     int _entBlitProgram = -1;
-    int _bloomProgram = -1;
     bool _isHDR = true;
 
     int _presentTex = -1;
@@ -52,7 +51,6 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
         ColorSpace = colorSpace;
         this.platform = (OpenTKPlatform)platform;            
         _entBlitProgram = platform.AddShader(canvasBlitVert, canvasBlitFrag, null);
-        _bloomProgram = platform.AddShader(effectVert, bloomFrag, null);
         _sampler = GL.GenSampler();
         GL.SamplerParameter(_sampler, SamplerParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
         GL.SamplerParameter(_sampler, SamplerParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
@@ -258,15 +256,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
         int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);
         int rbuf = GL.GetInteger(GetPName.ReadFramebufferBinding);
 
-        GL.UseProgram(_bloomProgram);
         GL.BindVertexArray(platform.blitvao);
-        var loc = GL.GetUniformLocation(_bloomProgram, "_MainTex");
-        GL.Uniform1(loc, 0);
-        var horLoc = GL.GetUniformLocation(_bloomProgram, "_Horizontal");
-        var vpsLoc = GL.GetUniformLocation(_bloomProgram, "_ViewportSize");
-        GL.Uniform1(horLoc, horizontal ? 1 : 0);
-        GL.Uniform2(vpsLoc, ebuf.Width, ebuf.Height);
-
         GL.Disable(EnableCap.DepthTest);
         GL.Disable(EnableCap.Blend);
 
@@ -276,14 +266,12 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
         GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
 
         GL.UseProgram(platform.BlitProgram);
-        loc = GL.GetUniformLocation(platform.BlitProgram, "_MainTex");
-        vpsLoc = GL.GetUniformLocation(platform.BlitProgram, "_ViewportSize");
+        var loc = GL.GetUniformLocation(platform.BlitProgram, "_MainTex");
+        var vpsLoc = GL.GetUniformLocation(platform.BlitProgram, "_ViewportSize");
         GL.Uniform1(loc, 0);
         GL.Uniform2(vpsLoc, _width, _height);
 
         this.BindForRender();
-        //GL.BlendEquationSeparate(BlendEquationMode.Max, BlendEquationMode.FuncAdd);
-        //GL.BlendFuncSeparate(BlendingFactorSrc.One, BlendingFactorDest.One, BlendingFactorSrc.One, BlendingFactorDest.Zero);
         GL.BlendEquation(BlendEquationMode.FuncAdd);
         GL.BlendFunc(BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
         GL.Enable(EnableCap.Blend);

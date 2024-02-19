@@ -36,7 +36,10 @@ internal class Program
     {
         Console.WriteLine($"Assembly path changed to {newpath}");
         var behaviour = LoadAndWatchBehaviour(newpath, player);
-        player.SetBehaviour(behaviour);
+        if(behaviour != null)
+        {
+            player.SetBehaviour(behaviour);
+        }
     }
 
     [STAThread]

@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 namespace AnimLib;
 
 internal class BakedSound {
-    public SoundTrack[] tracks;
+    public required SoundTrack[] tracks;
 }
 
 internal class SoundTrack {

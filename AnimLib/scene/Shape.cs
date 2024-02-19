@@ -26,7 +26,7 @@ internal class PlayerShape : SceneObject2D
     [ShowInEditor]
     public ShapeMode mode { get; set; } = ShapeMode.FilledContour;
 
-    public PlayerPathVerb[] path { get; set; }
+    public PlayerPathVerb[] path { get; set; } = Array.Empty<PlayerPathVerb>();
 
     public PlayerShape(string canvasName) : base() {
         this.CanvasName = canvasName; 

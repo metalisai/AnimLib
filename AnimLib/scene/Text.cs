@@ -6,7 +6,7 @@ internal class Player2DText : SceneObject2D {
     [ShowInEditor]
     public Color color{get; set;}
     [ShowInEditor]
-    public string text {get; set;}
+    public string text {get; set;} = "";
 
     public override object Clone()
     {
@@ -34,6 +34,9 @@ internal class Player2DText : SceneObject2D {
     }
 
     public override VisualEntity2D InitializeEntity() {
-        return null;
+        var ent = new Text2D(text, size, null, color);
+        ent.Transform.Pos = transform.Pos;
+        ent.Transform.Rot = transform.Rot;
+        return ent;
     }
 }

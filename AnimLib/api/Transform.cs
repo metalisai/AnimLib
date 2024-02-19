@@ -8,16 +8,24 @@ public class Transform {
     /// The entity this transform is attached to.
     /// </summary>
     protected VisualEntity3D entity;
+    internal Transform? _parent;
 
     /// <summary>
     /// The parent transform.
     /// </summary>
-    public Transform parent {
+    public Transform? parent {
         get {
-            return entity.state.parentId == 0 ? null : ((VisualEntity3D)World.current.EntityResolver.GetEntity(entity.state.parentId)).Transform;
+            if (entity.state.parentId == 0) {
+                return null;
+            }
+            var e = World.current.EntityResolver.GetEntity(entity.state.parentId);
+            return ((VisualEntity3D)e)?.Transform;
         } set {
-            World.current.SetProperty(entity, "parentId", value.entity.state.entityId, entity.state.parentId);
-            entity.state.parentId = value.entity.state.entityId;
+            _parent = value;
+            if (value != null) {
+                World.current.SetProperty(entity, "parentId", value.entity.state.entityId, entity.state.parentId);
+                entity.state.parentId = value.entity.state.entityId;
+            }
         }
     }
 

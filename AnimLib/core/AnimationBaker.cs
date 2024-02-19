@@ -64,6 +64,8 @@ internal class AnimationBaker {
         Time.Reset();
         var world = new World(settings);
         world.Reset();
+
+        scene = scene ?? new PlayerScene();
         var animator = new Animator(resourceManager, world, scene, settings, props, text);
 
         haveError = false;
@@ -155,7 +157,8 @@ internal class AnimationBaker {
 
         Debug.Log($"Baked animation has {cmds.Length} commands");
 
-        World.current = null;
+        World.current = new World(new AnimationSettings());
+        World.current.VoidWorld = true;
 
         sw.Stop();
         Performance.TimeToBake = sw.Elapsed.TotalSeconds;

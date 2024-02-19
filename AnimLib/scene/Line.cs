@@ -39,6 +39,14 @@ internal class PlayerLine : SceneObject2D {
     }
 
     public override VisualEntity2D InitializeEntity() {
-        return null;
+        var pb = new PathBuilder();
+        pb.MoveTo(start);
+        pb.LineTo(end);
+        var path = pb;
+        var lineShape = new Shape(new ShapeState(path));
+        lineShape.Color = color;
+        lineShape.Transform.Pos = transform.Pos;
+        lineShape.Transform.Rot = transform.Rot;
+        return lineShape;
     }
 }

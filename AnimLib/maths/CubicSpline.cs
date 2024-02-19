@@ -9,7 +9,7 @@ namespace AnimLib;
 /// </summary>
 public class CubicSpline {
     internal class BezierNode {
-        public BezierNode Left, Right;
+        public BezierNode? Left, Right;
         public CubicBezier<Vector2, float> Bezier;
 
         BezierNode(CubicBezier<Vector2, float> bezier)
@@ -65,7 +65,9 @@ public class CubicSpline {
 
         internal static void Evaluate(BezierNode root, float t, List<CubicBezier<Vector2, float>> ret)
         {
-            var (p1, p2) = CollapsePair((root.Left.Bezier, root.Right.Bezier), root.Bezier, t);
+            Debug.Assert(root.Left != null);
+            Debug.Assert(root.Right != null);
+            var (p1, p2) = CollapsePair((root.Left!.Bezier, root.Right!.Bezier), root.Bezier, t);
             if (root.Left.Left == null && root.Left.Right == null)
             {
                 ret.Add(p1);

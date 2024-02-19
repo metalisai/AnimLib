@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Diagnostics;
 
 namespace AnimLib {
@@ -25,7 +24,7 @@ namespace AnimLib {
                 if(string.IsNullOrEmpty(ret)) {
                     Debug.Warning($"Zenity output was empty! Exit code: {process.ExitCode}, Error: {process.StandardError.ReadLine()}");
                     Debug.Log($"Zenity command-line was: \"{startInfo.FileName} {startInfo.Arguments}\"");
-                    return null;
+                    throw new Exception("Zenity output was empty!");
                 }
                 return ret;
             }
