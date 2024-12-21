@@ -256,9 +256,16 @@ in vec2 v_texCoord;
 uniform vec4 _Color;
 uniform vec4 _Outline;
 uniform int _EntityId;
-uniform sampler2DMS _depthPeelTex;
+uniform sampler2DMS _depthPeelTexMs;
+uniform sampler2D _depthPeelTex;
+uniform bool _Multisample;
 void main() {
-    float depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), gl_SampleID).x;
+    float depth;
+    if (_Multisample) {
+        depth = texelFetch(_depthPeelTexMs, ivec2(gl_FragCoord.xy), gl_SampleID).x;
+    } else {
+        depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), 0).x;
+    }
     if(gl_FragCoord.z >= depth) {
         discard;
     }
@@ -308,9 +315,16 @@ in vec4 v_color;
 uniform vec4 _Color;
 uniform vec4 _Outline;
 uniform int _EntityId;
-uniform sampler2DMS _depthPeelTex;
+uniform sampler2DMS _depthPeelTexMs;
+uniform sampler2D _depthPeelTex;
+uniform bool _Multisample;
 void main() {
-    float depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), gl_SampleID).x;
+    float depth;
+    if (_Multisample) {
+        depth = texelFetch(_depthPeelTexMs, ivec2(gl_FragCoord.xy), gl_SampleID).x;
+    } else {
+        depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), 0).x;
+    }
     if(gl_FragCoord.z >= depth) {
         discard;
     }
@@ -390,10 +404,17 @@ in vec4 v_color;
 in vec2 v_edgeCoord;
 uniform vec4 _Color;
 uniform vec4 _Outline;
-uniform sampler2DMS _depthPeelTex;
+uniform sampler2DMS _depthPeelTexMs;
+uniform sampler2D _depthPeelTex;
+uniform bool _Multisample;
 uniform int _EntityId;
 void main() {
-    float depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), gl_SampleID).x;
+    float depth;
+    if (_Multisample) {
+        depth = texelFetch(_depthPeelTexMs, ivec2(gl_FragCoord.xy), gl_SampleID).x;
+    } else {
+        depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), 0).x;
+    }
     if(gl_FragCoord.z >= depth) {
         discard;
     }
@@ -411,10 +432,17 @@ in vec4 v_color;
 in vec3 v_modelPos;
 uniform vec4 _Color;
 uniform vec4 _Outline;
-uniform sampler2DMS _depthPeelTex;
+uniform sampler2DMS _depthPeelTexMs;
+uniform sampler2D _depthPeelTex;
+uniform bool _Multisample;
 uniform int _EntityId;
 void main() {
-    float depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), gl_SampleID).x;
+    float depth;
+    if (_Multisample) {
+        depth = texelFetch(_depthPeelTexMs, ivec2(gl_FragCoord.xy), gl_SampleID).x;
+    } else {
+        depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), 0).x;
+    }
     if(gl_FragCoord.z >= depth) {
         discard;
     }
@@ -482,10 +510,17 @@ in vec4 g_color;
 in vec3 g_bary;
 uniform vec4 _Color;
 uniform vec4 _Outline;
-uniform sampler2DMS _depthPeelTex;
+uniform sampler2DMS _depthPeelTexMs;
+uniform sampler2D _depthPeelTex;
+uniform bool _Multisample;
 uniform int _EntityId;
 void main() {
-    float depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), gl_SampleID).x;
+    float depth;
+    if (_Multisample) {
+        depth = texelFetch(_depthPeelTexMs, ivec2(gl_FragCoord.xy), gl_SampleID).x;
+    } else {
+        depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), 0).x;
+    }
     if(gl_FragCoord.z >= depth) {
         discard;
     }

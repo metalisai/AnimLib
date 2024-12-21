@@ -470,6 +470,7 @@ internal partial class GlWorldRenderer : IRenderer {
     }
 
     public IBackendRenderBuffer CreateBuffer(int w, int h, int id) {
+
         var buf = new DepthPeelRenderBuffer(platform, platform.PresentedColorSpace, true);
         buf.Resize(w, h);
         effectBuffer.Resize(w, h);
@@ -577,9 +578,16 @@ internal partial class GlWorldRenderer : IRenderer {
             GL.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             GL.Clear(ClearBufferMask.DepthBufferBit/* | ClearBufferMask.ColorBufferBit*/);
             foreach(var prog in _programs) {
-                var loc = GL.GetUniformLocation(prog, "_depthPeelTex");
+                var msloc = GL.GetUniformLocation(prog, "_Multisample");
+                int loc;
+                if (pb.IsMultisampled) {
+                    loc = GL.GetUniformLocation(prog, "_depthPeelTexMs");
+                } else {
+                    loc = GL.GetUniformLocation(prog, "_depthPeelTex");
+                }
                 GL.UseProgram(prog);
                 GL.ProgramUniform1(prog, loc, 1);
+                GL.ProgramUniform1(prog, msloc, pb.IsMultisampled ? 1 : 0);
                 GL.BindTextureUnit(1, pb.PeelTex);
                 GL.BindSampler(1, platform.GetSampler(PlatformTextureSampler.Blit));
             }

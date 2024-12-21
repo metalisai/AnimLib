@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using OpenTK.Graphics.OpenGL4;
 
 namespace AnimLib;
@@ -18,6 +19,8 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
     bool _multisample = true;
 
     int _sampler = -1;
+
+    int _samples = 1;
 
     // multisampled render buffer needs to be blitted to a non-multisampled texture
     int _msPresentTex = -1;
@@ -47,7 +50,6 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
 
     public DepthPeelRenderBuffer(IPlatform platform, FrameColorSpace colorSpace, bool multisample) {
         // this is an OpenGL implementation and requires an OpenGL platform
-        _multisample = multisample;
         ColorSpace = colorSpace;
         this.platform = (OpenTKPlatform)platform;            
         _entBlitProgram = platform.AddShader(canvasBlitVert, canvasBlitFrag, null);
@@ -56,6 +58,28 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
         GL.SamplerParameter(_sampler, SamplerParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
         GL.SamplerParameter(_sampler, SamplerParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
         GL.SamplerParameter(_sampler, SamplerParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+
+        if (multisample) {
+            int maxSamples = GL.GetInteger(GetPName.MaxSamples);
+            int maxColorSamples = GL.GetInteger(GetPName.MaxColorTextureSamples);
+            int maxIntSamples = GL.GetInteger(GetPName.MaxIntegerSamples);
+            int maxDepthSamples = GL.GetInteger(GetPName.MaxDepthTextureSamples);
+            Debug.TLog($"OpenGL max supported samples: {maxSamples}");
+            Debug.TLog($"OpenGL max supported color texture samples: {maxColorSamples}");
+            Debug.TLog($"OpenGL max supported integer texture samples: {maxIntSamples}");
+            Debug.TLog($"OpenGL max supported depth texture samples: {maxDepthSamples}");
+            var minSamples = ((int[])[maxSamples, maxColorSamples, maxIntSamples, maxDepthSamples]).Min();
+            Debug.Log($"Usable sample count: {minSamples}");
+            if (minSamples <= 1) {
+                Debug.Warning("Multisampling requested, but usable sample count is 1. Disabling MSAA.");
+                _multisample = false;
+            } else {
+                _multisample = true;
+            }
+            _samples = minSamples;
+        } else {
+            _multisample = false;
+        }
     }
 
     public int Texture() {
@@ -170,30 +194,36 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
             _presentTex = _colorTex;
         } else {
             Debug.Log("Creating multisampled render buffer");
+
             // this seems to be the max on most (even recent) hardware
             // some drivers fake 16x with supersampling
-            int samples = 8;
+            Debug.Log("Creating color texture");
             GL.BindTexture(TextureTarget.Texture2DMultisample, _colorTex);
-            GL.TexImage2DMultisample(TextureTargetMultisample.Texture2DMultisample, samples, internalFormat, width, height, true);
+            GL.TexImage2DMultisample(TextureTargetMultisample.Texture2DMultisample, _samples, internalFormat, width, height, true);
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2DMultisample, _colorTex, 0);
 
-            /*GL.BindTexture(TextureTarget.Texture2D, _entityIdTex);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.R32i, width, height, 0, PixelFormat.RedInteger, PixelType.Int, IntPtr.Zero);
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2D, _entityIdTex, 0);*/
+            Debug.Log("Creating entityId texture");
+            // this gives FramebufferIncompleteMultisample
+            //GL.BindTexture(TextureTarget.Texture2D, _entityIdTex);
+            //GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.R32i, width, height, 0, PixelFormat.RedInteger, PixelType.Int, IntPtr.Zero);
+            //GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2D, _entityIdTex, 0);
             GL.BindTexture(TextureTarget.Texture2DMultisample, _entityIdTex);
-            GL.TexImage2DMultisample(TextureTargetMultisample.Texture2DMultisample, samples, PixelInternalFormat.R32i, width, height, true);
+            GL.TexImage2DMultisample(TextureTargetMultisample.Texture2DMultisample, _samples, PixelInternalFormat.R32i, width, height, true);
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2DMultisample, _entityIdTex, 0);
             
+            Debug.Log("Creating depth texture 1");
             GL.BindTexture(TextureTarget.Texture2DMultisample, _depthTex1);
-            GL.TexImage2DMultisample(TextureTargetMultisample.Texture2DMultisample, samples, PixelInternalFormat.Depth24Stencil8, width, height, true);
+            GL.TexImage2DMultisample(TextureTargetMultisample.Texture2DMultisample, _samples, PixelInternalFormat.Depth24Stencil8, width, height, true);
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, TextureTarget.Texture2DMultisample, _depthTex1, 0);
 
+            Debug.Log("Creating depth texture 2");
             GL.BindTexture(TextureTarget.Texture2DMultisample, _depthTex2);
-            GL.TexImage2DMultisample(TextureTargetMultisample.Texture2DMultisample, samples, PixelInternalFormat.Depth24Stencil8, width, height, true);
+            GL.TexImage2DMultisample(TextureTargetMultisample.Texture2DMultisample, _samples, PixelInternalFormat.Depth24Stencil8, width, height, true);
             //GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, TextureTarget.Texture2DMultisample, _depthTex2, 0);
 
             // make a non-multisampled for presentable texture
             {
+                Debug.Log("Creating non-multisampled render texture");
                 if (_msPresentFBO == -1) {
                     _msPresentFBO = GL.GenFramebuffer();
                 }
@@ -204,7 +234,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
                 GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, _msPresentTex, 0);
                 var err2 = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
                 if(err2 != FramebufferErrorCode.FramebufferComplete) {
-                    throw new Exception("Frame buffer not complete: " + err2);
+                    throw new Exception("Present frame buffer not complete: " + err2);
                 }
             }
 
@@ -214,8 +244,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
 
         var err = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
         if(err != FramebufferErrorCode.FramebufferComplete) {
-            //Debug.Error("Frame buffer not complete: " + err);
-            throw new Exception("Frame buffer not complete: " + err);
+            throw new Exception("Render frame buffer not complete: " + err);
         }
         _width = width;
         _height = height;
