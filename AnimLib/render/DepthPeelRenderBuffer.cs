@@ -51,7 +51,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
     public DepthPeelRenderBuffer(IPlatform platform, FrameColorSpace colorSpace, bool multisample) {
         // this is an OpenGL implementation and requires an OpenGL platform
         ColorSpace = colorSpace;
-        this.platform = (OpenTKPlatform)platform;            
+        this.platform = (OpenTKPlatform)platform;
         _entBlitProgram = platform.AddShader(canvasBlitVert, canvasBlitFrag, null);
         _sampler = GL.GenSampler();
         GL.SamplerParameter(_sampler, SamplerParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
@@ -90,7 +90,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
         get { return _fbo; }
     }
 
-    public int GetEntityAtPixel(int x, int y) 
+    public int GetEntityAtPixel(int x, int y)
     {
         int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);
         int rbuf = GL.GetInteger(GetPName.ReadFramebufferBinding);
@@ -182,7 +182,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
             GL.BindTexture(TextureTarget.Texture2D, _entityIdTex);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.R32i, width, height, 0, PixelFormat.RedInteger, PixelType.Int, IntPtr.Zero);
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2D, _entityIdTex, 0);
-            
+
             GL.BindTexture(TextureTarget.Texture2D, _depthTex1);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Depth24Stencil8, width, height, 0, PixelFormat.DepthStencil, PixelType.UnsignedInt248, IntPtr.Zero);
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, TextureTarget.Texture2D, _depthTex1, 0);
@@ -193,7 +193,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
 
             _presentTex = _colorTex;
         } else {
-            Debug.Log("Creating multisampled render buffer");
+            Debug.Log($"Creating multisampled render buffer (MSAA x{_samples})");
 
             // this seems to be the max on most (even recent) hardware
             // some drivers fake 16x with supersampling
@@ -210,7 +210,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
             GL.BindTexture(TextureTarget.Texture2DMultisample, _entityIdTex);
             GL.TexImage2DMultisample(TextureTargetMultisample.Texture2DMultisample, _samples, PixelInternalFormat.R32i, width, height, true);
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2DMultisample, _entityIdTex, 0);
-            
+
             Debug.Log("Creating depth texture 1");
             GL.BindTexture(TextureTarget.Texture2DMultisample, _depthTex1);
             GL.TexImage2DMultisample(TextureTargetMultisample.Texture2DMultisample, _samples, PixelInternalFormat.Depth24Stencil8, width, height, true);

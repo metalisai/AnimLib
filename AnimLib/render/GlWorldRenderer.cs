@@ -10,7 +10,7 @@ namespace AnimLib;
 /// <c>IRenderer</c> implementation using OpenGL and SkiaSharp. A renderer is responsible for rendering <c>WorldSnapshot</c> for a specified <c>SceneView</c> using appropriate coordinate transformations.
 /// </summary>
 internal partial class GlWorldRenderer : IRenderer {
-    
+
     int _circleProgram;
     int _rectangleProgram;
     int _solidColorProgram;
@@ -211,7 +211,7 @@ internal partial class GlWorldRenderer : IRenderer {
                             res.vaos.Add(vao);
                         }
                     } else {
-                        vao = m.Geometry.VAOHandle;    
+                        vao = m.Geometry.VAOHandle;
                         GL.BindVertexArray(vao);
                     }
 
@@ -555,7 +555,7 @@ internal partial class GlWorldRenderer : IRenderer {
         GL.BlendEquation(BlendEquationMode.FuncAdd);
         //GL.BlendFunc(BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
         GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-        //GL.BlendFuncSeparate(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha, BlendingFactorSrc.One, BlendingFactorDest.Zero); 
+        //GL.BlendFuncSeparate(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha, BlendingFactorSrc.One, BlendingFactorDest.Zero);
         GL.Enable(EnableCap.Blend);
 
         var smat = M4x4.Ortho(0.0f, mainBuffer.Size.w, 0.0f, mainBuffer.Size.h, -1.0f, 1.0f);
@@ -579,14 +579,11 @@ internal partial class GlWorldRenderer : IRenderer {
             GL.Clear(ClearBufferMask.DepthBufferBit/* | ClearBufferMask.ColorBufferBit*/);
             foreach(var prog in _programs) {
                 var msloc = GL.GetUniformLocation(prog, "_Multisample");
-                int loc;
-                if (pb.IsMultisampled) {
-                    loc = GL.GetUniformLocation(prog, "_depthPeelTexMs");
-                } else {
-                    loc = GL.GetUniformLocation(prog, "_depthPeelTex");
-                }
+                var loc1 = GL.GetUniformLocation(prog, "_depthPeelTexMs");
+                var loc2 = GL.GetUniformLocation(prog, "_depthPeelTex");
                 GL.UseProgram(prog);
-                GL.ProgramUniform1(prog, loc, 1);
+                GL.ProgramUniform1(prog, loc1, 1);
+                GL.ProgramUniform1(prog, loc2, 1);
                 GL.ProgramUniform1(prog, msloc, pb.IsMultisampled ? 1 : 0);
                 GL.BindTextureUnit(1, pb.PeelTex);
                 GL.BindSampler(1, platform.GetSampler(PlatformTextureSampler.Blit));
@@ -614,7 +611,7 @@ internal partial class GlWorldRenderer : IRenderer {
                     mbg.UpdateMesh(geom);
                     meshes[i] = new ColoredTriangleMesh {
                         modelToWorld = mbg.ModelToWorld(ctx.entRes),
-                        Geometry = geom, 
+                        Geometry = geom,
                         Outline = mbg.outline,
                         /*Outline = mbg.Outline,
                         OutlineWidth = mbg.OutlineWidth,*/
@@ -624,9 +621,6 @@ internal partial class GlWorldRenderer : IRenderer {
                         properties = mbg.properties,
                     };
                     i++;
-                }
-                if (!pb.IsMultisampled) {
-                    Debug.Error("need to use sampler2D instead of sampler2DMS");
                 }
                 RenderMeshes(meshes, worldToClip, smat, ss.DynamicProperties);
                 foreach(var geom in throwawayGeometries) {
