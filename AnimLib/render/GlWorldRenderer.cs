@@ -582,11 +582,14 @@ internal partial class GlWorldRenderer : IRenderer {
                 var loc1 = GL.GetUniformLocation(prog, "_depthPeelTexMs");
                 var loc2 = GL.GetUniformLocation(prog, "_depthPeelTex");
                 GL.UseProgram(prog);
+                //GL.ProgramUniform1(prog, loc, 1);
                 GL.ProgramUniform1(prog, loc1, 1);
-                GL.ProgramUniform1(prog, loc2, 1);
-                GL.ProgramUniform1(prog, msloc, pb.IsMultisampled ? 1 : 0);
+                GL.ProgramUniform1(prog, loc2, 2);
                 GL.BindTextureUnit(1, pb.PeelTex);
+                GL.BindTextureUnit(2, pb.PeelTex);
+                GL.ProgramUniform1(prog, msloc, pb.IsMultisampled ? 1 : 0);
                 GL.BindSampler(1, platform.GetSampler(PlatformTextureSampler.Blit));
+                GL.BindSampler(2, platform.GetSampler(PlatformTextureSampler.Blit));
             }
             GL.BeginQuery(QueryTarget.SamplesPassed, query);
             //GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
