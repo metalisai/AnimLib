@@ -136,6 +136,7 @@ internal partial class GlWorldRenderer : IRenderer {
         var vertSize = Marshal.SizeOf(typeof(Vector3));
         var edgeSize = Marshal.SizeOf(typeof(Vector2));
         using var _ = new Performance.Call("WorldRenderer.RenderMeshes");
+
         if(meshes.Length > 0) {
             // TODO: winding order is wrong?
             GL.Disable(EnableCap.CullFace);
@@ -267,6 +268,8 @@ internal partial class GlWorldRenderer : IRenderer {
                 GL.BindVertexArray(m.Geometry.VAOHandle);
                 M4x4 modelToClip;
                 modelToClip = !m.is2d ? camMat*m.modelToWorld : screenMat;
+                // depth bias
+                modelToClip.m34 += 0.0001f*drawId;
                 GL.UniformMatrix4(loc, 1, false, ref modelToClip.m11);
                 var col4 = m.Tint.ToVector4();
                 GL.Uniform4(colLoc, col4.x, col4.y, col4.z, col4.w);
