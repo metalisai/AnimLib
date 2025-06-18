@@ -590,6 +590,16 @@ public class World
             }, 0.0f, 1.0f, duration);
     }
 
+    public Task CreateDynFadeIn<T>(T entity, float duration) where T : DynVisualEntity,IColored {
+        CreateDynInstantly(entity);
+        var c = entity.Color;
+        var alpha = c.a;
+        return Animate.InterpF(x => {
+                c.a = x*alpha;
+                entity.Color = c;
+            }, 0.0f, 1.0f, duration);
+    }
+
     /// <summary>
     /// Create a 2D shape by tracing it's contour, then fading the fill if it has one.
     /// </summary>
@@ -676,6 +686,12 @@ public class World
     public T CreateClone<T>(T e) where T : VisualEntity {
         var ret = (T)e.Clone();
         CreateInstantly(ret);
+        return ret;
+    }
+
+    public T CreateDynClone<T>(T e) where T : DynVisualEntity {
+        var ret = (T)e.Clone();
+        CreateDynInstantly(ret);
         return ret;
     }
 

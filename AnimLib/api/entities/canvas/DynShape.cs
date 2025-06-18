@@ -5,7 +5,7 @@ namespace AnimLib;
 /// <summary>
 /// A shape defined by path.
 /// </summary>
-public class DynShape : DynVisualEntity2D {
+public class DynShape : DynVisualEntity2D, IColored {
     protected ShapePath path;
 
     private protected DynProperty<ShapePath> PathP = DynProperty<ShapePath>.CreateEmpty(new ShapePath());
@@ -38,6 +38,16 @@ public class DynShape : DynVisualEntity2D {
 
         set {
             ContourColor.Value = value.Value;
+        }
+    }
+
+    public Color Color {
+        get {
+            return FillColorP;
+        }
+        set {
+            FillColor.Value = value;
+            ContourColor.Value = value;
         }
     }
 

@@ -199,7 +199,7 @@ internal class WorldMachine {
 
             Func<DynPropertyId, object?> getDynProp = (id) => {
                 if (id == DynProperty.Invalid.Id) {
-                    throw new Exception("DynProperty.Invalid.Id is not a valid DynPropertyId! Don't reference it.");
+                    throw new Exception($"DynProperty.Invalid.Id ({id} == {DynProperty.Invalid.Id}) is not a valid DynPropertyId! Don't reference it.");
                 }
                 if (_dynamicProperties.TryGetValue(id, out var val)) {
                     return val;

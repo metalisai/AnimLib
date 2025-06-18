@@ -784,7 +784,14 @@ internal class PlayerControls {
         if (Imgui.TreeNode("Commands")) {
             for (int i = 0; i < Performance.CommandCount; i++) {
                 var cmd = Performance.Commands[i];
-                Imgui.Text($"{cmd.GetType().Name} {cmd.time}");
+                if (Imgui.TreeNode($"{cmd.GetType().Name} {cmd.time} {i}"))
+                {
+                    if (cmd is WorldPropertyCommand pcmd)
+                    {
+                        Imgui.Text($"Name: {pcmd.property}");
+                    }
+                    Imgui.TreePop();
+                }
             }
             Imgui.TreePop();
         }

@@ -110,6 +110,15 @@ public static class Animate {
         }, t.Pos, t.Pos+offset, duration, curve);
     }
 
+    public static Task Offset(this DynVisualEntity2D ent, Vector2 offset, double duration = 1.0, EaseType curve = EaseType.EaseInOut)
+    {
+        /*return InterpT(x =>
+        {
+            ent.Position.Value = x;
+        }, (Vector2)ent.Position, ent.Position + offset, duration, curve);*/
+        return InterpT(ent.Position, ent.Position.Value + offset, duration, curve);
+    }
+
     /// <summary>
     /// Offset (move) a 2D entity from its current position.
     /// </summary>
@@ -234,6 +243,23 @@ public static class Animate {
         action.Invoke(end);
     }
 
+    public static async Task InterpT<T>(DynProperty<T> prop, T end, double duration, EaseType curve = EaseType.EaseInOut)
+    where T :
+            struct,
+            IAdditionOperators<T, T, T>,
+            ISubtractionOperators<T, T, T>,
+            IMultiplyOperators<T, double, T>
+    {
+        T startD = prop.Value!;
+        T endD = end;
+        double endTime = AnimLib.Time.T + duration;
+        await InterpF(prop, time =>
+        {
+            var t = Ease.Evaluate(time, curve);
+            return startD + (endD - startD) * t;
+        }, duration);           
+    }
+
     /// <summary>
     /// Interpolates a <c>IColored</c> entity from a start color to a target color. Uses HSV color space.
     /// </summary>
@@ -242,10 +268,12 @@ public static class Animate {
     /// <param name="targetColor">The target color.</param>
     /// <param name="duration">The duration of the color change.</param>
     /// <param name="curve">The interpolation curve to use.</param>
-    public static async Task Color(IColored entity, Color startColor, Color targetColor, double duration, EaseType curve = EaseType.EaseInOut) {
+    public static async Task Color(IColored entity, Color startColor, Color targetColor, double duration, EaseType curve = EaseType.EaseInOut)
+    {
         double endTime = AnimLib.Time.T + duration;
-        while (AnimLib.Time.T < endTime) {
-            double progress = 1.0 - (endTime - AnimLib.Time.T)/ duration;
+        while (AnimLib.Time.T < endTime)
+        {
+            double progress = 1.0 - (endTime - AnimLib.Time.T) / duration;
             var t = (float)Math.Clamp(progress, 0.0f, 1.0f);
             t = Ease.Evaluate(t, curve);
             entity.Color = AnimLib.Color.LerpHSV(startColor, targetColor, (float)t);

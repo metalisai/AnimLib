@@ -56,6 +56,7 @@ public record DynProperty {
         this.Name = name;
         this._value = initialValue;
         this.ExpectedType = expectedType;
+        Debug.Log($"New dynprop {this.Id} name {this.Name} type {this.ExpectedType}");
     }
 
     /// <summary>
@@ -112,18 +113,20 @@ public record DynProperty<T> : DynProperty {
     private DynProperty(T? initial) : base(initial, typeof(T)) {
     }
 
+    /* I decided this was bad idea, because it creates invalid dynproperty.*/
     /// <summary>
     /// Implicit conversion for assignment.
     /// </summary>
-    public static implicit operator DynProperty<T>(T value) {
+    /*public static implicit operator DynProperty<T>(T value) {
         var p = new DynProperty<T>(value);
         return p;
-    }
+    }*/
 
     /// <summary>
     /// Implicit conversion for assignment.
     /// </summary>
-    public static implicit operator T?(DynProperty<T> value) {
+    public static implicit operator T?(DynProperty<T> value)
+    {
         return value.Value;
     }
 }

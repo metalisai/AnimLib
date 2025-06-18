@@ -80,8 +80,8 @@ uniform float _Sigma = 3.5;
 uniform float _Amount = 1.0;
 uniform float _Saturation = 0.15;
 
-vec4 filter(vec4 input) {
-    vec3 filtered = max(input.rgb-vec3(_BloomThreshold), vec3(0.0));
+vec4 colorFilter(vec4 finput) {
+    vec3 filtered = max(finput.rgb-vec3(_BloomThreshold), vec3(0.0));
     // calculate luminance
     float brightness = dot(filtered, vec3(0.2126, 0.7152, 0.0722));
     filtered += _Saturation*vec3(brightness);
@@ -91,7 +91,7 @@ vec4 filter(vec4 input) {
 void main() {
     vec2 texCoord = gl_FragCoord.xy / _ViewportSize;
 
-    vec4 srcColor = filter(texture(_MainTex, texCoord, 0));
+    vec4 srcColor = colorFilter(texture(_MainTex, texCoord, 0));
 
     vec3 bloomColor = srcColor.rgb;
     float alpha = 0.0;
@@ -107,7 +107,7 @@ void main() {
         float val = -(i*i + j*j)/(2.0*sigma*sigma);
         float weight = exp(val) / (2.0*3.141592*sigma*sigma);
         vec2 offset = vec2(i, j)*stepSize;
-        vec4 sample = filter(texture(_MainTex, texCoord + offset, 0));
+        vec4 sample = colorFilter(texture(_MainTex, texCoord + offset, 0));
         bloomColor += amount*sample.rgb*weight;
         alpha += amount*sample.a*weight;
     }}

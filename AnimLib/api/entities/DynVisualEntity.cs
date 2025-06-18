@@ -52,7 +52,7 @@ public abstract class DynVisualEntity {
         Active = new DynProperty<bool>("active", Active.Value);
         SortKey = new DynProperty<int>("sortKey", SortKey.Value);
         Created = new DynProperty<bool>("created", Created.Value);
-        this.Created = true;
+        this.Created.Value = true;
     }
 
     abstract internal object Clone();
