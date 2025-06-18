@@ -66,7 +66,7 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
 
     public FrameColorSpace PresentedColorSpace { get; private set; }
 
-    static DebugProc? proc;
+    static DebugProc proc = debugCallback;
 
     public static ConcurrentBag<string> destroyedOwners = new ConcurrentBag<string>();
     public Dictionary<string, AllocatedResources> allocatedResources = new Dictionary<string, AllocatedResources>();
@@ -139,10 +139,10 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
     }
 
     protected override void OnLoad(EventArgs e) {
-        proc = new DebugProc(debugCallback);
         GL.DebugMessageCallback(proc, IntPtr.Zero);
         GL.Disable(EnableCap.Dither);
         GL.Enable(EnableCap.DebugOutput);
+        GL.Enable(EnableCap.DebugOutputSynchronous);
         GL.Enable(EnableCap.Blend);
         GL.BlendEquation(BlendEquationMode.FuncAdd);
         GL.BlendFunc(BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
