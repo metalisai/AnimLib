@@ -75,6 +75,26 @@ public class Time
         return tcs.Task;
     }
 
+    /// <summary>
+    /// Wait until specified time.
+    /// </summary>
+    /// <param name="time">Time in seconds to wait until.</param>
+    /// <returns>Task that completes at specified time.</returns>
+    public static Task WaitUntilT(double time) {
+        var tcs = new TaskCompletionSource<bool>();
+        var task = new WaitTask() {
+            TaskCompletion = tcs,
+            EndTime = time,
+        };
+        if(_currentTime >= task.EndTime) {
+            tcs.SetResult(true);
+        }
+        if(!task.TaskCompletion.Task.IsCompleted) {
+            _waitTasks.Add(task);
+        }
+        return tcs.Task;
+    }
+
     internal static void Reset() {
         _currentFrame = 0;
         _currentTime = 0.0;

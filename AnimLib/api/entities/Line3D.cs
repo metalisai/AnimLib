@@ -145,14 +145,19 @@ public class Line3D : VisualEntity3D, IColored
     /// </summary>
     public Line3D(float width = 1.0f, MeshVertexMode mode = MeshVertexMode.Segments) : this(World.current.Resources.GetGuid()) {
         var state = (Line3DState)this.state;
-        state.properties.Add("Width", new DynProperty("Width", width));
+        state.properties.Add("Width", new DynProperty<float>("Width", width));
         state.VertexMode = mode;
     }
 
     /// <summary>
     /// Copy constructor.
     /// </summary>
-    public Line3D(Line3D mesh) : base(mesh) {
+    public Line3D(Line3D mesh) : base(mesh)
+    {
+        var state = (Line3DState)this.state;
+        var ostate = (Line3DState)mesh.state;
+        Debug.Assert(state.properties.ContainsKey("Width"));
+        //state.properties.Add("Width", new DynProperty<float>("Width", ostate.properties["Width"].Value as float? ?? default(float)));
     }
 
     /// <summary>

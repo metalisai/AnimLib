@@ -145,7 +145,8 @@ internal class WorldSnapshot {
     public required CanvasSnapshot[] Canvases;
     // NOTE: the first renderbuffer is always the main one
     public required RenderBufferState[] RenderBuffers;
-    public Dictionary<int, object> DynamicProperties = new ();
+    public Dictionary<DynPropertyId, object> DynamicProperties = new ();
+
     public double Time;
 }
 
@@ -194,13 +195,17 @@ public class World
     List<WorldSoundCommand> _soundCommands = new ();
     List<Func<VisualEntity, bool>> CreationListeners = new ();
 
+    Dictionary<DynPropertyId, Func<Dictionary<DynPropertyId, object?>, object?>> _activeDynEvaluators = new ();
+
     // used by EntityCollection to keep track of children
     private Dictionary<int, List<VisualEntity>> _children = new ();
     private Dictionary<int, VisualEntity> _parents = new ();
 
     private Dictionary<int, VisualEntity> _entities = new ();
 
-    private Dictionary<int, object> _dynamicProperties = new ();
+    private Dictionary<int, DynVisualEntity> _dynEntities = new ();
+
+    private Dictionary<DynPropertyId, object?> _dynamicProperties = new ();
 
     private Stack<List<VisualEntity>> _captureStack = new ();
 
@@ -208,6 +213,11 @@ public class World
     object? currentEditor = null; // who edits things right now (e.g. scene or animationbehaviour)
     internal EntityResolver EntityResolver;
     Color background = Color.WHITE;
+
+    /// <summary>
+    /// The time dynamic property.
+    /// </summary>
+    public DynProperty<double> CurrentTime;
 
     /// <summary>
     /// Fake world.
@@ -284,6 +294,10 @@ public class World
         return entityId++;
     }
 
+    internal DynPropertyId GetUniqueDynId() {
+        return new DynPropertyId(entityId++);
+    }
+
     internal void Update(double dt) {
         /*foreach(var label in _labels) {
             LabelState state = ((LabelState)label.state);
@@ -321,6 +335,7 @@ public class World
         Resources = new WorldResources();
         _entities.Clear();
         _commands.Clear();
+        _activeDynEvaluators.Clear();
         var cam = new PerspectiveCamera();
         cam.Fov = 60.0f;
         cam.ZNear = 0.1f;
@@ -337,6 +352,14 @@ public class World
         Canvas.Default = defaultCanvas;
 
         this.ActiveCanvas = defaultCanvas;
+
+        this.CurrentTime = new DynProperty<double>("time", 0.0f);
+        var sprop = new WorldSpecialPropertyCommand(
+            propertyId: CurrentTime.Id,
+            SpecialWorldPropertyType.Time,
+            time: Time.T
+        );
+        _commands.Add(sprop);
 
         CreateInstantly(cam);
         ActiveCamera = cam;
@@ -374,7 +397,53 @@ public class World
     }
 
     internal delegate void OnPropertyChangedD(VisualEntity ent, string prop, object? newValue);
-    internal event OnPropertyChangedD? OnPropertyChanged;
+    internal event OnPropertyChangedD OnPropertyChanged;
+
+    internal void BeginDynEvaluator(DynProperty prop, Func<Dictionary<DynPropertyId, object?>, object?> evaluator) {
+        var id = prop.Id;
+        if (id.Id == 0) {
+            return;
+        }
+        if (_activeDynEvaluators.ContainsKey(id)) {
+            Debug.Error($"Dyn property {id} already has active evaluator. Make sure you don't evaluate a property from multiple places at the same time.");
+            return;
+        }
+
+        var cmd = new WorldPropertyEvaluatorCreate(
+            propertyId: id,
+            evaluator: evaluator,
+            oldValue: _dynamicProperties[id],
+            time: Time.T
+        );
+        _commands.Add(cmd);
+        _activeDynEvaluators.Add(id, evaluator);
+        prop.Evaluator = () => {
+            return evaluator(_dynamicProperties);
+        };
+    }
+
+    internal void EndDynEvaluator(DynProperty prop, object? finalValue) {
+        var id = prop.Id;
+        if (id.Id == 0) {
+            return;
+        }
+        if (!_activeDynEvaluators.ContainsKey(id)) {
+            Debug.Error($"Dyn property {id} does not have active evaluator. Maybe it was ignored due to race condition?");
+            return;
+        }
+        var cmd = new WorldPropertyEvaluatorDestroy(
+            propertyId: id,
+            evaluator: _activeDynEvaluators[id],
+            finalValue: finalValue,
+            time: Time.T
+        );
+        _commands.Add(cmd);
+        prop.Evaluator = null;
+        _dynamicProperties[id] = finalValue;
+        // use the internal version to avoid queueing another command
+        prop._value = finalValue;
+        _activeDynEvaluators.Remove(id);
+    }
 
     internal void SetProperty<T>(VisualEntity entity, string propert, T value, T oldvalue) {
         if(value != null && value.Equals(oldvalue))
@@ -404,6 +473,26 @@ public class World
             oldvalue: ents.Select(x => (object)x.s).ToArray()
         );
         _commands.Add(cmd);
+    }
+
+    private void DynEntityCreated(DynVisualEntity entity) {
+        entity.Id = GetUniqueId();
+        if(currentEditor == null) {
+            Debug.Error("Entity created when no one is editing!? Use StartEditing() before modifying world.");
+        }
+        /*if (currentEditor != null) {
+            entity.state.creator = currentEditor;
+        }
+        else {
+            Debug.Warning("Entity created without creator. This is not a problem but might make debugging harder.");
+        }*/
+        var cmd = new WorldDynCreateCommand(
+            entity: entity,
+            time: Time.T
+        );
+        _commands.Add(cmd);
+        entity.OnCreated();
+        _dynEntities.Add(entity.Id, entity);
     }
 
     private void EntityCreated(VisualEntity entity) {
@@ -484,8 +573,8 @@ public class World
         return ent;
     }
 
-    internal int CreateDynProperty(object vl) {
-        var id = GetUniqueId();
+    internal DynPropertyId CreateDynProperty(object? vl) {
+        var id = GetUniqueDynId();
         _dynamicProperties.Add(id, vl);
         var cmd = new WorldCreateDynPropertyCommand(
             propertyId: id,
@@ -496,14 +585,21 @@ public class World
         return id;
     }
 
-    internal object? GetDynProperty(int id) {
+    internal object? GetDynProperty(DynPropertyId id) {
         _dynamicProperties.TryGetValue(id, out var ret);
         return ret;
     }
 
-    internal void SetDynProperty(int id, object value) {
+    internal void SetDynProperty(DynPropertyId id, object? value) {
+        if (id.Id == 0) {
+            return;
+        }
+        if (_activeDynEvaluators.ContainsKey(id)) {
+            Debug.Error("Can't set dyn property while it has an evaluator. SetDynProperty ignored. Make sure you don't control single property from multiple places.");
+            return;
+        }
         var cmd = new WorldDynPropertyCommand(
-            entityId: id,
+            propertyId: id,
             newvalue: value,
             oldvalue: _dynamicProperties[id],
             time: Time.T
@@ -546,11 +642,26 @@ public class World
         return ent;
     } 
 
+    public T CreateDynInstantly<T>(T ent) where T : DynVisualEntity {
+        DynEntityCreated(ent);
+        return ent;
+    }
+
     /// <summary>
     /// Create an <c>IColored</c> entity with a fade in animation.
     /// </summary>
     public Task CreateFadeIn<T>(T entity, float duration) where T : VisualEntity,IColored {
         CreateInstantly(entity);
+        var c = entity.Color;
+        var alpha = c.a;
+        return Animate.InterpF(x => {
+                c.a = x*alpha;
+                entity.Color = c;
+            }, 0.0f, 1.0f, duration);
+    }
+
+    public Task CreateDynFadeIn<T>(T entity, float duration) where T : DynVisualEntity,IColored {
+        CreateDynInstantly(entity);
         var c = entity.Color;
         var alpha = c.a;
         return Animate.InterpF(x => {
@@ -632,11 +743,25 @@ public class World
     }
 
     /// <summary>
+    /// Clone a dynamic entity. Only state will be copied, the entity will not be created implicitly.
+    /// </summary>
+    public T CloneDyn<T>(T e) where T : DynVisualEntity {
+        var ret = e.Clone();
+        return (T)ret;
+    }
+
+    /// <summary>
     /// Create a clone of an entity. The clone is immediately created in the world.
     /// </summary>
     public T CreateClone<T>(T e) where T : VisualEntity {
         var ret = (T)e.Clone();
         CreateInstantly(ret);
+        return ret;
+    }
+
+    public T CreateDynClone<T>(T e) where T : DynVisualEntity {
+        var ret = (T)e.Clone();
+        CreateDynInstantly(ret);
         return ret;
     }
 

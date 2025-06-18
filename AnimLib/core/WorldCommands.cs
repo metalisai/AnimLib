@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace AnimLib;
 
 internal record WorldCommand(double time);
@@ -15,9 +18,9 @@ internal record WorldPropertyMultiCommand (
 ) : WorldCommand(time);
 
 internal record WorldDynPropertyCommand (
-    int entityId,
-    object newvalue,
-    object oldvalue,
+    DynPropertyId propertyId,
+    object? newvalue,
+    object? oldvalue,
     double time
 ) : WorldCommand(time);
 
@@ -30,11 +33,27 @@ internal record WorldPropertyCommand (
     double time
 ) : WorldCommand(time);
 
-internal record WorldCreateDynPropertyCommand (
-    int propertyId,
-    object value,
+internal record WorldPropertyEvaluatorCreate (
+    DynPropertyId propertyId,
+    Func<Dictionary<DynPropertyId, object?>, object?> evaluator,
+    object? oldValue, // value before first evaluation
     double time
 ) : WorldCommand(time);
+
+internal record WorldPropertyEvaluatorDestroy (
+    DynPropertyId propertyId,
+    Func<Dictionary<DynPropertyId, object?>, object?> evaluator,
+    object? finalValue, // value after last evaluation
+    double time
+) : WorldCommand(time);
+
+internal record WorldCreateDynPropertyCommand (
+    DynPropertyId propertyId,
+    object? value,
+    double time
+) : WorldCommand(time);
+
+internal record WorldDynCreateCommand(DynVisualEntity entity, double time) : WorldCommand(time);
 
 internal record WorldCreateCommand(object entity, double time) : WorldCommand(time);
 
@@ -45,3 +64,13 @@ internal record WorldSetActiveCameraCommand(int cameraEntId, int oldCamEntId, do
 internal record WorldEndCommand(double time) : WorldCommand(time);
 
 internal record WorldCreateRenderBufferCommand(int width, int height, int id, double time) : WorldCommand(time);
+
+/// <summary>
+/// Property types that are internally evaluated.
+/// </summary>
+public enum SpecialWorldPropertyType {
+    /// <summary> The current time in seconds. Starting from the beginning of the animation. </summary>
+    Time,
+};
+
+internal record WorldSpecialPropertyCommand(DynPropertyId propertyId, SpecialWorldPropertyType property, double time) : WorldCommand(time);

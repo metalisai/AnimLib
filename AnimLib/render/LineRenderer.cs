@@ -7,7 +7,7 @@ namespace AnimLib;
 /// <summary>
 /// A line renderer that turns a linear spline into a triangle mesh geometry.
 /// </summary>
-public static class LineRenderer {
+internal static class LineRenderer {
 
     public static void UpdateLineMesh(ColoredTriangleMeshGeometry geometry, Vector3[] line, float width, Color color, string guid){ 
         // TODO: this hits GC HARD
@@ -185,6 +185,7 @@ public static class LineRenderer {
         }
         System.Diagnostics.Debug.Assert(vertices.Count == edgeCoords.Count);
         System.Diagnostics.Debug.Assert(vertices.Count == vcolors.Count);
+
         return new ColoredTriangleMeshGeometry(guid) {
             vertices = vertices.ToArray(),
             indices = indices.ToArray(),

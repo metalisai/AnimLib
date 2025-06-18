@@ -17,6 +17,9 @@ internal class WorldMachine {
     List<CubeState> _cubes = new List<CubeState>();
     List<EntityState> _cameras =  new List<EntityState>();
     List<BezierState> _beziers = new List<BezierState>();
+
+    List<DynShape> _dynShapes = new List<DynShape>();
+
     Dictionary<int, CanvasEntities> _canvases = new Dictionary<int, CanvasEntities>();
     //Dictionary<VisualEntity, EntityState> _entities = new Dictionary<VisualEntity, EntityState>();
     Dictionary<int, EntityState> _entities = new Dictionary<int, EntityState>();
@@ -24,7 +27,11 @@ internal class WorldMachine {
     Dictionary<int, EntityState> _destroyedEntities = new Dictionary<int, EntityState>();
     List<RenderBufferState> _renderBuffers = new();
 
-    Dictionary<int, object> _dynamicProperties = new Dictionary<int, object>();
+    Dictionary<DynPropertyId, object?> _dynamicProperties = new ();
+
+    Dictionary<DynPropertyId, Func<Dictionary<DynPropertyId, object?>, object?>> _propertyEvaluators = new ();
+
+    List<(DynPropertyId propId, SpecialWorldPropertyType type)> _specialProperties = new ();
 
     public double fps = 60.0;
     string _lastAction = ""; // this is for debug
@@ -58,7 +65,11 @@ internal class WorldMachine {
         _cameras.Clear();
         _playCursorCmd = 0;
         _currentPlaybackTime = 0.0;
+        _specialProperties.Clear();
         _entities.Clear();
+        _dynamicProperties.Clear();
+        _propertyEvaluators.Clear();
+        _dynShapes.Clear();
         _beziers.Clear();
         _canvases.Clear();
         _dynamicProperties.Clear();
@@ -86,6 +97,15 @@ internal class WorldMachine {
         Reset();
     }
 
+    protected void EvaluateSpecialProperties() {
+        foreach(var sp in _specialProperties) {
+            _dynamicProperties[sp.propId] = sp.type switch {
+                SpecialWorldPropertyType.Time => _currentPlaybackTime,
+                _ => throw new NotImplementedException(),
+            };
+        }
+    }
+
     // returns true if done playing
     public bool Step(double dt) {
         var program = Program;
@@ -102,6 +122,14 @@ internal class WorldMachine {
             while(_playCursorCmd-1 > 0 && program[_playCursorCmd-1].time > _currentPlaybackTime) {
                 Undo(program[_playCursorCmd-1]);
                 _playCursorCmd--;
+            }
+        }
+        EvaluateSpecialProperties();
+        foreach(var kvp in _propertyEvaluators) {
+            try {
+                _dynamicProperties[kvp.Key] = kvp.Value(_dynamicProperties);
+            } catch(Exception e) {
+                Debug.Error($"Error evaluating property {kvp.Key}: {e.Message}");
             }
         }
         return _currentPlaybackTime == 0.0 || _currentPlaybackTime == GetEndTime();
@@ -169,6 +197,20 @@ internal class WorldMachine {
                 Canvas = canvas,
                 Effects = effects,
             };
+
+            Func<DynPropertyId, object?> getDynProp = (id) => {
+                if (id == DynProperty.Invalid.Id) {
+                    throw new Exception($"DynProperty.Invalid.Id ({id} == {DynProperty.Invalid.Id}) is not a valid DynPropertyId! Don't reference it.");
+                }
+                if (_dynamicProperties.TryGetValue(id, out var val)) {
+                    return val;
+                } else {
+                    throw new Exception($"DynProperty {id} not found!");
+                }
+            };
+            var dynShapes = _dynShapes.Select(x => (ShapeState)x.GetState(getDynProp)).ToArray();
+            css.Entities = css.Entities.Concat(dynShapes).ToArray();
+
             Array.Sort(css.Entities, new EntComparer());
             l.Add(css);
             //foreach(var s in css.Entities) s.canvas = canvas;
@@ -193,6 +235,22 @@ internal class WorldMachine {
             DynamicProperties = _dynamicProperties.ToDictionary(),
         };
         return ret;
+    }
+
+    private void CreateDynEntity(DynVisualEntity ent) {
+        switch(ent) {
+            case DynShape ds:
+                _dynShapes.Add(ds);
+                break;
+        }
+    }
+
+    private void DestroyDynEntity(DynVisualEntity ent) {
+        switch(ent) {
+            case DynShape ds:
+                _dynShapes.Remove(ds);
+                break;
+        }
     }
 
     private void CreateEntity(object entity) {
@@ -285,6 +343,9 @@ internal class WorldMachine {
             case WorldCreateCommand worldCreate:
                 CreateEntity(worldCreate.entity);
             break;
+            case WorldDynCreateCommand dynCreate:
+                CreateDynEntity(dynCreate.entity);
+            break;
             case WorldDestroyCommand worldDestroy:
             DestroyEntity(worldDestroy.entityId);
             break;
@@ -361,7 +422,21 @@ internal class WorldMachine {
             _dynamicProperties.Add(createDynPropertyCommand.propertyId, createDynPropertyCommand.value);
             break;
             case WorldDynPropertyCommand dynPropertyCommand:
-            _dynamicProperties[dynPropertyCommand.entityId] = dynPropertyCommand.newvalue;
+            _dynamicProperties[dynPropertyCommand.propertyId] = dynPropertyCommand.newvalue;
+            break;
+            case WorldPropertyEvaluatorCreate evaluatorCreate:
+            _propertyEvaluators.Add(evaluatorCreate.propertyId, evaluatorCreate.evaluator);
+            _dynamicProperties[evaluatorCreate.propertyId] = evaluatorCreate.oldValue;
+            break;
+            case WorldPropertyEvaluatorDestroy evaluatorDestroy:
+            _propertyEvaluators.Remove(evaluatorDestroy.propertyId);
+            _dynamicProperties[evaluatorDestroy.propertyId] = evaluatorDestroy.finalValue;
+            break;
+            case WorldSpecialPropertyCommand specialPropertyCommand:
+            _specialProperties.Add((specialPropertyCommand.propertyId, specialPropertyCommand.property));
+            break;
+            default:
+            Debug.Warning($"Unknown world command {cmd}");
             break;
         }
     }
@@ -370,6 +445,9 @@ internal class WorldMachine {
         switch(cmd) {
             case WorldCreateCommand worldCreate:
             DestroyEntity(((EntityState)worldCreate.entity).entityId);
+            break;
+            case WorldDynCreateCommand dynCreate:
+            DestroyDynEntity(dynCreate.entity);
             break;
             case WorldDestroyCommand worldDestroy:
             // TODO: this will be created with wrong properties (they are latest in world not from when the entity was destroyed)
@@ -433,11 +511,24 @@ internal class WorldMachine {
             _activeCamera = (setActiveCameraCommand.oldCamEntId == 0 ? null : (CameraState)_entities[setActiveCameraCommand.oldCamEntId]);
             break;
             case WorldCreateDynPropertyCommand createDynPropertyCommand:
-            _dynamicProperties.Remove(createDynPropertyCommand.propertyId);
+            var removed = _dynamicProperties.Remove(createDynPropertyCommand.propertyId);
+            if(!removed) {
+                throw new Exception("Destroying a dyn property that does not exist!");
+            }
             break;
             case WorldDynPropertyCommand dynPropertyCommand:
-            _dynamicProperties[dynPropertyCommand.entityId] = dynPropertyCommand.oldvalue;
+            _dynamicProperties[dynPropertyCommand.propertyId] = dynPropertyCommand.oldvalue;
             break;
+            case WorldPropertyEvaluatorCreate evaluatorCreate:
+                _propertyEvaluators.Remove(evaluatorCreate.propertyId);
+                _dynamicProperties[evaluatorCreate.propertyId] = evaluatorCreate.oldValue;
+            break;
+            case WorldPropertyEvaluatorDestroy evaluatorDestroy:
+                _propertyEvaluators.Add(evaluatorDestroy.propertyId, evaluatorDestroy.evaluator);
+                EvaluateSpecialProperties();
+                // TODO: this is bugged when the evaluator depends on other non-special properties
+                _dynamicProperties[evaluatorDestroy.propertyId] = evaluatorDestroy.finalValue;
+                break;
         }
     }
 

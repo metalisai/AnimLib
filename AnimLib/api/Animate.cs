@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Numerics;
+using System.Collections.Generic;
 
 using EaseType = AnimLib.Ease.EaseType;
 
@@ -29,11 +30,6 @@ public enum TextCreationMode {
 /// Helper class to animate entities. Part of the AnimLib user API.
 /// </summary>
 public static class Animate {
-    static CubicBezier<float,float> bouncy1 = new (0.0f, 0.0f, 1.5f, 1.0f);
-    static CubicBezier<float,float> smooth1 = new (0.0f, 0.0f, 1.0f, 1.0f);
-
-    static CubicBezier<Vector2,float> smooth = new CubicBezier<Vector2,float>(new Vector2(0.0f, 0.0f), new Vector2(0.33f, 0.0f), new Vector2 (0.66f, 1.0f), new Vector2(1.0f, 1.0f));
-
     /// <summary>
     /// Orbits a transform perpendicular to the given axis. Movement starts at the current position and orbits the specified angle during the given duration.
     /// </summary>
@@ -114,6 +110,15 @@ public static class Animate {
         }, t.Pos, t.Pos+offset, duration, curve);
     }
 
+    public static Task Offset(this DynVisualEntity2D ent, Vector2 offset, double duration = 1.0, EaseType curve = EaseType.EaseInOut)
+    {
+        /*return InterpT(x =>
+        {
+            ent.Position.Value = x;
+        }, (Vector2)ent.Position, ent.Position + offset, duration, curve);*/
+        return InterpT(ent.Position, ent.Position.Value + offset, duration, curve);
+    }
+
     /// <summary>
     /// Offset (move) a 2D entity from its current position.
     /// </summary>
@@ -175,6 +180,36 @@ public static class Animate {
     }
 
     /// <summary>
+    /// Interpolate a property using an evaluator that takes time-dependent value as input
+    /// </summary>
+    /// <param name="property">The property to interpolate.</param>
+    /// <param name="evaluator">The evaluator that takes time-dependent value as input. Evaluators with captures or side-effects should be avoided.</param>
+    /// <param name="start">The start value of the input parameter.</param>
+    /// <param name="end">The end value of the input parameter.</param>
+    /// <param name="duration">The duration of the interpolation.</param>
+    /// <param name="curve">The interpolation curve to use.</param>
+    /// <typeparam name="T">The type of the property.</typeparam>
+    public static async Task InterpF<T>(DynProperty<T> property, Func<float, T> evaluator, double duration, float start = 0.0f, float end = 1.0f, EaseType curve = EaseType.EaseInOut) {
+        double endTime = AnimLib.Time.T + duration;
+        double startT = AnimLib.Time.T;
+        var timePropertyId = World.current.CurrentTime.Id;
+        Func<Dictionary<DynPropertyId, object?>, object?> timeEvaluator = (dict) => {
+            var time = dict[timePropertyId] as double? ?? default(float);
+            var relativeTime = (double)time - startT;
+            var t = (float)Math.Clamp(relativeTime / duration, 0.0f, 1.0f);
+            t = Ease.Evaluate(t, curve);
+            if (relativeTime < duration) {
+                return evaluator.Invoke(start + (end - start) * t);
+            } else {
+                return evaluator.Invoke(end);
+            }
+        };
+        World.current.BeginDynEvaluator(property, timeEvaluator);
+        await AnimLib.Time.WaitUntilT(endTime);
+        World.current.EndDynEvaluator(property, evaluator.Invoke(end));
+    }
+
+    /// <summary>
     /// Interpolate a chosen type with given interpolation curve.
     /// </summary>
     /// <param name="action">The action to perform with the interpolated value.</param>
@@ -208,6 +243,23 @@ public static class Animate {
         action.Invoke(end);
     }
 
+    public static async Task InterpT<T>(DynProperty<T> prop, T end, double duration, EaseType curve = EaseType.EaseInOut)
+    where T :
+            struct,
+            IAdditionOperators<T, T, T>,
+            ISubtractionOperators<T, T, T>,
+            IMultiplyOperators<T, double, T>
+    {
+        T startD = prop.Value!;
+        T endD = end;
+        double endTime = AnimLib.Time.T + duration;
+        await InterpF(prop, time =>
+        {
+            var t = Ease.Evaluate(time, curve);
+            return startD + (endD - startD) * t;
+        }, duration);           
+    }
+
     /// <summary>
     /// Interpolates a <c>IColored</c> entity from a start color to a target color. Uses HSV color space.
     /// </summary>
@@ -216,10 +268,12 @@ public static class Animate {
     /// <param name="targetColor">The target color.</param>
     /// <param name="duration">The duration of the color change.</param>
     /// <param name="curve">The interpolation curve to use.</param>
-    public static async Task Color(IColored entity, Color startColor, Color targetColor, double duration, EaseType curve = EaseType.EaseInOut) {
+    public static async Task Color(IColored entity, Color startColor, Color targetColor, double duration, EaseType curve = EaseType.EaseInOut)
+    {
         double endTime = AnimLib.Time.T + duration;
-        while (AnimLib.Time.T < endTime) {
-            double progress = 1.0 - (endTime - AnimLib.Time.T)/ duration;
+        while (AnimLib.Time.T < endTime)
+        {
+            double progress = 1.0 - (endTime - AnimLib.Time.T) / duration;
             var t = (float)Math.Clamp(progress, 0.0f, 1.0f);
             t = Ease.Evaluate(t, curve);
             entity.Color = AnimLib.Color.LerpHSV(startColor, targetColor, (float)t);

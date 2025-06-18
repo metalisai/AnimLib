@@ -138,6 +138,9 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         GL.BindVertexArray(0);
     }
 
+    private static readonly DebugProc? _debugCallback = debugCallback;
+    private static GCHandle _debugProcCallbackHandle;
+
     protected override void OnLoad(EventArgs e) {
         GL.DebugMessageCallback(proc, IntPtr.Zero);
         GL.Disable(EnableCap.Dither);
@@ -184,41 +187,41 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         Debug.Log($"OpenGL context info\n\tGL version: {version}\n\tShading language version: {shadingLang}\n\tRenderer: {rendererStr}");
 
         this.KeyDown += (object? sender, KeyboardKeyEventArgs args) => {
-            if(PKeyDown != null) {
+            if (PKeyDown != null) {
                 PKeyDown(this, args);
             }
         };
         this.KeyUp += (object? sender, KeyboardKeyEventArgs args) => {
-            if(PKeyUp != null) {
+            if (PKeyUp != null) {
                 PKeyUp(this, args);
             }
         };
         this.KeyPress += (object? sender, KeyPressEventArgs args) => {
-            if(PKeyPress != null) {
+            if (PKeyPress != null) {
                 PKeyPress(this, args);
             }
         };
 
         this.MouseDown += (object? sender, MouseButtonEventArgs args) => {
-            if(mouseDown != null) {
+            if (mouseDown != null) {
                 mouseDown(this, args);
             }
         };
         this.MouseUp += (object? sender, MouseButtonEventArgs args) => {
-            if(mouseUp != null) {
+            if (mouseUp != null) {
                 mouseUp(this, args);
             }
         };
         this.MouseMove += (object? sender, MouseMoveEventArgs args) => {
-            if(mouseMove != null) {
+            if (mouseMove != null) {
                 mouseMove(this, args);
             }
         };
         this.MouseWheel += (object? sender, MouseWheelEventArgs args) => {
-            if(mouseScroll != null) {
+            if (mouseScroll != null) {
                 mouseScroll(this, args);
             }
-        };            
+        };
 
         // skia
         Skia = new SkiaRenderer(this);
@@ -229,7 +232,7 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
             Skia.CreateSW(true);
         }
 
-        if(OnLoaded != null) {
+        if (OnLoaded != null) {
             OnLoaded(this, new());
         }
 
@@ -564,17 +567,20 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         }
 
         GL.LinkProgram(ret);
-        GL.GetProgram(ret, GetProgramParameterName.LinkStatus, ps);
-        if(ps[0] != 1) {
+        ps[0] = 1;
+        //GL.GetProgram(ret, GetProgramParameterName.LinkStatus, ps);
+        if (ps[0] != 1)
+        {
             int slen;
             string slog = "";
             GL.GetProgramInfoLog(ret, 256, out slen, out slog);
             Debug.Error($"Failed to link program! LOG: {slog}");
-        } else {
+        }
+        else
+        {
             Debug.Log("Program linked!");
         }
         _programs.Add(ret);
-        // TODO: delete shaders?
         return ret;
     }
 

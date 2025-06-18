@@ -750,6 +750,21 @@ internal class PlayerControls {
         Imgui.Text($"  Canvas rendering: {Performance.TimeToRenderCanvases*1000.0:N3}ms");
         Imgui.Text($"Number of scene views: {Performance.views}");
         Imgui.Text($"Number of commands in animation: {Performance.CommandCount}");
+        if (Imgui.TreeNode("Commands")) {
+            for (int i = 0; i < Performance.CommandCount; i++) {
+                var cmd = Performance.Commands[i];
+                if (Imgui.TreeNode($"{cmd.GetType().Name} {cmd.time} {i}"))
+                {
+                    if (cmd is WorldPropertyCommand pcmd)
+                    {
+                        Imgui.Text($"Name: {pcmd.property}");
+                    }
+                    Imgui.TreePop();
+                }
+            }
+            Imgui.TreePop();
+        }
+
         Imgui.Text($"Last bake time: {Performance.TimeToBake*1000:N3}ms");
 
         TraversePerfTree(Performance.lastRoot);
