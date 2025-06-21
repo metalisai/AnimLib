@@ -349,6 +349,9 @@ internal class WorldMachine {
             case WorldDestroyCommand worldDestroy:
             DestroyEntity(worldDestroy.entityId);
             break;
+            case WorldDynDestroyCommand dynDestroy:
+            DestroyDynEntity(dynDestroy.entity);
+            break;
             case WorldPropertyMultiCommand wpm:
             {
                 var lower = char.ToLower(wpm.property[0]) + wpm.property.Substring(1);
@@ -454,6 +457,9 @@ internal class WorldMachine {
             // NOTE: but if the object gets destroyed, aren't the latest the right ones?
             CreateEntity(_destroyedEntities[worldDestroy.entityId]);
             _destroyedEntities.Remove(worldDestroy.entityId);
+            break;
+            case WorldDynDestroyCommand dynDestroy:
+            CreateDynEntity(dynDestroy.entity);
             break;
             case WorldPropertyMultiCommand wpm:
             {

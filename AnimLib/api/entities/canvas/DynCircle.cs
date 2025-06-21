@@ -5,21 +5,21 @@ namespace AnimLib;
 /// <summary>
 /// A circle shaped entity.
 /// </summary>
-public class DynCircle : DynShape {
+public class Circle : DynShape {
     private static ShapePath CreateCirclePath(float radius) {
         var pb = new PathBuilder();
         pb.Circle(Vector2.ZERO, radius);
         return pb;
     }
 
-    internal DynCircle(DynCircle other) : base(other) {
+    internal Circle(Circle other) : base(other) {
         this.radiusP.Value = other.radiusP.Value;
     }
 
     /// <summary>
     /// Creates a new circle with the given radius.
     /// </summary>
-    public DynCircle(float radius) : base(CreateCirclePath(radius)) {
+    public Circle(float radius) : base(CreateCirclePath(radius)) {
         radiusP.Value = radius;
     }
 
@@ -54,6 +54,6 @@ public class DynCircle : DynShape {
     }
 
     internal override object Clone() {
-        return new DynCircle(this);
+        return new Circle(this);
     }
 }

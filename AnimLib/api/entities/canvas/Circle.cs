@@ -21,7 +21,7 @@ internal class CircleState : ShapeState {
 /// <summary>
 /// A circle shaped entity.
 /// </summary>
-public class Circle : Shape, IColored {
+/*public class Circle : Shape, IColored {
     private static ShapePath CreateCirclePath(float radius) {
         var pb = new PathBuilder();
         pb.Circle(Vector2.ZERO, radius);
@@ -60,3 +60,4 @@ public class Circle : Shape, IColored {
         return new Circle(this);
     }
 }
+*/

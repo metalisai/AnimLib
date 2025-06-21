@@ -22,13 +22,13 @@ public class WorldState
         world.StartEditing(this);
 
         var circle = new Circle(50.0f);
-        world.CreateInstantly(circle);
+        world.CreateDynInstantly(circle);
 
-        Assert.True(circle.created);
+        Assert.True(circle.Created);
 
-        world.Destroy(circle);
+        world.DestroyDyn(circle);
 
-        Assert.False(circle.created);
+        Assert.False(circle.Created);
 
         world.EndEditing();
     }
@@ -42,7 +42,7 @@ public class WorldState
 
         var circle = new Circle(50.0f);
 
-        Assert.False(circle.created);
+        Assert.False(circle.Created);
 
         world.EndEditing();
     }

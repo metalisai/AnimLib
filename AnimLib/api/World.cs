@@ -194,20 +194,24 @@ public class World
     List<WorldCommand> _commands = new ();
     List<WorldSoundCommand> _soundCommands = new ();
     List<Func<VisualEntity, bool>> CreationListeners = new ();
+    List<Func<DynVisualEntity, bool>> DynCreationListeners = new ();
 
     Dictionary<DynPropertyId, Func<Dictionary<DynPropertyId, object?>, object?>> _activeDynEvaluators = new ();
 
     // used by EntityCollection to keep track of children
     private Dictionary<int, List<VisualEntity>> _children = new ();
-    private Dictionary<int, VisualEntity> _parents = new ();
+    private Dictionary<int, List<DynVisualEntity>> _dynChildren = new ();
+    private Dictionary<int, VisualEntity> _parents = new();
+    private Dictionary<int, DynVisualEntity> _dynParents = new();
 
-    private Dictionary<int, VisualEntity> _entities = new ();
+    private Dictionary<int, VisualEntity> _entities = new();
 
     private Dictionary<int, DynVisualEntity> _dynEntities = new ();
 
     private Dictionary<DynPropertyId, object?> _dynamicProperties = new ();
 
     private Stack<List<VisualEntity>> _captureStack = new ();
+    private Stack<List<DynVisualEntity>> _dynCaptureStack = new();
 
     internal ITypeSetter ts = new FreetypeSetting();
     object? currentEditor = null; // who edits things right now (e.g. scene or animationbehaviour)
@@ -475,9 +479,11 @@ public class World
         _commands.Add(cmd);
     }
 
-    private void DynEntityCreated(DynVisualEntity entity) {
+    private void DynEntityCreated(DynVisualEntity entity)
+    {
         entity.Id = GetUniqueId();
-        if(currentEditor == null) {
+        if (currentEditor == null)
+        {
             Debug.Error("Entity created when no one is editing!? Use StartEditing() before modifying world.");
         }
         /*if (currentEditor != null) {
@@ -493,6 +499,16 @@ public class World
         _commands.Add(cmd);
         entity.OnCreated();
         _dynEntities.Add(entity.Id, entity);
+
+        if (_dynCaptureStack.Count > 0)
+        {
+            foreach (var capture in _dynCaptureStack)
+            {
+                capture.Add(entity);
+            }
+        }
+        
+        CheckDynDependantEntities(entity);
     }
 
     private void EntityCreated(VisualEntity entity) {
@@ -530,11 +546,30 @@ public class World
         }
     }
 
-    private void CheckDependantEntities(VisualEntity newent) {
-        for(int i = CreationListeners.Count - 1; i >= 0; i--) {
+    private void DynEntityDestroyed(DynVisualEntity entity)
+    {
+        foreach(var list in _dynCaptureStack) {
+            list.RemoveAll(x => x.Id == entity.Id);
+        }
+    }
+
+    private void CheckDependantEntities(VisualEntity newent)
+    {
+        for (int i = CreationListeners.Count - 1; i >= 0; i--)
+        {
             var wd = CreationListeners[i];
-            if(wd.Invoke(newent)) {
+            if (wd.Invoke(newent))
+            {
                 CreationListeners.RemoveAt(i);
+            }
+        }
+    }
+
+    private void CheckDynDependantEntities(DynVisualEntity newent) {
+        for(int i = DynCreationListeners.Count - 1; i >= 0; i--) {
+            var wd = DynCreationListeners[i];
+            if(wd.Invoke(newent)) {
+                DynCreationListeners.RemoveAt(i);
             }
         }
     }
@@ -561,13 +596,27 @@ public class World
         _children[parent.EntityId].Remove(child);
         _parents.Remove(child.EntityId);
     }
+    
+    internal void DetachDynChild(DynVisualEntity parent, DynVisualEntity child)
+    {
+        if (!_dynChildren.ContainsKey(parent.Id))
+        {
+            Debug.Error("Parent does not have any children");
+            return;
+        }
+        //child.managedLifetime = false; // TODO: fix
+        _dynChildren[parent.Id].Remove(child);
+        _dynParents.Remove(child.Id);
+    }
 
     // when entity is created the Func is invoked, if the Func returns true it is deleted
     // useful for listening for dependencies
-    internal T MatchCreation<T>(T ent, Func<VisualEntity, bool> match) where T : VisualEntity{
+    internal T MatchCreation<T>(T ent, Func<VisualEntity, bool> match) where T : VisualEntity
+    {
         CreationListeners.Add(match);
         // check if the entity already exists
-        foreach(var dent in _entities.Values.ToList()) {
+        foreach (var dent in _entities.Values.ToList())
+        {
             CheckDependantEntities(dent);
         }
         return ent;
@@ -765,11 +814,44 @@ public class World
         return ret;
     }
 
+    public void DestroyDyn(DynVisualEntity obj)
+    {
+        if (!obj.Created) return;
+
+        // TODO:
+        /*if (obj.managedLifetime)
+        {
+            Debug.Error("Attempting to destroy managed entity. Detach the entity from it's parent EntityCollection first.");
+            return;
+        }*/
+
+        // destroy all children
+        if (_dynChildren.ContainsKey(obj.Id))
+        {
+            var localC = _dynChildren[obj.Id].ToArray();
+            foreach (var child in localC)
+            {
+                DetachDynChild(obj, child);
+                DestroyDyn(child);
+            }
+        }
+        var cmd = new WorldDynDestroyCommand(
+            entity: obj,
+            time: Time.T
+        );
+        obj.Created = false;
+        _commands.Add(cmd);
+
+        DynEntityDestroyed(obj);
+    }
+
     /// <summary>
     /// Remove entities from the world.
     /// </summary>
-    public void Destroy(params VisualEntity[] ents) {
-        foreach(var ent in ents) {
+    public void Destroy(params VisualEntity[] ents)
+    {
+        foreach (var ent in ents)
+        {
             Destroy(ent);
         }
     }

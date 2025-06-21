@@ -54,6 +54,7 @@ internal record WorldCreateDynPropertyCommand (
 ) : WorldCommand(time);
 
 internal record WorldDynCreateCommand(DynVisualEntity entity, double time) : WorldCommand(time);
+internal record WorldDynDestroyCommand(DynVisualEntity entity, double time) : WorldCommand(time);
 
 internal record WorldCreateCommand(object entity, double time) : WorldCommand(time);
 
