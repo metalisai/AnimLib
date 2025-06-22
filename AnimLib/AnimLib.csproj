@@ -5,6 +5,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
       -->
     <Nullable>enable</Nullable>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)GeneratedFiles</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -25,7 +27,13 @@
     <DefineConstants>Linux</DefineConstants>
   </PropertyGroup>
 
+  <!-- Treat failed source generation as error -->
+  <PropertyGroup>
+    <WarningsAsErrors>CS8785</WarningsAsErrors>
+  </PropertyGroup>
+
   <ItemGroup>
+    <PackageReference Include="System.Collections.Immutable" Version="6.0.0" PrivateAssets="all"/>
     <PackageReference Include="CairoSharp" Version="3.24.24.38" />
     <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.2.2" />
     <PackageReference Include="HarfBuzzSharp" Version="2.8.2.2" />
@@ -40,6 +48,7 @@
     <PackageReference Include="System.Windows.Extensions" Version="4.6.0-preview.18571.3" />
 
     <ProjectReference Include="..\AnimLib.Resources\AnimLib.Resources.csproj" />
+    <ProjectReference Include="..\AnimLib.CodeGen\AnimLib.CodeGen.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" SetTargetFramework="TargetFramework=netstandard2.0" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

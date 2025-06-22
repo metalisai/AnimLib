@@ -1,0 +1,30 @@
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnimLib", "AnimLib.csproj", "{CF0507DA-EED0-C88B-430F-8FD8C8F59E48}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnimLib.CodeGen", "..\AnimLib.CodeGen\AnimLib.CodeGen.csproj", "{A32ECF84-8C40-4938-9619-72B39220CA64}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CF0507DA-EED0-C88B-430F-8FD8C8F59E48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF0507DA-EED0-C88B-430F-8FD8C8F59E48}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF0507DA-EED0-C88B-430F-8FD8C8F59E48}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF0507DA-EED0-C88B-430F-8FD8C8F59E48}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A32ECF84-8C40-4938-9619-72B39220CA64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A32ECF84-8C40-4938-9619-72B39220CA64}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A32ECF84-8C40-4938-9619-72B39220CA64}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A32ECF84-8C40-4938-9619-72B39220CA64}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1EF535EE-1744-41E7-896D-3EE82F4649AA}
+	EndGlobalSection
+EndGlobal

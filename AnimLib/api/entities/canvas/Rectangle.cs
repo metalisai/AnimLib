@@ -1,21 +1,32 @@
+using System;
+
 namespace AnimLib;
 
 /// <summary>
 /// Internal state of a rectangle.
 /// </summary>
-internal class RectangleState : ShapeState {
-    public float width, height;
+[GenerateDynProperties(forType: typeof(Rectangle))]
+internal class RectangleState : ShapeState
+{
+    [Dyn]
+    public float width;
+    [Dyn]
+    public float height;
 
-    public RectangleState(ShapePath path) : base(path) {
+    public RectangleState(ShapePath path) : base(path)
+    {
     }
 
-    public RectangleState(RectangleState rs) : base(rs) {
+    public RectangleState(RectangleState rs) : base(rs)
+    {
         this.width = rs.width;
         this.height = rs.height;
     }
 
-    public override Vector2 AABB {
-        get {
+    public override Vector2 AABB
+    {
+        get
+        {
             return new Vector2(width, height);
         }
     }
@@ -29,18 +40,21 @@ internal class RectangleState : ShapeState {
 /// <summary>
 /// A rectangle shaped entity.
 /// </summary>
-public class Rectangle : Shape, IColored {
+/*public class Rectangle : Shape, IColored
+{
 
-    private static ShapePath CreateRectanglePath(float w, float h) {
+    private static ShapePath CreateRectanglePath(float w, float h)
+    {
         var pb = new PathBuilder();
-        pb.Rectangle(new Vector2(-0.5f*w, -0.5f*h), new Vector2(0.5f*w, 0.5f*h));
+        pb.Rectangle(new Vector2(-0.5f * w, -0.5f * h), new Vector2(0.5f * w, 0.5f * h));
         return pb;
     }
 
     /// <summary>
     /// Creates a new rectangle with the given width and height.
     /// </summary>
-    public Rectangle(float w, float h) : base(new RectangleState(CreateRectanglePath(w, h))) {
+    public Rectangle(float w, float h) : base(new RectangleState(CreateRectanglePath(w, h)))
+    {
         var s = (RectangleState)this.state;
         s.width = w;
         s.height = h;
@@ -49,17 +63,21 @@ public class Rectangle : Shape, IColored {
     /// <summary>
     /// Copy constructor.
     /// </summary>
-    public Rectangle(Rectangle r) : base(r) {
+    public Rectangle(Rectangle r) : base(r)
+    {
     }
 
     /// <summary>
     /// The width of the rectangle.
     /// </summary>
-    public float Width {
-        get {
+    public float Width
+    {
+        get
+        {
             return ((RectangleState)state).width;
         }
-        set {
+        set
+        {
             var rs = (RectangleState)state;
             rs.width = value;
             var pb = CreateRectanglePath(rs.width, rs.height);
@@ -70,11 +88,14 @@ public class Rectangle : Shape, IColored {
     /// <summary>
     /// The height of the rectangle.
     /// </summary>
-    public float Height {
-        get {
+    public float Height
+    {
+        get
+        {
             return ((RectangleState)state).height;
         }
-        set {
+        set
+        {
             var rs = (RectangleState)state;
             rs.height = value;
             var pb = CreateRectanglePath(rs.width, rs.height);
@@ -85,7 +106,38 @@ public class Rectangle : Shape, IColored {
     /// <summary>
     /// Clone this rectangle.
     /// </summary>
-    public override object Clone() {
+    public override object Clone()
+    {
         return new Rectangle(this);
+    }
+}*/
+
+/// <summary>
+/// A rectangle shaped entity.
+/// </summary>
+public partial class Rectangle : DynShape
+{
+    private static ShapePath CreateRectanglePath(float w, float h)
+    {
+        var pb = new PathBuilder();
+        pb.Rectangle(new Vector2(-0.5f * w, -0.5f * h), new Vector2(0.5f * w, 0.5f * h));
+        return pb;
+    }
+
+    /// <summary>
+    /// Creates a new rectangle with given width and height.
+    /// </summary>
+    public Rectangle(float w, float h) : base(CreateRectanglePath(w, h))
+    {
+        _widthP.Value = w;
+        _heightP.Value = h;
+    }
+
+    internal override object GetState(Func<DynPropertyId, object?> evaluator)
+    {
+        var state = new RectangleState(new ShapePath());
+        this.GetState(state, evaluator);
+        state.path = CreateRectanglePath(state.width, state.height);
+        return state;
     }
 }

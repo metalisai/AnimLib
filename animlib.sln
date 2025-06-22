@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnimLib.Resources", "AnimLi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnimLib.Tests", "AnimLib.Tests\AnimLib.Tests.csproj", "{4F637761-70A7-416A-B4D3-805F57B1354E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnimLib.CodeGen", "AnimLib.CodeGen\AnimLib.CodeGen.csproj", "{30DD7E41-03B9-495F-8F55-5C521E90BA7E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{4F637761-70A7-416A-B4D3-805F57B1354E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4F637761-70A7-416A-B4D3-805F57B1354E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4F637761-70A7-416A-B4D3-805F57B1354E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{30DD7E41-03B9-495F-8F55-5C521E90BA7E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30DD7E41-03B9-495F-8F55-5C521E90BA7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{30DD7E41-03B9-495F-8F55-5C521E90BA7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30DD7E41-03B9-495F-8F55-5C521E90BA7E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

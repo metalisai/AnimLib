@@ -62,14 +62,16 @@ internal class PlayerRect : SceneObject2D {
         return new PlayerRect(this);
     }
 
-    public override VisualEntity2D InitializeEntity() {
+    public override VisualEntity2D InitializeEntity()
+    {
         var ent = new Rectangle(this.size.x, this.size.y);
         ent.Color = this.color;
         ent.ContourColor = this.outline;
         ent.ContourSize = this.outlineWidth;
         ent.Mode = this.mode;
-        ent.Transform.Pos = transform.Pos;
-        ent.Transform.Rot = transform.Rot;
-        return ent;
+        ent.Position = transform.Pos;
+        ent.Rotation = transform.Rot;
+        //return ent;
+        return null; // TODO: fix
     }
 }
