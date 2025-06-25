@@ -6,7 +6,7 @@ public class DynAttribute : Attribute { }
 [AttributeUsage(AttributeTargets.Class)]
 public class GenerateDynPropertiesAttribute : Attribute
 {
-    public GenerateDynPropertiesAttribute(Type forType)
+    public GenerateDynPropertiesAttribute(Type forType, bool onlyProperties = false)
     {
         
     }

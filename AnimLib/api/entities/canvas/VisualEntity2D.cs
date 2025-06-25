@@ -16,23 +16,32 @@ public enum Entity2DCoordinateSystem {
     CanvasNormalized,
 };
 
-internal abstract class EntityState2D : EntityState {
+[GenerateDynProperties(forType: typeof(DynVisualEntity2D), onlyProperties: true)]
+internal abstract class EntityState2D : EntityState
+{
     public int canvasId = -1; // entity Id of canvas
+    [Dyn]
     public Vector2 position = Vector2.ZERO;
-    public float rot = 0.0f;
+    [Dyn]
+    public float rotation = 0.0f;
+    [Dyn]
     public Vector2 anchor = Vector2.ZERO;
+    [Dyn]
     public Vector2 pivot = Vector2.ZERO;
+    [Dyn]
     public Vector2 scale = Vector2.ONE;
+    [Dyn]
     public M3x3? homography = null; // optional homography matrix (relative to canvas)
     // NOTE: pivot and anchor always use CanvasNormalized coordinates
     public Entity2DCoordinateSystem csystem = Entity2DCoordinateSystem.CanvasOrientedWorld;
 
-    public EntityState2D() {}
+    public EntityState2D() { }
 
-    public EntityState2D(EntityState2D e2d) : base(e2d) {
+    public EntityState2D(EntityState2D e2d) : base(e2d)
+    {
         this.canvasId = e2d.canvasId;
         this.position = e2d.position;
-        this.rot = e2d.rot;
+        this.rotation = e2d.rotation;
         this.anchor = e2d.anchor;
         this.pivot = e2d.pivot;
         this.scale = e2d.scale;
@@ -41,18 +50,20 @@ internal abstract class EntityState2D : EntityState {
     }
 
     // normalized coordinates -0.5..0.5
-    internal M4x4 NormalizedCanvasToWorld(CanvasState canvas) {
-        var anchorWorld = canvas.NormalizedCanvasToWorld*new Vector4(anchor.x, anchor.y, 0.0f, 1.0f);
-        var c1 = new Vector4(canvas.width*Vector3.Cross(canvas.normal, canvas.up), 0.0f);
-        var c2 = new Vector4(canvas.height*canvas.up, 0.0f);
+    internal M4x4 NormalizedCanvasToWorld(CanvasState canvas)
+    {
+        var anchorWorld = canvas.NormalizedCanvasToWorld * new Vector4(anchor.x, anchor.y, 0.0f, 1.0f);
+        var c1 = new Vector4(canvas.width * Vector3.Cross(canvas.normal, canvas.up), 0.0f);
+        var c2 = new Vector4(canvas.height * canvas.up, 0.0f);
         var c3 = new Vector4(-canvas.normal, 0.0f);
         var mat = M4x4.FromColumns(c1, c2, c3, anchorWorld);
         return mat;
     }
 
     // oriented world coordinates (x - left, y - up, z - forward)
-    internal M4x4 CanvasToWorld(CanvasState canvas) {
-        var anchorWorld = canvas.NormalizedCanvasToWorld*new Vector4(anchor.x, anchor.y, 0.0f, 1.0f);
+    internal M4x4 CanvasToWorld(CanvasState canvas)
+    {
+        var anchorWorld = canvas.NormalizedCanvasToWorld * new Vector4(anchor.x, anchor.y, 0.0f, 1.0f);
         var c1 = new Vector4(Vector3.Cross(canvas.normal, canvas.up), 0.0f);
         var c2 = new Vector4(canvas.up, 0.0f);
         var c3 = new Vector4(-canvas.normal, 0.0f);
@@ -60,12 +71,17 @@ internal abstract class EntityState2D : EntityState {
     }
 
     // TODO: this doesn't belong here
-    public M4x4 ModelToWorld(EntityStateResolver resolver) {
-        if(parentId == 0) {
+    public M4x4 ModelToWorld(EntityStateResolver resolver)
+    {
+        if (parentId == 0)
+        {
             return M4x4.TRS(position, Quaternion.IDENTITY, scale);
-        } else { 
+        }
+        else
+        {
             var parent = (EntityState2D?)resolver.GetEntityState(parentId);
-            if(parent == null) {
+            if (parent == null)
+            {
                 Debug.Error($"Entity {this} did not find parent {parentId}");
                 return M4x4.IDENTITY;
             }
@@ -180,11 +196,11 @@ public abstract class VisualEntity2D : VisualEntity {
     public float Rot
     {
         get {
-            return ((EntityState2D)state).rot;
+            return ((EntityState2D)state).rotation;
         }
         set {
-            World.current.SetProperty(this, "Rot", value, ((EntityState2D)state).rot);
-            ((EntityState2D)state).rot = value;
+            World.current.SetProperty(this, "Rot", value, ((EntityState2D)state).rotation);
+            ((EntityState2D)state).rotation = value;
         }
     }
 

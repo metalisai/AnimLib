@@ -1,23 +1,35 @@
+using System;
+
 namespace AnimLib;
 
 /// <summary>
 /// Internal state of a star.
 /// </summary>
-internal class StarState : ShapeState {
-    public int points;
-    public float innerRadius, outerRadius;
+[GenerateDynProperties(forType: typeof(Star))]
+internal class StarState : ShapeState
+{
+    [Dyn]
+    public int numPoints;
+    [Dyn]
+    public float innerRadius;
+    [Dyn]
+    public float outerRadius;
 
-    public StarState(ShapePath path) : base(path) {
+    public StarState(ShapePath path) : base(path)
+    {
     }
 
-    public StarState(StarState rs) : base(rs) {
-        this.points = rs.points;
+    public StarState(StarState rs) : base(rs)
+    {
+        this.numPoints = rs.numPoints;
         this.innerRadius = rs.innerRadius;
         this.outerRadius = rs.outerRadius;
     }
 
-    public override Vector2 AABB {
-        get {
+    public override Vector2 AABB
+    {
+        get
+        {
             throw new System.NotImplementedException();
         }
     }
@@ -29,36 +41,32 @@ internal class StarState : ShapeState {
 }
 
 /// <summary>
-/// A n-point star shaped entity.
+/// A star shaped 2D entity.
 /// </summary>
-public class Star : Shape, IColored {
-
-    private static ShapePath CreateStarPath(float outerR, float innerR, int points = 5) {
+public partial class Star : DynShape
+{
+    private static ShapePath CreateStarPath(float outerR, float innerR, int points = 5)
+    {
         var pb = new PathBuilder();
         pb.Star(outerR, innerR, points);
         return pb;
     }
 
     /// <summary>
-    /// Creates a new star with the given inner, outer radius and number of points.
+    /// Creates a new 2D star shape with given radiuses and number of corners.
     /// </summary>
-    public Star(float outerR, float innerR, int points = 5) : base(new StarState(CreateStarPath(outerR, innerR, points))) {
-        var s = (StarState)this.state;
-        s.points = points;
-        s.innerRadius = innerR;
-        s.outerRadius = outerR;
+    public Star(float outerR, float innerR, int points = 5) : base(CreateStarPath(outerR, innerR, points))
+    {
+        _innerRadiusP.Value = innerR;
+        _outerRadiusP.Value = outerR;
+        _numPointsP.Value = points;
     }
 
-    /// <summary>
-    /// Copy constructor.
-    /// </summary>
-    public Star(Star r) : base(r) {
-    }
-
-    /// <summary>
-    /// Clone this star.
-    /// </summary>
-    public override object Clone() {
-        return new Star(this);
+    internal override object GetState(Func<DynPropertyId, object?> evaluator)
+    {
+        var state = new StarState(new ShapePath());
+        this.GetState(state, evaluator);
+        state.path = CreateStarPath(state.innerRadius, state.outerRadius, state.numPoints);
+        return state;
     }
 }

@@ -264,7 +264,7 @@ internal partial class SkiaRenderer
             origin = Vector2.ZERO;
         }
         var translation = origin + ent.position;
-        var trs = M3x3.TRS_2D(translation, ent.rot, ent.scale);
+        var trs = M3x3.TRS_2D(translation, ent.rotation, ent.scale);
         if(parentMat != null) {
             trs =parentMat.Value * trs;
         }

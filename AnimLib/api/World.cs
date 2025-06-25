@@ -839,7 +839,7 @@ public class World
             entity: obj,
             time: Time.T
         );
-        obj.Created = false;
+        obj.Created.Value = false;
         _commands.Add(cmd);
 
         DynEntityDestroyed(obj);

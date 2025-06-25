@@ -1,19 +1,35 @@
+using System;
+
 namespace AnimLib;
 
-internal class MorphShapeState : EntityState2D {
+[GenerateDynProperties(forType: typeof(MorphShape))]
+internal class MorphShapeState : EntityState2D
+{
+    [Dyn]
     public float progress = 0.0f;
+    [Dyn]
     public ShapePath shape1;
+    [Dyn]
     public ShapePath shape2;
+    [Dyn]
     public Color color1 = Color.RED;
+    [Dyn]
     public Color color2 = Color.RED;
+    [Dyn]
     public Color contourColor1 = Color.BLACK;
+    [Dyn]
     public Color contourColor2 = Color.BLACK;
+    [Dyn]
     public float contourSize1 = 0.0f;
+    [Dyn]
     public float contourSize2 = 0.0f;
+    [Dyn]
     public ShapeMode mode1 = ShapeMode.FilledContour;
+    [Dyn]
     public ShapeMode mode2 = ShapeMode.FilledContour;
 
-    public MorphShapeState(Shape shape1, Shape shape2) : base(shape1.state) {
+    public MorphShapeState(Shape shape1, Shape shape2) : base(shape1.state)
+    {
         this.shape1 = shape1.Path;
         this.shape2 = shape2.Path;
         this.color1 = shape1.Color;
@@ -31,7 +47,8 @@ internal class MorphShapeState : EntityState2D {
         Color contourColor1, Color contourColor2,
         float contourSize1, float contourSize2,
         ShapeMode mode1, ShapeMode mode2
-    ) : base() {
+    ) : base()
+    {
         this.shape1 = shape1;
         this.shape2 = shape2;
         this.color1 = color1;
@@ -44,7 +61,8 @@ internal class MorphShapeState : EntityState2D {
         this.mode2 = mode2;
     }
 
-    public MorphShapeState(MorphShapeState rs) : base(rs) {
+    public MorphShapeState(MorphShapeState rs) : base(rs)
+    {
         this.progress = rs.progress;
         this.shape1 = rs.shape1;
         this.shape2 = rs.shape2;
@@ -58,8 +76,10 @@ internal class MorphShapeState : EntityState2D {
         this.mode2 = rs.mode2;
     }
 
-    public override Vector2 AABB {
-        get {
+    public override Vector2 AABB
+    {
+        get
+        {
             throw new System.NotImplementedException();
         }
     }
@@ -69,70 +89,98 @@ internal class MorphShapeState : EntityState2D {
         return new MorphShapeState(this);
     }
 
-    internal bool HasBody(ShapeMode mode) {
+    internal bool HasBody(ShapeMode mode)
+    {
         return mode == ShapeMode.Filled || mode == ShapeMode.FilledContour;
     }
 
-    internal bool HasContour(ShapeMode mode) {
+    internal bool HasContour(ShapeMode mode)
+    {
         return mode == ShapeMode.Contour || mode == ShapeMode.FilledContour;
     }
 
-    public Color CurrentColor {
-        get {
+    public Color CurrentColor
+    {
+        get
+        {
             var a1 = color1.ToVector4().w;
             var a2 = color2.ToVector4().w;
             float alpha = a1 + (a2 - a1) * progress;
-            if (HasBody(mode1) && !HasBody(mode2)) {
+            if (HasBody(mode1) && !HasBody(mode2))
+            {
                 alpha *= 1.0f - progress;
-            } else if (!HasBody(mode1) && HasBody(mode2)) {
+            }
+            else if (!HasBody(mode1) && HasBody(mode2))
+            {
                 alpha *= progress;
-            } 
+            }
             var col = Color.LerpHSV(color1, color2, progress);
-            var rgb = col.WithA((byte)(alpha*255));
+            var rgb = col.WithA((byte)(alpha * 255));
             return rgb;
         }
     }
 
-    public Color CurrentContourColor {
-        get {
+    public Color CurrentContourColor
+    {
+        get
+        {
             var a1 = contourColor1.ToVector4().w;
             var a2 = contourColor2.ToVector4().w;
             float alpha = a1 + (a2 - a1) * progress;
-            if (HasContour(mode1) && !HasContour(mode2)) {
+            if (HasContour(mode1) && !HasContour(mode2))
+            {
                 alpha *= 1.0f - progress;
-            } else if (!HasContour(mode1) && HasContour(mode2)) {
+            }
+            else if (!HasContour(mode1) && HasContour(mode2))
+            {
                 alpha *= progress;
-            } 
+            }
             var col = Color.LerpHSV(contourColor1, contourColor2, progress);
-            var rgb = col.WithA((byte)(alpha*255));
+            var rgb = col.WithA((byte)(alpha * 255));
             return rgb;
         }
     }
 
-    public ShapeMode CurrentMode {
-        get {
-            if (progress <= 0.0f) {
+    public ShapeMode CurrentMode
+    {
+        get
+        {
+            if (progress <= 0.0f)
+            {
                 return mode1;
-            } else if (progress >= 1.0f) {
+            }
+            else if (progress >= 1.0f)
+            {
                 return mode2;
-            } else {
+            }
+            else
+            {
                 bool needBody = HasBody(mode1) || HasBody(mode2);
                 bool needContour = HasContour(mode1) || HasContour(mode2);
-                if (needBody && needContour) {
+                if (needBody && needContour)
+                {
                     return ShapeMode.FilledContour;
-                } else if (needBody) {
+                }
+                else if (needBody)
+                {
                     return ShapeMode.Filled;
-                } else if (needContour) {
+                }
+                else if (needContour)
+                {
                     return ShapeMode.Contour;
-                } else {
+                }
+                else
+                {
                     return ShapeMode.None;
                 }
             }
         }
     }
 
-    public float CurrentContourSize {
-        get {
+    public float CurrentContourSize
+    {
+        get
+        {
             return contourSize1 + (contourSize2 - contourSize1) * progress;
         }
     }
@@ -141,37 +189,32 @@ internal class MorphShapeState : EntityState2D {
 /// <summary>
 /// A morph shape between two shapes.
 /// </summary>
-public class MorphShape : VisualEntity2D {
+public partial class MorphShape : DynVisualEntity2D
+{
     /// <summary>
     /// Creates a new morph shape between two shapes.
     /// </summary>
-    public MorphShape(Shape a, Shape b, float progress = 0.0f) : base(new MorphShapeState(a, b)) {
-        this.Progress = progress;
+    public MorphShape(Shape a, Shape b, float progress = 0.0f) : base()
+    {
+        this._shape1P.Value = a.Path;
+        this._shape2P.Value = b.Path;
+        this._progressP.Value = progress;
     }
 
-    /// <summary>
-    /// Copy constructor.
-    /// </summary>
-    public MorphShape(MorphShape ms) : base(ms) {
-    }
-
-    /// <summary>
-    /// The progress of the morphing.
-    /// </summary>
-    public float Progress {
-        get {
-            return ((MorphShapeState)state).progress;
-        }
-        set {
-            World.current.SetProperty(this, "Progress", value, ((MorphShapeState)state).progress);
-            ((MorphShapeState)state).progress = value;
-        }
-    }
-
-    /// <summary>
-    /// Clone this morph shape.
-    /// </summary>
-    public override object Clone() {
-        return new MorphShape(this);
+    internal override object GetState(Func<DynPropertyId, object?> evaluator)
+    {
+        var state = new MorphShapeState(
+            _shape1P.Value!,
+            _shape2P.Value!,
+            _color1P.Value,
+            _color2P.Value,
+            _contourColor1P.Value,
+            _contourColor2P.Value,
+            _contourSize1P.Value,
+            _contourSize2P.Value,
+            _mode1P.Value,
+            _mode2P.Value);
+        this.GetState(state, evaluator);
+        return state;
     }
 }

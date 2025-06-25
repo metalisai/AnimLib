@@ -113,13 +113,13 @@ public record DynProperty<T> : DynProperty {
     private DynProperty(T? initial) : base(initial, typeof(T)) {
     }
 
-    /// <summary>
+    /*/// <summary>
     /// Implicit conversion for assignment.
     /// </summary>
     public static implicit operator DynProperty<T>(T value) {
         var p = new DynProperty<T>(value);
         return p;
-    }
+    }*/
 
     /// <summary>
     /// Implicit conversion for assignment.

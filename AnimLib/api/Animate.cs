@@ -116,7 +116,7 @@ public static class Animate {
         {
             ent.Position.Value = x;
         }, (Vector2)ent.Position, ent.Position + offset, duration, curve);*/
-        return InterpT(ent.Position, ent.Position.Value + offset, duration, curve);
+        return InterpT(ent.PositionProperty, ent.Position + offset, duration, curve);
     }
 
     /// <summary>
@@ -395,7 +395,7 @@ public static class Animate {
         if (destroyStartShape && startShape.created) {
             World.current.Destroy(startShape);
         }
-        World.current.CreateInstantly(morph);
+        World.current.CreateDynInstantly(morph);
         double startTime = AnimLib.Time.T;
         double endTime = startTime + duration;
         while (AnimLib.Time.T - startTime < duration) {
@@ -405,7 +405,7 @@ public static class Animate {
             morph.Progress = t;
             await AnimLib.Time.WaitFrame();
         }
-        World.current.Destroy(morph);
+        World.current.DestroyDyn(morph);
         var newShape = (Shape)endShape.Clone();
         newShape.Transform = new Transform2D(startShape.Transform, newShape);
         World.current.CreateInstantly(newShape);

@@ -1,9 +1,12 @@
 namespace AnimLib;
 
+using System;
+
 /// <summary>
 /// Internal state of a rectangle.
 /// </summary>
-public class SvgData {
+public class SvgData
+{
     /// <summary>
     /// SVG code.
     /// </summary>
@@ -14,111 +17,66 @@ public class SvgData {
     public int handle;
 }
 
-internal class SvgSpriteState : EntityState2D {
-    public float width, height;
+[GenerateDynProperties(forType: typeof(SvgSprite))]
+internal class SvgSpriteState : EntityState2D
+{
+    [Dyn]
+    public float width;
+    [Dyn]
+    public float height;
+    [Dyn]
     public SvgData svg;
+    [Dyn]
     public Color color = Color.WHITE;
 
-    public SvgSpriteState(SvgData svg, float width, float height){
+    public SvgSpriteState(SvgData svg, float width, float height)
+    {
         this.svg = svg;
         this.width = width;
         this.height = height;
     }
 
-    public SvgSpriteState(SvgSpriteState sprite) : base(sprite) {
+    public SvgSpriteState(SvgSpriteState sprite) : base(sprite)
+    {
         this.width = sprite.width;
         this.height = sprite.height;
         this.svg = sprite.svg;
         this.color = sprite.color;
     }
 
-    public override object Clone() {
+    public override object Clone()
+    {
         return new SvgSpriteState(this);
     }
 
-    public override Vector2 AABB {
-        get {
+    public override Vector2 AABB
+    {
+        get
+        {
             return new Vector2(width, height);
         }
     }
 }
 
 /// <summary>
-/// A SVG sprite entity.
+/// A circle shaped entity.
 /// </summary>
-public class SvgSprite : VisualEntity2D, IColored {
+public partial class SvgSprite : DynVisualEntity2D
+{
     /// <summary>
-    /// Creates a new SVG sprite given the SVG code and the width and height.
+    /// Creates a new 2D Svg sprite with given svg source and dimensions.
     /// </summary>
-    /// <param name="svg">The SVG code.</param>
-    /// <param name="width">The width of the sprite.</param>
-    /// <param name="height">The height of the sprite.</param>
-    public SvgSprite(SvgData svg, float width = -1.0f, float height = -1.0f) : base(new SvgSpriteState(svg, width, height)) {
+    public SvgSprite(SvgData svg, float width = -1.0f, float height = -1.0f) : base()
+    {
+        this._svgP.Value = svg;
+        this._widthP.Value = width;
+        this._heightP.Value = height;
     }
 
-    /// <summary>
-    /// Copy constructor.
-    /// </summary>
-    /// <param name="sprite">The sprite to copy.</param>
-    public SvgSprite(SvgSprite sprite) : base(sprite) {
-    }
-
-    /// <summary>
-    /// The tint color of the sprite.
-    /// </summary>
-    public Color Color {
-        get {
-            return ((SvgSpriteState)state).color;
-        }
-        set {
-            World.current.SetProperty(this, "Color", value, ((SvgSpriteState)state).color);
-            ((SvgSpriteState)state).color = value;
-        }
-    }
-
-    /// <summary>
-    /// The SVG code of the sprite.
-    /// </summary>
-    public SvgData Svg {
-        get {
-            return ((SvgSpriteState)state).svg;
-        }
-        set {
-            World.current.SetProperty(this, "Svg", value, ((SvgSpriteState)state).svg);
-            ((SvgSpriteState)state).svg = value;
-        }
-    }
-
-    /// <summary>
-    /// The width of the sprite.
-    /// </summary>
-    public float Width {
-        get {
-            return ((SvgSpriteState)state).width;
-        }
-        set {
-            World.current.SetProperty(this, "Width", value, ((SvgSpriteState)state).width);
-            ((SvgSpriteState)state).width = value;
-        }
-    }
-
-    /// <summary>
-    /// The height of the sprite.
-    /// </summary>
-    public float Height {
-        get {
-            return ((SvgSpriteState)state).height;
-        }
-        set {
-            World.current.SetProperty(this, "Height", value, ((SvgSpriteState)state).height);
-            ((SvgSpriteState)state).height = value;
-        }
-    }
-
-    /// <summary>
-    /// Clone this sprite.
-    /// </summary>
-    public override object Clone() {
-        return new SvgSprite(this);
+    internal override object GetState(Func<DynPropertyId, object?> evaluator)
+    {
+        var state = new SvgSpriteState(this._svgP.Value!, this._widthP.Value, this._heightP.Value);
+        this.GetState(state, evaluator);
+        return state;
     }
 }

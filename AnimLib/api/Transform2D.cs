@@ -46,11 +46,11 @@ public class Transform2D {
     /// </summary>
     public float Rot {
         get {
-            return entity.state.rot;
+            return entity.state.rotation;
         }
         set {
-            World.current.SetProperty(entity, "rot", value, entity.state.rot);
-            entity.state.rot = value;
+            World.current.SetProperty(entity, "rot", value, entity.state.rotation);
+            entity.state.rotation = value;
         }
     }
 

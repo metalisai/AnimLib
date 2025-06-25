@@ -54,7 +54,7 @@ public abstract class EntityCollection2D : VisualEntity2D {
         entities.Remove(e);
     }
 
-    /// <summary> Disconnect all entities from this collection (but don't destroy them). </summary>
+    /// <summary> Disconnect all entities from this collection (but don't destroy them). Destroys the collection entity.</summary>
     public void Disband()
     {
         foreach(var e in entities) {
