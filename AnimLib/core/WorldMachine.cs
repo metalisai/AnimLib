@@ -61,7 +61,8 @@ internal class WorldMachine {
 
     CameraState? _activeCamera;
 
-    public void Reset() {
+    public void Reset()
+    {
         _glyphs.Clear();
         _mbgeoms.Clear();
         //_rectangles.Clear();

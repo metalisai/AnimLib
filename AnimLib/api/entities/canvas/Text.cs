@@ -40,7 +40,7 @@ internal class Text2DState : EntityState2D
 /// <summary>
 /// A 2D text entity, consisting of a collection of vector shapes
 /// </summary>
-public class Text2D : EntityCollection2D
+public class Text2D : EntityCollection2D, IColored
 {
     List<(DynShape s, char c)> Glyphs = new ();
     internal float size;

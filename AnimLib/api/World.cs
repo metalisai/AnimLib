@@ -302,7 +302,8 @@ public class World
         return new DynPropertyId(entityId++);
     }
 
-    internal void Update(double dt) {
+    internal void Update(double dt)
+    {
         /*foreach(var label in _labels) {
             LabelState state = ((LabelState)label.state);
             var val = state.target.GetLabelWorldCoordinate(state.style, ((VisualEntity)state.target).state);
@@ -310,7 +311,11 @@ public class World
                 label.state.position = val.Value;
             }
         }*/
-        
+        // NOTE: WorldMachine has evaluator for special properties like time, but it doesn't change property during baking.
+        //   This evaluates the property during baking, so it will be visible to AnimationBehaviour code.
+        //   There is no need to add a command (setting .Value) because of the reason mentioned above, only the state is assigned.
+        CurrentTime._value = Time.T;
+        _dynamicProperties[CurrentTime.Id] = Time.T;
     }
 
     /// <summary>
