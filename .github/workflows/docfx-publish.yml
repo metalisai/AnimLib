@@ -27,6 +27,8 @@ jobs:
         run: dotnet restore
       - name: Install docfx
         run: dotnet tool update -g docfx
+      - name: Build solution (with source generators)
+        run: dotnet build -c Release
       - name: DocFX Build
         working-directory: docs
         run: docfx docfx.json

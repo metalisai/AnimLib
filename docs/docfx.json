@@ -9,7 +9,10 @@
           ]
         }
       ],
-      "dest": "api"
+      "dest": "api",
+      "properties": {
+        "Configuration": "Release"
+      }
     }
   ],
   "build": {
@@ -40,6 +43,7 @@
       "_appTitle": "",
       "_enableSearch": true,
       "pdf": false
-    }
+    },
+    "allowMissingSources": true
   }
 }
