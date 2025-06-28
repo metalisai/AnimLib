@@ -73,27 +73,27 @@ public class WorldState
         Assert.NotEmpty(shapes);
 
         // haven't created anything yet, so nothing should be created
-        Assert.False(text.created);
-        Assert.False(shapes[0].created);
+        Assert.False(text.Created);
+        Assert.False(shapes[0].Created);
 
-        world.CreateInstantly(text);
+        world.CreateDynInstantly(text);
 
         // check that the text and shapes are created
-        Assert.True(text.created);
-        Assert.True(shapes[0].created);
+        Assert.True(text.Created);
+        Assert.True(shapes[0].Created);
 
         // change the text
         text.Text = "Goodbye World";
         // check that the old shapes are destroyed
-        Assert.False(shapes[0].created);
+        Assert.False(shapes[0].Created);
         shapes = text.GetSubstring("Goodbye");
         Assert.NotEmpty(shapes);
 
-        world.Destroy(text);
+        world.DestroyDyn(text);
 
         // check that both the text and its shapes are destroyed
-        Assert.False(text.created);
-        Assert.False(shapes[0].created);
+        Assert.False(text.Created);
+        Assert.False(shapes[0].Created);
 
         animator.EndAnimate();
         world.EndEditing();
@@ -109,11 +109,11 @@ public class WorldState
 
         Assert.NotEmpty(shapes);
 
-        world.CreateInstantly(text);
-        Assert.True(text.created);
+        world.CreateDynInstantly(text);
+        Assert.True(text.Created);
         text.Disband();
-        Assert.False(text.created);
-        Assert.True(shapes[0].created);
+        Assert.False(text.Created);
+        Assert.True(shapes[0].Created);
 
         animator.EndAnimate();
         world.EndEditing();
