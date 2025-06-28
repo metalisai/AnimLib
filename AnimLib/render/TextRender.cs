@@ -189,7 +189,7 @@ internal class FontCache {
     internal void PushCharacter(GlyphState ch, Vector3 pos) {
         var vbuf = new List<float>();
         var key = new GlyphKey {
-            c = ch.glyph,
+            c = ch.character,
             size = ch.size   
         };
         if(!_cachedGlyphs.TryGetValue(key, out var g)) {

@@ -28,20 +28,6 @@ internal class MorphShapeState : EntityState2D
     [Dyn]
     public ShapeMode mode2 = ShapeMode.FilledContour;
 
-    public MorphShapeState(Shape shape1, Shape shape2) : base(shape1.state)
-    {
-        this.shape1 = shape1.Path;
-        this.shape2 = shape2.Path;
-        this.color1 = shape1.Color;
-        this.color2 = shape2.Color;
-        this.contourColor1 = shape1.ContourColor;
-        this.contourColor2 = shape2.ContourColor;
-        this.contourSize1 = shape1.ContourSize;
-        this.contourSize2 = shape2.ContourSize;
-        this.mode1 = shape1.Mode;
-        this.mode2 = shape2.Mode;
-    }
-
     public MorphShapeState(ShapePath shape1, ShapePath shape2,
         Color color1, Color color2,
         Color contourColor1, Color contourColor2,
@@ -194,11 +180,17 @@ public partial class MorphShape : DynVisualEntity2D
     /// <summary>
     /// Creates a new morph shape between two shapes.
     /// </summary>
-    public MorphShape(Shape a, Shape b, float progress = 0.0f) : base()
+    public MorphShape(DynShape a, DynShape b, float progress = 0.0f) : base(a)
     {
         this._shape1P.Value = a.Path;
         this._shape2P.Value = b.Path;
         this._progressP.Value = progress;
+        this._color1P.Value = a.Color;
+        this._color2P.Value = b.Color;
+        this._contourColor1P.Value = a.ContourColor;
+        this._contourColor2P.Value = b.ContourColor;
+        this._mode1P.Value = a.Mode;
+        this._mode2P.Value = b.Mode;
     }
 
     internal override object GetState(Func<DynPropertyId, object?> evaluator)
@@ -214,7 +206,7 @@ public partial class MorphShape : DynVisualEntity2D
             _contourSize2P.Value,
             _mode1P.Value,
             _mode2P.Value);
-        this.GetState(state, evaluator);
+        GetState(state, evaluator);
         return state;
     }
 }

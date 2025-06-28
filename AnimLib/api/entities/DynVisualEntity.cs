@@ -10,10 +10,11 @@ public abstract class DynVisualEntity {
     /// The ID of this entity.
     /// </summary>
     public int Id { get; internal set; }
+    public bool ManagedLifetime { get; internal set; }
     /// <summary>
     /// The parent entity ID.
     /// </summary>
-    public DynProperty<int> Parent = DynProperty<int>.CreateEmpty(-1);
+    public DynProperty<int> ParentId = DynProperty<int>.CreateEmpty(-1);
     /// <summary>
     /// Whether this entity is active. Inactive entities will not be rendered.
     /// </summary>
@@ -30,8 +31,9 @@ public abstract class DynVisualEntity {
     /// <summary>
     /// Creates a new visual entity.
     /// </summary>
-    internal DynVisualEntity(DynVisualEntity other) {
-        this.Parent = other.Parent;
+    internal DynVisualEntity(DynVisualEntity other)
+    {
+        this.ParentId = other.ParentId;
         this.Active = other.Active;
         this.SortKey = other.SortKey;
     }
@@ -42,13 +44,14 @@ public abstract class DynVisualEntity {
     abstract internal object GetState(Func<DynPropertyId, object?> evaluator);
 
     private protected void GetState(EntityState dest, Func<DynPropertyId, object?> evaluator) {
+        dest.entityId = Id;
         dest.active = evaluator(Active.Id) as bool? ?? default(bool);
         dest.sortKey = evaluator(SortKey.Id) as int? ?? default(int);
-        dest.parentId = evaluator(Parent.Id) as int? ?? default(int);
+        dest.parentId = evaluator(ParentId.Id) as int? ?? default(int);
     }
 
     internal virtual void OnCreated() {
-        Parent = new DynProperty<int>("parent", Parent.Value);
+        ParentId = new DynProperty<int>("parent", ParentId.Value);
         Active = new DynProperty<bool>("active", Active.Value);
         SortKey = new DynProperty<int>("sortKey", SortKey.Value);
         Created = new DynProperty<bool>("created", Created.Value);

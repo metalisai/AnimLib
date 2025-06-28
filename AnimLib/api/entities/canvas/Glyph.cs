@@ -2,16 +2,21 @@ using System;
 
 namespace AnimLib;
 
+[GenerateDynProperties(forType: typeof(Glyph))]
 internal class GlyphState : EntityState2D
 {
-    public char glyph;
+    [Dyn]
+    public char character;
+    [Dyn]
     public float size;
-    public Color color;
+    [Dyn]
+    public Color color = Color.BLACK;
 
-    public GlyphState() {}
+    public GlyphState() { }
 
-    public GlyphState(GlyphState g) : base(g) {
-        this.glyph = g.glyph;
+    public GlyphState(GlyphState g) : base(g)
+    {
+        this.character = g.character;
         this.size = g.size;
         this.color = g.color;
     }
@@ -21,8 +26,10 @@ internal class GlyphState : EntityState2D
         return new GlyphState(this);
     }
 
-    public override Vector2 AABB {
-        get {
+    public override Vector2 AABB
+    {
+        get
+        {
             throw new NotImplementedException();
         }
     }
@@ -30,67 +37,21 @@ internal class GlyphState : EntityState2D
 
 /// <summary>
 /// A (cached) glyph that's drawn from a font atlas.
-/// Faster than drawing Shapes, but less flexible.
 /// </summary>
-public class Glyph : VisualEntity2D, IColored {
+public partial class Glyph : DynVisualEntity2D {
     /// <summary>
-    /// The character this glyph represents.
+    /// Creates a new glyph with given width and height.
     /// </summary>
-    public char Character {
-        get {
-            return ((GlyphState)state).glyph;
-        }
-        set {
-            World.current.SetProperty(this, "Character", value, ((GlyphState)state).glyph);
-            ((GlyphState)state).glyph = value;
-        }
-    }
-
-    /// <summary>
-    /// The color of this glyph.
-    /// </summary>
-    public Color Color
+    public Glyph(char character, float size) : base()
     {
-        get {
-            return ((GlyphState)state).color;
-        }
-        set {
-            World.current.SetProperty(this, "Color", value, ((GlyphState)state).color);
-            ((GlyphState)state).color = value;
-        }
+        this._characterP.Value = character;
+        this._sizeP.Value = size;
     }
 
-    /// <summary>
-    /// The font size of this glyph.
-    /// </summary>
-    public float Size
+    internal override object GetState(Func<DynPropertyId, object?> evaluator)
     {
-        get {
-            return ((GlyphState)state).size;
-        }
-        set {
-            World.current.SetProperty(this, "Size", value, ((GlyphState)state).size);
-            ((GlyphState)state).size = value;
-        }
-    }
-
-    /// <summary>
-    /// Creates a new Glyph.
-    /// </summary>
-    public Glyph() : base(new GlyphState()) {
-    }
-
-    /// <summary>
-    /// Copy constructor.
-    /// </summary>
-    /// /// <param name="g">The Glyph to copy.</param>
-    public Glyph(Glyph g) : base(g) {
-    }
-
-    /// <summary>
-    /// Clone this Glyph.
-    /// </summary>
-    public override object Clone() {
-        return new Glyph(this);
+        var state = new GlyphState();
+        GetState(state, evaluator);
+        return state;
     }
 }

@@ -5,10 +5,10 @@ namespace AnimLib {
     public static class TextAnimation {
         public static async Task<Text2D> TypeText(Text2D t, Vector2 position, string text, int wordPerMinute = 150) {
             var rnd = new Random();
-            t.Transform.Pos = position;
+            t.Position = position;
             t.Text = "";
-            if(!t.created) {
-                World.current.CreateInstantly(t);
+            if(!t.Created) {
+                World.current.CreateDynInstantly(t);
             }
             string current = "";
             foreach(var c in text) {

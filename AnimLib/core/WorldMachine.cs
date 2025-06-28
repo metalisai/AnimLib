@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 
 namespace AnimLib;
 
@@ -9,10 +10,13 @@ namespace AnimLib;
 /// </summary>
 internal class WorldMachine {
 
-    public class CanvasEntities {
+    public class CanvasEntities
+    {
+        // TODO: remove
         public List<EntityState2D> Entities = new List<EntityState2D>();
+        public List<DynVisualEntity2D> NewEntities = new();
     }
-    List<GlyphState> _glyphs = new List<GlyphState>();
+    List<Glyph> _glyphs = new List<Glyph>();
     List<MeshBackedGeometry> _mbgeoms = new List<MeshBackedGeometry>();
     List<CubeState> _cubes = new List<CubeState>();
     List<EntityState> _cameras =  new List<EntityState>();
@@ -183,46 +187,60 @@ internal class WorldMachine {
         }
     }
 
-    public WorldSnapshot GetWorldSnapshot() {
+    private object? GetDynProp(DynPropertyId id)
+    {
+        if (id == DynProperty.Invalid.Id)
+        {
+            throw new Exception($"DynProperty.Invalid.Id ({id} == {DynProperty.Invalid.Id}) is not a valid DynPropertyId! Don't reference it.");
+        }
+        if (_dynamicProperties.TryGetValue(id, out var val))
+        {
+            return val;
+        }
+        else
+        {
+            throw new Exception($"DynProperty {id} not found!");
+        }
+    }
+
+    public WorldSnapshot GetWorldSnapshot()
+    {
 
         var l = new List<CanvasSnapshot>();
-        foreach(var c in _canvases.OrderBy(x => _entities[x.Key].sortKey)) {
+        foreach (var c in _canvases.OrderBy(x => _entities[x.Key].sortKey))
+        {
             var canvas = (CanvasState)_entities[c.Key];
-            var effects = canvas.effects.Select(x => 
+            var effects = canvas.effects.Select(x =>
                 (x.GetType().Name,
                 x.properties.Select(x => (x.Key, this._dynamicProperties[x.Value.Id])).ToArray())
             ).ToArray();
-            var css = new CanvasSnapshot() {
-                Entities = c.Value.Entities.Where(x => x.active).Select(x => (EntityState2D)x.Clone()).ToArray(),
+
+
+            var css = new CanvasSnapshot()
+            {
+                //Entities = c.Value.Entities.Where(x => x.active).Select(x => (EntityState2D)x.Clone()).ToArray(),
+                Entities = c.Value.NewEntities.Where(x => x.Active).Select(x => (EntityState2D)x.GetState(GetDynProp)).Concat(c.Value.Entities.Where(x => x.active).Select(x => (EntityState2D)x.Clone())).ToArray(),
                 Canvas = canvas,
                 Effects = effects,
             };
 
-            Func<DynPropertyId, object?> getDynProp = (id) => {
-                if (id == DynProperty.Invalid.Id) {
-                    throw new Exception($"DynProperty.Invalid.Id ({id} == {DynProperty.Invalid.Id}) is not a valid DynPropertyId! Don't reference it.");
-                }
-                if (_dynamicProperties.TryGetValue(id, out var val)) {
-                    return val;
-                } else {
-                    throw new Exception($"DynProperty {id} not found!");
-                }
-            };
-            var dynShapes = _dynShapes.Select(x => (ShapeState)x.GetState(getDynProp)).ToArray();
-            css.Entities = css.Entities.Concat(dynShapes).ToArray();
+            //var dynShapes = _dynShapes.Select(x => (ShapeState)x.GetState(getDynProp)).ToArray();
+            //css.Entities = css.Entities.Concat(dynShapes).ToArray();
 
             Array.Sort(css.Entities, new EntComparer());
             l.Add(css);
             //foreach(var s in css.Entities) s.canvas = canvas;
         }
 
-        var ret = new WorldSnapshot() {
-            Glyphs = _glyphs.Where(x => x.active).ToArray(),
+        var ret = new WorldSnapshot()
+        {
+            Glyphs = _glyphs.Where(x => x.Active).Select(x => (GlyphState)x.GetState(GetDynProp)).ToArray(),
             MeshBackedGeometries = _mbgeoms.Where(x => x.active).ToArray(),
             Cubes = _cubes.Where(x => x.active).ToArray(),
             Beziers = _beziers.Where(x => x.active).ToArray(),
             resolver = new EntityStateResolver(
-                GetEntityState: entid => {
+                GetEntityState: entid =>
+                {
                     return _entities.ContainsKey(entid) ? _entities[entid] : null;
                 }
             ),
@@ -238,17 +256,32 @@ internal class WorldMachine {
     }
 
     private void CreateDynEntity(DynVisualEntity ent) {
-        switch(ent) {
-            case DynShape ds:
-                _dynShapes.Add(ds);
+        switch (ent)
+        {
+            case Glyph g1:
+                _glyphs.Add(g1);
+                break;
+            case DynVisualEntity2D ent2d:
+                var canvas = (CanvasState)_entities[ent2d.CanvasId];
+                _canvases[canvas.entityId].NewEntities.Add(ent2d);
+                break;
+            default:
+                Debug.Error($"Creating unknown Dyn entity {ent}");
                 break;
         }
     }
 
     private void DestroyDynEntity(DynVisualEntity ent) {
-        switch(ent) {
-            case DynShape ds:
-                _dynShapes.Remove(ds);
+        switch (ent)
+        {
+            case Glyph g1:
+                _glyphs.RemoveAll(x => x.Id == ent.Id);
+                break;
+            case DynVisualEntity2D ent2d:
+                foreach(var s in _canvases) s.Value.NewEntities.RemoveAll(x => x.Id == ent.Id);
+                break;
+            default:
+                Debug.Error($"Destroying unknown Dyn entity {ent}");
                 break;
         }
     }
@@ -256,10 +289,6 @@ internal class WorldMachine {
     private void CreateEntity(object entity) {
         EntityState state;
         switch(entity) {
-            case GlyphState g1:
-            state = (EntityState)g1.Clone();
-            _glyphs.Add((GlyphState)state);
-            break;
             case MeshBackedGeometry a1:
             state = (EntityState)a1.Clone();
             //state = a1;
@@ -302,9 +331,6 @@ internal class WorldMachine {
         switch(ent) {
             case ArrowState a1:
             _mbgeoms.RemoveAll(x => x.entityId == entityId);
-            break;
-            case GlyphState g1:
-                _glyphs.RemoveAll(x => x.entityId == entityId);
             break;
             case CubeState c2:
             _cubes.RemoveAll(x => x.entityId == entityId);

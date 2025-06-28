@@ -33,10 +33,10 @@ internal class Player2DText : SceneObject2D {
         return false;
     }
 
-    public override VisualEntity2D InitializeEntity() {
+    public override DynVisualEntity2D InitializeEntity() {
         var ent = new Text2D(text, size, null, color);
-        ent.Transform.Pos = transform.Pos;
-        ent.Transform.Rot = transform.Rot;
+        ent.Position = transform.Pos;
+        ent.Rotation = transform.Rot;
         return ent;
     }
 }

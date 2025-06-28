@@ -71,18 +71,18 @@ internal class NoProjectBehaviour : AnimationBehaviour {
 
     public async Task Animation(World world, Animator animator) {
         var hw = new Text2D("No project loaded!");
-        hw.Transform.Pos = new Vector2(100.0f, -200.0f);
+        hw.Position = new Vector2(100.0f, -200.0f);
         hw.Size = 22.0f;
         hw.Color = Color.RED;
         hw.Anchor = new Vector2(-0.5f, 0.5f); // top left
         //hw.HAlign = TextHorizontalAlignment.Center;
         //hw.VAlign = TextVerticalAlignment.Center;
         // TODO: this thing  is screaming for multiline text
-        var hw2 = world.Clone(hw);
-        hw2.Transform.Pos = new Vector2(100.0f, -200.0f+31.0f);
+        var hw2 = world.CloneDyn(hw);
+        hw2.Position = new Vector2(100.0f, -200.0f+31.0f);
         hw2.Text = "File->New project... or File->Open project... to continue";
-        world.CreateInstantly(hw);
-        world.CreateInstantly(hw2);
+        world.CreateDynInstantly(hw);
+        world.CreateDynInstantly(hw2);
         await Task.Yield();
     }
 }
@@ -98,7 +98,7 @@ internal class ErrorBehaviour : AnimationBehaviour {
 
     public async Task Animation(World world, Animator animator) {
         var hw = new Text2D();
-        hw.Transform.Pos = new Vector2(100.0f, -200.0f);
+        hw.Position = new Vector2(100.0f, -200.0f);
         hw.Size = 22.0f;
         hw.Color = Color.RED;
         hw.Anchor = new Vector2(-0.5f, 0.5f); // top left
@@ -106,11 +106,11 @@ internal class ErrorBehaviour : AnimationBehaviour {
         hw.VAlign = TextVerticalAlignment.Center;
         // TODO: this thing  is screaming for multiline text
         hw.Text = "Error occurred during animation";
-        var hw2 = world.Clone(hw);
-        hw2.Transform.Pos = new Vector2(100.0f, -200.0f+31.0f);
+        var hw2 = world.CloneDyn(hw);
+        hw2.Position = new Vector2(100.0f, -200.0f+31.0f);
         hw2.Text = "Fix your animation and try again!";
-        world.CreateInstantly(hw);
-        world.CreateInstantly(hw2);
+        world.CreateDynInstantly(hw);
+        world.CreateDynInstantly(hw2);
         await Task.Yield();
     }
 }
@@ -126,7 +126,7 @@ internal class EmptyBehaviour : AnimationBehaviour {
 
     public async Task Animation(World world, Animator animator) {
         var hw = new Text2D();
-        hw.Transform.Pos = new Vector2(100.0f, -200.0f);
+        hw.Position = new Vector2(100.0f, -200.0f);
         hw.Size = 22.0f;
         hw.Color = Color.RED;
         hw.Anchor = new Vector2(-0.5f, 0.5f); // top left
@@ -134,15 +134,15 @@ internal class EmptyBehaviour : AnimationBehaviour {
         hw.VAlign = TextVerticalAlignment.Center;
         // TODO: this thing  is screaming for multiline text
         hw.Text = "No project assembly (.dll) found!";
-        var hw2 = world.Clone(hw);
-        hw2.Transform.Pos = new Vector2(100.0f, -200.0f+31.0f);
+        var hw2 = world.CloneDyn(hw);
+        hw2.Position = new Vector2(100.0f, -200.0f+31.0f);
         hw2.Text = "Go to project directory and build it";
-        var hw3 = world.Clone(hw);
-        hw3.Transform.Pos = new Vector2(100.0f, -200.0f+62.0f);
+        var hw3 = world.CloneDyn(hw);
+        hw3.Position = new Vector2(100.0f, -200.0f+62.0f);
         hw3.Text = "The animation will reload automatically";
-        world.CreateInstantly(hw);
-        world.CreateInstantly(hw2);
-        world.CreateInstantly(hw3);
+        world.CreateDynInstantly(hw);
+        world.CreateDynInstantly(hw2);
+        world.CreateDynInstantly(hw3);
 
         await Task.Yield();
     }

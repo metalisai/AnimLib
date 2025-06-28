@@ -76,7 +76,7 @@ public partial class SvgSprite : DynVisualEntity2D
     internal override object GetState(Func<DynPropertyId, object?> evaluator)
     {
         var state = new SvgSpriteState(this._svgP.Value!, this._widthP.Value, this._heightP.Value);
-        this.GetState(state, evaluator);
+        GetState(state, evaluator);
         return state;
     }
 }

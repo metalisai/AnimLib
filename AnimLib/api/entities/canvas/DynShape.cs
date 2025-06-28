@@ -13,7 +13,7 @@ public partial class DynShape : DynVisualEntity2D, IColored {
 
     internal override object GetState(Func<DynPropertyId, object?> evaluator) {
         var shape = new ShapeState(Path ?? new ShapePath());
-        base.GetState(shape, evaluator);
+        GetState(shape, evaluator);
         return shape;
     }
 }

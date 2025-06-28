@@ -19,6 +19,7 @@ public enum Entity2DCoordinateSystem {
 [GenerateDynProperties(forType: typeof(DynVisualEntity2D), onlyProperties: true)]
 internal abstract class EntityState2D : EntityState
 {
+    [Dyn]
     public int canvasId = -1; // entity Id of canvas
     [Dyn]
     public Vector2 position = Vector2.ZERO;

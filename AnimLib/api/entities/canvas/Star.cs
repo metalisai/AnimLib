@@ -65,7 +65,7 @@ public partial class Star : DynShape
     internal override object GetState(Func<DynPropertyId, object?> evaluator)
     {
         var state = new StarState(new ShapePath());
-        this.GetState(state, evaluator);
+        GetState(state, evaluator);
         state.path = CreateStarPath(state.innerRadius, state.outerRadius, state.numPoints);
         return state;
     }

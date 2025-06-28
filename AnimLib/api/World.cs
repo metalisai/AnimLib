@@ -585,6 +585,17 @@ public class World
         _parents.Add(child.EntityId, parent);
     }
 
+    internal void AttachDynChild(DynVisualEntity parent, DynVisualEntity child)
+    {
+        if (!_dynChildren.ContainsKey(parent.Id))
+        {
+            _dynChildren.Add(parent.Id, new List<DynVisualEntity>());
+        }
+        child.ManagedLifetime = true;
+        _dynChildren[parent.Id].Add(child);
+        _dynParents.Add(child.Id, parent);
+    }
+
     internal void DetachChild(VisualEntity parent, VisualEntity child)
     {
         if (!_children.ContainsKey(parent.EntityId))
@@ -604,7 +615,7 @@ public class World
             Debug.Error("Parent does not have any children");
             return;
         }
-        //child.managedLifetime = false; // TODO: fix
+        child.ManagedLifetime = false;
         _dynChildren[parent.Id].Remove(child);
         _dynParents.Remove(child.Id);
     }
@@ -621,8 +632,20 @@ public class World
         }
         return ent;
     }
+    
+    internal T MatchCreation<T>(T ent, Func<DynVisualEntity, bool> match) where T : DynVisualEntity
+    {
+        DynCreationListeners.Add(match);
+        // check if the entity already exists
+        foreach (var dent in _dynEntities.Values.ToList())
+        {
+            CheckDynDependantEntities(dent);
+        }
+        return ent;
+    }
 
-    internal DynPropertyId CreateDynProperty(object? vl) {
+    internal DynPropertyId CreateDynProperty(object? vl)
+    {
         var id = GetUniqueDynId();
         _dynamicProperties.Add(id, vl);
         var cmd = new WorldCreateDynPropertyCommand(

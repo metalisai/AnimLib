@@ -31,13 +31,13 @@ public class AnimatedTextList {
     public async Task Add(Text2D text) {
         var lastitem = items.LastOrDefault();
         Vector2 newpos = lastitem == null ? origin : lastitem.position+new Vector2(0.0f, heightOffset);
-        var startpos = text.state.position;
+        var startpos = text.Position;
         items.Add(new ListItem() {
             text = text,
             position = newpos,
         });
         await Animate.InterpF((x) => {
-            text.Transform.Pos = Vector2.Lerp(startpos, newpos, x);
+            text.Position = Vector2.Lerp(startpos, newpos, x);
         }, 0.0f, 1.0f, 1.0);
     }
 
@@ -51,16 +51,16 @@ public class AnimatedTextList {
     public async Task Add(Text2D text, int idx) {
         var lastitem = items.LastOrDefault();
         Vector2 newpos = PosForIndex(idx);
-        var startpos = text.state.position;
+        var startpos = text.Position;
         var newitem = new ListItem() {
             text = text,
             position = newpos,
         };
         items.Insert(idx, newitem);
         await Animate.InterpF((x) => {
-            text.Transform.Pos = Vector2.Lerp(startpos, newpos, x);
+            text.Position = Vector2.Lerp(startpos, newpos, x);
             for(int i = idx+1; i < items.Count; i++) {
-                items[i].text.Transform.Pos = Vector2.Lerp(items[i].position, items[i].position+new Vector2(0.0f, heightOffset),x);
+                items[i].text.Position = Vector2.Lerp(items[i].position, items[i].position+new Vector2(0.0f, heightOffset),x);
             }
         }, 0.0f, 1.0f, 1.0);
         int i = 0;
@@ -81,7 +81,7 @@ public class AnimatedTextList {
         int count = items.Count;
         await Animate.InterpF((x) => {
             for(int i = idx+1; i < count; i++) {
-                items[i].text.Transform.Pos = Vector2.Lerp(items[i].position, items[i].position-new Vector2(0.0f, heightOffset),x);
+                items[i].text.Position = Vector2.Lerp(items[i].position, items[i].position-new Vector2(0.0f, heightOffset),x);
                 //text.Transform.Pos = new Vector3(Vector2.Lerp(startpos, newpos, x), text.state.position.z);
             }
         }, 0.0f, 1.0f, 1.0);

@@ -244,16 +244,16 @@ internal class PlayerScene {
                                         var cs = canvas.state as CanvasState;
                                         if(cs != null && cs.name == so2d.CanvasName) {
                                             System.Diagnostics.Debug.Assert(ce.created);
-                                            c.Canvas = canvas;
-                                            world.CreateInstantly(c);
-                                            sceneObjects[c.state.entityId] = e.obj;
+                                            c.CanvasId = canvas.EntityId;
+                                            world.CreateDynInstantly(c);
+                                            sceneObjects[c.Id] = e.obj;
                                             return true;
                                         }
                                         break;
                                 }
                                 return false;
                             };
-                            world.MatchCreation(c, canvasMatch);
+                            //world.MatchCreation(c, canvasMatch); TODO: fix
                             break;
                     }
                     world.EndEditing();

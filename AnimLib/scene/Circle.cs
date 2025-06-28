@@ -46,7 +46,7 @@ internal class PlayerCircle : SceneObject2D {
         return (transform.Pos-point).Length < radius;
     }
 
-    public override VisualEntity2D InitializeEntity()
+    public override DynVisualEntity2D InitializeEntity()
     {
         var ent = new Circle(this.radius);
         ent.Color = this.color;
@@ -55,8 +55,6 @@ internal class PlayerCircle : SceneObject2D {
         ent.Mode = this.mode;
         ent.Position = transform.Pos;
         ent.Rotation = transform.Rot;
-        //return ent;
-        // TODO: fix
-        return null;
+        return ent;
     }
 }

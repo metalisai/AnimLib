@@ -59,7 +59,7 @@ public partial class Rectangle : DynShape
     internal override object GetState(Func<DynPropertyId, object?> evaluator)
     {
         var state = new RectangleState(new ShapePath());
-        this.GetState(state, evaluator);
+        GetState(state, evaluator);
         state.path = CreateRectanglePath(state.width, state.height);
         return state;
     }

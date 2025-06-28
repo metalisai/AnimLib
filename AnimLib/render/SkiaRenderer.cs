@@ -419,100 +419,119 @@ internal partial class SkiaRenderer
             }
         };
         
-        foreach(var entitiy in css.Entities) {
+        foreach (var entitiy in css.Entities)
+        {
             float bw = this.width;
             float bh = this.height;
-            switch(entitiy) {
-            case MorphShapeState morphShape:
-                using (SKPaint paint = new SKPaint()) {
-                    var path1 = CubicSpline.FromShape(morphShape.shape1);
-                    var path2 = CubicSpline.FromShape(morphShape.shape2);
-                    //var morph = path1[0].MorphTo(path2[0], morphShape.progress);
-                    var morphs = CubicSpline.MorphCollection(path1, path2, morphShape.progress);
-                    //var path = morph.ToShapePath().ToSKPath();
-                    var path = CubicSpline.CollectionToShapePath(morphs).ToSKPath();
-                    confPaint(paint);
-                    renderShape(paint, path, morphShape, morphShape.CurrentMode, morphShape.CurrentColor, morphShape.CurrentContourColor, morphShape.CurrentContourSize);
-                }
-                break;
-            case ShapeState shape:
-                using(SKPaint paint = new SKPaint()) {
-                    var path = shape.path.ToSKPath();
-                    confPaint(paint);
-                    // calculate transform
-                    // NOTE: Skia's top is bottom in our renderer
-                    renderShape(paint, path, shape, shape.mode, shape.color, shape.contourColor, shape.contourSize);
-                }
-                break;
-            case SpriteState sprite:
-                SKImage? image = null;
-                if(sprite.texture.GLHandle > 0) {
-                    image = LoadedImages[sprite.texture.GLHandle];
-                } else {
-                    image = LoadTexture(sprite.texture);
-                }
-                if(image != null && mat != null) {
+            switch (entitiy)
+            {
+                case MorphShapeState morphShape:
+                    using (SKPaint paint = new SKPaint())
+                    {
+                        var path1 = CubicSpline.FromShape(morphShape.shape1);
+                        var path2 = CubicSpline.FromShape(morphShape.shape2);
+                        //var morph = path1[0].MorphTo(path2[0], morphShape.progress);
+                        var morphs = CubicSpline.MorphCollection(path1, path2, morphShape.progress);
+                        //var path = morph.ToShapePath().ToSKPath();
+                        var path = CubicSpline.CollectionToShapePath(morphs).ToSKPath();
+                        confPaint(paint);
+                        renderShape(paint, path, morphShape, morphShape.CurrentMode, morphShape.CurrentColor, morphShape.CurrentContourColor, morphShape.CurrentContourSize);
+                    }
+                    break;
+                case ShapeState shape:
+                    using (SKPaint paint = new SKPaint())
+                    {
+                        var path = shape.path.ToSKPath();
+                        confPaint(paint);
+                        // calculate transform
+                        // NOTE: Skia's top is bottom in our renderer
+                        renderShape(paint, path, shape, shape.mode, shape.color, shape.contourColor, shape.contourSize);
+                    }
+                    break;
+                case SpriteState sprite:
+                    SKImage? image = null;
+                    if (sprite.texture.GLHandle > 0)
+                    {
+                        image = LoadedImages[sprite.texture.GLHandle];
+                    }
+                    else
+                    {
+                        image = LoadTexture(sprite.texture);
+                    }
+                    if (image != null && mat != null)
+                    {
 
-                    //SKMatrix GetLocalTransform(EntityState2D ent, CanvasState rc, Rect aabb) {
-                    if (canvas is not SKCanvas c2) {
-                        Debug.Error("SkiaRenderer: canvas matrix is null");
-                        break;
+                        //SKMatrix GetLocalTransform(EntityState2D ent, CanvasState rc, Rect aabb) {
+                        if (canvas is not SKCanvas c2)
+                        {
+                            Debug.Error("SkiaRenderer: canvas matrix is null");
+                            break;
+                        }
+                        var curMat = canvas.TotalMatrix;
+                        var local = GetLocalTransform(sprite, rc, new Rect(0.0f, 0.0f, sprite.width, sprite.height), css.Entities, rb.Size).PreConcat(new SKMatrix(1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f)).PostConcat(curMat);
+                        canvas?.SetMatrix(local);
+                        var rect = new SKRect(-sprite.width / 2.0f, -sprite.height / 2.0f, sprite.width / 2.0f, sprite.height / 2.0f);
+                        using (var paint = new SKPaint())
+                        {
+                            paint.FilterQuality = SKFilterQuality.High;
+                            paint.BlendMode = SKBlendMode.SrcOver;
+                            paint.ColorF = sprite.color.ToSKColorF();
+                            c2.DrawImage(image, rect, paint);
+                        }
+                        c2.SetMatrix(curMat);
                     }
-                    var curMat = canvas.TotalMatrix;
-                    var local = GetLocalTransform(sprite, rc, new Rect(0.0f, 0.0f, sprite.width, sprite.height), css.Entities, rb.Size).PreConcat(new SKMatrix(1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f)).PostConcat(curMat);
-                    canvas?.SetMatrix(local);
-                    var rect = new SKRect(-sprite.width/2.0f, -sprite.height/2.0f, sprite.width/2.0f, sprite.height/2.0f);
-                    using(var paint = new SKPaint()) {
-                        paint.FilterQuality = SKFilterQuality.High;
-                        paint.BlendMode = SKBlendMode.SrcOver;
-                        paint.ColorF = sprite.color.ToSKColorF();
-                        c2.DrawImage(image, rect, paint);
+                    break;
+                case SvgSpriteState svgsprite:
+                    SKSvg? svg = null;
+                    if (svgsprite.svg.handle > 0)
+                    {
+                        svg = LoadedSvgs[svgsprite.svg.handle];
                     }
-                    c2.SetMatrix(curMat);
-                }
-                break;
-            case SvgSpriteState svgsprite:
-                SKSvg? svg = null;
-                if(svgsprite.svg.handle > 0) {
-                    svg = LoadedSvgs[svgsprite.svg.handle];
-                } else {
-                    svg = LoadSvg(svgsprite.svg);
-                }
-                if(svg != null && mat != null && svg.Picture != null && canvas != null) {
-                    var bounds = svg.Picture.CullRect;
-                    var curMat = canvas.TotalMatrix;
-                    var rect = new SKRect(-svgsprite.width/2.0f, -svgsprite.height/2.0f, svgsprite.width/2.0f, svgsprite.height/2.0f);
-                    float scaleX = 1.0f, scaleY = 1.0f;
-                    float aspect = bounds.Width / bounds.Height;
-                    if (svgsprite.width > 0.0f) {
-                        scaleX = svgsprite.width / bounds.Width;
+                    else
+                    {
+                        svg = LoadSvg(svgsprite.svg);
                     }
-                    if (svgsprite.height > 0.0f) {
-                        scaleY = svgsprite.height / bounds.Height;
-                    }
+                    if (svg != null && mat != null && svg.Picture != null && canvas != null)
+                    {
+                        var bounds = svg.Picture.CullRect;
+                        var curMat = canvas.TotalMatrix;
+                        var rect = new SKRect(-svgsprite.width / 2.0f, -svgsprite.height / 2.0f, svgsprite.width / 2.0f, svgsprite.height / 2.0f);
+                        float scaleX = 1.0f, scaleY = 1.0f;
+                        float aspect = bounds.Width / bounds.Height;
+                        if (svgsprite.width > 0.0f)
+                        {
+                            scaleX = svgsprite.width / bounds.Width;
+                        }
+                        if (svgsprite.height > 0.0f)
+                        {
+                            scaleY = svgsprite.height / bounds.Height;
+                        }
 
-                    if (svgsprite.width > 0.0f && svgsprite.height <= 0.0f) {
-                        scaleY = scaleX;
-                    }
-                    else if (svgsprite.height > 0.0f && svgsprite.width <= 0.0f) {
-                        scaleX = scaleY;
-                    }
-                    float tX = -bounds.Width*scaleX/2.0f;
-                    float tY = bounds.Height*scaleY/2.0f;
+                        if (svgsprite.width > 0.0f && svgsprite.height <= 0.0f)
+                        {
+                            scaleY = scaleX;
+                        }
+                        else if (svgsprite.height > 0.0f && svgsprite.width <= 0.0f)
+                        {
+                            scaleX = scaleY;
+                        }
+                        float tX = -bounds.Width * scaleX / 2.0f;
+                        float tY = bounds.Height * scaleY / 2.0f;
 
-                    var preMat = new SKMatrix(scaleX, 0.0f, tX, 0.0f, -scaleY, tY, 0.0f, 0.0f, 1.0f);
-                    var local = GetLocalTransform(svgsprite, rc, new Rect(0.0f, 0.0f, svgsprite.width, svgsprite.height), css.Entities, rb.Size).PreConcat(preMat).PostConcat(curMat);
-                    canvas.SetMatrix(local);
+                        var preMat = new SKMatrix(scaleX, 0.0f, tX, 0.0f, -scaleY, tY, 0.0f, 0.0f, 1.0f);
+                        var local = GetLocalTransform(svgsprite, rc, new Rect(0.0f, 0.0f, svgsprite.width, svgsprite.height), css.Entities, rb.Size).PreConcat(preMat).PostConcat(curMat);
+                        canvas.SetMatrix(local);
 
-                    // TODO: scale svg to fit rect
-                    using(var paint = new SKPaint()) {
-                        paint.BlendMode = SKBlendMode.SrcOver;
-                        paint.ColorF = svgsprite.color.ToSKColorF();
-                        canvas.DrawPicture(svg.Picture, paint);
+                        // TODO: scale svg to fit rect
+                        using (var paint = new SKPaint())
+                        {
+                            paint.BlendMode = SKBlendMode.SrcOver;
+                            paint.ColorF = svgsprite.color.ToSKColorF();
+                            canvas.DrawPicture(svg.Picture, paint);
+                        }
+                        canvas.SetMatrix(curMat);
                     }
-                    canvas.SetMatrix(curMat);
-                }
-                break;
+                    break;
             }
         }
 

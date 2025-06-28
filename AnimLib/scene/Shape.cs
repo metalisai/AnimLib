@@ -76,16 +76,16 @@ internal class PlayerShape : SceneObject2D
         return points.ToArray();
     }
 
-    public override VisualEntity2D InitializeEntity()
+    public override DynVisualEntity2D InitializeEntity()
     {
         var path = this.path.Select(x => (x.verb, x.data)).ToArray();
-        var shape = new Shape(new ShapePath() { path = path});
+        var shape = new DynShape(new ShapePath() { path = path});
         shape.Color = this.color;
         shape.ContourColor = this.outline;
         shape.ContourSize = this.outlineWidth;
         shape.Mode = this.mode;
-        shape.Transform.Pos = transform.Pos;
-        shape.Transform.Rot = transform.Rot;
+        shape.Position = transform.Pos;
+        shape.Rotation = transform.Rot;
         return shape;
     }
 

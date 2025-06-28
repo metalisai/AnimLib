@@ -157,6 +157,11 @@ public static class Animate {
             t.Pos = x;
         }, t.Pos, moveTo, duration, curve);
     }
+    
+    public static Task Move(this DynVisualEntity2D ent, Vector2 moveTo, double duration = 1.0, EaseType curve = EaseType.EaseInOut)
+    {
+        return InterpT(ent.PositionProperty, moveTo, duration, curve);
+    }
 
     /// <summary>
     /// Interpolate a float with given interpolation curve.
@@ -166,11 +171,12 @@ public static class Animate {
     /// <param name="end">The end value of the interpolation.</param>
     /// <param name="duration">The duration of the interpolation.</param>
     /// <param name="curve">The interpolation curve to use.</param>
-    public static async Task InterpF(Action<float> action, float start, float end, double duration, EaseType curve = EaseType.EaseInOut) 
+    public static async Task InterpF(Action<float> action, float start, float end, double duration, EaseType curve = EaseType.EaseInOut)
     {
         double endTime = AnimLib.Time.T + duration;
-        while (AnimLib.Time.T < endTime) {
-            double progress = 1.0 - (endTime - AnimLib.Time.T)/ duration;
+        while (AnimLib.Time.T < endTime)
+        {
+            double progress = 1.0 - (endTime - AnimLib.Time.T) / duration;
             var t = (float)Math.Clamp(progress, 0.0f, 1.0f);
             t = Ease.Evaluate(t, curve);
             action.Invoke(start + (end - start) * t);
@@ -389,11 +395,11 @@ public static class Animate {
     /// <param name="duration">The duration of the morph.</param>
     /// <param name="curve">The interpolation curve to use.</param>
     /// <param name="destroyStartShape">Whether to destroy the start shape when creating the morph shape.</param>
-    public static async Task<Shape> CreateMorph(Shape startShape, Shape endShape, float duration, EaseType curve = EaseType.EaseInOut, bool destroyStartShape = true)
+    public static async Task<DynShape> CreateMorph(DynShape startShape, DynShape endShape, float duration, EaseType curve = EaseType.EaseInOut, bool destroyStartShape = true)
     {
         var morph = new MorphShape(startShape, endShape);
-        if (destroyStartShape && startShape.created) {
-            World.current.Destroy(startShape);
+        if (destroyStartShape && startShape.Created) {
+            World.current.DestroyDyn(startShape);
         }
         World.current.CreateDynInstantly(morph);
         double startTime = AnimLib.Time.T;
@@ -406,9 +412,12 @@ public static class Animate {
             await AnimLib.Time.WaitFrame();
         }
         World.current.DestroyDyn(morph);
-        var newShape = (Shape)endShape.Clone();
-        newShape.Transform = new Transform2D(startShape.Transform, newShape);
-        World.current.CreateInstantly(newShape);
+        var newShape = (DynShape)endShape.Clone();
+        //newShape.Transform = new Transform2D(startShape.Transform, newShape);
+        newShape.Position = startShape.Position;
+        newShape.Rotation = startShape.Rotation;
+        newShape.Scale = startShape.Scale;
+        World.current.CreateDynInstantly(newShape);
         return newShape;
     }
 
@@ -425,31 +434,36 @@ public static class Animate {
         {
             default:
             case TextCreationMode.Instant:
-                World.current.CreateInstantly(text);
+                World.current.CreateDynInstantly(text);
                 break;
             case TextCreationMode.Fade:
-                foreach (var c in text.CurrentShapes) {
+                foreach (var c in text.CurrentShapes)
+                {
                     c.s.Mode = ShapeMode.Filled;
                     c.s.Color = text.Color.WithA(0);
                     c.s.Trim = (0.0f, 1.0f);
                 }
                 text.Color = text.Color.WithA(0);
-                World.current.CreateInstantly(text);
-                foreach (var c in text.CurrentShapes) {
+                World.current.CreateDynInstantly(text);
+                foreach (var c in text.CurrentShapes)
+                {
                     last = Animate.Color(c.s, c.s.Color.WithA(0), c.s.Color.WithA(255), 0.5f);
                     await AnimLib.Time.WaitSeconds(charDelay);
                 }
                 await last;
                 break;
             case TextCreationMode.PathAndFade:
-                foreach (var c in text.CurrentShapes) {
+                foreach (var c in text.CurrentShapes)
+                {
                     c.s.ContourColor = AnimLib.Color.BLACK;
                     c.s.Mode = ShapeMode.Contour;
                     c.s.Trim = (0.0f, 0.0f);
                 }
-                World.current.CreateInstantly(text);
-                foreach (var c in text.CurrentShapes) {
-                    async Task AnimateCreation(float from, float to) {
+                World.current.CreateDynInstantly(text);
+                foreach (var c in text.CurrentShapes)
+                {
+                    async Task AnimateCreation(float from, float to)
+                    {
                         await Animate.InterpF(x => c.s.Trim = (from, x), from, to, 0.5f);
                         c.s.Color = text.Color.WithA(0);
                         c.s.Mode = ShapeMode.FilledContour;

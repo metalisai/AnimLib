@@ -53,7 +53,7 @@ internal abstract class SceneObject2D : SceneObject {
         return new Plane(new Vector3(0.0f, 0.0f, -1.0f), Vector3.ZERO);
     }
 
-    public abstract VisualEntity2D InitializeEntity();
+    public abstract DynVisualEntity2D InitializeEntity();
 
     // get 2D handles that can be dragged on a surface in the editor
     // (the handles are in world space)

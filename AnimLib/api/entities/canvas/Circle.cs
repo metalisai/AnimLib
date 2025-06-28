@@ -49,7 +49,7 @@ public partial class Circle : DynShape
     internal override object GetState(Func<DynPropertyId, object?> evaluator)
     {
         var state = new CircleState(new ShapePath());
-        this.GetState(state, evaluator);
+        GetState(state, evaluator);
         state.path = CreateCirclePath(state.radius);
         return state;
     }
