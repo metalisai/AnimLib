@@ -27,6 +27,9 @@ jobs:
         run: dotnet restore
       - name: Install docfx
         run: dotnet tool update -g docfx
+      - name: Build native
+        run: ./build.sh
+        working-directory: ./AnimLib.ImGui/src
       - name: Build solution (with source generators)
         run: dotnet build -c Release
       - name: DocFX Build
