@@ -15,21 +15,45 @@ public abstract partial class DynVisualEntity2D : DynVisualEntity {
         {
             // this is here to make the compiler happy
             _canvasIdP.Value = Canvas.Default?.EntityId ?? throw new Exception("Can't find default canvas");
-            //Canvas = World.current.ActiveCanvas;
+            Canvas = World.current.ActiveCanvas;
         }
         else
         {
             Debug.Error("World.ActiveCanvas is set to a canvas entity that isn't created. Using default canvas.");
             // this is here to make the compiler happy
             _canvasIdP.Value = Canvas.Default?.EntityId ?? throw new Exception("Can't find default canvas");
-            //Canvas = Canvas.Default;
+            Canvas = Canvas.Default;
         }
     }
 
-    public DynVisualEntity2D? Parent { get; set; }
+    DynVisualEntity2D? _parent;
+    public DynVisualEntity2D? Parent
+    {
+        get => _parent;
+        set
+        {
+            _parent = value;
+            if (Created.Value)
+            {
+                ParentId.Value = value?.Id ?? -1;
+            }
+        }
+    }
+
+    Canvas? _canvas;
+    public Canvas? Canvas
+    {
+        get => _canvas;
+        set
+        {
+            _canvas = value;
+            _canvasIdP.Value = value?.EntityId ?? Canvas.Default?.EntityId ?? -1;
+        }
+    }
 
     internal DynVisualEntity2D(DynVisualEntity2D other) : base(other)
     {
+        _canvas = other.Canvas;
         _canvasIdP.Value = other._canvasIdP.Value;
         _positionP.Value = other._positionP.Value;
         _rotationP.Value = other._rotationP.Value;
@@ -62,6 +86,11 @@ public abstract partial class DynVisualEntity2D : DynVisualEntity {
                 Debug.Error("2D entity parented to an entity that hasn't been created yet.");
                 Parent = null;
             }
+        }
+
+        if (Canvas != null && Canvas != Canvas.Default)
+        {
+            _canvasIdP.Value = Canvas.EntityId;
         }
     }
 
