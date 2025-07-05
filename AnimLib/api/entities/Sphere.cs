@@ -4,7 +4,7 @@ using System;
 namespace AnimLib;
 
 internal class SphereState : MeshBackedGeometry {
-    public Color _color;
+    public Color _color = Color.RED;
     public Color color {
         get {
             return _color;

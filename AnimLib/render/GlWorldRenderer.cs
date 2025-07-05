@@ -636,23 +636,6 @@ internal partial class GlWorldRenderer : IRenderer {
                 }
             }
 
-            if(ss.Cubes != null) {
-                int i = 0;
-                ColoredTriangleMesh[] meshes= new ColoredTriangleMesh[ss.Cubes.Length];
-                foreach(var cube in ss.Cubes) {
-                    meshes[i] = new ColoredTriangleMesh {
-                        //Transform = cube.Transform,
-                        modelToWorld = cube.ModelToWorld(ctx.entRes),
-                        Geometry = rs.cubeGeometry!,
-                        Tint = cube.color,
-                        Outline = cube.outline,
-                        Shader = BuiltinShader.CubeShader,
-                        entityId = cube.entityId,
-                    };
-                    i++;
-                }
-                RenderMeshes(meshes, worldToClip, smat, ss.DynamicProperties);
-            }
             if(ss.Meshes != null) {
                 RenderMeshes(ss.Meshes, worldToClip, smat, ss.DynamicProperties);
             }

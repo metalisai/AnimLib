@@ -137,7 +137,6 @@ internal class WorldSnapshot {
     public required EntityStateResolver resolver;
     public required CameraState? Camera;
     public required RectangleState[] Rectangles;
-    public required CubeState[] Cubes;
     public required GlyphState[] Glyphs;
     public required ColoredTriangleMesh[] Meshes;
     public required MeshBackedGeometry[] MeshBackedGeometries;

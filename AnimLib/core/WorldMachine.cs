@@ -18,7 +18,6 @@ internal class WorldMachine {
     }
     List<Glyph> _glyphs = new List<Glyph>();
     List<MeshBackedGeometry> _mbgeoms = new List<MeshBackedGeometry>();
-    List<CubeState> _cubes = new List<CubeState>();
     List<EntityState> _cameras =  new List<EntityState>();
     List<BezierState> _beziers = new List<BezierState>();
 
@@ -66,7 +65,6 @@ internal class WorldMachine {
         _glyphs.Clear();
         _mbgeoms.Clear();
         //_rectangles.Clear();
-        _cubes.Clear();
         _cameras.Clear();
         _playCursorCmd = 0;
         _currentPlaybackTime = 0.0;
@@ -237,7 +235,6 @@ internal class WorldMachine {
         {
             Glyphs = _glyphs.Where(x => x.Active).Select(x => (GlyphState)x.GetState(GetDynProp)).ToArray(),
             MeshBackedGeometries = _mbgeoms.Where(x => x.active).ToArray(),
-            Cubes = _cubes.Where(x => x.active).ToArray(),
             Beziers = _beziers.Where(x => x.active).ToArray(),
             resolver = new EntityStateResolver(
                 GetEntityState: entid =>
@@ -295,11 +292,6 @@ internal class WorldMachine {
             //state = a1;
             _mbgeoms.Add((MeshBackedGeometry)state);
             break;
-            case CubeState c2:
-            state = (EntityState)c2.Clone();
-            //state = c2;
-            _cubes.Add((CubeState)state);
-            break;
             case BezierState bz:
             state = (EntityState)bz.Clone();
             _beziers.Add((BezierState)state);
@@ -332,9 +324,6 @@ internal class WorldMachine {
         switch(ent) {
             case ArrowState a1:
             _mbgeoms.RemoveAll(x => x.entityId == entityId);
-            break;
-            case CubeState c2:
-            _cubes.RemoveAll(x => x.entityId == entityId);
             break;
             case BezierState bz:
             _beziers.RemoveAll(x => x.entityId == entityId);
