@@ -67,10 +67,32 @@ public struct Quaternion {
     /// Create a new quaternion from a rotation matrix. Assumes the matrix is orthonormal.
     /// </summary>
     public Quaternion(ref M3x3 m) {
-        this.w = (float)Math.Sqrt(1.0 + m.m11 + m.m22 + m.m33) / 2.0f;
-        this.x = (m.m32 - m.m23)/(4.0f * this.w);
-        this.y = (m.m13 - m.m31)/(4.0f * this.w);
-        this.z = (m.m21 - m.m12)/(4.0f * this.w);
+        float trace = m.m11 + m.m22 + m.m33;
+        if (trace > 0) {
+            float s = (float)Math.Sqrt(trace + 1.0f) * 2f; // s=4*w
+            this.w = 0.25f * s;
+            this.x = (m.m32 - m.m23) / s;
+            this.y = (m.m13 - m.m31) / s;
+            this.z = (m.m21 - m.m12) / s;
+        } else if (m.m11 > m.m22 && m.m11 > m.m33) {
+            float s = (float)Math.Sqrt(1.0f + m.m11 - m.m22 - m.m33) * 2f; // s=4*x
+            this.w = (m.m32 - m.m23) / s;
+            this.x = 0.25f * s;
+            this.y = (m.m12 + m.m21) / s;
+            this.z = (m.m13 + m.m31) / s;
+        } else if (m.m22 > m.m33) {
+            float s = (float)Math.Sqrt(1.0f + m.m22 - m.m11 - m.m33) * 2f; // s=4*y
+            this.w = (m.m13 - m.m31) / s;
+            this.x = (m.m12 + m.m21) / s;
+            this.y = 0.25f * s;
+            this.z = (m.m23 + m.m32) / s;
+        } else {
+            float s = (float)Math.Sqrt(1.0f + m.m33 - m.m11 - m.m22) * 2f; // s=4*z
+            this.w = (m.m21 - m.m12) / s;
+            this.x = (m.m13 + m.m31) / s;
+            this.y = (m.m23 + m.m32) / s;
+            this.z = 0.25f * s;
+        }
     }
 
     /// <summary>
