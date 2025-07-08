@@ -26,7 +26,7 @@ internal abstract class EntityState3D : EntityState
     // TODO: cache
     public M4x4 ModelToWorld(EntityStateResolver resolver)
     {
-        if (parentId == 0)
+        if (parentId <= 0)
         {
             return M4x4.TRS(position, rotation, scale);
         }
@@ -45,6 +45,10 @@ internal abstract class EntityState3D : EntityState
 
 public abstract partial class DynVisualEntity3D : DynVisualEntity
 {
+    internal DynVisualEntity3D()
+    {
+        
+    }
 }
 
 /// <summary>

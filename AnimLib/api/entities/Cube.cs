@@ -1,36 +1,32 @@
+using System;
 using System.Linq;
 
 namespace AnimLib;
 
-internal class CubeState : MeshBackedGeometry
+[GenerateDynProperties(forType: typeof(Cube))]
+internal class CubeState : NewMeshBackedGeometry
 {
-    public Color color = Color.WHITE;
-    internal bool dirty = true;
+    [Dyn]
+    public Color color = Color.YELLOW;
 
-    public CubeState(string owner) : base(owner)
+    public CubeState(string uid) : base(uid)
     {
         this.Shader = BuiltinShader.CubeShader;
     }
-
-    public CubeState(RendererHandle h, string owner) : base(h, owner)
+    
+    public CubeState(string uid, CubeState sls) : this(uid)
     {
-
-    }
-
-    public CubeState(CubeState c) : base(c)
-    {
-        this.color = c.color;
+        this.color = sls.color;
     }
 
     public override object Clone()
     {
-        return new CubeState(this);
+        return new CubeState(UID, this);
     }
 
-    public override void UpdateMesh(ColoredTriangleMeshGeometry cubeGeometry)
+    public override void GenerateMesh(ColoredTriangleMeshGeometry mesh)
     {
-        cubeGeometry.Dirty = dirty;
-        cubeGeometry.vertices = new Vector3[] {
+        mesh.vertices = new Vector3[] {
             new Vector3(-0.5f, -0.5f, -0.5f),
             new Vector3(0.5f, -0.5f, -0.5f),
             new Vector3(-0.5f, 0.5f, -0.5f),
@@ -40,12 +36,12 @@ internal class CubeState : MeshBackedGeometry
             new Vector3(-0.5f, 0.5f, 0.5f),
             new Vector3(0.5f, 0.5f, 0.5f),
         };
-        cubeGeometry.indices = new uint[] {
+        mesh.indices = new uint[] {
             0,1,2, 1,3,2, 0,4,1, 1,4,5, 2,7,6, 2,3,7, 1,7,3, 1,5,7, 4,2,6, 4,0,2, 5,6,7, 5,4,6
         };
-        cubeGeometry.colors = Enumerable.Repeat(color, cubeGeometry.vertices.Length).ToArray();
-        cubeGeometry.Dirty = true;
-        cubeGeometry.edgeCoordinates = new Vector2[] {
+        mesh.colors = Enumerable.Repeat(color, mesh.vertices.Length).ToArray();
+        mesh.Dirty = true;
+        mesh.edgeCoordinates = new Vector2[] {
             Vector2.ZERO,
             Vector2.ZERO,
             Vector2.ZERO,
@@ -61,48 +57,20 @@ internal class CubeState : MeshBackedGeometry
 /// <summary>
 /// A 3D cube.
 /// </summary>
-public class Cube : VisualEntity3D, IColored {
-    /// <summary> Color of the cube </summary>
-    public Color Color { 
-        get {
-            return ((CubeState)state).color;
-        }
-        set {
-            World.current.SetProperty(this, "Color", value, ((CubeState)state).color);
-            ((CubeState)state).color = value;
-        }
-    }
-
-    /// <summary> Outline color of the cube </summary>
-    public Color Outline { 
-        get {
-            return ((CubeState)state).outline;
-        }
-        set {
-            World.current.SetProperty(this, "Outline", value, ((CubeState)state).outline);
-            ((CubeState)state).outline = value;
-        }
-    }
-    
-    public Cube(string owner) : base(new CubeState(owner)) {
-    }
-
+public partial class Cube : MeshEntity3D, IColored
+{
     /// <summary>
-    /// Create a new sphere
+    /// Creates a new cube object.
     /// </summary>
-    public Cube() : this(World.current.Resources.GetGuid()) {
+    public Cube() : base()
+    {
     }
 
-    /// <summary>
-    /// Copy constructor.
-    /// </summary>
-    public Cube(Cube cube) : base(cube) {
-    }
-
-    /// <summary>
-    /// Clone this cube.
-    /// </summary>
-    public override object Clone() {
-        return new Cube(this);
+    internal override object GetState(Func<DynPropertyId, object?> evaluator)
+    {
+        Debug.Assert(this.Created); // Id is only valid if the entity is created
+        var state = new CubeState(NewMeshBackedGeometry.GenerateEntityName(this.Id));
+        GetState(state, evaluator);
+        return state;
     }
 }

@@ -17,6 +17,7 @@ internal class WorldMachine {
         public List<DynVisualEntity2D> NewEntities = new();
     }
     List<Glyph> _glyphs = new List<Glyph>();
+    List<MeshEntity3D> _meshEntities = new();
     List<MeshBackedGeometry> _mbgeoms = new List<MeshBackedGeometry>();
     List<EntityState> _cameras =  new List<EntityState>();
     List<BezierState> _beziers = new List<BezierState>();
@@ -63,6 +64,7 @@ internal class WorldMachine {
     public void Reset()
     {
         _glyphs.Clear();
+        _meshEntities.Clear();
         _mbgeoms.Clear();
         //_rectangles.Clear();
         _cameras.Clear();
@@ -234,6 +236,7 @@ internal class WorldMachine {
         var ret = new WorldSnapshot()
         {
             Glyphs = _glyphs.Where(x => x.Active).Select(x => (GlyphState)x.GetState(GetDynProp)).ToArray(),
+            NewMeshes = _meshEntities.Where(x => x.Active).Select(x => (NewMeshBackedGeometry)x.GetState(GetDynProp)).ToArray(),
             MeshBackedGeometries = _mbgeoms.Where(x => x.active).ToArray(),
             Beziers = _beziers.Where(x => x.active).ToArray(),
             resolver = new EntityStateResolver(
@@ -263,6 +266,9 @@ internal class WorldMachine {
                 var canvas = (CanvasState)_entities[ent2d.CanvasId];
                 _canvases[canvas.entityId].NewEntities.Add(ent2d);
                 break;
+            case MeshEntity3D ent3d:
+                _meshEntities.Add(ent3d);
+                break;
             default:
                 Debug.Error($"Creating unknown Dyn entity {ent}");
                 break;
@@ -274,6 +280,9 @@ internal class WorldMachine {
         {
             case Glyph g1:
                 _glyphs.RemoveAll(x => x.Id == ent.Id);
+                break;
+            case MeshEntity3D ent3d:
+                _meshEntities.RemoveAll(x => x.Id == ent.Id);
                 break;
             case DynVisualEntity2D ent2d:
                 foreach(var s in _canvases) s.Value.NewEntities.RemoveAll(x => x.Id == ent.Id);

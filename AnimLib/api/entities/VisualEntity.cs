@@ -20,7 +20,7 @@ internal abstract class EntityState : ICloneable {
     public bool selectable = true;
     public int entityId = -1;
     public int sortKey = 0; // used to sort 2D or transparent 3D entities
-    public abstract object Clone();
+    public abstract object Clone(); // TODO: this should be removed, not needed with new entity API
 
     public EntityState() {
     }

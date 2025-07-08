@@ -138,6 +138,7 @@ internal class WorldSnapshot {
     public required CameraState? Camera;
     public required RectangleState[] Rectangles;
     public required GlyphState[] Glyphs;
+    public required NewMeshBackedGeometry[] NewMeshes;
     public required ColoredTriangleMesh[] Meshes;
     public required MeshBackedGeometry[] MeshBackedGeometries;
     public required BezierState[] Beziers;

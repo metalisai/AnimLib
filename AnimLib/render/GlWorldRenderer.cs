@@ -131,19 +131,22 @@ internal partial class GlWorldRenderer : IRenderer {
         new Vector2(0.0f, 1.0f)
     };
 
-    public void RenderMeshes(ColoredTriangleMesh[] meshes, M4x4 camMat, M4x4 screenMat, Dictionary<DynPropertyId, object> dynProps) {
+    public void RenderMeshes(ColoredTriangleMesh[] meshes, M4x4 camMat, M4x4 screenMat, Dictionary<DynPropertyId, object> dynProps)
+    {
         var colorSize = Marshal.SizeOf(typeof(Color));
         var vertSize = Marshal.SizeOf(typeof(Vector3));
         var edgeSize = Marshal.SizeOf(typeof(Vector2));
         using var _ = new Performance.Call("WorldRenderer.RenderMeshes");
 
-        if(meshes.Length > 0) {
+        if (meshes.Length > 0)
+        {
             // TODO: winding order is wrong?
             GL.Disable(EnableCap.CullFace);
             GL.FrontFace(FrontFaceDirection.Cw);
             GL.Enable(EnableCap.DepthTest);
 
-            foreach(var m in meshes) {
+            foreach (var m in meshes)
+            {
                 var program = GetProgram(m.Shader);
                 GL.UseProgram(program);
                 var loc = GL.GetUniformLocation(program, "_ModelToClip");
@@ -151,49 +154,59 @@ internal partial class GlWorldRenderer : IRenderer {
                 var outlineLoc = GL.GetUniformLocation(program, "_Outline");
                 var entLoc = GL.GetUniformLocation(program, "_EntityId");
 
-                foreach(var prop in m.shaderProperties) {
+                foreach (var prop in m.shaderProperties)
+                {
                     var sloc = GL.GetUniformLocation(program, prop.Item1);
-                    switch(prop.Item2){
+                    switch (prop.Item2)
+                    {
                         case float props:
                             GL.Uniform1(sloc, props);
-                        break;
+                            break;
                         case Func<float> propsf:
                             GL.Uniform1(sloc, propsf());
-                        break;
+                            break;
                         case Func<Vector4> propsv4:
                             var v = propsv4();
                             GL.Uniform4(sloc, v.x, v.y, v.z, v.w);
-                        break;
+                            break;
                         default:
                             throw new NotImplementedException();
                     }
                 }
 
-                if(m.Geometry.Dirty) {
+                if (m.Geometry.Dirty)
+                {
                     int vao;
                     int vertCount = m.Geometry.vertices.Length;
-                    if(m.Geometry.VAOHandle < 0) {
+                    if (m.Geometry.VAOHandle < 0)
+                    {
                         vao = GL.GenVertexArray();
                         int vbo = GL.GenBuffer();
                         int ebo = GL.GenBuffer();
                         GL.BindVertexArray(vao);
                         GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
-                        if (m.Geometry.indices.Length > 0) {
+                        if (m.Geometry.indices.Length > 0)
+                        {
                             GL.BindBuffer(BufferTarget.ElementArrayBuffer, ebo);
                         }
 #if DEBUG
-                        if ((new Color()).r.GetType() != typeof(float)) {
+                        if ((new Color()).r.GetType() != typeof(float))
+                        {
                             throw new Exception("Color.r is not float, VertexAttribPointer expects float!");
                         }
 
-                        if (m.Shader == BuiltinShader.QuadShader) {
+                        if (m.Shader == BuiltinShader.QuadShader)
+                        {
                             m.Geometry.edgeCoordinates = quadTex;
                         }
 #endif
-                        if(m.Geometry.edgeCoordinates != null && m.Geometry.edgeCoordinates.Length > 0) {
+                        if (m.Geometry.edgeCoordinates != null && m.Geometry.edgeCoordinates.Length > 0)
+                        {
                             GL.EnableVertexAttribArray(2);
-                            GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, 0, new IntPtr(m.Geometry.copiedVertices*(vertSize+colorSize)));
-                        } else {
+                            GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, 0, new IntPtr(m.Geometry.copiedVertices * (vertSize + colorSize)));
+                        }
+                        else
+                        {
                             GL.DisableVertexAttribArray(2);
                         }
                         m.Geometry.VAOHandle = vao;
@@ -203,62 +216,72 @@ internal partial class GlWorldRenderer : IRenderer {
                         // (we created a new buffer, but we don't know the lifetime of it)
                         var irr = (IRendererResource)m.Geometry;
                         var ar = RenderState.currentPlatform as OpenTKPlatform;
-                        if(irr.GetOwnerGuid() != "" && ar != null) {
-                            if(!ar.allocatedResources.TryGetValue(irr.GetOwnerGuid(), out var res)) {
+                        if (irr.GetOwnerGuid() != "" && ar != null)
+                        {
+                            if (!ar.allocatedResources.TryGetValue(irr.GetOwnerGuid(), out var res))
+                            {
                                 res = new OpenTKPlatform.AllocatedResources();
                                 ar.allocatedResources.Add(irr.GetOwnerGuid(), res);
                             }
                             res.buffers.Add(vbo); res.buffers.Add(ebo);
                             res.vaos.Add(vao);
                         }
-                    } else {
+                    }
+                    else
+                    {
                         vao = m.Geometry.VAOHandle;
                         GL.BindVertexArray(vao);
                     }
 
-                    IntPtr colorOffset = new IntPtr(vertCount*vertSize);
-                    IntPtr edgeOffset = new IntPtr(vertCount*(vertSize+colorSize));
+                    IntPtr colorOffset = new IntPtr(vertCount * vertSize);
+                    IntPtr edgeOffset = new IntPtr(vertCount * (vertSize + colorSize));
 
                     GL.BindBuffer(BufferTarget.ArrayBuffer, m.Geometry.VBOHandle);
-                    GL.BufferData(BufferTarget.ArrayBuffer, vertCount*(vertSize+colorSize+edgeSize), IntPtr.Zero, BufferUsageHint.DynamicDraw);
+                    GL.BufferData(BufferTarget.ArrayBuffer, vertCount * (vertSize + colorSize + edgeSize), IntPtr.Zero, BufferUsageHint.DynamicDraw);
 
-                    if (m.Geometry.vertices.Length > 0) {
+                    if (m.Geometry.vertices.Length > 0)
+                    {
                         var handle = GCHandle.Alloc(m.Geometry.vertices, GCHandleType.Pinned);
                         IntPtr ptr = handle.AddrOfPinnedObject();
                         var colorHandle = GCHandle.Alloc(m.Geometry.colors, GCHandleType.Pinned);
-                        if (m.Geometry.colors.Length != m.Geometry.vertices.Length) {
+                        if (m.Geometry.colors.Length != m.Geometry.vertices.Length)
+                        {
                             Debug.Error("MeshState: color.Length != vertices.Length");
                         }
                         IntPtr colorPtr = colorHandle.AddrOfPinnedObject();
 
-                        GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, vertCount*vertSize, ptr);
-                        GL.BufferSubData(BufferTarget.ArrayBuffer, colorOffset, vertCount*colorSize, colorPtr);
+                        GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, vertCount * vertSize, ptr);
+                        GL.BufferSubData(BufferTarget.ArrayBuffer, colorOffset, vertCount * colorSize, colorPtr);
                         m.Geometry.copiedVertices = m.Geometry.vertices.Length;
                         m.Geometry.copiedColors = m.Geometry.colors.Length;
 
                         GL.EnableVertexAttribArray(0);
                         GL.EnableVertexAttribArray(1);
                         GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, vertSize, 0);
-                        GL.VertexAttribPointer(1, 4, VertexAttribPointerType.Float, false, colorSize, new IntPtr(vertCount*vertSize));
+                        GL.VertexAttribPointer(1, 4, VertexAttribPointerType.Float, false, colorSize, new IntPtr(vertCount * vertSize));
 
                         handle.Free();
                         colorHandle.Free();
-                    } else {
+                    }
+                    else
+                    {
                         GL.DisableVertexAttribArray(0);
                         GL.DisableVertexAttribArray(1);
                     }
 
-                    if(m.Geometry.edgeCoordinates != null && m.Geometry.edgeCoordinates.Length > 0) {
+                    if (m.Geometry.edgeCoordinates != null && m.Geometry.edgeCoordinates.Length > 0)
+                    {
                         var edgeHandle = GCHandle.Alloc(m.Geometry.edgeCoordinates, GCHandleType.Pinned);
                         var edgePtr = edgeHandle.AddrOfPinnedObject();
-                        GL.BufferSubData(BufferTarget.ArrayBuffer, edgeOffset, vertCount*edgeSize, edgePtr);
+                        GL.BufferSubData(BufferTarget.ArrayBuffer, edgeOffset, vertCount * edgeSize, edgePtr);
                         edgeHandle.Free();
                     }
                     GL.BindBuffer(BufferTarget.ElementArrayBuffer, m.Geometry.EBOHandle);
-                    if (m.Geometry.indices.Length > 0) {
+                    if (m.Geometry.indices.Length > 0)
+                    {
                         var handle = GCHandle.Alloc(m.Geometry.indices, GCHandleType.Pinned);
                         IntPtr ptr = handle.AddrOfPinnedObject();
-                        GL.BufferData(BufferTarget.ElementArrayBuffer, m.Geometry.indices.Length*4, ptr, BufferUsageHint.DynamicDraw);
+                        GL.BufferData(BufferTarget.ElementArrayBuffer, m.Geometry.indices.Length * 4, ptr, BufferUsageHint.DynamicDraw);
                         m.Geometry.copiedIndices = m.Geometry.indices.Length;
                         handle.Free();
                     }
@@ -267,9 +290,9 @@ internal partial class GlWorldRenderer : IRenderer {
                 }
                 GL.BindVertexArray(m.Geometry.VAOHandle);
                 M4x4 modelToClip;
-                modelToClip = !m.is2d ? camMat*m.modelToWorld : screenMat;
+                modelToClip = !m.is2d ? camMat * m.modelToWorld : screenMat;
                 // depth bias
-                modelToClip.m34 += 0.0001f*drawId;
+                modelToClip.m34 += 0.0001f * drawId;
                 GL.UniformMatrix4(loc, 1, false, ref modelToClip.m11);
                 var col4 = m.Tint.ToVector4();
                 GL.Uniform4(colLoc, col4.x, col4.y, col4.z, col4.w);
@@ -277,7 +300,8 @@ internal partial class GlWorldRenderer : IRenderer {
                 GL.Uniform4(outlineLoc, outline4.x, outline4.y, outline4.z, outline4.w);
                 GL.Uniform1(entLoc, m.entityId);
                 PrimitiveType primType;
-                switch(m.Geometry.vertexMode) {
+                switch (m.Geometry.vertexMode)
+                {
                     case MeshVertexMode.Segments:
                         primType = PrimitiveType.Lines;
                         break;
@@ -288,16 +312,22 @@ internal partial class GlWorldRenderer : IRenderer {
                         primType = PrimitiveType.Triangles;
                         break;
                 }
-                if (m.Geometry.indices.Length > 0) {
+                if (m.Geometry.indices.Length > 0)
+                {
                     GL.DrawElements(primType, m.Geometry.copiedIndices, DrawElementsType.UnsignedInt, 0);
-                } else {
+                }
+                else
+                {
                     float range = 1.0f;
 
-                    if (m.Shader == BuiltinShader.LineShader) {
+                    if (m.Shader == BuiltinShader.LineShader)
+                    {
                         float setWidth = 1.0f;
-                        if (m.properties.TryGetValue("Width", out var widthProp)) {
+                        if (m.properties.TryGetValue("Width", out var widthProp))
+                        {
                             dynProps.TryGetValue(widthProp.Id, out var fwidth);
-                            if (fwidth is float f) {
+                            if (fwidth is float f)
+                            {
                                 setWidth = f;
                             }
                         }
@@ -307,7 +337,8 @@ internal partial class GlWorldRenderer : IRenderer {
                     }
                     Debug.Assert(m.Geometry.copiedVertices == m.Geometry.copiedColors);
                     GL.DrawArrays(primType, 0, m.Geometry.copiedVertices);
-                    if (m.Shader == BuiltinShader.LineShader) {
+                    if (m.Shader == BuiltinShader.LineShader)
+                    {
                         GL.Disable(EnableCap.LineSmooth);
                         GL.LineWidth(range);
                     }
@@ -597,25 +628,62 @@ internal partial class GlWorldRenderer : IRenderer {
             GL.BeginQuery(QueryTarget.SamplesPassed, query);
             //GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
 
-            if(ss.MeshBackedGeometries != null && ss.MeshBackedGeometries.Length > 0) {
+            if ((ss.NewMeshes?.Length ?? 0) > 0)
+            {
+                var marr = ss.NewMeshes!;
+                var meshes = new ColoredTriangleMesh[marr.Length];
+                var geoms = new ColoredTriangleMeshGeometry[marr.Length];
+                for (int i = 0; i < marr.Length; i++)
+                {
+                    var mbg = marr[i];
+                    geoms[i] = new ColoredTriangleMeshGeometry("");
+                    marr[i].GenerateMesh(geoms[i]);
+                    meshes[i] = new ColoredTriangleMesh
+                    {
+                        modelToWorld = mbg.ModelToWorld(ctx.entRes),
+                        Geometry = geoms[i],
+                        Outline = Color.BLACK,
+                        Shader = mbg.Shader,
+                        shaderProperties = new(),
+                        entityId = mbg.entityId,
+                        properties = new(),
+                    };
+                }
+                RenderMeshes(meshes, worldToClip, smat, ss.DynamicProperties);
+                foreach (var geom in geoms)
+                {
+                    GL.DeleteBuffer(geom.EBOHandle);
+                    GL.DeleteBuffer(geom.VBOHandle);
+                    GL.DeleteVertexArray(geom.VAOHandle);
+                }
+            }
+
+            if (ss.MeshBackedGeometries != null && ss.MeshBackedGeometries.Length > 0)
+            {
                 int i = 0;
                 ColoredTriangleMesh[] meshes = new ColoredTriangleMesh[ss.MeshBackedGeometries.Length];
                 var throwawayGeometries = new List<ColoredTriangleMeshGeometry>();
-                foreach(var mbg in ss.MeshBackedGeometries) {
+                foreach (var mbg in ss.MeshBackedGeometries)
+                {
                     ColoredTriangleMeshGeometry? geom = null;
-                    if(mbg.RendererHandle == null) {
+                    if (mbg.RendererHandle == null)
+                    {
                         // TODO: find a way to reuse these, this is nasty
                         geom = new ColoredTriangleMeshGeometry("");
                         throwawayGeometries.Add(geom);
                     }
-                    else if(mbg.RendererHandle.Handle == null) {
+                    else if (mbg.RendererHandle.Handle == null)
+                    {
                         mbg.RendererHandle.Handle = new ColoredTriangleMeshGeometry("");
                         geom = mbg.RendererHandle.Handle;
-                    } else {
+                    }
+                    else
+                    {
                         geom = mbg.RendererHandle.Handle;
                     }
                     mbg.UpdateMesh(geom);
-                    meshes[i] = new ColoredTriangleMesh {
+                    meshes[i] = new ColoredTriangleMesh
+                    {
                         modelToWorld = mbg.ModelToWorld(ctx.entRes),
                         Geometry = geom,
                         Outline = mbg.outline,
@@ -629,7 +697,8 @@ internal partial class GlWorldRenderer : IRenderer {
                     i++;
                 }
                 RenderMeshes(meshes, worldToClip, smat, ss.DynamicProperties);
-                foreach(var geom in throwawayGeometries) {
+                foreach (var geom in throwawayGeometries)
+                {
                     GL.DeleteBuffer(geom.EBOHandle);
                     GL.DeleteBuffer(geom.VBOHandle);
                     GL.DeleteVertexArray(geom.VAOHandle);
