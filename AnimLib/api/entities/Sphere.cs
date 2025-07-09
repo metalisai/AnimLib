@@ -8,7 +8,7 @@ internal class SphereState : NewMeshBackedGeometry
 {
     [Dyn]
     public Color color = Color.YELLOW;
-    [Dyn]
+    [Dyn(onSet: new string[] { "MeshDirty" })]
     public float radius = 0.5f;
 
     public SphereState(string uid) : base(uid)
@@ -95,7 +95,7 @@ internal class SphereState : NewMeshBackedGeometry
 public partial class Sphere : MeshEntity3D, IColored
 {
     /// <summary>
-    /// Creates a new circle with the given radius.
+    /// Creates a new sphere with the given radius.
     /// </summary>
     public Sphere(float radius) : base()
     {

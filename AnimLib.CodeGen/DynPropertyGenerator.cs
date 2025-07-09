@@ -92,6 +92,7 @@ public class DynPropertyGenerator : IIncrementalGenerator
 
         // Check if [Dyn] attribute is present
         var hasDynAttr = false;
+        string[] onSetCalls = Array.Empty<string>();
         foreach (var variable in fieldDecl.Declaration.Variables)
         {
             var symbol2 = context.SemanticModel.GetDeclaredSymbol(variable) as IFieldSymbol;
@@ -101,6 +102,10 @@ public class DynPropertyGenerator : IIncrementalGenerator
             {
                 if (attr.AttributeClass?.ToDisplayString() == "DynAttribute")
                 {
+                    var onSetIdx = attr.AttributeConstructor!.Parameters.Select((v, i) => new { v = v, index = i }).First(x => x.v.Name == "onSet").index;
+                    if (attr.ConstructorArguments[onSetIdx].Values != null) {
+                        onSetCalls = attr.ConstructorArguments[onSetIdx].Values.Select(x => (string)x.Value!).ToArray() ?? onSetCalls;
+                    }
                     hasDynAttr = true;
                     break;
                 }
@@ -125,7 +130,7 @@ public class DynPropertyGenerator : IIncrementalGenerator
         var fieldName = variableDecl.Identifier.Text;
         var initializer = variableDecl.Initializer?.Value.ToString() ?? GetDefaultValue(fieldType);
 
-        return new DynFieldInfo(className, ns, fieldName, fieldType, typeInfo.Type!.IsReferenceType, initializer);
+        return new DynFieldInfo(className, ns, fieldName, fieldType, typeInfo.Type!.IsReferenceType, initializer, onSet: onSetCalls);
     }
 
     private static string GetDefaultValue(string type)
@@ -235,7 +240,21 @@ public class DynPropertyGenerator : IIncrementalGenerator
             sb.AppendLine($"        public {field.Type} {realName}");
             sb.AppendLine("        {");
             sb.AppendLine($"            get => {backingFieldName}.Value!;");
-            sb.AppendLine($"            set => {backingFieldName}.Value = value;");
+            if (field.onSet.Length <= 0)
+            {
+                sb.AppendLine($"            set => {backingFieldName}.Value = value;");
+            }
+            // if setter has calls, call the calls
+            else
+            {
+                sb.AppendLine("            set {");
+                sb.AppendLine($"                {backingFieldName}.Value = value;");
+                foreach (var call in field.onSet)
+                {
+                    sb.AppendLine($"                {call}();");
+                }
+                sb.AppendLine("            }");
+            }
             sb.AppendLine("        }");
             sb.AppendLine();
         }
@@ -251,7 +270,7 @@ public class DynPropertyGenerator : IIncrementalGenerator
 
     }
 
-    private record DynFieldInfo(string ClassName, string Namespace, string FieldName, string Type, bool isRef, string Initializer);
+    private record DynFieldInfo(string ClassName, string Namespace, string FieldName, string Type, bool isRef, string Initializer, string[] onSet);
     private record DynClassInfo(string forFullTypeName, string forTypeName, string stateClassName, bool onlyProperties, bool isAbstract);
 }
 
