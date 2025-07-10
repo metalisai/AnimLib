@@ -19,10 +19,11 @@ internal class WorldMachine {
     List<Glyph> _glyphs = new List<Glyph>();
     List<MeshEntity3D> _meshEntities = new();
     List<MeshBackedGeometry> _mbgeoms = new List<MeshBackedGeometry>();
-    List<EntityState> _cameras =  new List<EntityState>();
-    List<BezierState> _beziers = new List<BezierState>();
+    List<DynVisualEntity> _cameras =  new ();
 
     List<DynShape> _dynShapes = new List<DynShape>();
+
+    Dictionary<int, DynVisualEntity> _dynEntities = new();
 
     Dictionary<int, CanvasEntities> _canvases = new Dictionary<int, CanvasEntities>();
     //Dictionary<VisualEntity, EntityState> _entities = new Dictionary<VisualEntity, EntityState>();
@@ -31,7 +32,7 @@ internal class WorldMachine {
     Dictionary<int, EntityState> _destroyedEntities = new Dictionary<int, EntityState>();
     List<RenderBufferState> _renderBuffers = new();
 
-    Dictionary<DynPropertyId, object?> _dynamicProperties = new ();
+    Dictionary<DynPropertyId, object?> _dynamicPropertyValues = new ();
 
     Dictionary<DynPropertyId, Func<Dictionary<DynPropertyId, object?>, object?>> _propertyEvaluators = new ();
 
@@ -49,17 +50,17 @@ internal class WorldMachine {
     private WorldCommand[] Program {
         get {
             if (_program == null)
-                return new WorldCommand[0];
+                return [];
             else
                 return _program;
         }
     }
 
-    private WorldCommand[] _program = Array.Empty<WorldCommand>();
+    private WorldCommand[] _program = [];
     int _playCursorCmd = 0;
     double _currentPlaybackTime = 0.0;
 
-    CameraState? _activeCamera;
+    Camera? _activeCamera;
 
     public void Reset()
     {
@@ -72,12 +73,11 @@ internal class WorldMachine {
         _currentPlaybackTime = 0.0;
         _specialProperties.Clear();
         _entities.Clear();
-        _dynamicProperties.Clear();
+        _dynEntities.Clear();
+        _dynamicPropertyValues.Clear();
         _propertyEvaluators.Clear();
         _dynShapes.Clear();
-        _beziers.Clear();
         _canvases.Clear();
-        _dynamicProperties.Clear();
         //var cam = new PerspectiveCamera();
         //cam.Position = new Vector3(0.0f, 0.0f, -13.0f);
         //_activeCamera = cam;
@@ -104,7 +104,7 @@ internal class WorldMachine {
 
     protected void EvaluateSpecialProperties() {
         foreach(var sp in _specialProperties) {
-            _dynamicProperties[sp.propId] = sp.type switch {
+            _dynamicPropertyValues[sp.propId] = sp.type switch {
                 SpecialWorldPropertyType.Time => _currentPlaybackTime,
                 _ => throw new NotImplementedException(),
             };
@@ -130,13 +130,19 @@ internal class WorldMachine {
             }
         }
         EvaluateSpecialProperties();
-        foreach(var kvp in _propertyEvaluators) {
-            try {
-                _dynamicProperties[kvp.Key] = kvp.Value(_dynamicProperties);
-            } catch(Exception e) {
+        DynProperty._evaluationContext = GetDynProp;
+        foreach (var kvp in _propertyEvaluators)
+        {
+            try
+            {
+                _dynamicPropertyValues[kvp.Key] = kvp.Value(_dynamicPropertyValues);
+            }
+            catch (Exception e)
+            {
                 Debug.Error($"Error evaluating property {kvp.Key}: {e.Message}");
             }
         }
+        DynProperty._evaluationContext = null;
         return _currentPlaybackTime == 0.0 || _currentPlaybackTime == GetEndTime();
     }
 
@@ -194,7 +200,7 @@ internal class WorldMachine {
         {
             throw new Exception($"DynProperty.Invalid.Id ({id} == {DynProperty.Invalid.Id}) is not a valid DynPropertyId! Don't reference it.");
         }
-        if (_dynamicProperties.TryGetValue(id, out var val))
+        if (_dynamicPropertyValues.TryGetValue(id, out var val))
         {
             return val;
         }
@@ -208,12 +214,12 @@ internal class WorldMachine {
     {
 
         var l = new List<CanvasSnapshot>();
-        foreach (var c in _canvases.OrderBy(x => _entities[x.Key].sortKey))
+        foreach (var c in _canvases.OrderBy(x => _dynEntities[x.Key].SortKey))
         {
-            var canvas = (CanvasState)_entities[c.Key];
-            var effects = canvas.effects.Select(x =>
+            var canvas = (Canvas)_dynEntities[c.Key];
+            var effects = canvas.Effects.Select(x =>
                 (x.GetType().Name,
-                x.properties.Select(x => (x.Key, this._dynamicProperties[x.Value.Id])).ToArray())
+                x.properties.Select(x => (x.Key, this._dynamicPropertyValues[x.Value.Id])).ToArray())
             ).ToArray();
 
 
@@ -221,7 +227,7 @@ internal class WorldMachine {
             {
                 //Entities = c.Value.Entities.Where(x => x.active).Select(x => (EntityState2D)x.Clone()).ToArray(),
                 Entities = c.Value.NewEntities.Where(x => x.Active).Select(x => (EntityState2D)x.GetState(GetDynProp)).Concat(c.Value.Entities.Where(x => x.active).Select(x => (EntityState2D)x.Clone())).ToArray(),
-                Canvas = canvas,
+                Canvas = (CanvasState)canvas.GetState(GetDynProp),
                 Effects = effects,
             };
 
@@ -238,7 +244,6 @@ internal class WorldMachine {
             Glyphs = _glyphs.Where(x => x.Active).Select(x => (GlyphState)x.GetState(GetDynProp)).ToArray(),
             NewMeshes = _meshEntities.Where(x => x.Active).Select(x => (NewMeshBackedGeometry)x.GetState(GetDynProp)).ToArray(),
             MeshBackedGeometries = _mbgeoms.Where(x => x.active).ToArray(),
-            Beziers = _beziers.Where(x => x.active).ToArray(),
             resolver = new EntityStateResolver(
                 GetEntityState: entid =>
                 {
@@ -246,36 +251,45 @@ internal class WorldMachine {
                 }
             ),
             Canvases = l.ToArray(),
-            Camera = (_activeCamera?.Clone() as CameraState) ?? null,
+            Camera = (_activeCamera?.GetState(GetDynProp) as CameraState) ?? null,
             RenderBuffers = _renderBuffers.ToArray(),
             // TODO: populate these
             Rectangles = Array.Empty<RectangleState>(),
             Meshes = Array.Empty<ColoredTriangleMesh>(),
-            DynamicProperties = _dynamicProperties.ToDictionary(),
+            DynamicProperties = _dynamicPropertyValues.ToDictionary(),
         };
         return ret;
     }
 
-    private void CreateDynEntity(DynVisualEntity ent) {
+    private void CreateDynEntity(DynVisualEntity ent)
+    {
         switch (ent)
         {
             case Glyph g1:
                 _glyphs.Add(g1);
                 break;
             case DynVisualEntity2D ent2d:
-                var canvas = (CanvasState)_entities[ent2d.CanvasId];
-                _canvases[canvas.entityId].NewEntities.Add(ent2d);
+                var canvas = (Canvas)_dynEntities[ent2d.CanvasId];
+                _canvases[canvas.Id].NewEntities.Add(ent2d);
                 break;
             case MeshEntity3D ent3d:
                 _meshEntities.Add(ent3d);
+                break;
+            case Canvas canv:
+                _canvases.Add(canv.Id, new CanvasEntities());
+                break;
+            case Camera cam:
+                _cameras.Add(cam);
                 break;
             default:
                 Debug.Error($"Creating unknown Dyn entity {ent}");
                 break;
         }
+        _dynEntities.Add(ent.Id, ent);
     }
 
-    private void DestroyDynEntity(DynVisualEntity ent) {
+    private void DestroyDynEntity(DynVisualEntity ent)
+    {
         switch (ent)
         {
             case Glyph g1:
@@ -285,12 +299,19 @@ internal class WorldMachine {
                 _meshEntities.RemoveAll(x => x.Id == ent.Id);
                 break;
             case DynVisualEntity2D ent2d:
-                foreach(var s in _canvases) s.Value.NewEntities.RemoveAll(x => x.Id == ent.Id);
+                foreach (var s in _canvases) s.Value.NewEntities.RemoveAll(x => x.Id == ent.Id);
+                break;
+            case Canvas canv:
+                _canvases.Remove(canv.Id);
+                break;
+            case Camera cam:
+                _cameras.RemoveAll(x => x.Id == cam.Id);
                 break;
             default:
                 Debug.Error($"Destroying unknown Dyn entity {ent}");
                 break;
         }
+        _dynEntities.Remove(ent.Id);
     }
 
     private void CreateEntity(object entity) {
@@ -300,18 +321,6 @@ internal class WorldMachine {
             state = (EntityState)a1.Clone();
             //state = a1;
             _mbgeoms.Add((MeshBackedGeometry)state);
-            break;
-            case BezierState bz:
-            state = (EntityState)bz.Clone();
-            _beziers.Add((BezierState)state);
-            break;
-            case PerspectiveCameraState p1:
-            state = (EntityState)p1.Clone();
-            _cameras.Add((PerspectiveCameraState)state);
-            break;
-            case OrthoCameraState oc1:
-            state = (EntityState)oc1.Clone();
-            _cameras.Add((OrthoCameraState)state);
             break;
             case CanvasState ca1:
             state = (EntityState)ca1.Clone();
@@ -331,20 +340,8 @@ internal class WorldMachine {
     private void DestroyEntity(int entityId) {
         var ent = _entities[entityId];
         switch(ent) {
-            case ArrowState a1:
-            _mbgeoms.RemoveAll(x => x.entityId == entityId);
-            break;
-            case BezierState bz:
-            _beziers.RemoveAll(x => x.entityId == entityId);
-            break;
-            case SolidLineState l2:
-            _mbgeoms.RemoveAll(x => x.entityId == entityId);
-            break;
             case MeshBackedGeometry mb1:
             _mbgeoms.RemoveAll(x => x.entityId == entityId);
-            break;
-            case CameraState c3:
-            _cameras.RemoveAll(x => x.entityId == entityId);
             break;
             case CanvasState ca1:
             _canvases.Remove(entityId);
@@ -444,21 +441,22 @@ internal class WorldMachine {
             }
             break;
             case WorldSetActiveCameraCommand setActiveCameraCommand:
-            _activeCamera = (CameraState)_entities[setActiveCameraCommand.cameraEntId];
+            Debug.Assert(_dynEntities[setActiveCameraCommand.cameraEntId] is Camera);
+            _activeCamera = _dynEntities[setActiveCameraCommand.cameraEntId] as Camera;
             break;
             case WorldCreateDynPropertyCommand createDynPropertyCommand:
-            _dynamicProperties.Add(createDynPropertyCommand.propertyId, createDynPropertyCommand.value);
+            _dynamicPropertyValues.Add(createDynPropertyCommand.propertyId, createDynPropertyCommand.value);
             break;
             case WorldDynPropertyCommand dynPropertyCommand:
-            _dynamicProperties[dynPropertyCommand.propertyId] = dynPropertyCommand.newvalue;
+            _dynamicPropertyValues[dynPropertyCommand.propertyId] = dynPropertyCommand.newvalue;
             break;
             case WorldPropertyEvaluatorCreate evaluatorCreate:
             _propertyEvaluators.Add(evaluatorCreate.propertyId, evaluatorCreate.evaluator);
-            _dynamicProperties[evaluatorCreate.propertyId] = evaluatorCreate.oldValue;
+            _dynamicPropertyValues[evaluatorCreate.propertyId] = evaluatorCreate.oldValue;
             break;
             case WorldPropertyEvaluatorDestroy evaluatorDestroy:
             _propertyEvaluators.Remove(evaluatorDestroy.propertyId);
-            _dynamicProperties[evaluatorDestroy.propertyId] = evaluatorDestroy.finalValue;
+            _dynamicPropertyValues[evaluatorDestroy.propertyId] = evaluatorDestroy.finalValue;
             break;
             case WorldSpecialPropertyCommand specialPropertyCommand:
             _specialProperties.Add((specialPropertyCommand.propertyId, specialPropertyCommand.property));
@@ -539,26 +537,26 @@ internal class WorldMachine {
             }
             break;
             case WorldSetActiveCameraCommand setActiveCameraCommand:
-            _activeCamera = (setActiveCameraCommand.oldCamEntId == 0 ? null : (CameraState)_entities[setActiveCameraCommand.oldCamEntId]);
+            _activeCamera = setActiveCameraCommand.oldCamEntId == 0 ? null : _dynEntities[setActiveCameraCommand.oldCamEntId] as Camera;
             break;
             case WorldCreateDynPropertyCommand createDynPropertyCommand:
-            var removed = _dynamicProperties.Remove(createDynPropertyCommand.propertyId);
+            var removed = _dynamicPropertyValues.Remove(createDynPropertyCommand.propertyId);
             if(!removed) {
                 throw new Exception("Destroying a dyn property that does not exist!");
             }
             break;
             case WorldDynPropertyCommand dynPropertyCommand:
-            _dynamicProperties[dynPropertyCommand.propertyId] = dynPropertyCommand.oldvalue;
+            _dynamicPropertyValues[dynPropertyCommand.propertyId] = dynPropertyCommand.oldvalue;
             break;
             case WorldPropertyEvaluatorCreate evaluatorCreate:
                 _propertyEvaluators.Remove(evaluatorCreate.propertyId);
-                _dynamicProperties[evaluatorCreate.propertyId] = evaluatorCreate.oldValue;
+                _dynamicPropertyValues[evaluatorCreate.propertyId] = evaluatorCreate.oldValue;
             break;
             case WorldPropertyEvaluatorDestroy evaluatorDestroy:
                 _propertyEvaluators.Add(evaluatorDestroy.propertyId, evaluatorDestroy.evaluator);
                 EvaluateSpecialProperties();
                 // TODO: this is bugged when the evaluator depends on other non-special properties
-                _dynamicProperties[evaluatorDestroy.propertyId] = evaluatorDestroy.finalValue;
+                _dynamicPropertyValues[evaluatorDestroy.propertyId] = evaluatorDestroy.finalValue;
                 break;
         }
     }

@@ -77,6 +77,8 @@ public class Texture2D : IRendererResource {
     /// </summary>
     public int GLHandle = -1;
 
+    public int SkiaHandle = -1;
+
     /// <summary>
     /// Per row alignment in bytes.
     /// </summary>
@@ -130,10 +132,58 @@ public class Texture2D : IRendererResource {
         return new Color(red, green, blue, alpha);
     }
 
+    public byte[] GetConverted(TextureFormat newFormat)
+    {
+        if (Format == TextureFormat.BGR8 && newFormat == TextureFormat.RGBx8)
+        {
+            var newData = new byte[Width * Height * 4];
+            int newIdx = 0;
+            int oldIdx = 0;
+            for (int row = 0; row < Height; row++)
+            {
+                for (int col = 0; col < Width; col++)
+                {
+                    newData[newIdx] = RawData[oldIdx + 2];
+                    newData[newIdx + 1] = RawData[oldIdx + 1];
+                    newData[newIdx + 2] = RawData[oldIdx + 0];
+                    newData[newIdx + 3] = 255;
+                    newIdx += 4;
+                    oldIdx += 3;
+                }
+                // skip alignment bytes
+                oldIdx += (4 - (oldIdx % Alignment)) % 4;
+            }
+            return newData;
+        }
+        else if (Format == TextureFormat.BGRA8 && newFormat == TextureFormat.RGBA8)
+        {
+            var newData = new byte[RawData.Length];
+            int newIdx = 0;
+            for (int row = 0; row < Height; row++)
+            {
+                for (int col = 0; col < Width; col++)
+                {
+                    byte c0 = RawData[newIdx];
+                    byte c1 = RawData[newIdx + 1];
+                    byte c2 = RawData[newIdx + 2];
+                    byte c3 = RawData[newIdx + 3];
+                    newData[newIdx] = c2;
+                    newData[newIdx + 1] = c1;
+                    newData[newIdx + 2] = c0;
+                    newData[newIdx + 3] = c3;
+                    newIdx += 4;
+                }
+            }
+            return newData;
+        }
+        else throw new NotImplementedException();
+    }
+
     /// <summary>
     /// Convert the texture to the given format.
     /// </summary>
-    public void ConvertColor(TextureFormat newFormat) {
+    public void ConvertColor(TextureFormat newFormat)
+    {
         // someone has already loaded the texture, can't pull the rug under their feet
         System.Diagnostics.Debug.Assert(GLHandle < 0);
         // need this for Skia (they only support 8, 16, 32, 64bit formats)

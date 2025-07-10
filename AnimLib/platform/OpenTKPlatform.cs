@@ -274,6 +274,11 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
                 typ = PixelType.HalfFloat;
                 pif = PixelInternalFormat.Rgba16f;
                 break;
+            case Texture2D.TextureFormat.BGRA8:
+                fmt = PixelFormat.Bgra;
+                typ = PixelType.UnsignedByte;
+                pif = PixelInternalFormat.Rgba;
+                break;
             default:
                 throw new NotImplementedException();
         }

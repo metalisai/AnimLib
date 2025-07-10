@@ -43,14 +43,6 @@ internal abstract class EntityState3D : EntityState
     }
 }
 
-public abstract partial class DynVisualEntity3D : DynVisualEntity
-{
-    internal DynVisualEntity3D()
-    {
-        
-    }
-}
-
 /// <summary>
 /// A 3D visual entity. Unlike <see cref="VisualEntity2D"/>, this entity does not require a canvas (and can't be placed on one).
 /// </summary>

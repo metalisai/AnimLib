@@ -1,4 +1,7 @@
 using System;
+using System.Security.Cryptography.X509Certificates;
+using MathNet.Numerics.Optimization;
+using SharpFont.MultipleMasters;
 
 namespace AnimLib;
 
@@ -30,19 +33,40 @@ public record DynProperty {
 
     internal Func<object?>? Evaluator { get; set; }
 
+    internal static Func<DynPropertyId, object?>? _evaluationContext;
+    public static Func<DynPropertyId, object?> EvaluationContext
+    {
+        get
+        {
+            if (_evaluationContext == null)
+            {
+                return World.current.GetDynProperty;
+            }
+            else
+            {
+                return _evaluationContext;
+            }
+        }
+    }
+
     /// <summary>
     /// The current value.
     /// </summary>
-    public object? Value { 
-        get {
-            if (Evaluator != null) {
+    public object? Value
+    {
+        get
+        {
+            if (Evaluator != null)
+            {
                 return Evaluator();
             }
             return this._value;
         }
-        set {
+        set
+        {
 #if DEBUG
-            if (value != null && !ExpectedType.IsAssignableFrom(value.GetType())) {
+            if (value != null && !ExpectedType.IsAssignableFrom(value.GetType()))
+            {
                 throw new Exception($"Expected {ExpectedType} but got {value.GetType()}");
             }
 #endif
@@ -52,7 +76,7 @@ public record DynProperty {
     }
 
     internal DynProperty(string name, object? initialValue, Type expectedType) {
-        this.Id = World.current.CreateDynProperty(initialValue);
+        this.Id = World.current.CreateDynProperty(initialValue, this);
         this.Name = name;
         this._value = initialValue;
         this.ExpectedType = expectedType;

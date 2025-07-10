@@ -72,29 +72,32 @@ public static class Animate {
     /// <param name="angle">The total angle to orbit.</param>
     /// <param name="duration">The duration of the orbit operation.</param>
     /// <returns>A task that represents the animation operation.</returns>
-    public static async Task OrbitAndLookAt(Transform obj, Vector3 axis, Vector3 p, float angle, float duration) {
+    public static async Task OrbitAndLookAt(DynVisualEntity3D obj, Vector3 axis, Vector3 p, float angle, float duration)
+    {
         // TODO: velocity ramping not instant
-        bool infinite = false;;
-        if (duration == 0.0f) {
-            infinite = true;
-            duration = 1.0f;
-        }
         double startTime = AnimLib.Time.T;
         double endTime = startTime + duration;
 
         var pointToOrbit = p;
-        var offset = obj.Pos - p;
+        var offset = obj.Position - p;
         axis = axis.Normalized;
 
-        while (infinite || AnimLib.Time.T < endTime) {
-            var t = (AnimLib.Time.T - startTime)/ duration;
-            var et = Ease.Evaluate(t, EaseType.EaseInOut);
+        _ = InterpF(obj.PositionProperty, time =>
+        {
+            var et = Ease.Evaluate(time, EaseType.EaseInOut);
             var a = (float)et * angle;
-            var r = Quaternion.AngleAxis((a / 180.0f)*(float)Math.PI, axis);
-            obj.Pos = pointToOrbit + (r * offset);
-            obj.Rot = Quaternion.LookRotation((p-obj.Pos).Normalized, axis);
-            await AnimLib.Time.WaitFrame();
-        }
+            var r = Quaternion.AngleAxis((a / 180.0f) * (float)Math.PI, axis);
+            return pointToOrbit + (r * offset);
+        }, duration);
+
+        await InterpF(obj.RotationProperty, time =>
+        {
+            var et = Ease.Evaluate(time, EaseType.EaseInOut);
+            var a = (float)et * angle;
+            var r = Quaternion.AngleAxis((a / 180.0f) * (float)Math.PI, axis);
+            var pos = pointToOrbit + (r * offset);
+            return Quaternion.LookRotation((p - pos).Normalized, axis);
+        }, duration); 
     }
 
     /// <summary>

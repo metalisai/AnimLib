@@ -9,6 +9,7 @@ using System.Xml;
 using System.Xml.Linq;
 
 using CanvasProperties = (string Name, (string Name, object Value)[] Properties);
+using SharpFont;
 
 namespace AnimLib;
 
@@ -58,18 +59,22 @@ internal partial class SkiaRenderer
     private SKImage? LoadTexture(Texture2D texture) {
         int handle = textureId++;
         SKImageInfo info;
-        switch(texture.Format) {
+        var data = texture.RawData;
+        switch (texture.Format)
+        {
             case Texture2D.TextureFormat.RGBA8:
                 info = new SKImageInfo(texture.Width, texture.Height, SKColorType.Rgba8888);
                 info.AlphaType = SKAlphaType.Unpremul;
                 break;
             case Texture2D.TextureFormat.BGRA8:
-                texture.ConvertColor(Texture2D.TextureFormat.RGBA8);
+                //texture.ConvertColor(Texture2D.TextureFormat.RGBA8);
+                data = texture.GetConverted(Texture2D.TextureFormat.RGBA8);
                 info = new SKImageInfo(texture.Width, texture.Height, SKColorType.Rgba8888);
                 info.AlphaType = SKAlphaType.Unpremul;
                 break;
             case Texture2D.TextureFormat.BGR8:
-                texture.ConvertColor(Texture2D.TextureFormat.RGBx8);
+                //texture.ConvertColor(Texture2D.TextureFormat.RGBx8);
+                data = texture.GetConverted(Texture2D.TextureFormat.RGBx8);
                 info = new SKImageInfo(texture.Width, texture.Height, SKColorType.Rgb888x);
                 info.AlphaType = SKAlphaType.Opaque;
                 break;
@@ -77,9 +82,9 @@ internal partial class SkiaRenderer
                 Debug.Error($"Can't load texture, unsupported format {texture.Format}");
                 return null;
         }
-        SKImage image = SKImage.FromPixelCopy(info, texture.RawData);
+        SKImage image = SKImage.FromPixelCopy(info, data);
         LoadedImages.Add(handle, image);
-        texture.GLHandle = handle;
+        texture.SkiaHandle = handle;
         Debug.Log($"Loaded texture {texture.Width}x{texture.Height} format {texture.Format}");
         return image;
     }
@@ -450,9 +455,9 @@ internal partial class SkiaRenderer
                     break;
                 case SpriteState sprite:
                     SKImage? image = null;
-                    if (sprite.texture.GLHandle > 0)
+                    if (sprite.texture.SkiaHandle > 0)
                     {
-                        image = LoadedImages[sprite.texture.GLHandle];
+                        image = LoadedImages[sprite.texture.SkiaHandle];
                     }
                     else
                     {

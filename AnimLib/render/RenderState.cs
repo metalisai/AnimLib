@@ -13,9 +13,10 @@ internal interface IRenderer {
 /// <summary>
 /// Legacy shaders, probably will be replaced/removed.
 /// </summary>
-public enum BuiltinShader {
+public enum BuiltinShader
+{
     /// <summary> No shader </summary>
-    None, 
+    None,
     /// <summary> Shader for rendering lines </summary>
     LineShader,
     /// <summary> Shader for rendering arrows </summary>
@@ -28,6 +29,8 @@ public enum BuiltinShader {
     QuadShader,
     /// <summary> Shader to render a triangle mesh with a single color </summary>
     SolidColorShader,
+    /// <summary> Shader to render a textured quad in 3D space. </summary>
+    TexturedQuadShader,
 }
 
 internal class RenderState 

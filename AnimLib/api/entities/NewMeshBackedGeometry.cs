@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace AnimLib;
 
 internal abstract class NewMeshBackedGeometry : EntityState3D
@@ -15,5 +18,10 @@ internal abstract class NewMeshBackedGeometry : EntityState3D
     public NewMeshBackedGeometry(string uid) : base()
     {
 
+    }
+
+    public virtual List<(string, object)> GetShaderProperties()
+    {
+        return [];
     }
 }

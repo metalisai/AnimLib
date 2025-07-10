@@ -503,7 +503,7 @@ void main() {
 }
 ";
 
-string meshFrag = @"#version 330
+    string meshFrag = @"#version 330
 #extension GL_ARB_sample_shading : enable
 layout(location = 0) out vec4 outColor;
 layout(location = 1) out int outEntityId;
@@ -543,43 +543,31 @@ void main() {
     outEntityId = _EntityId;
 }";
 
-string texRectFrag = @"#version 330 core
+    string texRectFrag = @"#version 330 core
+#extension GL_ARB_sample_shading : enable
 layout(location = 0) out vec4 outColor;
 in vec4 v_color;
 in vec3 v_modelPos;
 in vec2 v_texCoord;
+uniform bool _Multisample;
 uniform vec4 _Color;
 uniform vec4 _Outline;
 uniform sampler2D _MainTex;
+uniform sampler2DMS _depthPeelTexMs;
 uniform sampler2D _depthPeelTex;
 void main() {
-    float depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), 0).x;
+    float depth;
+    if (_Multisample) {
+        depth = texelFetch(_depthPeelTexMs, ivec2(gl_FragCoord.xy), gl_SampleID).x;
+    } else {
+        depth = texelFetch(_depthPeelTex, ivec2(gl_FragCoord.xy), 0).x;
+    }
     if(gl_FragCoord.z >= depth) {
         discard;
     }
 
-    const float r = 0.5;
-    const float smoothAmount = 3.0;
-    vec2 dist = abs(v_modelPos.xy);
-    vec2 xdxy = dFdx(v_modelPos.xy);
-    vec2 ydxy = dFdy(v_modelPos.xy);
-    float ldx = length(vec2(xdxy.x, ydxy.x));
-    float ldy = length(vec2(xdxy.y, ydxy.y));
-    float bx = 1.0 - smoothAmount*ldx;
-    float by = 1.0 - smoothAmount*ldy;
-    vec2 b = vec2(bx, by);
-    vec2 a = smoothstep(vec2(r), r*b, dist);
-    float alpha = min(a.x, a.y)*v_color.a*_Color.a;
-
-    // outline
-    vec2 bcs = vec2(1-2.0*ldx, 1-2.0*ldy);
-    vec2 blendColor = smoothstep(r*bcs, r*b*bcs, dist);
-    float blendColorm = min(blendColor.x, blendColor.y);
-
     vec4 texColor = texture(_MainTex, vec2(v_texCoord.x, 1.0 - v_texCoord.y));
-
-    vec3 oc = mix(_Outline.rgb, (_Color*v_color*texColor).rgb, blendColorm);
-    outColor = vec4(oc*alpha, alpha);
+    outColor = texColor;
 }";
 
 string textVert = @"#version 330 core

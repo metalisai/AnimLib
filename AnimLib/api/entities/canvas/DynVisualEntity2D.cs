@@ -11,17 +11,17 @@ public abstract partial class DynVisualEntity2D : DynVisualEntity {
 
     internal DynVisualEntity2D()
     {
-        if (World.current.ActiveCanvas.created)
+        if (World.current.ActiveCanvas.Created)
         {
             // this is here to make the compiler happy
-            _canvasIdP.Value = Canvas.Default?.EntityId ?? throw new Exception("Can't find default canvas");
+            _canvasIdP.Value = Canvas.Default?.Id ?? throw new Exception("Can't find default canvas");
             Canvas = World.current.ActiveCanvas;
         }
         else
         {
             Debug.Error("World.ActiveCanvas is set to a canvas entity that isn't created. Using default canvas.");
             // this is here to make the compiler happy
-            _canvasIdP.Value = Canvas.Default?.EntityId ?? throw new Exception("Can't find default canvas");
+            _canvasIdP.Value = Canvas.Default?.Id ?? throw new Exception("Can't find default canvas");
             Canvas = Canvas.Default;
         }
     }
@@ -47,7 +47,7 @@ public abstract partial class DynVisualEntity2D : DynVisualEntity {
         set
         {
             _canvas = value;
-            _canvasIdP.Value = value?.EntityId ?? Canvas.Default?.EntityId ?? -1;
+            _canvasIdP.Value = value?.Id ?? Canvas.Default?.Id ?? -1;
         }
     }
 
@@ -90,7 +90,7 @@ public abstract partial class DynVisualEntity2D : DynVisualEntity {
 
         if (Canvas != null && Canvas != Canvas.Default)
         {
-            _canvasIdP.Value = Canvas.EntityId;
+            _canvasIdP.Value = Canvas.Id;
         }
     }
 

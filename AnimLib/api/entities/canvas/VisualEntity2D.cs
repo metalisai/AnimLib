@@ -106,7 +106,7 @@ public abstract class VisualEntity2D : VisualEntity {
 
     internal VisualEntity2D(EntityState2D state) : base(state) {
         Transform = new Transform2D(this);
-        if (World.current.ActiveCanvas.created)
+        if (World.current.ActiveCanvas.Created)
         {
             // this is here to make the compiler happy
             _canvas = Canvas.Default ?? throw new Exception("Can't find default canvas");
@@ -134,10 +134,10 @@ public abstract class VisualEntity2D : VisualEntity {
     internal int CanvasId
     {
         get {
-            return _canvas.EntityId;
+            return _canvas.Id;
         }
         set {
-            World.current.SetProperty(this, "canvasId", value, Canvas.EntityId);
+            World.current.SetProperty(this, "canvasId", value, Canvas.Id);
             ((EntityState2D)state).canvasId = value;
         }
     }
@@ -157,8 +157,8 @@ public abstract class VisualEntity2D : VisualEntity {
             return _canvas;
         }
         set {
-            World.current.SetProperty(this, "canvasId", value.EntityId, Canvas.EntityId);
-            ((EntityState2D)state).canvasId = value.EntityId;
+            World.current.SetProperty(this, "canvasId", value.Id, Canvas.Id);
+            ((EntityState2D)state).canvasId = value.Id;
             _canvas = value;
         }
     }

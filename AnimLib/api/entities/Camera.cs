@@ -1,12 +1,18 @@
 
+using System;
+
 namespace AnimLib;
 
-internal abstract class CameraState : EntityState3D {
+[GenerateDynProperties(forType: typeof(Camera))]
+internal abstract class CameraState : EntityState3D
+{
+    [Dyn]
     public Color clearColor = new Color(255, 255, 255, 255);
 
-    public CameraState() {}
+    public CameraState() { }
 
-    public CameraState(CameraState cs) : base(cs) {
+    public CameraState(CameraState cs) : base(cs)
+    {
         this.clearColor = cs.clearColor;
     }
 
@@ -14,17 +20,7 @@ internal abstract class CameraState : EntityState3D {
     public abstract Ray RayFromClip(Vector2 clipPos, float aspect);
 }
 
-public abstract class Camera : VisualEntity3D {
-    internal Camera(EntityState state) : base(state) {}
-    public Camera(Camera c) : base(c) {}
-
-    public Color ClearColor {
-        get {
-            return ((CameraState)state).clearColor;
-        }
-        set {
-            World.current.SetProperty(this, "clearColor", value, ((CameraState)state).clearColor);
-            ((CameraState)state).clearColor = value;
-        }
-    }
+public abstract partial class Camera : DynVisualEntity3D
+{
+    internal Camera() : base() { }
 }

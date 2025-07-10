@@ -238,13 +238,12 @@ internal class PlayerScene {
                                 Debug.Error("SceneObject2D.InitializeEntity() return null");
                                 break;
                             }
-                            Func<VisualEntity, bool> canvasMatch = (VisualEntity ce) => {
+                            Func<DynVisualEntity, bool> canvasMatch = (DynVisualEntity ce) => {
                                 switch(ce) {
                                     case Canvas canvas:
-                                        var cs = canvas.state as CanvasState;
-                                        if(cs != null && cs.name == so2d.CanvasName) {
-                                            System.Diagnostics.Debug.Assert(ce.created);
-                                            c.CanvasId = canvas.EntityId;
+                                        if(canvas.Name == so2d.CanvasName) {
+                                            System.Diagnostics.Debug.Assert(ce.Created);
+                                            c.CanvasId = canvas.Id;
                                             world.CreateDynInstantly(c);
                                             sceneObjects[c.Id] = e.obj;
                                             return true;

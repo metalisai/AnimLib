@@ -99,8 +99,6 @@ public class ColoredTriangleMesh {
     public BuiltinShader Shader = BuiltinShader.LineShader;
     /// <summary> The color of the mesh. </summary>
     public Color Tint = Color.WHITE;
-    /// <summary> The outline color of the mesh. </summary>
-    public Color Outline = Color.BLACK;
     /// <summary> The homogeneous transformation matrix. </summary>
     public M4x4 modelToWorld;
     /// <summary> The geometry of the mesh. </summary>
@@ -141,7 +139,6 @@ internal class WorldSnapshot {
     public required NewMeshBackedGeometry[] NewMeshes;
     public required ColoredTriangleMesh[] Meshes;
     public required MeshBackedGeometry[] MeshBackedGeometries;
-    public required BezierState[] Beziers;
     public required CanvasSnapshot[] Canvases;
     // NOTE: the first renderbuffer is always the main one
     public required RenderBufferState[] RenderBuffers;
@@ -208,9 +205,10 @@ public class World
 
     private Dictionary<int, DynVisualEntity> _dynEntities = new ();
 
-    private Dictionary<DynPropertyId, object?> _dynamicProperties = new ();
+    private Dictionary<DynPropertyId, object?> _dynamicPropertyValues = new ();
+    private Dictionary<DynPropertyId, DynProperty> _dynamicProperties = new ();
 
-    private Stack<List<VisualEntity>> _captureStack = new ();
+    private Stack<List<VisualEntity>> _captureStack = new();
     private Stack<List<DynVisualEntity>> _dynCaptureStack = new();
 
     internal ITypeSetter ts = new FreetypeSetting();
@@ -242,8 +240,8 @@ public class World
             return _activeCamera;
         } set {
             var cmd = new WorldSetActiveCameraCommand(
-                cameraEntId: value?.EntityId ?? 0,
-                oldCamEntId: _activeCamera?.EntityId ?? 0,
+                cameraEntId: value?.Id ?? 0,
+                oldCamEntId: _activeCamera?.Id ?? 0,
                 time: Time.T
             );
             _commands.Add(cmd);
@@ -315,7 +313,7 @@ public class World
         //   This evaluates the property during baking, so it will be visible to AnimationBehaviour code.
         //   There is no need to add a command (setting .Value) because of the reason mentioned above, only the state is assigned.
         CurrentTime._value = Time.T;
-        _dynamicProperties[CurrentTime.Id] = Time.T;
+        _dynamicPropertyValues[CurrentTime.Id] = Time.T;
     }
 
     /// <summary>
@@ -349,15 +347,15 @@ public class World
         cam.Fov = 60.0f;
         cam.ZNear = 0.1f;
         cam.ZFar = 1000.0f;
-        cam.Transform.Pos = new Vector3(0.0f, 0.0f, -13.0f);
+        cam.Position = new Vector3(0.0f, 0.0f, -13.0f);
 
         var screenCam = new OrthoCamera();
         screenCam.Width = settings.Width;
         screenCam.Height= settings.Height;
-        CreateInstantly(screenCam);
+        CreateDynInstantly(screenCam);
 
         var defaultCanvas = new Canvas(CanvasState.DEFAULTNAME, screenCam);
-        CreateInstantly(defaultCanvas);
+        CreateDynInstantly(defaultCanvas);
         Canvas.Default = defaultCanvas;
 
         this.ActiveCanvas = defaultCanvas;
@@ -370,17 +368,16 @@ public class World
         );
         _commands.Add(sprop);
 
-        CreateInstantly(cam);
+        CreateDynInstantly(cam);
         ActiveCamera = cam;
         EndEditing();
     }
 
     internal Canvas? FindCanvas(string name) {
-        foreach(var ent in _entities) {
+        foreach(var ent in _dynEntities) {
             if(ent.Value is Canvas) {
                 var canvas = ent.Value as Canvas;
-                var state = canvas?.state as CanvasState;
-                if(state != null && state.name == name) {
+                if(canvas?.Name == name) {
                     return canvas;
                 }
             }
@@ -421,13 +418,13 @@ public class World
         var cmd = new WorldPropertyEvaluatorCreate(
             propertyId: id,
             evaluator: evaluator,
-            oldValue: _dynamicProperties[id],
+            oldValue: _dynamicPropertyValues[id],
             time: Time.T
         );
         _commands.Add(cmd);
         _activeDynEvaluators.Add(id, evaluator);
         prop.Evaluator = () => {
-            return evaluator(_dynamicProperties);
+            return evaluator(_dynamicPropertyValues);
         };
     }
 
@@ -448,7 +445,7 @@ public class World
         );
         _commands.Add(cmd);
         prop.Evaluator = null;
-        _dynamicProperties[id] = finalValue;
+        _dynamicPropertyValues[id] = finalValue;
         // use the internal version to avoid queueing another command
         prop._value = finalValue;
         _activeDynEvaluators.Remove(id);
@@ -649,10 +646,11 @@ public class World
         return ent;
     }
 
-    internal DynPropertyId CreateDynProperty(object? vl)
+    internal DynPropertyId CreateDynProperty(object? vl, DynProperty prop)
     {
         var id = GetUniqueDynId();
-        _dynamicProperties.Add(id, vl);
+        _dynamicPropertyValues.Add(id, vl);
+        _dynamicProperties.Add(id, prop);
         var cmd = new WorldCreateDynPropertyCommand(
             propertyId: id,
             value: vl,
@@ -663,7 +661,7 @@ public class World
     }
 
     internal object? GetDynProperty(DynPropertyId id) {
-        _dynamicProperties.TryGetValue(id, out var ret);
+        _dynamicPropertyValues.TryGetValue(id, out var ret);
         return ret;
     }
 
@@ -678,11 +676,11 @@ public class World
         var cmd = new WorldDynPropertyCommand(
             propertyId: id,
             newvalue: value,
-            oldvalue: _dynamicProperties[id],
+            oldvalue: _dynamicPropertyValues[id],
             time: Time.T
         );
         _commands.Add(cmd);
-        _dynamicProperties[id] = value;
+        _dynamicPropertyValues[id] = value;
     }
 
     /// <summary>

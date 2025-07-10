@@ -8,7 +8,7 @@ internal class SphereState : NewMeshBackedGeometry
 {
     [Dyn]
     public Color color = Color.YELLOW;
-    [Dyn(onSet: new string[] { "MeshDirty" })]
+    [Dyn(onSet: ["MeshDirty"])]
     public float radius = 0.5f;
 
     public SphereState(string uid) : base(uid)

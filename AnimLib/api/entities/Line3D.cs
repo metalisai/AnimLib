@@ -1,169 +1,80 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace AnimLib;
 
-internal class Line3DState : MeshBackedGeometry
+[GenerateDynProperties(forType: typeof(Line3D))]
+internal class Line3DState : NewMeshBackedGeometry
 {
-    internal MeshVertexMode VertexMode = MeshVertexMode.Strip;
+    [Dyn(onSet: ["MeshDirty"])]
+    internal MeshVertexMode vertexMode = MeshVertexMode.Strip;
+    [Dyn]
+    public float width;
+    [Dyn(onSet: ["MeshDirty"])]
+    public Vector3[] vertices = [];
+    [Dyn]
+    public Color color = Color.BLACK;
+    [Dyn(onSet: ["MeshDirty"])]
+    public Color[] colors = [];
 
-    bool dirty = true;
-    Vector3[] _vertices;
-    public Vector3[] vertices {
-        get {
-            return _vertices;
+    public Line3DState(string uid) : base(uid)
+    {
+    }
+
+    public Line3DState(string uid, Line3DState sls) : this(uid)
+    {
+        this.vertexMode = sls.vertexMode;
+    }
+
+    public override object Clone()
+    {
+        return new Line3DState(UID, this);
+    }
+
+    public override void GenerateMesh(ColoredTriangleMeshGeometry mesh)
+    {
+        mesh.vertexMode = vertexMode;
+        mesh.vertices = vertices;
+        if (colors.Length > 0 && colors.Length == vertices.Length)
+        {
+            mesh.colors = colors;
         }
-        set {
-            _vertices = value;
-            _colors = vertices.Select(x => color).ToArray();
-            dirty = true;
-        }
-    }
-
-    Color _color;
-    public Color color {
-        get {
-            return _color;
-        } 
-        set {
-            _color = value;
-            _colors = vertices.Select(x => color).ToArray();
-            dirty = true;
-        }
-    }
-
-    Color[] _colors;
-    public Color[] colors {
-        get {
-            return _colors;
-        }
-        set {
-            _colors = value;
-            dirty = true;
-        }
-    }
-
-    internal Line3DState(string owner) : base(owner) {
-        this.Shader = BuiltinShader.LineShader;
-        this._vertices = Array.Empty<Vector3>();
-        this._colors = Array.Empty<Color>();
-        dirty = true;
-    }
-
-    public Line3DState(Line3DState ms) : base(ms) {
-        this._vertices = ms.vertices.ToArray();
-        this.color = ms.color;
-        this._colors = ms.colors.ToArray();
-        this.outline = ms.outline;
-        this.VertexMode = ms.VertexMode;
-        dirty = true;
-    }
-
-    public override object Clone() {
-        return new Line3DState(this);
-    }
-
-    public override void UpdateMesh(ColoredTriangleMeshGeometry mesh) {
-        mesh.Dirty = dirty;
-        if(dirty) {
-            mesh.vertexMode = VertexMode;
-            mesh.vertices = vertices;
-            if (_colors.Length > 0 && colors.Length == vertices.Length) {
-                mesh.colors = _colors;
-            } else {
-                if (_colors.Length > 0) {
-                    Debug.Error("Line3DState: colors.Length != vertices.Length");
-                }
-                mesh.colors = vertices.Select(x => color).ToArray();
+        else
+        {
+            if (colors.Length > 0)
+            {
+                Debug.Error("Line3DState: colors.Length != vertices.Length");
             }
-            dirty = false;
+            mesh.colors = vertices.Select(x => color).ToArray();
         }
+    }
+
+    public override List<(string, object)> GetShaderProperties()
+    {
+        return [("Width", this.width)];
     }
 }
 
 /// <summary>
 /// A 3D triangle mesh.
 /// </summary>
-public class Line3D : VisualEntity3D, IColored
+public partial class Line3D : MeshEntity3D, IColored
 {
     /// <summary>
-    /// The color of the mesh.
+    /// Creates a new Line3D.
     /// </summary>
-    public Color Color {
-        get {
-            return ((Line3DState)state).color;
-        }
-        set {
-            World.current.SetProperty(this, "Color", value, ((Line3DState)state).color);
-            ((Line3DState)state).color = value;
-        }
-    }
-
-    /// <summary>
-    /// The colors of line vertices.
-    /// </summary>
-    public Color[] Colors {
-        get {
-            return ((Line3DState)state).colors;
-        }
-        set {
-            World.current.SetProperty(this, "Colors", value, ((Line3DState)state).colors);
-            ((Line3DState)state).colors = value;
-        }
-    }
-
-    /// <summary>
-    /// The vertices of the mesh.
-    /// </summary>
-    public Vector3[] Vertices {
-        get {
-            return ((Line3DState)state).vertices;
-        }
-        set {
-            World.current.SetProperty(this, "Vertices", value, ((Line3DState)state).vertices);
-            ((Line3DState)state).vertices = value;
-        }
-    }
-
-    /// <summary>
-    /// The width of the line in pixels.
-    /// </summary>
-    public float Width {
-        get {
-            return (float)((Line3DState)state).properties["Width"].Value;
-        }
-        set {
-            ((Line3DState)state).properties["Width"].Value = value;
-        }
-    }
-
-    internal Line3D(string owner) : base(new Line3DState(owner)) {
-    }
-
-    /// <summary>
-    /// Creates a new Mesh.
-    /// </summary>
-    public Line3D(float width = 1.0f, MeshVertexMode mode = MeshVertexMode.Segments) : this(World.current.Resources.GetGuid()) {
-        var state = (Line3DState)this.state;
-        state.properties.Add("Width", new DynProperty<float>("Width", width));
-        state.VertexMode = mode;
-    }
-
-    /// <summary>
-    /// Copy constructor.
-    /// </summary>
-    public Line3D(Line3D mesh) : base(mesh)
+    public Line3D(float width = 1.0f, MeshVertexMode mode = MeshVertexMode.Segments)
     {
-        var state = (Line3DState)this.state;
-        var ostate = (Line3DState)mesh.state;
-        Debug.Assert(state.properties.ContainsKey("Width"));
-        //state.properties.Add("Width", new DynProperty<float>("Width", ostate.properties["Width"].Value as float? ?? default(float)));
+        VertexMode = mode;
+        Width = width;
     }
 
-    /// <summary>
-    /// Clones this mesh.
-    /// </summary>
-    public override object Clone() {
-        return new Line3D(this);
+    internal override object GetState(Func<DynPropertyId, object?> evaluator)
+    {
+        Debug.Assert(this.Created); // Id is only valid if the entity is created
+        var state = new Line3DState(NewMeshBackedGeometry.GenerateEntityName(this.Id));
+        GetState(state, evaluator);
+        return state;
     }
 }

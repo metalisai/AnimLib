@@ -82,54 +82,12 @@ internal partial class GlWorldRenderer : IRenderer {
         }
     }
 
-    private void RenderBeziers(BezierState[] beziers, M4x4 mat, M4x4 orthoMat, IBackendRenderBuffer buf, in FrameContext ctx) {
-        if(beziers.Length > 0) {
-            GL.Disable(EnableCap.CullFace);
-            GL.Disable(EnableCap.DepthTest);
-            GL.UseProgram(_bezierProgram);
-            var loc = GL.GetUniformLocation(_bezierProgram, "_ModelToClip");
-            var colLoc = GL.GetUniformLocation(_bezierProgram, "_Color");
-            var idLoc = GL.GetUniformLocation(_bezierProgram, "_EntityId");
-            var p1Loc = GL.GetUniformLocation(_bezierProgram, "_Point1");
-            var p2Loc = GL.GetUniformLocation(_bezierProgram, "_Point2");
-            var p3Loc = GL.GetUniformLocation(_bezierProgram, "_Point3");
-            var ssLoc = GL.GetUniformLocation(_bezierProgram, "_ScreenSize");
-            var wLog = GL.GetUniformLocation(_bezierProgram, "_Width");
-            GL.BindVertexArray(platform.rectVao);
-            foreach(BezierState bz in beziers) {
-                // NOTE: bz.points causes nullable warning in sdk 8.0.100, seems like a compiler bug?
-                Vector3[] points = bz.points!;
-                int count = 1 + (bz.points!.Length-3)/2;
-                M4x4 modelToWorld, modelToClip;
-                if(bz.points == null || bz.points.Length < 3)
-                    continue;
-                modelToWorld = bz.ModelToWorld(ctx.entRes);
-                modelToClip = mat * modelToWorld;
-                GL.UniformMatrix4(loc, 1, false, ref modelToClip.m11);
-                var col4 = Vector4.FromInt32(bz.color.ToU32());
-                GL.Uniform4(colLoc, col4.x, col4.y, col4.z, col4.w);
-                GL.Uniform1(idLoc, bz.entityId);
-                GL.Uniform1(wLog, bz.width);
-                for(int i = 0; i < count; i++) {
-                    int idx = i*2;
-                    GL.Uniform4(p1Loc, bz.points[idx].x, bz.points[idx].y, bz.points[idx].z, 1.0f);
-                    GL.Uniform4(p2Loc, bz.points[idx+1].x, bz.points[idx+1].y, bz.points[idx+1].z, 1.0f);
-                    GL.Uniform4(p3Loc, bz.points[idx+2].x, bz.points[idx+2].y, bz.points[idx+2].z, 1.0f);
-                    var size = buf.Size;
-                    GL.Uniform2(ssLoc, size.Item1, size.Item2);
-                    GL.DrawArrays(PrimitiveType.Points, 0, 1);
-                    drawId++;
-                }
-            }
-        }
-    }
-
-    Vector2[] quadTex = new Vector2[] {
+    Vector2[] quadTex = [
         new Vector2(0.0f, 0.0f),
         new Vector2(1.0f, 0.0f),
         new Vector2(1.0f, 1.0f),
-        new Vector2(0.0f, 1.0f)
-    };
+        new Vector2(0.0f, 1.0f),
+    ];
 
     public void RenderMeshes(ColoredTriangleMesh[] meshes, M4x4 camMat, M4x4 screenMat, Dictionary<DynPropertyId, object> dynProps)
     {
@@ -151,7 +109,6 @@ internal partial class GlWorldRenderer : IRenderer {
                 GL.UseProgram(program);
                 var loc = GL.GetUniformLocation(program, "_ModelToClip");
                 var colLoc = GL.GetUniformLocation(program, "_Color");
-                var outlineLoc = GL.GetUniformLocation(program, "_Outline");
                 var entLoc = GL.GetUniformLocation(program, "_EntityId");
 
                 foreach (var prop in m.shaderProperties)
@@ -165,9 +122,21 @@ internal partial class GlWorldRenderer : IRenderer {
                         case Func<float> propsf:
                             GL.Uniform1(sloc, propsf());
                             break;
+                        case Vector4 v4:
+                            GL.Uniform4(sloc, v4.x, v4.y, v4.z, v4.w);
+                            break;
                         case Func<Vector4> propsv4:
                             var v = propsv4();
                             GL.Uniform4(sloc, v.x, v.y, v.z, v.w);
+                            break;
+                        case Texture2D tex2d:
+                            Debug.Assert(prop.Item1 == "_MainTex");
+                            if (tex2d.GLHandle < 0)
+                            {
+                                platform.LoadTexture(tex2d);
+                            }
+                            GL.BindTextureUnit(0, tex2d.GLHandle);
+                            GL.Uniform1(sloc, 0);
                             break;
                         default:
                             throw new NotImplementedException();
@@ -178,6 +147,9 @@ internal partial class GlWorldRenderer : IRenderer {
                 {
                     int vao;
                     int vertCount = m.Geometry.vertices.Length;
+                    IntPtr colorOffset = new IntPtr(vertCount * vertSize);
+                    IntPtr edgeOffset = new IntPtr(vertCount * (vertSize + colorSize));
+
                     if (m.Geometry.VAOHandle < 0)
                     {
                         vao = GL.GenVertexArray();
@@ -203,7 +175,7 @@ internal partial class GlWorldRenderer : IRenderer {
                         if (m.Geometry.edgeCoordinates != null && m.Geometry.edgeCoordinates.Length > 0)
                         {
                             GL.EnableVertexAttribArray(2);
-                            GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, 0, new IntPtr(m.Geometry.copiedVertices * (vertSize + colorSize)));
+                            GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, 0, new IntPtr(edgeOffset));
                         }
                         else
                         {
@@ -232,9 +204,6 @@ internal partial class GlWorldRenderer : IRenderer {
                         vao = m.Geometry.VAOHandle;
                         GL.BindVertexArray(vao);
                     }
-
-                    IntPtr colorOffset = new IntPtr(vertCount * vertSize);
-                    IntPtr edgeOffset = new IntPtr(vertCount * (vertSize + colorSize));
 
                     GL.BindBuffer(BufferTarget.ArrayBuffer, m.Geometry.VBOHandle);
                     GL.BufferData(BufferTarget.ArrayBuffer, vertCount * (vertSize + colorSize + edgeSize), IntPtr.Zero, BufferUsageHint.DynamicDraw);
@@ -296,8 +265,6 @@ internal partial class GlWorldRenderer : IRenderer {
                 GL.UniformMatrix4(loc, 1, false, ref modelToClip.m11);
                 var col4 = m.Tint.ToVector4();
                 GL.Uniform4(colLoc, col4.x, col4.y, col4.z, col4.w);
-                var outline4 = m.Outline.ToVector4();
-                GL.Uniform4(outlineLoc, outline4.x, outline4.y, outline4.z, outline4.w);
                 GL.Uniform1(entLoc, m.entityId);
                 PrimitiveType primType;
                 switch (m.Geometry.vertexMode)
@@ -323,13 +290,10 @@ internal partial class GlWorldRenderer : IRenderer {
                     if (m.Shader == BuiltinShader.LineShader)
                     {
                         float setWidth = 1.0f;
-                        if (m.properties.TryGetValue("Width", out var widthProp))
+                        var widthProp = m.shaderProperties.Where(x => x.Item1 == "Width");
+                        if (widthProp.Count() > 0)
                         {
-                            dynProps.TryGetValue(widthProp.Id, out var fwidth);
-                            if (fwidth is float f)
-                            {
-                                setWidth = f;
-                            }
+                            setWidth = (float)widthProp.First().Item2;
                         }
                         GL.GetFloat(GetPName.SmoothLineWidthRange, out range);
                         GL.Enable(EnableCap.LineSmooth);
@@ -375,6 +339,8 @@ internal partial class GlWorldRenderer : IRenderer {
                 return _rectangleProgram;
             case BuiltinShader.SolidColorShader:
                 return _solidColorProgram;
+            case BuiltinShader.TexturedQuadShader:
+                return _texRectProgram;
             default:
                 return 0;
         }
@@ -628,6 +594,7 @@ internal partial class GlWorldRenderer : IRenderer {
             GL.BeginQuery(QueryTarget.SamplesPassed, query);
             //GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
 
+            // TODO: cache meshes based on mesh.MeshVersion
             if ((ss.NewMeshes?.Length ?? 0) > 0)
             {
                 var marr = ss.NewMeshes!;
@@ -642,9 +609,8 @@ internal partial class GlWorldRenderer : IRenderer {
                     {
                         modelToWorld = mbg.ModelToWorld(ctx.entRes),
                         Geometry = geoms[i],
-                        Outline = Color.BLACK,
                         Shader = mbg.Shader,
-                        shaderProperties = new(),
+                        shaderProperties = marr[i].GetShaderProperties(),
                         entityId = mbg.entityId,
                         properties = new(),
                     };
@@ -686,7 +652,6 @@ internal partial class GlWorldRenderer : IRenderer {
                     {
                         modelToWorld = mbg.ModelToWorld(ctx.entRes),
                         Geometry = geom,
-                        Outline = mbg.outline,
                         /*Outline = mbg.Outline,
                         OutlineWidth = mbg.OutlineWidth,*/
                         Shader = mbg.Shader,
@@ -708,15 +673,8 @@ internal partial class GlWorldRenderer : IRenderer {
             if(ss.Meshes != null) {
                 RenderMeshes(ss.Meshes, worldToClip, smat, ss.DynamicProperties);
             }
-            if(ss.Beziers != null) {
-                RenderBeziers(ss.Beziers, worldToClip, smat, mainBuffer, in ctx);
-            }
 
             GL.EndQuery(QueryTarget.SamplesPassed);
-
-            //TODO:
-            //RenderTriangleMeshes();
-            //RenderLinestrips();
 
             // TODO: OnRender delegate!
 
