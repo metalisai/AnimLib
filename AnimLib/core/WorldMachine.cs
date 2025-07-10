@@ -18,7 +18,6 @@ internal class WorldMachine {
     }
     List<Glyph> _glyphs = new List<Glyph>();
     List<MeshEntity3D> _meshEntities = new();
-    List<MeshBackedGeometry> _mbgeoms = new List<MeshBackedGeometry>();
     List<DynVisualEntity> _cameras =  new ();
 
     List<DynShape> _dynShapes = new List<DynShape>();
@@ -66,8 +65,6 @@ internal class WorldMachine {
     {
         _glyphs.Clear();
         _meshEntities.Clear();
-        _mbgeoms.Clear();
-        //_rectangles.Clear();
         _cameras.Clear();
         _playCursorCmd = 0;
         _currentPlaybackTime = 0.0;
@@ -243,7 +240,6 @@ internal class WorldMachine {
         {
             Glyphs = _glyphs.Where(x => x.Active).Select(x => (GlyphState)x.GetState(GetDynProp)).ToArray(),
             NewMeshes = _meshEntities.Where(x => x.Active).Select(x => (NewMeshBackedGeometry)x.GetState(GetDynProp)).ToArray(),
-            MeshBackedGeometries = _mbgeoms.Where(x => x.active).ToArray(),
             resolver = new EntityStateResolver(
                 GetEntityState: entid =>
                 {

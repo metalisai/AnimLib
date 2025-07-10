@@ -624,52 +624,6 @@ internal partial class GlWorldRenderer : IRenderer {
                 }
             }
 
-            if (ss.MeshBackedGeometries != null && ss.MeshBackedGeometries.Length > 0)
-            {
-                int i = 0;
-                ColoredTriangleMesh[] meshes = new ColoredTriangleMesh[ss.MeshBackedGeometries.Length];
-                var throwawayGeometries = new List<ColoredTriangleMeshGeometry>();
-                foreach (var mbg in ss.MeshBackedGeometries)
-                {
-                    ColoredTriangleMeshGeometry? geom = null;
-                    if (mbg.RendererHandle == null)
-                    {
-                        // TODO: find a way to reuse these, this is nasty
-                        geom = new ColoredTriangleMeshGeometry("");
-                        throwawayGeometries.Add(geom);
-                    }
-                    else if (mbg.RendererHandle.Handle == null)
-                    {
-                        mbg.RendererHandle.Handle = new ColoredTriangleMeshGeometry("");
-                        geom = mbg.RendererHandle.Handle;
-                    }
-                    else
-                    {
-                        geom = mbg.RendererHandle.Handle;
-                    }
-                    mbg.UpdateMesh(geom);
-                    meshes[i] = new ColoredTriangleMesh
-                    {
-                        modelToWorld = mbg.ModelToWorld(ctx.entRes),
-                        Geometry = geom,
-                        /*Outline = mbg.Outline,
-                        OutlineWidth = mbg.OutlineWidth,*/
-                        Shader = mbg.Shader,
-                        shaderProperties = mbg.shaderProperties,
-                        entityId = mbg.entityId,
-                        properties = mbg.properties,
-                    };
-                    i++;
-                }
-                RenderMeshes(meshes, worldToClip, smat, ss.DynamicProperties);
-                foreach (var geom in throwawayGeometries)
-                {
-                    GL.DeleteBuffer(geom.EBOHandle);
-                    GL.DeleteBuffer(geom.VBOHandle);
-                    GL.DeleteVertexArray(geom.VAOHandle);
-                }
-            }
-
             if(ss.Meshes != null) {
                 RenderMeshes(ss.Meshes, worldToClip, smat, ss.DynamicProperties);
             }

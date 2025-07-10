@@ -28,7 +28,6 @@ internal class WorldResources : IDisposable {
     }
     public List<ColoredTriangleMeshGeometry> MeshGeometries = new List<ColoredTriangleMeshGeometry>();
     public List<Texture2D> Textures = new List<Texture2D>();
-    public List<MeshBackedGeometry> MeshBackedGeometries = new List<MeshBackedGeometry>();
 
     string hash = Guid.NewGuid().ToString();
 
@@ -40,7 +39,6 @@ internal class WorldResources : IDisposable {
     {
         MeshGeometries.Clear();
         Textures.Clear();
-        MeshBackedGeometries.Clear();
         // make sure renderer knows that everything we allocated is no longer needed
         RenderState.currentPlatform?.DestroyOwner(hash);
         Debug.Log("World resources destroyed " + GetGuid());
@@ -138,7 +136,6 @@ internal class WorldSnapshot {
     public required GlyphState[] Glyphs;
     public required NewMeshBackedGeometry[] NewMeshes;
     public required ColoredTriangleMesh[] Meshes;
-    public required MeshBackedGeometry[] MeshBackedGeometries;
     public required CanvasSnapshot[] Canvases;
     // NOTE: the first renderbuffer is always the main one
     public required RenderBufferState[] RenderBuffers;
@@ -201,9 +198,7 @@ public class World
 
     private Stack<List<DynVisualEntity>> _dynCaptureStack = new();
 
-    internal ITypeSetter ts = new FreetypeSetting();
     object? currentEditor = null; // who edits things right now (e.g. scene or animationbehaviour)
-    Color background = Color.WHITE;
 
     /// <summary>
     /// The time dynamic property.
@@ -286,13 +281,6 @@ public class World
 
     internal void Update(double dt)
     {
-        /*foreach(var label in _labels) {
-            LabelState state = ((LabelState)label.state);
-            var val = state.target.GetLabelWorldCoordinate(state.style, ((VisualEntity)state.target).state);
-            if(val != null){
-                label.state.position = val.Value;
-            }
-        }*/
         // NOTE: WorldMachine has evaluator for special properties like time, but it doesn't change property during baking.
         //   This evaluates the property during baking, so it will be visible to AnimationBehaviour code.
         //   There is no need to add a command (setting .Value) because of the reason mentioned above, only the state is assigned.
@@ -607,18 +595,6 @@ public class World
             }, 0.0f, 1.0f, duration);
         DestroyDyn(entity);
     }
-
-    /*public async Task DestroyFadeOut<T>(T entity, float duration) where T : Shape {
-        var c = entity.Color;
-        var cc = entity.ContourColor;
-        await Animate.InterpT<float>(x => {
-                c.a = (byte)Math.Round((1.0f-x)*c.a);
-                cc.a = (byte)Math.Round((1.0f-x)*cc.a);
-                entity.Color = c;
-                entity.ContourColor = cc;
-            }, 0.0f, 1.0f, duration);
-        Destroy(entity);
-    }*/
 
     /// <summary>
     /// Clone a dynamic entity. Only state will be copied, the entity will not be created implicitly.
