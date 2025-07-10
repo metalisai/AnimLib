@@ -44,11 +44,6 @@ internal class SvgSpriteState : EntityState2D
         this.color = sprite.color;
     }
 
-    public override object Clone()
-    {
-        return new SvgSpriteState(this);
-    }
-
     public override Vector2 AABB
     {
         get

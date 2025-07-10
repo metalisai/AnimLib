@@ -38,7 +38,7 @@ public static class Animate {
     /// <param name="p">The center of the orbit.</param>
     /// <param name="angle">The total angle to orbit.</param>
     /// <param name="duration">The duration of the orbit operation.</param>
-    public static async Task OrbitPoint(Transform obj, Vector3 axis, Vector3 p, float angle, float duration) {
+    /*public static async Task OrbitPoint(Transform obj, Vector3 axis, Vector3 p, float angle, float duration) {
         // TODO: velocity ramping not instant
         bool infinite = false;;
         if (duration == 0.0f) {
@@ -60,7 +60,7 @@ public static class Animate {
             obj.Pos = pointToOrbit + (r * offset);
             await AnimLib.Time.WaitFrame();
         }
-    }
+    }*/
 
     /// <summary>
     /// Orbits a transform perpendicular to the given axis. Movement starts at the current position and orbits the specified angle during the given duration.
@@ -100,19 +100,6 @@ public static class Animate {
         }, duration); 
     }
 
-    /// <summary>
-    /// Offset (move) a 3D entity from its current position.
-    /// </summary>
-    /// <param name="t">The transform to offset from it's current location.</param>
-    /// <param name="offset">The offset to move the transform by.</param>
-    /// <param name="duration">The duration of the offset operation.</param>
-    /// <param name="curve">The interpolation curve to use.</param>
-    public static async Task Offset(this Transform t, Vector3 offset, double duration = 1.0, EaseType curve = EaseType.EaseInOut) {
-        await InterpT(x => {
-            t.Pos = x;
-        }, t.Pos, t.Pos+offset, duration, curve);
-    }
-
     public static Task Offset(this DynVisualEntity2D ent, Vector2 offset, double duration = 1.0, EaseType curve = EaseType.EaseInOut)
     {
         /*return InterpT(x =>
@@ -120,45 +107,6 @@ public static class Animate {
             ent.Position.Value = x;
         }, (Vector2)ent.Position, ent.Position + offset, duration, curve);*/
         return InterpT(ent.PositionProperty, ent.Position + offset, duration, curve);
-    }
-
-    /// <summary>
-    /// Offset (move) a 2D entity from its current position.
-    /// </summary>
-    /// <param name="t">The 2D transform to offset from it's current location.</param>
-    /// <param name="offset">The offset to move the transform by.</param>
-    /// <param name="duration">The duration of the offset operation.</param>
-    /// <param name="curve">The interpolation curve to use.</param>
-    public static async Task Offset(this Transform2D t, Vector2 offset, double duration = 1.0, EaseType curve = EaseType.EaseInOut) {
-        await InterpT(x => {
-            t.Pos = x;
-        }, t.Pos, t.Pos+offset, duration, curve);
-    }
-
-    /// <summary>
-    /// Move a 2D entity to a given position.
-    /// </summary>
-    /// <param name="t">The 2D transform to move to a new location.</param>
-    /// <param name="moveTo">The position to move the transform to.</param> 
-    /// <param name="duration">The duration of the move operation.</param>
-    /// <param name="curve">The interpolation curve to use.</param>
-    public static async Task Move(this Transform2D t, Vector2 moveTo, double duration = 1.0, EaseType curve = EaseType.EaseInOut) {
-        await InterpT(x => {
-            t.Pos = x;
-        }, t.Pos, moveTo, duration, curve);
-    }
-
-    /// <summary>
-    /// Move a 3D entity to a given position.
-    /// </summary>
-    /// <param name="t">The 3D transform to move to a new location.</param>
-    /// <param name="moveTo">The position to move the transform to.</param>
-    /// <param name="duration">The duration of the move operation.</param>
-    /// <param name="curve">The interpolation curve to use.</param>
-    public static async Task Move(this Transform t, Vector3 moveTo, double duration = 1.0, EaseType curve = EaseType.EaseInOut) {
-        await InterpT(x => {
-            t.Pos = x;
-        }, t.Pos, moveTo, duration, curve);
     }
     
     public static Task Move(this DynVisualEntity2D ent, Vector2 moveTo, double duration = 1.0, EaseType curve = EaseType.EaseInOut)
@@ -351,11 +299,11 @@ public static class Animate {
     /// <param name="a">The acceleration.</param>
     /// <param name="duration">The duration of the animation.</param>
     /// <param name="v0">The initial velocity.</param>
-    public static Task Accelerate(Transform2D t, Vector2 a, float duration, Vector2 v0)
+    /*public static Task Accelerate(Transform2D t, Vector2 a, float duration, Vector2 v0)
     {
         Action<Vector2> action = x => t.Pos = x;
         return Accelerate(action, t.Pos, a, duration, v0);
-    }
+    }*/
 
     /// <summary>
     /// Accepts a lambda that's called every frame.

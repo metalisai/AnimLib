@@ -22,11 +22,6 @@ internal class SphereState : NewMeshBackedGeometry
         this.radius = sls.radius;
     }
 
-    public override object Clone()
-    {
-        return new SphereState(UID, this);
-    }
-
     public override void GenerateMesh(ColoredTriangleMeshGeometry mesh)
     {
         // uvSphere

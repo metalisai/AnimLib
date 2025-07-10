@@ -33,11 +33,6 @@ internal class StarState : ShapeState
             throw new System.NotImplementedException();
         }
     }
-
-    public override object Clone()
-    {
-        return new StarState(this);
-    }
 }
 
 /// <summary>

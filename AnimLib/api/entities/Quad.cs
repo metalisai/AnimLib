@@ -25,11 +25,6 @@ internal class QuadState : NewMeshBackedGeometry
         this.color = qs.color;
     }
 
-    public override object Clone()
-    {
-        return new QuadState(UID, this);
-    }
-
     public override void GenerateMesh(ColoredTriangleMeshGeometry mesh)
     {
         mesh.vertices = vertices;

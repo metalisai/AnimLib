@@ -19,11 +19,6 @@ internal class CircleState : ShapeState
     {
         this.radius = cs.radius;
     }
-
-    public override object Clone()
-    {
-        return new CircleState(this);
-    }
 }
 
 /// <summary>

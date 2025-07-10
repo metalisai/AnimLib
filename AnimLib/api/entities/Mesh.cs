@@ -29,11 +29,6 @@ internal class MeshState : NewMeshBackedGeometry
         this.outline = ms.outline;
     }
 
-    public override object Clone()
-    {
-        return new MeshState(UID, this);
-    }
-
     public override void GenerateMesh(ColoredTriangleMeshGeometry mesh)
     {
         mesh.vertices = vertices;

@@ -112,9 +112,9 @@ internal class SceneView
         usingGizmo = false;
     }
 
-    public void PostRender(CameraState cam, WorldSnapshot ss) {
+    /*public void PostRender(CameraState cam, WorldSnapshot ss) {
         this.lastCam = (CameraState)cam.Clone();
-    }
+    }*/
 
     // calculate target area for renderbuffer, preserving aspect ratio
     public (int,int,int,int) CalculateArea(int x, int y, int width, int height)

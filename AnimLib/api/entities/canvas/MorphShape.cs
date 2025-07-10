@@ -70,11 +70,6 @@ internal class MorphShapeState : EntityState2D
         }
     }
 
-    public override object Clone()
-    {
-        return new MorphShapeState(this);
-    }
-
     internal bool HasBody(ShapeMode mode)
     {
         return mode == ShapeMode.Filled || mode == ShapeMode.FilledContour;

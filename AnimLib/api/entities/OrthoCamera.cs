@@ -25,11 +25,6 @@ internal class OrthoCameraState : CameraState
         this.height = ocs.height;
     }
 
-    public override object Clone()
-    {
-        return new OrthoCameraState(this);
-    }
-
     public override M4x4 CreateWorldToClipMatrix(float aspect)
     {
         float hw = width / 2.0f;

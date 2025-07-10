@@ -21,11 +21,6 @@ internal class GlyphState : EntityState2D
         this.color = g.color;
     }
 
-    public override object Clone()
-    {
-        return new GlyphState(this);
-    }
-
     public override Vector2 AABB
     {
         get

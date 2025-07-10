@@ -21,11 +21,6 @@ internal class TexRectState : NewMeshBackedGeometry
         this.Shader = BuiltinShader.TexturedQuadShader;
     }
 
-    public override object Clone()
-    {
-        return new TexRectState(UID, this);
-    }
-
     public override void GenerateMesh(ColoredTriangleMeshGeometry mesh)
     {
         mesh.vertexMode = MeshVertexMode.Triangles;

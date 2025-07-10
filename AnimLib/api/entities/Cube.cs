@@ -19,11 +19,6 @@ internal class CubeState : NewMeshBackedGeometry
         this.color = sls.color;
     }
 
-    public override object Clone()
-    {
-        return new CubeState(UID, this);
-    }
-
     public override void GenerateMesh(ColoredTriangleMeshGeometry mesh)
     {
         mesh.vertices = new Vector3[] {

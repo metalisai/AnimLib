@@ -1,29 +1,33 @@
+using System;
+
 namespace AnimLib;
 
-internal class DummyState : EntityState3D {
-    public DummyState() : base() {
+[GenerateDynProperties(forType: typeof(Dummy))]
+internal class DummyState : EntityState3D
+{
+    public DummyState() : base()
+    {
     }
 
-    public DummyState(DummyState d) : base(d) {
-    }
-
-    public override object Clone() {
-        return new DummyState(this);
+    public DummyState(DummyState d) : base(d)
+    {
     }
 }
 
 /// <summary>
 /// A dummy object. Useful for debugging or parenting (the transform kind, not the human kind).
 /// </summary>
-public class Dummy : VisualEntity3D {
+public partial class Dummy : DynVisualEntity3D
+{
     /// <summary> Create a new dummy object. </summary>
-    public Dummy() : base(new DummyState()) {}
+    public Dummy() : base() { }
 
-    /// <summary> Copy constructor. </summary>
-    public Dummy(Dummy dummy) : base(dummy) {}
 
-    /// <summary> Clone this dummy object. </summary>
-    public override object Clone() {
-        return new Dummy(this);
+    internal override object GetState(Func<DynPropertyId, object?> evaluator)
+    {
+        Debug.Assert(this.Created); // Id is only valid if the entity is created
+        var state = new CubeState(NewMeshBackedGeometry.GenerateEntityName(this.Id));
+        GetState(state, evaluator);
+        return state;
     }
 }

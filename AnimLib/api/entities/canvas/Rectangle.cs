@@ -28,11 +28,6 @@ internal class RectangleState : ShapeState
             return new Vector2(width, height);
         }
     }
-
-    public override object Clone()
-    {
-        return new RectangleState(this);
-    }
 }
 
 /// <summary>

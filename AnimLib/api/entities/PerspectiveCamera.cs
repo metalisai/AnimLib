@@ -21,11 +21,6 @@ internal class PerspectiveCameraState : CameraState
         this.zFar = pcs.zFar;
     }
 
-    public override object Clone()
-    {
-        return new PerspectiveCameraState(this);
-    }
-
     public M4x4 CreateWorldToViewMatrix()
     {
         var invRot = rotation;

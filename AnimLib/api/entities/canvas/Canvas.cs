@@ -44,11 +44,6 @@ internal class CanvasState : EntityState3D
         this.name = cs.name;
     }
 
-    public override object Clone()
-    {
-        return new CanvasState(this);
-    }
-
     public M4x4 WorldToNormalizedCanvas
     {
         get

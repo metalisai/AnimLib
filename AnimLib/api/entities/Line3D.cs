@@ -27,11 +27,6 @@ internal class Line3DState : NewMeshBackedGeometry
         this.vertexMode = sls.vertexMode;
     }
 
-    public override object Clone()
-    {
-        return new Line3DState(UID, this);
-    }
-
     public override void GenerateMesh(ColoredTriangleMeshGeometry mesh)
     {
         mesh.vertexMode = vertexMode;

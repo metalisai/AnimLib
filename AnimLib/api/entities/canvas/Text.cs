@@ -25,11 +25,6 @@ internal class Text2DState : EntityState2D
         this.text = ts.text;
     }
 
-    public override object Clone() 
-    {
-        return new Text2DState(this);
-    }
-
     public override Vector2 AABB {
         get {
             throw new NotImplementedException();

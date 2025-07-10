@@ -147,10 +147,6 @@ internal class WorldSnapshot {
     public double Time;
 }
 
-internal class EntityResolver {
-    public required Func<int, VisualEntity> GetEntity;
-}
-
 /// <summary>
 /// World is a container for all entities and cameras present in the current world instance. Tracks changes made to all containing state and turns the changes into commands that can be executed in the <c>WorldMachine</c>.
 /// </summary>
@@ -190,30 +186,23 @@ public class World
 
     List<WorldCommand> _commands = new ();
     List<WorldSoundCommand> _soundCommands = new ();
-    List<Func<VisualEntity, bool>> CreationListeners = new ();
     List<Func<DynVisualEntity, bool>> DynCreationListeners = new ();
 
     Dictionary<DynPropertyId, Func<Dictionary<DynPropertyId, object?>, object?>> _activeDynEvaluators = new ();
 
     // used by EntityCollection to keep track of children
-    private Dictionary<int, List<VisualEntity>> _children = new ();
     private Dictionary<int, List<DynVisualEntity>> _dynChildren = new ();
-    private Dictionary<int, VisualEntity> _parents = new();
     private Dictionary<int, DynVisualEntity> _dynParents = new();
-
-    private Dictionary<int, VisualEntity> _entities = new();
 
     private Dictionary<int, DynVisualEntity> _dynEntities = new ();
 
     private Dictionary<DynPropertyId, object?> _dynamicPropertyValues = new ();
     private Dictionary<DynPropertyId, DynProperty> _dynamicProperties = new ();
 
-    private Stack<List<VisualEntity>> _captureStack = new();
     private Stack<List<DynVisualEntity>> _dynCaptureStack = new();
 
     internal ITypeSetter ts = new FreetypeSetting();
     object? currentEditor = null; // who edits things right now (e.g. scene or animationbehaviour)
-    internal EntityResolver EntityResolver;
     Color background = Color.WHITE;
 
     /// <summary>
@@ -280,11 +269,6 @@ public class World
     internal World(AnimationSettings settings) {
         this.settings = settings.Clone();
         current = this;
-        EntityResolver = new EntityResolver {
-            GetEntity = entid => {
-                return _entities[entid];
-            }
-        };
         Id = worldId++;
         _activeCanvas = new Canvas(CanvasState.DEFAULTNAME, new OrthoCamera());
         Resources = new WorldResources();
@@ -340,7 +324,6 @@ public class World
         renderBufferId = 1;
         Resources?.Dispose();
         Resources = new WorldResources();
-        _entities.Clear();
         _commands.Clear();
         _activeDynEvaluators.Clear();
         var cam = new PerspectiveCamera();
@@ -385,15 +368,6 @@ public class World
         return null;
     }
 
-    internal VisualEntity? FindEntityByCreator(object creator) {
-        foreach(var ent in _entities.Values) {
-            if(ent.state.creator == creator) {
-                return ent;
-            }
-        }
-        return null;
-    }
-
     internal void AddResource(ColoredTriangleMeshGeometry geometry) {
         Resources.MeshGeometries.Add(geometry);
     }
@@ -401,9 +375,6 @@ public class World
     internal void AddResource(Texture2D texture) {
         Resources.Textures.Add(texture);
     }
-
-    internal delegate void OnPropertyChangedD(VisualEntity ent, string prop, object? newValue);
-    internal event OnPropertyChangedD OnPropertyChanged;
 
     internal void BeginDynEvaluator(DynProperty prop, Func<Dictionary<DynPropertyId, object?>, object?> evaluator) {
         var id = prop.Id;
@@ -451,36 +422,6 @@ public class World
         _activeDynEvaluators.Remove(id);
     }
 
-    internal void SetProperty<T>(VisualEntity entity, string propert, T value, T oldvalue) {
-        if(value != null && value.Equals(oldvalue))
-            return;
-        if(entity.created) {
-            if(OnPropertyChanged != null) {
-                OnPropertyChanged(entity, propert, value);
-            }
-            var cmd = new WorldPropertyCommand(
-                entityId: entity.EntityId,
-                property: propert,
-                newvalue: value,
-                oldvalue: oldvalue,
-                time: Time.T
-            );
-            _commands.Add(cmd);
-        }
-    }
-
-    internal void SetPropertyMulti<T>(IEnumerable<VisualEntity> entity, string propert, T value, T[] oldvalues) where T : notnull {
-        var ents = entity.Zip(oldvalues, (f, s) => (f, s)).Where(x => x.f.created);
-        var cmd = new WorldPropertyMultiCommand(
-            entityIds: ents.Select(x => x.f.EntityId).ToArray(),
-            time: Time.T,
-            property: propert,
-            newvalue: value,
-            oldvalue: ents.Select(x => (object)x.s).ToArray()
-        );
-        _commands.Add(cmd);
-    }
-
     private void DynEntityCreated(DynVisualEntity entity)
     {
         entity.Id = GetUniqueId();
@@ -513,57 +454,10 @@ public class World
         CheckDynDependantEntities(entity);
     }
 
-    private void EntityCreated(VisualEntity entity) {
-        entity.state.entityId = GetUniqueId();
-        if(currentEditor == null) {
-            Debug.Error("Entity created when no one is editing!? Use StartEditing() before modifying world.");
-        }
-        if (currentEditor != null) {
-            entity.state.creator = currentEditor;
-        }
-        else {
-            Debug.Warning("Entity created without creator. This is not a problem but might make debugging harder.");
-        }
-        var cmd = new WorldCreateCommand(
-            entity: entity.state.Clone(),
-            time: Time.T
-        );
-        _commands.Add(cmd);
-        entity.created = true;
-        _entities.Add(entity.EntityId, entity);
-        entity.EntityCreated();
-
-        if(_captureStack.Count > 0) {
-            foreach(var capture in _captureStack) {
-                capture.Add(entity);
-            }
-        }
-
-        CheckDependantEntities(entity);
-    }
-
-    private void EntityDestroyed(VisualEntity entity) {
-        foreach(var list in _captureStack) {
-            list.RemoveAll(x => x.EntityId == entity.EntityId);
-        }
-    }
-
     private void DynEntityDestroyed(DynVisualEntity entity)
     {
         foreach(var list in _dynCaptureStack) {
             list.RemoveAll(x => x.Id == entity.Id);
-        }
-    }
-
-    private void CheckDependantEntities(VisualEntity newent)
-    {
-        for (int i = CreationListeners.Count - 1; i >= 0; i--)
-        {
-            var wd = CreationListeners[i];
-            if (wd.Invoke(newent))
-            {
-                CreationListeners.RemoveAt(i);
-            }
         }
     }
 
@@ -576,17 +470,6 @@ public class World
         }
     }
 
-    internal void AttachChild(VisualEntity parent, VisualEntity child)
-    {
-        if (!_children.ContainsKey(parent.EntityId))
-        {
-            _children.Add(parent.EntityId, new List<VisualEntity>());
-        }
-        child.managedLifetime = true;
-        _children[parent.EntityId].Add(child);
-        _parents.Add(child.EntityId, parent);
-    }
-
     internal void AttachDynChild(DynVisualEntity parent, DynVisualEntity child)
     {
         if (!_dynChildren.ContainsKey(parent.Id))
@@ -596,18 +479,6 @@ public class World
         child.ManagedLifetime = true;
         _dynChildren[parent.Id].Add(child);
         _dynParents.Add(child.Id, parent);
-    }
-
-    internal void DetachChild(VisualEntity parent, VisualEntity child)
-    {
-        if (!_children.ContainsKey(parent.EntityId))
-        {
-            Debug.Error("Parent does not have any children");
-            return;
-        }
-        child.managedLifetime = false;
-        _children[parent.EntityId].Remove(child);
-        _parents.Remove(child.EntityId);
     }
     
     internal void DetachDynChild(DynVisualEntity parent, DynVisualEntity child)
@@ -620,19 +491,6 @@ public class World
         child.ManagedLifetime = false;
         _dynChildren[parent.Id].Remove(child);
         _dynParents.Remove(child.Id);
-    }
-
-    // when entity is created the Func is invoked, if the Func returns true it is deleted
-    // useful for listening for dependencies
-    internal T MatchCreation<T>(T ent, Func<VisualEntity, bool> match) where T : VisualEntity
-    {
-        CreationListeners.Add(match);
-        // check if the entity already exists
-        foreach (var dent in _entities.Values.ToList())
-        {
-            CheckDependantEntities(dent);
-        }
-        return ent;
     }
     
     internal T MatchCreation<T>(T ent, Func<DynVisualEntity, bool> match) where T : DynVisualEntity
@@ -683,56 +541,9 @@ public class World
         _dynamicPropertyValues[id] = value;
     }
 
-    /// <summary>
-    /// Begin capturing creation of entities. All entities created after this call will be added to the returned list.
-    /// </summary>
-    public List<VisualEntity> BeginCapture() {
-        var ret = new List<VisualEntity>();
-        _captureStack.Push(ret);
-        return ret;
-    }
-
-    /// <summary>
-    /// End capturing creation of entities.
-    /// </summary>
-    public void EndCapture() {
-        _captureStack.Pop();
-    }
-
-    /// <summary>
-    /// Create entities without any animations.
-    /// </summary>
-    public T[] CreateInstantly<T>(params T[] ents) where T : VisualEntity {
-        foreach(var ent in ents) {
-            EntityCreated(ent);
-        }
-        return ents;
-    }
-
-    /// <summary>
-    /// Create an entity without any animations.
-    /// </summary>
-    public T CreateInstantly<T>(T ent) where T : VisualEntity {
-        EntityCreated(ent);
-        return ent;
-    } 
-
     public T CreateDynInstantly<T>(T ent) where T : DynVisualEntity {
         DynEntityCreated(ent);
         return ent;
-    }
-
-    /// <summary>
-    /// Create an <c>IColored</c> entity with a fade in animation.
-    /// </summary>
-    public Task CreateFadeIn<T>(T entity, float duration) where T : VisualEntity,IColored {
-        CreateInstantly(entity);
-        var c = entity.Color;
-        var alpha = c.a;
-        return Animate.InterpF(x => {
-                c.a = x*alpha;
-                entity.Color = c;
-            }, 0.0f, 1.0f, duration);
     }
 
     public Task CreateDynFadeIn<T>(T entity, float duration) where T : DynVisualEntity,IColored {
@@ -752,7 +563,7 @@ public class World
     /// <param name="duration">The duration of the whole animation.</param>
     /// <returns></returns>
     /// <typeparam name="T">The type of the shape.</typeparam>
-    public async Task CreateTraceAndFade<T>(T entity, float duration) where T : Shape, IColored {
+    public async Task CreateTraceAndFade<T>(T entity, float duration) where T : DynShape, IColored {
         bool fadeIn = entity.Mode == ShapeMode.FilledContour || entity.Mode == ShapeMode.Filled;
         float traceDuration = fadeIn ? duration*0.5f : duration;
         var oldMode = entity.Mode;
@@ -760,7 +571,7 @@ public class World
         var alpha = c.a;
         entity.Mode = ShapeMode.Contour;
         entity.Trim = (0.0f, 0.0f);
-        CreateInstantly(entity);
+        CreateDynInstantly(entity);
         await Animate.InterpF(x => {
                 entity.Trim = (0.0f, x);
             }, 0.0f, 1.0f, traceDuration);
@@ -775,8 +586,8 @@ public class World
     /// <summary>
     /// Create an <c>IColored</c> entity with a fade in animation. Calls the <c>setcolor</c> function each time the color is updated.
     /// </summary>
-    public Task CreateFadeIn<T>(T entity, Color startColor, Action<Color> setColor, float duration) where T : VisualEntity,IColored {
-        CreateInstantly(entity);
+    public Task CreateFadeIn<T>(T entity, Color startColor, Action<Color> setColor, float duration) where T : DynVisualEntity,IColored {
+        CreateDynInstantly(entity);
         var c = startColor;
         var alpha = c.a;
         return Animate.InterpF(x => {
@@ -788,13 +599,13 @@ public class World
     /// <summary>
     /// Destroy an <c>IColored</c> entity with a fade out animation.
     /// </summary>
-    public async Task DestroyFadeOut<T>(T entity, float duration) where T : VisualEntity, IColored {
+    public async Task DestroyFadeOut<T>(T entity, float duration) where T : DynVisualEntity, IColored {
         var c = entity.Color;
         await Animate.InterpF(x => {
                 c.a = (byte)Math.Round((1.0f-x)*c.a);
                 entity.Color = c;
             }, 0.0f, 1.0f, duration);
-        Destroy(entity);
+        DestroyDyn(entity);
     }
 
     /*public async Task DestroyFadeOut<T>(T entity, float duration) where T : Shape {
@@ -810,28 +621,11 @@ public class World
     }*/
 
     /// <summary>
-    /// Create a clone of an entity. The clone is not immediately created in the world.
-    /// </summary>
-    public T Clone<T>(T e) where T : VisualEntity {
-        var ret = (T)e.Clone();
-        return ret;
-    }
-
-    /// <summary>
     /// Clone a dynamic entity. Only state will be copied, the entity will not be created implicitly.
     /// </summary>
     public T CloneDyn<T>(T e) where T : DynVisualEntity {
         var ret = e.Clone();
         return (T)ret;
-    }
-
-    /// <summary>
-    /// Create a clone of an entity. The clone is immediately created in the world.
-    /// </summary>
-    public T CreateClone<T>(T e) where T : VisualEntity {
-        var ret = (T)e.Clone();
-        CreateInstantly(ret);
-        return ret;
     }
 
     public T CreateDynClone<T>(T e) where T : DynVisualEntity {
@@ -869,47 +663,6 @@ public class World
         _commands.Add(cmd);
 
         DynEntityDestroyed(obj);
-    }
-
-    /// <summary>
-    /// Remove entities from the world.
-    /// </summary>
-    public void Destroy(params VisualEntity[] ents)
-    {
-        foreach (var ent in ents)
-        {
-            Destroy(ent);
-        }
-    }
-
-    /// <summary>
-    /// Remove an entity from the world.
-    /// </summary>
-    public void Destroy(VisualEntity obj) {
-        if(!obj.created) return;
-
-        if (obj.managedLifetime)
-        {
-            Debug.Error("Attempting to destroy managed entity. Detach the entity from it's parent EntityCollection first.");
-            return;
-        }
-
-        // destroy all children
-        if(_children.ContainsKey(obj.EntityId)) {
-            var localC = _children[obj.EntityId].ToArray();
-            foreach(var child in localC) {
-                DetachChild(obj, child);
-                Destroy(child);
-            }
-        }
-        var cmd = new WorldDestroyCommand(
-            entityId: obj.EntityId,
-            time: Time.T
-        );
-        obj.created = false;
-        _commands.Add(cmd);
-
-        EntityDestroyed(obj);
     }
 
     internal WorldCommand[] GetCommands() {

@@ -226,7 +226,7 @@ internal class WorldMachine {
             var css = new CanvasSnapshot()
             {
                 //Entities = c.Value.Entities.Where(x => x.active).Select(x => (EntityState2D)x.Clone()).ToArray(),
-                Entities = c.Value.NewEntities.Where(x => x.Active).Select(x => (EntityState2D)x.GetState(GetDynProp)).Concat(c.Value.Entities.Where(x => x.active).Select(x => (EntityState2D)x.Clone())).ToArray(),
+                Entities = c.Value.NewEntities.Where(x => x.Active).Select(x => (EntityState2D)x.GetState(GetDynProp)).Concat(c.Value.Entities.Where(x => x.active).Select(x => x)).ToArray(),
                 Canvas = (CanvasState)canvas.GetState(GetDynProp),
                 Effects = effects,
             };
@@ -314,62 +314,10 @@ internal class WorldMachine {
         _dynEntities.Remove(ent.Id);
     }
 
-    private void CreateEntity(object entity) {
-        EntityState state;
-        switch(entity) {
-            case MeshBackedGeometry a1:
-            state = (EntityState)a1.Clone();
-            //state = a1;
-            _mbgeoms.Add((MeshBackedGeometry)state);
-            break;
-            case CanvasState ca1:
-            state = (EntityState)ca1.Clone();
-            _canvases.Add(state.entityId, new CanvasEntities());
-            break;
-            case EntityState2D ent2d:
-            var canvas = (CanvasState)_entities[ent2d.canvasId];
-            state = (EntityState)ent2d.Clone();
-            _canvases[canvas.entityId].Entities.Add((EntityState2D)state);
-            break;
-            default:
-            throw new NotImplementedException();
-        }
-        _entities.Add(state.entityId, state);
-    }
-
-    private void DestroyEntity(int entityId) {
-        var ent = _entities[entityId];
-        switch(ent) {
-            case MeshBackedGeometry mb1:
-            _mbgeoms.RemoveAll(x => x.entityId == entityId);
-            break;
-            case CanvasState ca1:
-            _canvases.Remove(entityId);
-            break;
-            case EntityState2D ss1:
-            foreach(var s in _canvases) s.Value.Entities.RemoveAll(x => x.entityId == entityId);
-            break;
-            default:
-            throw new Exception("Destroying unknown entity!");
-        }
-        var state = _entities[entityId];
-        _destroyedEntities[entityId] = state;
-        var removed = _entities.Remove(entityId);
-        if(!removed) {
-            throw new Exception("Destroying an entity that does not exist!");
-        }
-    }
-
     private void Execute(WorldCommand cmd) {
         switch(cmd) {
-            case WorldCreateCommand worldCreate:
-                CreateEntity(worldCreate.entity);
-            break;
             case WorldDynCreateCommand dynCreate:
                 CreateDynEntity(dynCreate.entity);
-            break;
-            case WorldDestroyCommand worldDestroy:
-            DestroyEntity(worldDestroy.entityId);
             break;
             case WorldDynDestroyCommand dynDestroy:
             DestroyDynEntity(dynDestroy.entity);
@@ -469,17 +417,8 @@ internal class WorldMachine {
 
     private void Undo(WorldCommand cmd) {
         switch(cmd) {
-            case WorldCreateCommand worldCreate:
-            DestroyEntity(((EntityState)worldCreate.entity).entityId);
-            break;
             case WorldDynCreateCommand dynCreate:
             DestroyDynEntity(dynCreate.entity);
-            break;
-            case WorldDestroyCommand worldDestroy:
-            // TODO: this will be created with wrong properties (they are latest in world not from when the entity was destroyed)
-            // NOTE: but if the object gets destroyed, aren't the latest the right ones?
-            CreateEntity(_destroyedEntities[worldDestroy.entityId]);
-            _destroyedEntities.Remove(worldDestroy.entityId);
             break;
             case WorldDynDestroyCommand dynDestroy:
             CreateDynEntity(dynDestroy.entity);

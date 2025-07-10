@@ -29,11 +29,6 @@ internal class SpriteState : EntityState2D
         this.color = sprite.color;
     }
 
-    public override object Clone()
-    {
-        return new SpriteState(this);
-    }
-
     public override Vector2 AABB
     {
         get

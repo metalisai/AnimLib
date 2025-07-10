@@ -80,7 +80,6 @@ public record DynProperty {
         this.Name = name;
         this._value = initialValue;
         this.ExpectedType = expectedType;
-        Debug.Log($"New dynprop {this.Id} name {this.Name} type {this.ExpectedType}");
     }
 
     /// <summary>

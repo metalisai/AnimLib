@@ -194,24 +194,24 @@ internal class PlayerScene {
         return null;
     }
 
-    public VisualEntity? GetSceneEntityByName(string name) {
+    public DynVisualEntity? GetSceneEntityByName(string name) {
         // TODO: use hash map!
         var objs = GetObjects();
         foreach(var obj in objs) {
-            if(obj.name == name){ 
+            /*if(obj.name == name){ 
                 var ent = World.current.FindEntityByCreator(obj);
                 if(ent == null) {
                     // TODO: player error
                     Debug.Error($"Scene entity {name} exists, but is either already destroyed or not created yet!");
                 }
                 return ent;
-            }
+            }*/
         }
         Debug.Error($"Scene entity {name} does not exist");
         return null;
     }
 
-    public VisualEntity[] GetSceneEntitiesByName(string pattern) {
+    public DynVisualEntity[] GetSceneEntitiesByName(string pattern) {
         throw new NotImplementedException();
         /*Regex ex = new Regex(pattern);
         var objs = GetObjects();
@@ -308,11 +308,12 @@ internal class PlayerScene {
                         sceneObjects[ent.EntityId] = e.obj;
                     }
                 }*/ else if(e.type == SceneEventType.Delete) {
-                    var ent = world.FindEntityByCreator(e.obj);
+                    //var ent = world.FindEntityByCreator(e.obj);
+                    DynVisualEntity? ent = null;
                     if(ent == null) {
                         Debug.Error($"Scene destroying entity that isn't created by us {e.obj.name}");
                     } else {
-                        world.Destroy(ent);
+                        world.DestroyDyn(ent);
                     }
                 }
             } else {
