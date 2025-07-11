@@ -10,6 +10,8 @@ internal class QuadState : NewMeshBackedGeometry
     public Vector3[] vertices = new Vector3[4];
     [Dyn]
     public Color color;
+    [Dyn]
+    public Color outline;
 
     internal QuadState(string uid) : base(uid)
     {
@@ -30,6 +32,11 @@ internal class QuadState : NewMeshBackedGeometry
         mesh.vertices = vertices;
         mesh.colors = [color, color, color, color];
         mesh.indices = [0, 1, 2, 2, 3, 0];
+    }
+
+    public override List<(string, object)> GetShaderProperties()
+    {
+        return [("_Outline", this.outline.ToVector4())];
     }
 }
 

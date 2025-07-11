@@ -290,8 +290,8 @@ void main() {
 
     float alpha = _Color.a*v_color.a;
     vec3 colorRGB = _Color.rgb*v_color.rgb * alpha;
-    //outColor = mix(_Outline, vec4(colorRGB, alpha), blendColorm);
-    outColor = vec4(colorRGB, alpha);
+    outColor = mix(_Outline, vec4(colorRGB, alpha), blendColorm);
+    //outColor = vec4(colorRGB, alpha);
     outEntityId = _EntityId;
 }";
 

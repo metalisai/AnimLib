@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace AnimLib;
@@ -8,12 +9,14 @@ internal class CubeState : NewMeshBackedGeometry
 {
     [Dyn]
     public Color color = Color.YELLOW;
+    [Dyn]
+    public Color outline = Color.BLACK;
 
     public CubeState(string uid) : base(uid)
     {
         this.Shader = BuiltinShader.CubeShader;
     }
-    
+
     public CubeState(string uid, CubeState sls) : this(uid)
     {
         this.color = sls.color;
@@ -46,6 +49,11 @@ internal class CubeState : NewMeshBackedGeometry
             Vector2.ZERO,
             Vector2.ZERO,
         };
+    }
+
+    public override List<(string, object)> GetShaderProperties()
+    {
+        return [("_Outline", this.outline.ToVector4())];
     }
 }
 
