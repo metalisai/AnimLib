@@ -47,11 +47,11 @@ internal partial class SkiaRenderer
 
     Texture2D? tex;
 
-    IPlatform platform;
+    IRendererPlatform platform;
 
     TextPlacement textPlacement;
 
-    public SkiaRenderer(IPlatform platform) {
+    public SkiaRenderer(IRendererPlatform platform) {
         this.platform = platform;
         textPlacement = new TextPlacement(TextPlacement.DefaultFontPath, System.IO.Path.GetFileNameWithoutExtension(TextPlacement.DefaultFontPath));
     }

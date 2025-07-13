@@ -12,7 +12,7 @@ namespace AnimLib;
 /// <summary>
 /// A platform implementation using OpenTK.
 /// </summary>
-internal partial class OpenTKPlatform : GameWindow, IPlatform
+internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
 {
     public class AllocatedResources {
         public List<int> vaos = new List<int>();
@@ -20,8 +20,8 @@ internal partial class OpenTKPlatform : GameWindow, IPlatform
         public List<int> textures = new List<int>();
     }
 
-    public event IPlatform.OnSizeChangedDelegate? OnSizeChanged;
-    public event IPlatform.OnDisplayChangedDelegate? OnDisplayChanged;
+    public event IInteractivePlatform.OnSizeChangedDelegate? OnSizeChanged;
+    public event IInteractivePlatform.OnDisplayChangedDelegate? OnDisplayChanged;
     public event EventHandler? OnLoaded;
     public event EventHandler<MouseButtonEventArgs>? mouseDown;
     public event EventHandler<MouseButtonEventArgs>? mouseUp;

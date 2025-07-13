@@ -56,7 +56,7 @@ internal class PlayerControls {
         }
     }
 
-    RenderState renderer;
+    UserInterface ui;
     SceneView view;
 
     public SceneView MainView {
@@ -67,12 +67,12 @@ internal class PlayerControls {
 
     Dictionary<string, Gizmo3DObj> gizmoStates = new Dictionary<string, Gizmo3DObj>();
 
-    public PlayerControls(RenderState renderer, AnimationPlayer player) {
-        this.renderer = renderer;
+    public PlayerControls(RenderState renderer, UserInterface ui, AnimationPlayer player) {
+        this.ui = ui;
 
         view = new SceneView(0, 0, 100, 100, 1920, 1080);
         renderer.AddSceneView(view);
-        renderer.imgui.DrawMenuEvent += DrawMainMenu;
+        ui.imgui.DrawMenuEvent += DrawMainMenu;
         
         if(this.player != null)
             throw new Exception();
@@ -86,7 +86,7 @@ internal class PlayerControls {
             SetPlaying(playing);
         };
 
-        renderer.imgui.PlayEvent += () => {
+        ui.imgui.PlayEvent += () => {
             Debug.Log("Play " + playing);
             if (!this.playing)
             {
@@ -97,7 +97,7 @@ internal class PlayerControls {
                 this.player.Stop();
             }
         };
-        renderer.imgui.SeekEvent += (float progress) => {
+        ui.imgui.SeekEvent += (float progress) => {
             this.player.Seek(progress);
         };
     }
@@ -773,7 +773,7 @@ internal class PlayerControls {
     }
 
     public void DoInterface() {
-        this.renderer.imgui.SceneWindow((double)view.BufferWidth/view.BufferHeight, view.TextureHandle, this.playing, this.progress, 1.0f);
+        this.ui.imgui.SceneWindow((double)view.BufferWidth/view.BufferHeight, view.TextureHandle, this.playing, this.progress, 1.0f);
 
         if(_showPerformance) {
             ShowPerf();

@@ -35,29 +35,19 @@ public enum BuiltinShader
 
 internal class RenderState 
 {
-    public static IPlatform? currentPlatform;
+    public static IRendererPlatform? currentPlatform;
 
-    readonly internal IPlatform platform;
+    readonly internal IRendererPlatform platform;
     IRenderer? renderer;
     string guid = Guid.NewGuid().ToString();
     bool _renderGizmos = true;
-    IBackendRenderBuffer uiRenderBuffer;
     FontCache _fr;
     ITypeSetter ts = new FreetypeSetting();
-    bool mouseLeft;
-    bool mouseRight;
-    Vector2 mousePos;
-    float scrollValue;
-    float scrollDelta;
     List<SceneView> views = new List<SceneView>();
-    Vector2 debugCamRot;
     System.Diagnostics.Stopwatch sw = new();
     WorldSnapshot? currentScene;
 
     public ColoredTriangleMeshGeometry? cubeGeometry;
-    public bool overrideCamera = false;
-    public PerspectiveCameraState? debugCamera;
-    public Imgui imgui;
 
     public delegate void OnUpdateDelegate(double dt);
     public OnUpdateDelegate? OnUpdate;
@@ -65,21 +55,27 @@ internal class RenderState
     public delegate void OnEndRenderSceneDelegate(IEnumerable<SceneView> views);
     public OnRenderSceneDelegate? OnPreRender;
     public OnEndRenderSceneDelegate? OnPostRender;
+    bool wasOverridden = false;
+    public PerspectiveCameraState? OverrideCamera = null;
+    
+    public IEnumerable<SceneView> Views
+    {
+        get
+        {
+            return views;
+        }
+    }
 
-    public RenderState(IPlatform platform) {
+    public RenderState(IRendererPlatform platform)
+    {
         currentPlatform = platform;
         this.platform = platform;
-        uiRenderBuffer = new DepthPeelRenderBuffer(platform, platform.PresentedColorSpace, false);
 
-        platform.OnSizeChanged += UpdateSize;
+
         platform.OnLoaded += Load;
-        platform.mouseDown += mouseDown;
-        platform.mouseUp += mouseUp;
-        platform.mouseMove += mouseMove;
-        platform.mouseScroll += mouseScroll;
         platform.PRenderFrame += RenderFrame;
 
-        imgui = new Imgui((int)uiRenderBuffer.Size.Item1, (int)uiRenderBuffer.Size.Item2, platform);
+
 
         _fr = new FontCache(ts, platform);
     }
@@ -100,97 +96,18 @@ internal class RenderState
         }
     }
 
-    public int WindowWidth {
-        get {
-            return uiRenderBuffer.Size.Item1;
-        }
-    }
-
-    public int WindowHeight {
-        get {
-            return uiRenderBuffer.Size.Item2;
-        }
-    }
-
-    // resize buffers, UI etc
-    public void UpdateSize(int width, int height) {
-        if(uiRenderBuffer.Size.Item1 != width || uiRenderBuffer.Size.Item2 != height) {
-            Debug.TLog($"Resize window to {width}x{height}");
-            uiRenderBuffer.Resize(width, height);
-        }
-    }
-
-    public void Load(object? sender, EventArgs args) {
+    public void Load(object? sender, EventArgs args)
+    {
         CreateMeshes();
 
         var glPlatform = platform as OpenTKPlatform;
-        if(glPlatform == null) {
+        if (glPlatform == null)
+        {
             throw new Exception("GlWorldRenderer currently requires OpenTKPlatform");
         }
         renderer = new GlWorldRenderer(glPlatform, this);
         //renderer = new TessallationRenderer(platform as OpenTKPlatform, this);
         Debug.TLog($"Renderer implementation: {renderer}");
-        uiRenderBuffer.Resize(1024, 1024);
-
-        platform.PKeyDown += (object? sender, KeyboardKeyEventArgs args) => {
-            if(args.Key == Key.F && !args.IsRepeat) {
-                overrideCamera = !overrideCamera;
-                if(overrideCamera) {
-                    debugCamera = new PerspectiveCameraState();
-                    debugCamera.position.z = -13.0f;
-                } else {
-                    if (debugCamera != null) {
-                        debugCamera.position = Vector3.ZERO;
-                    }
-                    this.debugCamRot = Vector2.ZERO;
-                }
-            }
-            Imgui.KeyEdge((uint)args.Key, true);
-        };
-        platform.PKeyUp += (object? sender, KeyboardKeyEventArgs args) => {
-            Imgui.KeyEdge((uint)args.Key, false);
-        };
-        platform.PKeyPress += (object? sender, KeyPressEventArgs args) => {
-            Imgui.AddInputCharacter(args.KeyChar);
-        };
-
-        this.OnUpdate += (double dtd) => {
-            float dt = (float)dtd;
-            var kstate = Keyboard.GetState();
-            if(overrideCamera && debugCamera != null) {
-                float s = 5.0f;
-                if(kstate.IsKeyDown(Key.ShiftLeft)) {
-                    s = 0.01f;
-                }
-                if(kstate.IsKeyDown(Key.W)) {
-                    debugCamera.position += debugCamera.rotation*Vector3.FORWARD*dt*s;
-                }
-                if(kstate.IsKeyDown(Key.S)) {
-                    debugCamera.position -= debugCamera.rotation*Vector3.FORWARD*dt*s;
-                }
-                if(kstate.IsKeyDown(Key.A)) {
-                    debugCamera.position -= debugCamera.rotation*Vector3.RIGHT*dt*s;
-                }
-                if(kstate.IsKeyDown(Key.D)) {
-                    debugCamera.position += debugCamera.rotation*Vector3.RIGHT*dt*s;
-                }
-            }
-        };
-
-        platform.mouseMove += (object? s, MouseMoveEventArgs args) => {
-            var state = OpenTK.Input.Keyboard.GetState();
-            if(overrideCamera && !state[OpenTK.Input.Key.ControlLeft]) {
-                this.debugCamRot.x += args.XDelta*0.01f;
-                this.debugCamRot.y += args.YDelta*0.01f;
-                this.debugCamRot.x %= 2*MathF.PI;
-                this.debugCamRot.y %= 2*MathF.PI;
-                var qx = Quaternion.AngleAxis(debugCamRot.x, Vector3.UP);
-                var qy = Quaternion.AngleAxis(debugCamRot.y, Vector3.RIGHT);
-                if (debugCamera != null) {
-                    debugCamera.rotation = qy * qx;
-                }
-            }
-        };
     }
 
     public FontCache FontCache {
@@ -213,42 +130,10 @@ internal class RenderState
         views.Remove(view);
     }
 
-    private void mouseDown(object? sender, MouseButtonEventArgs args) {
-        if(args.Button == MouseButton.Left) {
-            mouseLeft = true;
-        }
-        if(args.Button == MouseButton.Right) {
-            mouseRight = true;
-        }
-    }
-
-    private void mouseUp(object? sender, MouseButtonEventArgs args) {
-        if(args.Button == MouseButton.Left) {
-            mouseLeft = false;
-        }
-        if(args.Button == MouseButton.Right) {
-            mouseRight = false;
-        }
-    }
-
-    private void mouseMove(object? sender, MouseMoveEventArgs args) {
-        mousePos = new Vector2(args.Position.X, args.Position.Y);
-    }
-
-    private void mouseScroll(object? sender, MouseWheelEventArgs args) {
-        scrollValue = args.ValuePrecise;
-        scrollDelta = args.DeltaPrecise;
-    }
-
-    public int GetGuiEntityAtPixel(IBackendRenderBuffer pb, Vector2 pixel) {
-        if(pixel.x >= 0.0f && pixel.x < pb.Size.Item1 && pixel.y >= 0.0f && pixel.y < pb.Size.Item2) {
-            return pb.GetEntityAtPixel((int)pixel.x, pb.Size.Item2-(int)pixel.y-1);
-        } else {
-            return -2;
-        }
-    }
+    public bool SceneDirty = true;
     
-    private void CreateMeshes() {
+    private void CreateMeshes()
+    {
         cubeGeometry = new ColoredTriangleMeshGeometry(guid);
         cubeGeometry.vertices = new Vector3[] {
             new Vector3(-0.5f, -0.5f, -0.5f),
@@ -290,51 +175,50 @@ internal class RenderState
         currentScene = ss;
     }
 
-    bool wasOverridden = false;
-
-    private void RenderFrame(object? sender, FrameEventArgs args) {
+    private void RenderFrame(object? sender, FrameEventArgs args)
+    {
         Performance.BeginFrame();
 
-        // TODO: use actual frame rate
-        imgui.Update(uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2, 1.0f/60.0f, mousePos, mouseLeft, mouseRight, false, scrollDelta);
-        scrollDelta = 0.0f;
-
-        if(OnPreRender != null) {
+        if (OnPreRender != null)
+        {
             using var _ = new Performance.Call("RenderState.OnPreRender");
             OnPreRender();
         }
 
-        bool sceneUpdated = overrideCamera || wasOverridden || SceneStatus == AnimationPlayer.FrameStatus.New;
-        wasOverridden = overrideCamera;
+        bool sceneUpdated = OverrideCamera != null || wasOverridden || SceneStatus == AnimationPlayer.FrameStatus.New;
         //bool sceneUpdated = true;
-        uiRenderBuffer.Clear();
+        wasOverridden = OverrideCamera != null;
 
-        platform.ClearBackbuffer(0, 0, uiRenderBuffer.Size.Item1, uiRenderBuffer.Size.Item2);
-        
         {
             using var _ = new Performance.Call("BeginFrame views");
-            foreach(var view in views) {
+            foreach (var view in views)
+            {
                 view.BeginFrame();
             }
         }
-        if(OnUpdate != null) {
+        if (OnUpdate != null)
+        {
             using var _ = new Performance.Call("RenderState.OnUpdate");
             OnUpdate(args.Time);
         }
-        
+
         // Render scene
-        if(currentScene != null && renderer != null)
+        if (currentScene != null && renderer != null)
         {
             using var _ = new Performance.Call("Render views");
             Performance.views = views.Count;
             sw.Restart();
-            if(sceneUpdated) {
-                foreach(var sv in views) {
+            if (SceneDirty || SceneStatus == AnimationPlayer.FrameStatus.New)
+            {
+                foreach (var sv in views)
+                {
                     var sceneCamera = currentScene.Camera;
-                    if(overrideCamera) {
-                        sceneCamera = debugCamera;
+                    if (OverrideCamera != null)
+                    {
+                        sceneCamera = OverrideCamera;
                     }
-                    if (sceneCamera == null) {
+                    if (sceneCamera == null)
+                    {
                         Debug.Warning("No camera in scene");
                         continue;
                     }
@@ -346,39 +230,23 @@ internal class RenderState
             Performance.TimeToRenderViews = sw.Elapsed.TotalSeconds;
         }
 
-        if(sceneUpdated) {
+        if (sceneUpdated)
+        {
             using var _ = new Performance.Call("OnPostRender views");
-            foreach(var view in views) {
+            foreach (var view in views)
+            {
                 view.Buffer?.OnPostRender();
             }
         }
 
-        if(OnPostRender != null) {
+        if (OnPostRender != null)
+        {
             using var _ = new Performance.Call("RenderState.OnPostRender");
             OnPostRender(views);
         }
 
-        // Render UI
-        {
-            using var _ = new Performance.Call("Render UI");
-            var drawList = imgui.Render();
-            platform.RenderGUI(drawList, views, uiRenderBuffer);
-        }
-
-        int sceneEntity = -2;
-        if (views.Count > 0) {
-            sceneEntity = views[0].GetEntityIdAtPixel(Imgui.GetMousePos());
-        }
-        var guiEntity = GetGuiEntityAtPixel(uiRenderBuffer, Imgui.GetMousePos());
-        if(sceneEntity == -2) { // out of scene viewport
-            UserInterface.MouseEntityId = guiEntity;
-        } else {
-            if (guiEntity == -1)
-                UserInterface.MouseEntityId = sceneEntity;
-            else
-                UserInterface.MouseEntityId = guiEntity;
-        }
-
         Performance.EndFrame();
+
+        SceneDirty = false;
     }
 }

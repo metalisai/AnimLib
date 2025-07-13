@@ -48,7 +48,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
 
     public FrameColorSpace ColorSpace { get; private set; }
 
-    public DepthPeelRenderBuffer(IPlatform platform, FrameColorSpace colorSpace, bool multisample) {
+    public DepthPeelRenderBuffer(IRendererPlatform platform, FrameColorSpace colorSpace, bool multisample) {
         // this is an OpenGL implementation and requires an OpenGL platform
         ColorSpace = colorSpace;
         this.platform = (OpenTKPlatform)platform;

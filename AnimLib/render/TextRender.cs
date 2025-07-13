@@ -82,7 +82,7 @@ internal class FontCache {
 
     bool cacheDirty = false;
 
-    IPlatform platform;
+    IRendererPlatform platform;
 
     internal void RenderGlyph(char c, float size, FontGlyph fg) {
         int gend = curX + fg.w + 1;
@@ -121,7 +121,7 @@ internal class FontCache {
         cacheDirty = true;
     }
 
-    internal FontCache(ITypeSetter ts, IPlatform platform) {
+    internal FontCache(ITypeSetter ts, IRendererPlatform platform) {
         /*for(int i = 33; i < 127; i++) {
             var surface = RenderSurface((char)i, font);
             textures[i] = surface;

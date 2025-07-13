@@ -12,11 +12,11 @@ internal class MultisampleRenderBuffer : IBackendRenderBuffer, IDisposable{
     int _entityIdTex = -1;
     int _width, _height;
     int _blitvao = -1, _blitvbo = -1;
-    IPlatform platform;
+    IRendererPlatform platform;
 
     public FrameColorSpace ColorSpace { get; private set; }
 
-    public MultisampleRenderBuffer(IPlatform platform, FrameColorSpace colorSpace) {
+    public MultisampleRenderBuffer(IRendererPlatform platform, FrameColorSpace colorSpace) {
         ColorSpace = colorSpace;
         this.platform = platform;
     }

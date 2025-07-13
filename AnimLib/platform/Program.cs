@@ -128,56 +128,78 @@ internal class Program
 
     static FileSystemWatcher? watcher;
 
-    static void LaunchEditor(bool useSkiaSoftware = false, string? projectPath = null) {
-        var platform = new OpenTKPlatform(1024, 1024, 
+    static void LaunchHeadless(bool useSkiaSoftware = false, string? projectPath = null)
+    {
+        Debug.Log("Launching headless");
+    }
+
+    static void LaunchEditor(bool useSkiaSoftware = false, string? projectPath = null)
+    {
+        var platform = new OpenTKPlatform(1024, 1024,
             skiaSoftware: useSkiaSoftware
         );
         var renderState = new RenderState(platform);
+        var ui = new UserInterface(platform, renderState);
 
-        AnimationPlayer player = new (new NoProjectBehaviour());
-        PlayerControls pctrl = new (renderState, player);
+        AnimationPlayer player = new(new NoProjectBehaviour());
+        PlayerControls pctrl = new(renderState, ui, player);
 
 
         player.ResourceManager.OnAssemblyChanged += (path) => AssemblyPathChanged(path, player);
         pctrl.SetPlayer(player);
-        
+
         SynchronizationContext.SetSynchronizationContext(mainCtx);
 
-        platform.PFileDrop += (object? sender, OpenTK.Input.FileDropEventArgs args) => {
+        platform.PFileDrop += (object? sender, OpenTK.Input.FileDropEventArgs args) =>
+        {
             Debug.Log($"DROP FILE {args.FileName}");
             player.FileDrop(args.FileName);
         };
 
-        platform.PKeyUp += (object? sender, OpenTK.Input.KeyboardKeyEventArgs args) => {
-            if(args.Key == OpenTK.Input.Key.Delete) {
+        platform.PKeyUp += (object? sender, OpenTK.Input.KeyboardKeyEventArgs args) =>
+        {
+            if (args.Key == OpenTK.Input.Key.Delete)
+            {
                 pctrl.Delete();
             }
-            if(args.Control && args.Key == OpenTK.Input.Key.C) {
+            if (args.Control && args.Key == OpenTK.Input.Key.C)
+            {
                 pctrl.Copy();
             }
-            if(args.Control && args.Key == OpenTK.Input.Key.V) {
+            if (args.Control && args.Key == OpenTK.Input.Key.V)
+            {
                 pctrl.Paste();
             }
-            if(args.Control && args.Key == OpenTK.Input.Key.S) {
+            if (args.Control && args.Key == OpenTK.Input.Key.S)
+            {
                 pctrl.Save();
             }
         };
 
+        platform.PRenderFrame += ui.OnUpdate;
+        renderState.OnPreRender += ui.OnPreRender;
+        renderState.OnPostRender += ui.OnPostRender;
+
         double refreshRate = 60.0;
-        platform.OnDisplayChanged += (int w, int h, double rate) => {
+        platform.OnDisplayChanged += (int w, int h, double rate) =>
+        {
             Debug.Log($"Resolution changed to {w}x{h}@{rate}");
             refreshRate = rate;
         };
 
-        renderState.OnPreRender += () => {
+        renderState.OnPreRender += () =>
+        {
             mainCtx.InvokeAllPosted();
 
             // render animation handle UI
-            foreach(var h in player.GetAnimationHandles()) {
-                if(h.StartTime <= Time.T) {
+            foreach (var h in player.GetAnimationHandles())
+            {
+                if (h.StartTime <= Time.T)
+                {
                     bool update;
                     h.Position = pctrl.Show2DHandle(h.Identifier, h.Position, h.Anchor, out update);
-                    if(update) {
+                    if (update)
+                    {
                         player.Update2DHandle(h.Identifier, h.Position);
                         player.SetAnimationDirty(true);
                         break;
@@ -185,16 +207,19 @@ internal class Program
                 }
             }
             int i = 0;
-            foreach(var h in player.GetAnimationHandles3D()) {
-                if(h.StartTime <= Time.T) {
+            foreach (var h in player.GetAnimationHandles3D())
+            {
+                if (h.StartTime <= Time.T)
+                {
                     //if((UserInterface.WorldCamera.position - h.Position).Length > 1.0f) {
-                        bool update;
-                        h.Position = pctrl.Show3DHandle(h.Identifier, h.Position, out update);
-                        if(update) {
-                            player.Update3DHandle(h.Identifier, h.Position);
-                            player.SetAnimationDirty(true);
-                            break;
-                        }
+                    bool update;
+                    h.Position = pctrl.Show3DHandle(h.Identifier, h.Position, out update);
+                    if (update)
+                    {
+                        player.Update3DHandle(h.Identifier, h.Position);
+                        player.SetAnimationDirty(true);
+                        break;
+                    }
                     //}
                 }
                 i++;
@@ -202,18 +227,20 @@ internal class Program
 
             // render editor UI
             pctrl.DoInterface();
-            var frameStatus = player.NextFrame(1.0/refreshRate, out var ret);
+            var frameStatus = player.NextFrame(1.0 / refreshRate, out var ret);
             i++;
-            if(frameStatus == AnimationPlayer.FrameStatus.New) {
+            if (frameStatus == AnimationPlayer.FrameStatus.New)
+            {
                 renderState.SetScene(ret!);
             }
             renderState.SceneStatus = frameStatus;
             renderState.RenderGizmos = !player.Exporting;
         };
-           
+
         renderState.OnPostRender += player.OnEndRenderScene;
 
-        if(projectPath != null) {
+        if (projectPath != null)
+        {
             Debug.Log($"Loading project {projectPath}");
             player.ResourceManager.SetProject(projectPath);
         }
@@ -221,7 +248,7 @@ internal class Program
         platform.Run(144.0, 144.0);
         player.Close();
         Console.WriteLine("Application closing");
-        if(watcher != null) watcher.Dispose();
+        if (watcher != null) watcher.Dispose();
     }
 
     [STAThread]
@@ -235,15 +262,28 @@ internal class Program
             "--project", 
             "Project file to load"
         );
+        var headlessOption = new Option<bool>(
+            "--headless",
+            "Launch headless"
+        );
         var rootCommand = new RootCommand("Animation editor");
         rootCommand.AddOption(skiaSoftwareOption);
         skiaSoftwareOption.IsRequired = false;
         rootCommand.AddOption(projectOption);
         projectOption.IsRequired = false;
-        rootCommand.SetHandler( (useSw, project) => {
+        rootCommand.AddOption(headlessOption);
+        headlessOption.IsRequired = false;
+        rootCommand.SetHandler( (useSw, project, headless) => {
                 Debug.Log($"Using SkiaSharp software rendering: {useSw}");
+            if (!headless)
+            {
                 LaunchEditor(useSw, project);
-            }, skiaSoftwareOption, projectOption
+            }
+            else
+            {
+                LaunchHeadless(useSw, project);
+            }
+            }, skiaSoftwareOption, projectOption, headlessOption
         );
         var code = rootCommand.Invoke(args);
         Debug.Log($"Root command returned {code}. Exiting");

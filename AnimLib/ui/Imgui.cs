@@ -458,7 +458,7 @@ internal class Imgui {
     IntPtr ctxHandle;
 
     Dictionary<int, Texture2D> textures = new Dictionary<int, Texture2D>();
-    public Imgui(int width, int height, IPlatform platform) {
+    public Imgui(int width, int height, IRendererPlatform platform) {
         draw_data_cb = new imgui_animlib_draw_data_cb_t(DrawDataCallback);
         draw_cb = new imgui_animlib_draw_cb_t(DrawCallback);
         draw_menu_cb = new imgui_animlib_draw_menu_t(DrawMenuCallback);
