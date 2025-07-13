@@ -1,11 +1,12 @@
 using System;
 using System.Linq;
-using OpenTK;
+using OpenTK.Windowing.Desktop;
 using OpenTK.Graphics.OpenGL4;
-using OpenTK.Input;
+using OpenTK.Windowing.Common;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using OpenTK.Mathematics;
 
 namespace AnimLib;
 
@@ -23,20 +24,20 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
     public event IInteractivePlatform.OnSizeChangedDelegate? OnSizeChanged;
     public event IInteractivePlatform.OnDisplayChangedDelegate? OnDisplayChanged;
     public event EventHandler? OnLoaded;
-    public event EventHandler<MouseButtonEventArgs>? mouseDown;
-    public event EventHandler<MouseButtonEventArgs>? mouseUp;
-    public event EventHandler<MouseMoveEventArgs>? mouseMove;
-    public event EventHandler<MouseWheelEventArgs>? mouseScroll;
-    public event EventHandler<KeyboardKeyEventArgs>? PKeyDown;
-    public event EventHandler<KeyboardKeyEventArgs>? PKeyUp;
-    public event EventHandler<KeyPressEventArgs>? PKeyPress;
-    public event EventHandler<OpenTK.Input.FileDropEventArgs>? PFileDrop;
-    public event EventHandler<FrameEventArgs>? PRenderFrame;
+    public event Action<MouseButtonEventArgs>? mouseDown;
+    public event Action<MouseButtonEventArgs>? mouseUp;
+    public event Action<MouseMoveEventArgs>? mouseMove;
+    public event Action<MouseWheelEventArgs>? mouseScroll;
+    public event Action<KeyboardKeyEventArgs>? PKeyDown;
+    public event Action<KeyboardKeyEventArgs>? PKeyUp;
+    public event Action<TextInputEventArgs>? PTextInput;
+    public event Action<FileDropEventArgs>? PFileDrop;
+    public event Action<FrameEventArgs>? PRenderFrame;
 
     System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
 
-    public int WinWidth { get { return Width; } }
-    public int WinHeight { get { return Height; } }
+    public int WinWidth { get { return Size.X; } }
+    public int WinHeight { get { return Size.Y; } }
 
     private int imguiVao, imguiVbo, imguiEbo;
 
@@ -71,14 +72,23 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
     public static ConcurrentBag<string> destroyedOwners = new ConcurrentBag<string>();
     public Dictionary<string, AllocatedResources> allocatedResources = new Dictionary<string, AllocatedResources>();
 
-    public OpenTKPlatform(int width, int height, bool skiaSoftware = false) : base(width, height, new OpenTK.Graphics.GraphicsMode(), "Test", 0 , DisplayDevice.Default, 3, 3, OpenTK.Graphics.GraphicsContextFlags.ForwardCompatible) {
-        Width = width;
-        Height = height;
+    public OpenTKPlatform(int width, int height, bool skiaSoftware = false)/* : base(width, height, new OpenTK.Graphics.GraphicsMode(), "Test", 0 , DisplayDevice.Default, 3, 3, OpenTK.Graphics.GraphicsContextFlags.ForwardCompatible)*/
+    : base(GameWindowSettings.Default, new NativeWindowSettings
+    {
+        API = ContextAPI.OpenGL,
+        APIVersion = new Version(3, 3),
+        AutoLoadBindings = true,
+        ClientSize = new Vector2i(width, height),
+        Profile = ContextProfile.Compatability,
+        SrgbCapable = true,
+        Title = "Test",
+    })
+    {
         _useSkiaSoftware = skiaSoftware;
 
-        FileDrop += (object? sender, OpenTK.Input.FileDropEventArgs args) => {
+        FileDrop += (FileDropEventArgs args) => {
             if(PFileDrop != null) {
-                PFileDrop(this, args);
+                PFileDrop(args);
             }
         };
 
@@ -102,20 +112,15 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
         destroyedOwners.Add(hash);
     }
 
-    protected override void OnResize(EventArgs e) {
+    protected override void OnResize(ResizeEventArgs e) {
         if(OnSizeChanged != null) {
-            OnSizeChanged(this.Width, this.Height);
+            OnSizeChanged(this.Size.X, this.Size.Y);
         }
-        if(OnDisplayChanged != null) {
-            double maxrate = 0.0;
-            foreach (DisplayIndex index in Enum.GetValues(typeof(DisplayIndex))) { 
-                var dsp = DisplayDevice.GetDisplay(index);
-                if (dsp != null) {
-                    maxrate = Math.Max(dsp.RefreshRate, maxrate);
-                }
-            }
-            if (maxrate == 0.0) maxrate = 60.0;
-            OnDisplayChanged(this.Width, this.Height, maxrate);
+        if (OnDisplayChanged != null)
+        {
+            var monitor = Monitors.GetMonitorFromWindow(this);
+            OnDisplayChanged(Size.X, Size.Y, monitor.CurrentVideoMode.RefreshRate);
+            Debug.Log($"Resize {Size.X}x{Size.Y}@{monitor.CurrentVideoMode.RefreshRate}");
         }
         base.OnResize(e);
     }
@@ -141,7 +146,7 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
     private static readonly DebugProc? _debugCallback = debugCallback;
     private static GCHandle _debugProcCallbackHandle;
 
-    protected override void OnLoad(EventArgs e) {
+    protected override void OnLoad() {
         GL.DebugMessageCallback(proc, IntPtr.Zero);
         GL.Disable(EnableCap.Dither);
         GL.Enable(EnableCap.DebugOutput);
@@ -151,7 +156,7 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
         GL.BlendFunc(BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
         GL.Enable(EnableCap.CullFace);
         GL.FrontFace(FrontFaceDirection.Ccw);
-        GL.CullFace(CullFaceMode.Front);
+        GL.CullFace(TriangleFace.Front);
         GL.DepthFunc(DepthFunction.Lequal);
         GL.Enable(EnableCap.DepthTest);
 
@@ -186,40 +191,42 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
         string rendererStr = GL.GetString(StringName.Renderer);
         Debug.Log($"OpenGL context info\n\tGL version: {version}\n\tShading language version: {shadingLang}\n\tRenderer: {rendererStr}");
 
-        this.KeyDown += (object? sender, KeyboardKeyEventArgs args) => {
+        this.KeyDown += (KeyboardKeyEventArgs args) => {
             if (PKeyDown != null) {
-                PKeyDown(this, args);
+                PKeyDown(args);
             }
         };
-        this.KeyUp += (object? sender, KeyboardKeyEventArgs args) => {
+        this.KeyUp += (KeyboardKeyEventArgs args) => {
             if (PKeyUp != null) {
-                PKeyUp(this, args);
+                PKeyUp(args);
             }
         };
-        this.KeyPress += (object? sender, KeyPressEventArgs args) => {
-            if (PKeyPress != null) {
-                PKeyPress(this, args);
+        this.TextInput += (TextInputEventArgs args) =>
+        {
+            if (PTextInput != null)
+            {
+                PTextInput(args);
             }
         };
 
-        this.MouseDown += (object? sender, MouseButtonEventArgs args) => {
+        this.MouseDown += (MouseButtonEventArgs args) => {
             if (mouseDown != null) {
-                mouseDown(this, args);
+                mouseDown(args);
             }
         };
-        this.MouseUp += (object? sender, MouseButtonEventArgs args) => {
+        this.MouseUp += (MouseButtonEventArgs args) => {
             if (mouseUp != null) {
-                mouseUp(this, args);
+                mouseUp(args);
             }
         };
-        this.MouseMove += (object? sender, MouseMoveEventArgs args) => {
+        this.MouseMove += (MouseMoveEventArgs args) => {
             if (mouseMove != null) {
-                mouseMove(this, args);
+                mouseMove(args);
             }
         };
-        this.MouseWheel += (object? sender, MouseWheelEventArgs args) => {
+        this.MouseWheel += (MouseWheelEventArgs args) => {
             if (mouseScroll != null) {
-                mouseScroll(this, args);
+                mouseScroll(args);
             }
         };
 
@@ -236,7 +243,7 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
             OnLoaded(this, new());
         }
 
-        base.OnLoad(e);
+        base.OnLoad();
     }
 
     public void LoadTexture(Texture2D tex2d) {
@@ -343,7 +350,7 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
         }
 
         if(PRenderFrame != null) {
-            PRenderFrame(this, e);
+            PRenderFrame(e);
         }
         sw.Stop();
         Performance.TimeToProcessFrame = sw.Elapsed.TotalSeconds;
@@ -410,7 +417,7 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
             } else { // rendering gui
                 GL.Uniform1(entIdLoc, 0xAAAAAAA);
             }
-            GL.Scissor((int)dc.clipRect.Item1, Height - (int)dc.clipRect.Item4, (int)(dc.clipRect.Item3-dc.clipRect.Item1), (int)(dc.clipRect.Item4-dc.clipRect.Item2));
+            GL.Scissor((int)dc.clipRect.Item1, Size.Y - (int)dc.clipRect.Item4, (int)(dc.clipRect.Item3-dc.clipRect.Item1), (int)(dc.clipRect.Item4-dc.clipRect.Item2));
 #warning remove
             GL.BindSampler(0, linearSampler);
             GL.DrawElementsBaseVertex(PrimitiveType.Triangles, (int)dc.elemCount, DrawElementsType.UnsignedShort, new IntPtr(dc.idxOffset*sizeof(ushort)), (int)dc.vOffset);
@@ -469,7 +476,7 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
         }
         RenderImGui(data, views, rb);
         pb.NextLayer();
-        if (data != null) pb.BlendToScreen(Width, Height);
+        if (data != null) pb.BlendToScreen(Size.X, Size.Y);
     }
 
     public void ClearBackbuffer(int x, int y, int w, int h) {
@@ -684,7 +691,8 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
 
     protected override void Dispose(bool dispose) {
         // TODO: a lot of stuf needs to be disposed here
-        if (!IsDisposed) {
+        //if (!IsDisposed)
+        {
             GL.DeleteVertexArray(blitvao);
             GL.DeleteBuffer(blitvbo);
             blitvao = -1;

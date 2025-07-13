@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.CommandLine.IO;
 using System.Linq;
-using OpenTK;
-using OpenTK.Input;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace AnimLib;
 
@@ -55,7 +55,7 @@ internal class UserInterface
         }
     }
 
-    private void mouseDown(object? sender, MouseButtonEventArgs args)
+    private void mouseDown(MouseButtonEventArgs args)
     {
         if (args.Button == MouseButton.Left)
         {
@@ -67,7 +67,7 @@ internal class UserInterface
         }
     }
 
-    private void mouseUp(object? sender, MouseButtonEventArgs args)
+    private void mouseUp(MouseButtonEventArgs args)
     {
         if (args.Button == MouseButton.Left)
         {
@@ -79,15 +79,16 @@ internal class UserInterface
         }
     }
 
-    private void mouseMove(object? sender, MouseMoveEventArgs args)
+    private void mouseMove(MouseMoveEventArgs args)
     {
         mousePos = new Vector2(args.Position.X, args.Position.Y);
     }
 
-    private void mouseScroll(object? sender, MouseWheelEventArgs args)
+    private void mouseScroll(MouseWheelEventArgs args)
     {
-        scrollValue = args.ValuePrecise;
-        scrollDelta = args.DeltaPrecise;
+        // TODO: wrong
+        scrollValue = args.OffsetY;
+        scrollDelta = args.OffsetY;
     }
 
     public int WindowWidth
@@ -110,9 +111,9 @@ internal class UserInterface
     {
         uiRenderBuffer.Resize(1024, 1024);
 
-        uiPlatform.PKeyDown += (object? sender, KeyboardKeyEventArgs args) =>
+        uiPlatform.PKeyDown += (KeyboardKeyEventArgs args) =>
         {
-            if (args.Key == Key.F && !args.IsRepeat)
+            if (args.Key == Keys.F && !args.IsRepeat)
             {
                 overrideCamera = !overrideCamera;
                 if (overrideCamera)
@@ -131,22 +132,22 @@ internal class UserInterface
             }
             Imgui.KeyEdge((uint)args.Key, true);
         };
-        uiPlatform.PKeyUp += (object? sender, KeyboardKeyEventArgs args) =>
+        uiPlatform.PKeyUp += (KeyboardKeyEventArgs args) =>
         {
             Imgui.KeyEdge((uint)args.Key, false);
         };
-        uiPlatform.PKeyPress += (object? sender, KeyPressEventArgs args) =>
+        uiPlatform.PTextInput += (TextInputEventArgs args) =>
         {
-            Imgui.AddInputCharacter(args.KeyChar);
+            Imgui.AddInputCharacter((uint)args.Unicode);
         };
 
-        uiPlatform.mouseMove += (object? s, MouseMoveEventArgs args) =>
+        uiPlatform.mouseMove += (MouseMoveEventArgs args) =>
         {
-            var state = OpenTK.Input.Keyboard.GetState();
-            if (overrideCamera && !state[OpenTK.Input.Key.ControlLeft])
+            var state = uiPlatform.KeyboardState;
+            if (overrideCamera && !state.IsKeyDown(Keys.LeftControl))
             {
-                this.debugCamRot.x += args.XDelta * 0.01f;
-                this.debugCamRot.y += args.YDelta * 0.01f;
+                this.debugCamRot.x += args.DeltaX * 0.01f;
+                this.debugCamRot.y += args.DeltaY * 0.01f;
                 this.debugCamRot.x %= 2 * MathF.PI;
                 this.debugCamRot.y %= 2 * MathF.PI;
                 var qx = Quaternion.AngleAxis(debugCamRot.x, Vector3.UP);
@@ -200,30 +201,30 @@ internal class UserInterface
         wasOverridden = overrideCamera;
     }
 
-    public void OnUpdate(object? sender, FrameEventArgs args)
+    public void OnUpdate(FrameEventArgs args)
     {
         float dt = (float)args.Time;
-        var kstate = Keyboard.GetState();
+        var kstate = uiPlatform.KeyboardState;
         if (overrideCamera && debugCamera != null)
         {
             float s = 5.0f;
-            if (kstate.IsKeyDown(Key.ShiftLeft))
+            if (kstate.IsKeyDown(Keys.LeftShift))
             {
                 s = 0.01f;
             }
-            if (kstate.IsKeyDown(Key.W))
+            if (kstate.IsKeyDown(Keys.W))
             {
                 debugCamera.position += debugCamera.rotation * Vector3.FORWARD * dt * s;
             }
-            if (kstate.IsKeyDown(Key.S))
+            if (kstate.IsKeyDown(Keys.S))
             {
                 debugCamera.position -= debugCamera.rotation * Vector3.FORWARD * dt * s;
             }
-            if (kstate.IsKeyDown(Key.A))
+            if (kstate.IsKeyDown(Keys.A))
             {
                 debugCamera.position -= debugCamera.rotation * Vector3.RIGHT * dt * s;
             }
-            if (kstate.IsKeyDown(Key.D))
+            if (kstate.IsKeyDown(Keys.D))
             {
                 debugCamera.position += debugCamera.rotation * Vector3.RIGHT * dt * s;
             }

@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading;
 using System.Collections.Concurrent;
 using System.CommandLine;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace AnimLib;
 
@@ -131,6 +133,8 @@ internal class Program
     static void LaunchHeadless(bool useSkiaSoftware = false, string? projectPath = null)
     {
         Debug.Log("Launching headless");
+        var platform = new HeadlessOpenTKPlatform();
+        Debug.Log("Exiting");
     }
 
     static void LaunchEditor(bool useSkiaSoftware = false, string? projectPath = null)
@@ -150,27 +154,27 @@ internal class Program
 
         SynchronizationContext.SetSynchronizationContext(mainCtx);
 
-        platform.PFileDrop += (object? sender, OpenTK.Input.FileDropEventArgs args) =>
+        platform.PFileDrop += (FileDropEventArgs args) =>
         {
-            Debug.Log($"DROP FILE {args.FileName}");
-            player.FileDrop(args.FileName);
+            Debug.Log($"DROP FILE {args.FileNames[0]}");
+            player.FileDrop(args.FileNames[0]);
         };
 
-        platform.PKeyUp += (object? sender, OpenTK.Input.KeyboardKeyEventArgs args) =>
+        platform.PKeyUp += (KeyboardKeyEventArgs args) =>
         {
-            if (args.Key == OpenTK.Input.Key.Delete)
+            if (args.Key == Keys.Delete)
             {
                 pctrl.Delete();
             }
-            if (args.Control && args.Key == OpenTK.Input.Key.C)
+            if (args.Control && args.Key == Keys.C)
             {
                 pctrl.Copy();
             }
-            if (args.Control && args.Key == OpenTK.Input.Key.V)
+            if (args.Control && args.Key == Keys.V)
             {
                 pctrl.Paste();
             }
-            if (args.Control && args.Key == OpenTK.Input.Key.S)
+            if (args.Control && args.Key == Keys.S)
             {
                 pctrl.Save();
             }
@@ -245,7 +249,8 @@ internal class Program
             player.ResourceManager.SetProject(projectPath);
         }
 
-        platform.Run(144.0, 144.0);
+        //platform.Run(144.0, 144.0);
+        platform.Run();
         player.Close();
         Console.WriteLine("Application closing");
         if (watcher != null) watcher.Dispose();

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-using OpenTK;
-using OpenTK.Input;
+using OpenTK.Windowing.Common;
 
 namespace AnimLib;
 
@@ -175,7 +174,7 @@ internal class RenderState
         currentScene = ss;
     }
 
-    private void RenderFrame(object? sender, FrameEventArgs args)
+    private void RenderFrame(FrameEventArgs args)
     {
         Performance.BeginFrame();
 

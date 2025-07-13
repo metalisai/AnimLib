@@ -1,7 +1,7 @@
 using System;
-using OpenTK;
-using OpenTK.Input;
+using OpenTK.Windowing.Common;
 using System.Collections.Generic;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace AnimLib;
 
@@ -18,16 +18,18 @@ internal interface IUserInterfacePlatform
     event OnSizeChangedDelegate OnSizeChanged;
     delegate void OnDisplayChangedDelegate(int w, int h, double rate);
     event OnDisplayChangedDelegate OnDisplayChanged;
-    event EventHandler<MouseButtonEventArgs> mouseDown;
-    event EventHandler<MouseButtonEventArgs> mouseUp;
-    event EventHandler<MouseMoveEventArgs> mouseMove;
-    event EventHandler<MouseWheelEventArgs> mouseScroll;
-    event EventHandler<KeyboardKeyEventArgs> PKeyDown;
-    event EventHandler<KeyboardKeyEventArgs> PKeyUp;
-    event EventHandler<KeyPressEventArgs> PKeyPress;
+    event Action<MouseButtonEventArgs> mouseDown;
+    event Action<MouseButtonEventArgs> mouseUp;
+    event Action<MouseMoveEventArgs> mouseMove;
+    event Action<MouseWheelEventArgs> mouseScroll;
+    event Action<KeyboardKeyEventArgs> PKeyDown;
+    event Action<KeyboardKeyEventArgs> PKeyUp;
+    event Action<TextInputEventArgs> PTextInput;
     event EventHandler OnLoaded;
 
-    event EventHandler<OpenTK.Input.FileDropEventArgs> PFileDrop;
+    KeyboardState KeyboardState { get; }
+
+    event Action<FileDropEventArgs> PFileDrop;
     void RenderGUI(Imgui.DrawList data, IList<SceneView> views, IBackendRenderBuffer rb);
     // TODO: this isn't good (could have multiple windows etc..)
     int WinWidth { get; }
@@ -48,7 +50,7 @@ internal interface IRendererPlatform
     
     event EventHandler OnLoaded;
 
-    event EventHandler<FrameEventArgs> PRenderFrame;
+    event Action<FrameEventArgs> PRenderFrame;
 
     void LoadTexture(Texture2D tex2d);
     int AddShader(string v, string f, string? g, string? tcs = null, string? tes = null);
