@@ -175,8 +175,6 @@ internal class Program
         };
         renderState.OnPostRender += player.OnEndRenderScene;
 
-        projectPath = "/home/ttammear/temp/AnimLib.VisualTests/Entities3D/Entities3D.animproj";
-
         if (projectPath != null)
         {
             Debug.Log($"Loading project {projectPath}");
@@ -331,29 +329,32 @@ internal class Program
             "--project", 
             "Project file to load"
         );
-        var headlessOption = new Option<bool>(
-            "--headless",
-            "Launch headless"
-        );
         var rootCommand = new RootCommand("Animation editor");
         rootCommand.AddOption(skiaSoftwareOption);
         skiaSoftwareOption.IsRequired = false;
         rootCommand.AddOption(projectOption);
         projectOption.IsRequired = false;
-        rootCommand.AddOption(headlessOption);
-        headlessOption.IsRequired = false;
-        rootCommand.SetHandler( (useSw, project, headless) => {
+        rootCommand.SetHandler( (useSw, project) => {
                 Debug.Log($"Using SkiaSharp software rendering: {useSw}");
-            if (!headless)
-            {
                 LaunchEditor(useSw, project);
-            }
-            else
-            {
-                LaunchHeadless(useSw, project);
-            }
-            }, skiaSoftwareOption, projectOption, headlessOption
+            }, skiaSoftwareOption, projectOption
         );
+
+        var projectOption2 = new Option<string>(
+            "--project", 
+            "Project file to load"
+        );
+        projectOption2.IsRequired = true;
+        var exportCommand = new Command("export", "Export an animation.");
+        exportCommand.AddOption(projectOption2);
+        exportCommand.AddOption(skiaSoftwareOption);
+        exportCommand.SetHandler((useSw, project) =>
+        {
+            Debug.Log($"Headless export mode. Using SkiaSharp software rendering: {useSw}");
+            LaunchHeadless(useSw, project);
+        }, skiaSoftwareOption, projectOption2);
+        rootCommand.AddCommand(exportCommand);
+
         var code = rootCommand.Invoke(args);
         Debug.Log($"Root command returned {code}. Exiting");
     }
