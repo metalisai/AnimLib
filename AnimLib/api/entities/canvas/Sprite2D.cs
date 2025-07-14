@@ -58,7 +58,7 @@ public partial class Sprite : DynVisualEntity2D
 
     internal override object GetState(Func<DynPropertyId, object?> evaluator)
     {
-        var state = new SpriteState(_textureP.Value, _widthP.Value, _heightP.Value);
+        var state = new SpriteState(_textureP.Value!, _widthP.Value, _heightP.Value);
         GetState(state, evaluator);
         return state;
     }

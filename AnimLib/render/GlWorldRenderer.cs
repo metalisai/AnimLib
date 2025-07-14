@@ -95,7 +95,7 @@ internal partial class GlWorldRenderer : IRenderer
         new Vector2(0.0f, 1.0f),
     ];
 
-    public void RenderMeshes(ColoredTriangleMesh[] meshes, M4x4 camMat, M4x4 screenMat, Dictionary<DynPropertyId, object> dynProps)
+    public void RenderMeshes(ColoredTriangleMesh[] meshes, M4x4 camMat, M4x4 screenMat, Dictionary<DynPropertyId, object?> dynProps)
     {
         var colorSize = Marshal.SizeOf(typeof(Color));
         var vertSize = Marshal.SizeOf(typeof(Vector3));
@@ -437,7 +437,7 @@ internal partial class GlWorldRenderer : IRenderer
         {
             GL.Disable(EnableCap.CullFace);
         }
-        GL.CullFace((CullFaceMode)state.cullMode);
+        GL.CullFace((TriangleFace)state.cullMode);
         if (state.fbSrgb)
         {
             GL.Enable(EnableCap.FramebufferSrgb);

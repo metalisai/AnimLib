@@ -216,7 +216,7 @@ internal class WorldMachine {
             var canvas = (Canvas)_dynEntities[c.Key];
             var effects = canvas.Effects.Select(x =>
                 (x.GetType().Name,
-                x.properties.Select(x => (x.Key, this._dynamicPropertyValues[x.Value.Id])).ToArray())
+                x.properties.Select(x => (x.Key, this._dynamicPropertyValues[x.Value.Id]!)).ToArray())
             ).ToArray();
 
 

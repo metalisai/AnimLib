@@ -139,7 +139,7 @@ internal class WorldSnapshot {
     public required CanvasSnapshot[] Canvases;
     // NOTE: the first renderbuffer is always the main one
     public required RenderBufferState[] RenderBuffers;
-    public Dictionary<DynPropertyId, object> DynamicProperties = new ();
+    public Dictionary<DynPropertyId, object?> DynamicProperties = new ();
 
     public double Time;
 }
@@ -267,6 +267,7 @@ public class World
         Id = worldId++;
         _activeCanvas = new Canvas(CanvasState.DEFAULTNAME, new OrthoCamera());
         Resources = new WorldResources();
+        this.CurrentTime = DynProperty<double>.CreateEmpty(0.0);
         //this._activeCamera.Position = new Vector3(0.0f, 0.0f, 13.0f);
         Reset();
     }

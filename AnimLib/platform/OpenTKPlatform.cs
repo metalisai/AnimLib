@@ -147,7 +147,6 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
     }
 
     private static readonly DebugProc? _debugCallback = debugCallback;
-    private static GCHandle _debugProcCallbackHandle;
 
     protected override void OnLoad() {
         GL.DebugMessageCallback(proc, IntPtr.Zero);

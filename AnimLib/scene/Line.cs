@@ -44,10 +44,9 @@ internal class PlayerLine : SceneObject2D {
         pb.LineTo(end);
         var path = pb;
         var lineShape = new DynShape(path);
-        //lineShape.Color = color;
+        lineShape.Color = color;
         lineShape.Position = transform.Pos;
         lineShape.Rotation = transform.Rot;
-        //return lineShape;
-        return null; // TODO: fix
+        return lineShape;
     }
 }
