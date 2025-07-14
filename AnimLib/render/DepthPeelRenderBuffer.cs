@@ -26,10 +26,12 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
     int _msPresentTex = -1;
     int _msPresentFBO = -1;
 
-    OpenTKPlatform platform;
+    IRendererPlatform renderPlatform;
 
-    public (int w, int h) Size {
-        get {
+    public (int w, int h) Size
+    {
+        get
+        {
             return (_width, _height);
         }
     }
@@ -51,7 +53,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
     public DepthPeelRenderBuffer(IRendererPlatform platform, FrameColorSpace colorSpace, bool multisample) {
         // this is an OpenGL implementation and requires an OpenGL platform
         ColorSpace = colorSpace;
-        this.platform = (OpenTKPlatform)platform;
+        this.renderPlatform = platform;
         _entBlitProgram = platform.AddShader(canvasBlitVert, canvasBlitFrag, null);
         _sampler = GL.GenSampler();
         GL.SamplerParameter(_sampler, SamplerParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
@@ -285,7 +287,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
         int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);
         int rbuf = GL.GetInteger(GetPName.ReadFramebufferBinding);
 
-        GL.BindVertexArray(platform.blitvao);
+        GL.BindVertexArray(renderPlatform.BlitVao);
         GL.Disable(EnableCap.DepthTest);
         GL.Disable(EnableCap.Blend);
 
@@ -294,9 +296,9 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
         GL.BindSampler(0, _sampler);
         GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
 
-        GL.UseProgram(platform.BlitProgram);
-        var loc = GL.GetUniformLocation(platform.BlitProgram, "_MainTex");
-        var vpsLoc = GL.GetUniformLocation(platform.BlitProgram, "_ViewportSize");
+        GL.UseProgram(renderPlatform.BlitProgram);
+        var loc = GL.GetUniformLocation(renderPlatform.BlitProgram, "_MainTex");
+        var vpsLoc = GL.GetUniformLocation(renderPlatform.BlitProgram, "_ViewportSize");
         GL.Uniform1(loc, 0);
         GL.Uniform2(vpsLoc, _width, _height);
 
@@ -325,8 +327,8 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
         int dbuf = GL.GetInteger(GetPName.DrawFramebufferBinding);
         int rbuf = GL.GetInteger(GetPName.ReadFramebufferBinding);
         BindForRender();
-        GL.BindVertexArray(platform.blitvao);
-        var bp = blitProgram ?? platform.BlitProgram;
+        GL.BindVertexArray(renderPlatform.BlitVao);
+        var bp = blitProgram ?? renderPlatform.BlitProgram;
         var loc = GL.GetUniformLocation(bp, "_MainTex");
         var vpsLoc = GL.GetUniformLocation(bp, "_ViewportSize");
         GL.UseProgram(bp);
@@ -347,7 +349,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
     }
 
     public void BlitTexture(Texture2D tex, int? blitProgram = null) {
-        platform.LoadTexture(tex);
+        renderPlatform.LoadTexture(tex);
         BlitTexture(tex.GLHandle, blitProgram);
     }
 
@@ -361,10 +363,10 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
 
         //GL.BlitFramebuffer(0, 0, Width, Height, 0, 0, Width, Height, ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Linear);
 
-        GL.BindVertexArray(platform.blitvao);
-        var loc = GL.GetUniformLocation(platform.BlitProgram, "_MainTex");
-        var vpsLoc = GL.GetUniformLocation(platform.BlitProgram, "_ViewportSize");
-        GL.UseProgram(platform.BlitProgram);
+        GL.BindVertexArray(renderPlatform.BlitVao);
+        var loc = GL.GetUniformLocation(renderPlatform.BlitProgram, "_MainTex");
+        var vpsLoc = GL.GetUniformLocation(renderPlatform.BlitProgram, "_ViewportSize");
+        GL.UseProgram(renderPlatform.BlitProgram);
         GL.Uniform1(loc, 0);
         GL.Uniform2(vpsLoc, sw, sh);
         GL.Disable(EnableCap.DepthTest);

@@ -141,24 +141,52 @@ internal class AnimationPlayer {
         return settings;
     }
 
-    public void BakeProc() {
+    public void Bake()
+    {
         AnimationBaker baker = new AnimationBaker(ResourceManager);
-        while(running) {
+        var newbeh = (AnimationBehaviour?)Activator.CreateInstance(currentBehaviour.GetType());
+        if (newbeh == null)
+        {
+            throw new Exception("Failed to create new behaviour instance");
+        }
+        PlayerProperties props;
+        lock (handleLock)
+        {
+            props = new PlayerProperties()
+            {
+                VectorHandleMap = new Dictionary<string, Vector2>(VectorHandleMap),
+                VectorHandleMap3D = new Dictionary<string, Vector3>(VectorHandleMap3D),
+                Values = Values.Clone(),
+            };
+        }
+        var animation = baker.BakeAnimation(newbeh, settings, props, Scene);
+        preparedAnimation = animation;
+    }
+
+    public void BakeProc()
+    {
+        AnimationBaker baker = new AnimationBaker(ResourceManager);
+        while (running)
+        {
             var beh = currentBehaviour;
             bool settled = (frameId - setDirtyAt) > 15;
             bool shouldUpdate = settled | mustUpdate;
-            if (animationDirty && !sceneDirty && beh != null && shouldUpdate) {
+            if (animationDirty && !sceneDirty && beh != null && shouldUpdate)
+            {
                 animationDirty = false;
                 mustUpdate = false;
                 // create clean instance
                 var newbeh = (AnimationBehaviour?)Activator.CreateInstance(currentBehaviour.GetType());
-                if(newbeh == null) {
+                if (newbeh == null)
+                {
                     Debug.Warning("Failed to create new behaviour instance");
                     continue;
                 }
                 PlayerProperties props;
-                lock(handleLock) {
-                    props = new PlayerProperties() {
+                lock (handleLock)
+                {
+                    props = new PlayerProperties()
+                    {
                         VectorHandleMap = new Dictionary<string, Vector2>(VectorHandleMap),
                         VectorHandleMap3D = new Dictionary<string, Vector3>(VectorHandleMap3D),
                         Values = Values.Clone(),
@@ -182,7 +210,7 @@ internal class AnimationPlayer {
         }
     }
 
-    public AnimationPlayer(AnimationBehaviour defaultBehaviour) {
+    public AnimationPlayer(AnimationBehaviour defaultBehaviour, bool useThreads = true) {
         this.defaultBehaviour = defaultBehaviour;
         currentBehaviour = defaultBehaviour;
         var settings = new AnimationSettings();
@@ -194,7 +222,7 @@ internal class AnimationPlayer {
         trackPlayer = new TrackPlayer();
 
         running = true;
-        // Create a thread and call a background method   
+        // Create a thread and call a background method
         bakeThread = new Thread(new ThreadStart(BakeProc));  
         // Start thread  
         bakeThread.Start(); 
@@ -390,7 +418,8 @@ internal class AnimationPlayer {
             Debug.Log($"Exporting time {machine.GetPlaybackTime()}/{endTime}");
             machine.Step(1.0 / (double)settings.FPS);
             var frame = machine.GetWorldSnapshot();
-            if(machine.GetPlaybackTime() >= endTime) {
+            if (machine.GetPlaybackTime() >= endTime)
+            {
                 export.exporter.Stop();
                 var sound = currentAnimation?.SoundTrack;
                 if (sound != null) {
@@ -400,6 +429,7 @@ internal class AnimationPlayer {
                     export.exporter.AddAudio(export.fileName, samples, sound.sampleRate);
                     export = null;
                 }
+                export = null;
             }
             ss = frame;
             return FrameStatus.New;

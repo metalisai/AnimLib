@@ -2,13 +2,13 @@
 namespace AnimLib;
 
 internal partial class OpenTKPlatform {
-string blitVert = @"#version 330 core
+internal static string blitVert = @"#version 330 core
 layout(location = 0) in vec4 position;
 void main() {
 gl_Position = position;
 }";
 
-string blitFrag = @"#version 330 core
+internal static string blitFrag = @"#version 330 core
 layout(location = 0) out vec4 outColor;
 uniform sampler2D _MainTex;
 uniform ivec2 _ViewportSize;
@@ -20,7 +20,7 @@ outColor = texture(_MainTex, texCoord);
 //outColor = vec4(1.0, 0.0, 0.0, 1.0);
 }";
 
-string imguiVert = @"#version 330 core 
+internal static string imguiVert = @"#version 330 core 
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec4 color;
 layout(location = 2) in vec2 texCoord;
@@ -33,7 +33,7 @@ v_color = color;
 v_texCoord = texCoord;
 }";
 
-string imguiFrag = @"#version 330
+internal static string imguiFrag = @"#version 330
 layout(location = 0) out vec4 outColor;
 layout(location = 1) out int outEntityId;
 in vec4 v_color;
@@ -60,7 +60,7 @@ if(_correctGamma) {
 outEntityId = _entityId;
 }";
 
-string vertShader = @"#version 330 core 
+internal static string vertShader = @"#version 330 core 
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec4 color;
 out vec4 v_color;
@@ -70,7 +70,7 @@ gl_Position = _ModelToClip*position;
 v_color = color;
 }";
 
-string fragShader = @"#version 330
+internal static string fragShader = @"#version 330
 layout(location = 0) out vec4 outColor;
 in vec4 v_color;
 uniform vec4 _Color;

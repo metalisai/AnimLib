@@ -41,7 +41,10 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
 
     private int imguiVao, imguiVbo, imguiEbo;
 
-    public SkiaRenderer? Skia;
+    public SkiaRenderer? SkiaRenderer;
+
+    public SkiaRenderer Skia => SkiaRenderer!;
+    public int BlitVao => blitvao;
 
     public int rectVao;
     public int dynVao, dynVbo;
@@ -59,7 +62,7 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
         get { return _blitProgram; }
     }
 
-    public int[] Programs {
+    public IEnumerable<int> Programs {
         get {
             return _programs.ToArray();
         }
@@ -181,7 +184,7 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
 
         CompileShaders();
         Debug.Log("Shader compilation complete");
-        CreateMeshes();
+        CreateMeshes(out rectVao, out dynVao, out dynVbo, out blitvao, out blitvbo);
         Debug.Log("Platform meshes created");
         SetupImgui();
         Debug.Log("ImGui resources created");
@@ -231,12 +234,12 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
         };
 
         // skia
-        Skia = new SkiaRenderer(this);
+        SkiaRenderer = new SkiaRenderer(this);
         if (!_useSkiaSoftware) {
-            Skia.CreateGL(true);
+            SkiaRenderer.CreateGL(true);
         } else {
             // FYI this is unusably slow with HDR backbuffer
-            Skia.CreateSW(true);
+            SkiaRenderer.CreateSW(true);
         }
 
         if (OnLoaded != null) {
@@ -247,10 +250,25 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
     }
 
     public void LoadTexture(Texture2D tex2d) {
+        int tex = tex2d.GLHandle;
+        GlLoadTexture(tex2d);
+        if (tex2d.ownerGuid != "" && tex < 0 && tex2d.GLHandle >= 0)
+        {
+            tex = tex2d.GLHandle;
+            if (!allocatedResources.TryGetValue(tex2d.ownerGuid, out var res))
+            {
+                res = new AllocatedResources();
+                allocatedResources.Add(tex2d.ownerGuid, res);
+            }
+            res.textures.Add(tex);
+        }
+    }
+
+    public static void GlLoadTexture(Texture2D tex2d) {
         PixelFormat fmt = default;
         PixelType typ = default;
         PixelInternalFormat pif = default;
-        switch(tex2d.Format) {
+        switch (tex2d.Format) {
             case Texture2D.TextureFormat.R8:
                 fmt = PixelFormat.Red;
                 typ = PixelType.UnsignedByte;
@@ -290,31 +308,23 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
                 throw new NotImplementedException();
         }
         int tex = tex2d.GLHandle;
-        if(tex < 0) {
+        if (tex < 0) {
             tex = GL.GenTexture();
             tex2d.GLHandle = tex;
         }
 
-        if(tex2d.ownerGuid != "") {
-            if(!allocatedResources.TryGetValue(tex2d.ownerGuid, out var res)) {
-                res = new AllocatedResources();
-                allocatedResources.Add(tex2d.ownerGuid, res);
-            }
-            res.textures.Add(tex);
-        }
-
         GL.BindTexture(TextureTarget.Texture2D, tex);
         GL.PixelStore(PixelStoreParameter.UnpackAlignment, tex2d.Alignment);
-        GL.TexImage2D(TextureTarget.Texture2D, 
-            0, pif, 
-            tex2d.Width, tex2d.Height, 0, 
-            fmt, typ, 
+        GL.TexImage2D(TextureTarget.Texture2D,
+            0, pif,
+            tex2d.Width, tex2d.Height, 0,
+            fmt, typ,
             ref tex2d.RawData[0]
         );
 
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-        if(tex2d.GenerateMipmap) {
+        if (tex2d.GenerateMipmap) {
             Debug.TLog($"Generate mipmap for {tex}");
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
         }
@@ -325,36 +335,40 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
     protected override void OnUpdateFrame(FrameEventArgs e) {
     }
 
+    void IRendererPlatform.RenderFrame(FrameEventArgs e) {
+        
+    }
+
     protected override void OnRenderFrame(FrameEventArgs e) {
         base.OnRenderFrame(e);
 
         // destory resources that are no longer needed
         sw.Restart();
-        if(destroyedOwners.Count > 0) {
-            while(destroyedOwners.TryTake(out var owner)) {
-                if(!allocatedResources.TryGetValue(owner, out var res)) {
+        if (destroyedOwners.Count > 0) {
+            while (destroyedOwners.TryTake(out var owner)) {
+                if (!allocatedResources.TryGetValue(owner, out var res)) {
                     break;
                 } else {
                     Debug.Log($"Renderer resource owner {owner} with resources destroyed");
-                    foreach(var tx in res.textures) {
+                    foreach (var tx in res.textures) {
                         GL.DeleteTexture(tx);
                     }
-                    foreach(var vao in res.vaos) {
+                    foreach (var vao in res.vaos) {
                         GL.DeleteVertexArray(vao);
                     }
-                    foreach(var buf in res.buffers) {
+                    foreach (var buf in res.buffers) {
                         GL.DeleteBuffer(buf);
                     }
                 }
             }
         }
 
-        if(PRenderFrame != null) {
+        if (PRenderFrame != null) {
             PRenderFrame(e);
         }
         sw.Stop();
         Performance.TimeToProcessFrame = sw.Elapsed.TotalSeconds;
-        
+
         sw.Restart();
         GL.Flush();
         SwapBuffers();
@@ -479,7 +493,7 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
         if (data != null) pb.BlendToScreen(Size.X, Size.Y);
     }
 
-    public void ClearBackbuffer(int x, int y, int w, int h) {
+    public static void GlClearBackbuffer(int x, int y, int w, int h) {
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
         GL.DrawBuffer(DrawBufferMode.Back);
         GL.Viewport(x, y, w, h);
@@ -489,8 +503,19 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
     }
 
+    public void ClearBackbuffer(int x, int y, int w, int h) {
+        GlClearBackbuffer(x, y, w, h);
+    }
+
     public void DeleteShader(int shader) {
         GL.DeleteShader(shader);
+        _programs.Remove(shader);
+    }
+
+    public int AddShader(string v, string f, string? g, string? tcs = null, string? tes = null) {
+        var ret = GlAddShader(v, f, g, tcs, tes);
+        _programs.Add(ret);
+        return ret;
     }
 
     /// <summary>
@@ -501,13 +526,13 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
     /// <param name="g">Geometry shader source.</param>
     /// <param name="tcs">Tessellation control shader source.</param>
     /// <param name="tes">Tessellation evaluation shader source.</param>
-    public int AddShader(string v, string f, string? g, string? tcs = null, string? tes = null) {
+    public static int GlAddShader(string v, string f, string? g, string? tcs = null, string? tes = null) {
         int[] ps = new int[1];
         var vs = GL.CreateShader(ShaderType.VertexShader);
         GL.ShaderSource(vs, v);
         GL.CompileShader(vs);
         GL.GetShader(vs, ShaderParameter.CompileStatus, ps);
-        if(ps[0] != 1) {
+        if (ps[0] != 1) {
             int slen;
             string slog = new string('*', 256);
             GL.GetShaderInfoLog(vs, 256, out slen, out slog);
@@ -519,7 +544,7 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
         GL.ShaderSource(fs, f);
         GL.CompileShader(fs);
         GL.GetShader(fs, ShaderParameter.CompileStatus, ps);
-        if(ps[0] != 1) {
+        if (ps[0] != 1) {
             int slen;
             string slog = new string('*', 256);
             GL.GetShaderInfoLog(fs, 256, out slen, out slog);
@@ -533,12 +558,12 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
         GL.DeleteShader(vs);
         GL.DeleteShader(fs);
 
-        if(g != null) {
+        if (g != null) {
             var gs = GL.CreateShader(ShaderType.GeometryShader);
             GL.ShaderSource(gs, g);
             GL.CompileShader(gs);
             GL.GetShader(gs, ShaderParameter.CompileStatus, ps);
-            if(ps[0] != 1) {
+            if (ps[0] != 1) {
                 int slen;
                 string slog = "";
                 GL.GetShaderInfoLog(gs, 256, out slen, out slog);
@@ -548,15 +573,15 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
             GL.DeleteShader(gs);
         }
 
-        if((tcs == null) != (tes == null)) {
+        if ((tcs == null) != (tes == null)) {
             Debug.Error("To use tessellation, both TCS and TES need to be set!");
         }
-        if(tcs != null) {
-            var tcss = GL.CreateShader(ShaderType.TessControlShader); 
+        if (tcs != null) {
+            var tcss = GL.CreateShader(ShaderType.TessControlShader);
             GL.ShaderSource(tcss, tcs);
             GL.CompileShader(tcss);
             GL.GetShader(tcss, ShaderParameter.CompileStatus, ps);
-            if(ps[0] != 1) {
+            if (ps[0] != 1) {
                 int slen;
                 string slog = "";
                 GL.GetShaderInfoLog(tcss, 256, out slen, out slog);
@@ -566,7 +591,7 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
             GL.ShaderSource(tess, tes);
             GL.CompileShader(tess);
             GL.GetShader(tess, ShaderParameter.CompileStatus, ps);
-            if(ps[0] != 1) {
+            if (ps[0] != 1) {
                 int slen;
                 string slog = "";
                 GL.GetShaderInfoLog(tess, 256, out slen, out slog);
@@ -592,7 +617,6 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
         {
             Debug.Log("Program linked!");
         }
-        _programs.Add(ret);
         return ret;
     }
 
@@ -617,7 +641,7 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
         GL.BufferData(BufferTarget.ArrayBuffer, vData.Length * sizeof(float), vData, BufferUsageHint.DynamicDraw);
     }
 
-    private void CreateMeshes() {
+    internal static void CreateMeshes(out int rectVao, out int dynVao, out int dynVbo, out int blitvao, out int blitvbo) {
         var vData = new float[] {
            -0.5f, -0.5f, 0.0f, 1.0f,
             0.5f, -0.5f, 0.0f, 1.0f,
@@ -657,24 +681,22 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
 
         // blit VAO (used to blit textures)
         // blit VAO hasn't been created yet
-        if(blitvao == -1) {
-            blitvao = GL.GenVertexArray();
-            GL.BindVertexArray(blitvao);
-            blitvbo = GL.GenBuffer();
-            float[] quad = new float[] {
-                -1.0f, -1.0f, 0.0f, 1.0f,
-                1.0f, -1.0f, 0.0f, 1.0f,
-                -1.0f,  1.0f, 0.0f, 1.0f,
-                1.0f, -1.0f, 0.0f, 1.0f,
-                1.0f,  1.0f, 0.0f, 1.0f,
-                -1.0f,  1.0f, 0.0f, 1.0f,
-            };
-            GL.BindBuffer(BufferTarget.ArrayBuffer, blitvbo);
-            GL.BufferData(BufferTarget.ArrayBuffer, quad.Length * sizeof(float), quad, BufferUsageHint.StaticDraw);
-            GL.EnableVertexAttribArray(0);
-            GL.VertexAttribPointer(0, 4, VertexAttribPointerType.Float, false, 0, IntPtr.Zero);
-            GL.BindVertexArray(0);
-        }
+        blitvao = GL.GenVertexArray();
+        GL.BindVertexArray(blitvao);
+        blitvbo = GL.GenBuffer();
+        float[] quad = new float[] {
+            -1.0f, -1.0f, 0.0f, 1.0f,
+            1.0f, -1.0f, 0.0f, 1.0f,
+            -1.0f,  1.0f, 0.0f, 1.0f,
+            1.0f, -1.0f, 0.0f, 1.0f,
+            1.0f,  1.0f, 0.0f, 1.0f,
+            -1.0f,  1.0f, 0.0f, 1.0f,
+        };
+        GL.BindBuffer(BufferTarget.ArrayBuffer, blitvbo);
+        GL.BufferData(BufferTarget.ArrayBuffer, quad.Length * sizeof(float), quad, BufferUsageHint.StaticDraw);
+        GL.EnableVertexAttribArray(0);
+        GL.VertexAttribPointer(0, 4, VertexAttribPointerType.Float, false, 0, IntPtr.Zero);
+        GL.BindVertexArray(0);
     }
     
     private void CompileShaders() {
@@ -683,7 +705,7 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
         _imguiProgram = AddShader(imguiVert, imguiFrag, null);
     }
 
-    static void debugCallback(DebugSource source, DebugType type, int id, DebugSeverity severity, int length, IntPtr message, IntPtr userParam) {
+    internal static void debugCallback(DebugSource source, DebugType type, int id, DebugSeverity severity, int length, IntPtr message, IntPtr userParam) {
         if(type == DebugType.DebugTypeOther)
             return;
         Debug.Warning($"OpenGL debug ({type}) src:{source} message: {Marshal.PtrToStringAnsi(message)}");

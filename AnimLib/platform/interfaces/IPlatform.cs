@@ -47,7 +47,7 @@ internal interface IRendererPlatform
     /// Desktop OpenGL supports hardware gamma correction, but a lot of platforms don't.
     /// </summary>
     FrameColorSpace PresentedColorSpace { get; }
-    
+
     event EventHandler OnLoaded;
 
     event Action<FrameEventArgs> PRenderFrame;
@@ -62,6 +62,13 @@ internal interface IRendererPlatform
     int GetSampler(PlatformTextureSampler sampler);
 
     int BlitProgram { get; }
+
+    // Force rendering a frame, for headless platforms
+    void RenderFrame(FrameEventArgs e);
+    IEnumerable<int> Programs { get; }
+    void DeleteShader(int shader);
+    internal SkiaRenderer Skia { get; }
+    int BlitVao { get; }
 }
 
 internal interface IInteractivePlatform : IRendererPlatform, IUserInterfacePlatform

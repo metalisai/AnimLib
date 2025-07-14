@@ -19,12 +19,12 @@ internal partial class GlKawaseBlur : IDisposable
     int _linearSampler = -1;
     int _mipSampler = -1;
 
-    OpenTKPlatform platform;
+    IRendererPlatform platform;
 
     public float Radius { get; set; } = 1.0f;
     public float Threshold { get; set; } = 1.0f;
 
-    public GlKawaseBlur(OpenTKPlatform platform) {
+    public GlKawaseBlur(IRendererPlatform platform) {
         _kawaseDownProgram = platform.AddShader(effectVert, kawaseBlurDown13Frag, null);
         _kawaseUpProgram = platform.AddShader(effectVert, kawaseBlurUpFrag, null);
 
@@ -118,7 +118,7 @@ internal partial class GlKawaseBlur : IDisposable
         GL.Disable(EnableCap.DepthTest);
         GL.Disable(EnableCap.ScissorTest);
         GL.Disable(EnableCap.StencilTest);
-        GL.BindVertexArray(platform.blitvao);
+        GL.BindVertexArray(platform.BlitVao);
         GL.DrawBuffers(1, new DrawBuffersEnum[] { DrawBuffersEnum.ColorAttachment0 });
 
         GL.Uniform1(thresholdLoc, this.Threshold);
@@ -211,7 +211,7 @@ internal partial class GlKawaseBlur : IDisposable
         GL.Viewport(0, 0, w, h);
         GL.BindTextureUnit(0, _colorTex2);
         GL.BindSampler(0, _linearSampler);
-        GL.BindVertexArray(platform.blitvao);
+        GL.BindVertexArray(platform.BlitVao);
         GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
 
         // reset/restore state

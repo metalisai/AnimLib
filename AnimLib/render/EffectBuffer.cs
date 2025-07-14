@@ -14,9 +14,9 @@ internal partial class EffectBuffer : IDisposable {
     int _height;
     private bool disposedValue;
 
-    OpenTKPlatform platform;
+    IRendererPlatform platform;
 
-    public EffectBuffer(OpenTKPlatform platform) {
+    public EffectBuffer(IRendererPlatform platform) {
         _sampler = GL.GenSampler();
         GL.SamplerParameter(_sampler, SamplerParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
         GL.SamplerParameter(_sampler, SamplerParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
@@ -81,7 +81,7 @@ internal partial class EffectBuffer : IDisposable {
         GL.Disable(EnableCap.ScissorTest);
         GL.Disable(EnableCap.StencilTest);
 
-        GL.BindVertexArray(platform.blitvao);
+        GL.BindVertexArray(platform.BlitVao);
         this.Bind();
         GL.UseProgram(_acesProgram);
         int mainTexLoc = GL.GetUniformLocation(_acesProgram, "_MainTex");

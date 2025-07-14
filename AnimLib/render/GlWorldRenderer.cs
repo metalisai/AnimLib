@@ -9,7 +9,8 @@ namespace AnimLib;
 /// <summary>
 /// <c>IRenderer</c> implementation using OpenGL and SkiaSharp. A renderer is responsible for rendering <c>WorldSnapshot</c> for a specified <c>SceneView</c> using appropriate coordinate transformations.
 /// </summary>
-internal partial class GlWorldRenderer : IRenderer {
+internal partial class GlWorldRenderer : IRenderer
+{
 
     int _circleProgram;
     int _rectangleProgram;
@@ -24,7 +25,7 @@ internal partial class GlWorldRenderer : IRenderer {
 
     int drawId = 0;
 
-    private OpenTKPlatform platform;
+    private IRendererPlatform renderPlatform;
     private RenderState rs;
 
     private Dictionary<int, IBackendRenderBuffer> renderBuffers = new();
@@ -35,49 +36,54 @@ internal partial class GlWorldRenderer : IRenderer {
     EffectBuffer effectBuffer;
     GlKawaseBlur kawaseBlur;
 
-    private struct FrameContext {
+    private struct FrameContext
+    {
         public required EntityStateResolver entRes;
     }
 
-    public GlWorldRenderer(OpenTKPlatform platform, RenderState rs) {
-        this.platform = platform;
+    public GlWorldRenderer(IRendererPlatform renderPlatform, RenderState rs)
+    {
+        this.renderPlatform = renderPlatform;
         this.rs = rs;
-        _circleProgram = platform.AddShader(circleVert, circleFrag, null);
-        _bezierProgram = platform.AddShader(quadBezierVert, quadBezierFrag, quadBezierGeo);
-        _rectangleProgram = platform.AddShader(rectangleVert, rectangleFrag, null);
-        _solidColorProgram = platform.AddShader(solidColorVert, solidColorFrag, null);
-        _texRectProgram = platform.AddShader(rectangleVert, texRectFrag, null);
-        _arrowProgram = platform.AddShader(rectangleVert, arrowFrag, null);
-        _staticLineProgram = platform.AddShader(staticLineVert, staticLineFrag, null);
-        _cubeProgram = platform.AddShader(staticLineVert, cubeFrag, null);
-        _meshProgram = platform.AddShader(vertShader, meshFrag, meshGeom);
+        _circleProgram = renderPlatform.AddShader(circleVert, circleFrag, null);
+        _bezierProgram = renderPlatform.AddShader(quadBezierVert, quadBezierFrag, quadBezierGeo);
+        _rectangleProgram = renderPlatform.AddShader(rectangleVert, rectangleFrag, null);
+        _solidColorProgram = renderPlatform.AddShader(solidColorVert, solidColorFrag, null);
+        _texRectProgram = renderPlatform.AddShader(rectangleVert, texRectFrag, null);
+        _arrowProgram = renderPlatform.AddShader(rectangleVert, arrowFrag, null);
+        _staticLineProgram = renderPlatform.AddShader(staticLineVert, staticLineFrag, null);
+        _cubeProgram = renderPlatform.AddShader(staticLineVert, cubeFrag, null);
+        _meshProgram = renderPlatform.AddShader(vertShader, meshFrag, meshGeom);
         //_wireTriangleProgram = AddShader(wireTriangleVert, wireTriangleFrag, null);
         //_lineProgram = AddShader(lineVert, lineFrag, lineGeom);
-        _textProgram = platform.AddShader(textVert, textFrag, null);
+        _textProgram = renderPlatform.AddShader(textVert, textFrag, null);
 
         // TODO: dispose
-        effectBuffer = new EffectBuffer(platform);
-        kawaseBlur = new GlKawaseBlur(platform);
+        effectBuffer = new EffectBuffer(renderPlatform);
+        kawaseBlur = new GlKawaseBlur(renderPlatform);
 
         sw = new System.Diagnostics.Stopwatch();
     }
 
-    public void RenderCanvases(IBackendRenderBuffer buffer, CanvasSnapshot[] canvases, M4x4 mat) {
+    public void RenderCanvases(IBackendRenderBuffer buffer, CanvasSnapshot[] canvases, M4x4 mat)
+    {
         using var _ = new Performance.Call("WorldRenderer.RenderCanvases");
-        if (platform.Skia == null) {
+        if (renderPlatform.Skia == null)
+        {
             return;
         }
         // save OpenGL state (Skia might modify it in HW rendering mode)
         PushState();
         // draw 2D last so that they are always in front
         var sorted = canvases.OrderBy(x => x.Canvas.is2d ? 1 : 0);
-        foreach(var canvas in sorted) {
+        foreach (var canvas in sorted)
+        {
             var buf = (DepthPeelRenderBuffer)buffer;
-            platform.Skia.RenderCanvas(canvas, ref mat, this.gizmo, buf);
+            renderPlatform.Skia.RenderCanvas(canvas, ref mat, this.gizmo, buf);
             RestoreState();
             {
                 using var __ = new Performance.Call("WorldRenderer buf.BlitTextureWithEntityId");
-                buf.BlitTextureWithEntityId(platform.Skia.Texture, canvas.Canvas.entityId);
+                buf.BlitTextureWithEntityId(renderPlatform.Skia.Texture, canvas.Canvas.entityId);
             }
         }
     }
@@ -133,7 +139,7 @@ internal partial class GlWorldRenderer : IRenderer {
                             Debug.Assert(prop.Item1 == "_MainTex");
                             if (tex2d.GLHandle < 0)
                             {
-                                platform.LoadTexture(tex2d);
+                                renderPlatform.LoadTexture(tex2d);
                             }
                             GL.BindTextureUnit(0, tex2d.GLHandle);
                             GL.Uniform1(sloc, 0);
@@ -312,9 +318,11 @@ internal partial class GlWorldRenderer : IRenderer {
         }
     }
 
-    private void RenderGlyphs(Vector2 screenSize, GlyphState[] gs, CameraState worldCamera, in FrameContext ctx) {
+    private void RenderGlyphs(Vector2 screenSize, GlyphState[] gs, CameraState worldCamera, in FrameContext ctx)
+    {
         var mat = M4x4.Ortho(0.0f, screenSize.x, 0.0f, screenSize.y, -1.0f, 1.0f);
-        foreach(var ch in gs) {
+        foreach (var ch in gs)
+        {
             var modelToWorld = ch.ModelToWorld(ctx.entRes);
             //Vector2 anchorPos = ch.anchor * screenSize;
             Vector3 pos = new Vector3(modelToWorld.m14, modelToWorld.m24, modelToWorld.m34);
@@ -325,8 +333,10 @@ internal partial class GlWorldRenderer : IRenderer {
         drawId++;
     }
 
-    public int GetProgram(BuiltinShader shader) {
-        switch(shader) {
+    public int GetProgram(BuiltinShader shader)
+    {
+        switch (shader)
+        {
             case BuiltinShader.LineShader:
                 return _staticLineProgram;
             case BuiltinShader.ArrowShader:
@@ -346,7 +356,8 @@ internal partial class GlWorldRenderer : IRenderer {
         }
     }
 
-    struct SavedState {
+    struct SavedState
+    {
         public bool blend;
         public bool programPointSize;
         public int boundVao;
@@ -372,7 +383,8 @@ internal partial class GlWorldRenderer : IRenderer {
 
     SavedState state;
 
-    public void PushState() {
+    public void PushState()
+    {
         var state = new SavedState();
         state.blend = GL.GetBoolean(GetPName.Blend); // GL.Enable(EnableCap.Blend);
         state.programPointSize = GL.GetBoolean(GetPName.ProgramPointSize); // GL.Enable(EnableCap.ProgramPointSize)
@@ -398,32 +410,48 @@ internal partial class GlWorldRenderer : IRenderer {
         this.state = state;
     }
 
-    public void RestoreState() {
-        if(state.blend) {
+    public void RestoreState()
+    {
+        if (state.blend)
+        {
             GL.Enable(EnableCap.Blend);
-        } else {
+        }
+        else
+        {
             GL.Disable(EnableCap.Blend);
         }
-        if(state.programPointSize) {
+        if (state.programPointSize)
+        {
             GL.Enable(EnableCap.ProgramPointSize);
-        } else {
+        }
+        else
+        {
             GL.Disable(EnableCap.ProgramPointSize);
         }
         GL.BindVertexArray(state.boundVao);
-        if(state.cullFace) {
+        if (state.cullFace)
+        {
             GL.Enable(EnableCap.CullFace);
-        } else {
+        }
+        else
+        {
             GL.Disable(EnableCap.CullFace);
         }
         GL.CullFace((CullFaceMode)state.cullMode);
-        if(state.fbSrgb) {
+        if (state.fbSrgb)
+        {
             GL.Enable(EnableCap.FramebufferSrgb);
-        } else {
+        }
+        else
+        {
             GL.Disable(EnableCap.FramebufferSrgb);
         }
-        if(state.stencilTest) {
+        if (state.stencilTest)
+        {
             GL.Enable(EnableCap.StencilTest);
-        } else {
+        }
+        else
+        {
             GL.Disable(EnableCap.StencilTest);
         }
         GL.ActiveTexture((TextureUnit)state.textureUnit);
@@ -432,20 +460,29 @@ internal partial class GlWorldRenderer : IRenderer {
         GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, state.boundReadFb);
         GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, state.boundDrawFb);
         GL.DrawBuffer((DrawBufferMode)state.drawBuffer);
-        if(state.dither) {
+        if (state.dither)
+        {
             GL.Enable(EnableCap.Dither);
-        } else {
+        }
+        else
+        {
             GL.Disable(EnableCap.Dither);
         }
         GL.DepthMask(state.depthMask);
-        if(state.multisample) {
+        if (state.multisample)
+        {
             GL.Enable(EnableCap.Multisample);
-        } else {
+        }
+        else
+        {
             GL.Disable(EnableCap.Multisample);
         }
-        if(state.depthTest) {
+        if (state.depthTest)
+        {
             GL.Enable(EnableCap.DepthTest);
-        } else {
+        }
+        else
+        {
             GL.Disable(EnableCap.DepthTest);
         }
 
@@ -465,30 +502,34 @@ internal partial class GlWorldRenderer : IRenderer {
         GL.Viewport(state.vpX, state.vpY, state.vpW, state.vpH);
     }
 
-    public bool BufferValid(IBackendRenderBuffer buf) {
+    public bool BufferValid(IBackendRenderBuffer buf)
+    {
         return buf is DepthPeelRenderBuffer;
     }
 
-    public IBackendRenderBuffer CreateBuffer(int w, int h, int id) {
+    public IBackendRenderBuffer CreateBuffer(int w, int h, int id)
+    {
 
-        var buf = new DepthPeelRenderBuffer(platform, platform.PresentedColorSpace, true);
+        var buf = new DepthPeelRenderBuffer(renderPlatform, renderPlatform.PresentedColorSpace, true);
         buf.Resize(w, h);
         effectBuffer.Resize(w, h);
         // TODO: this is wrong!
-        platform.Skia?.SetBuffer(buf);
+        renderPlatform.Skia.SetBuffer(buf);
         Debug.TLog($"Created new DepthPeelRenderBuffer with size {w}x{h}");
 
         renderBuffers.Add(id, buf);
         return buf;
     }
 
-    public void RenderScene(WorldSnapshot ss, CameraState cam, bool gizmo, out IBackendRenderBuffer mainBuffer) {
+    public void RenderScene(WorldSnapshot ss, CameraState cam, bool gizmo, out IBackendRenderBuffer mainBuffer)
+    {
         using var _ = new Performance.Call("WorldRenderer.RenderScene");
 
         this.gizmo = gizmo;
         long passedcount = 0;
 
-        var ctx = new FrameContext {
+        var ctx = new FrameContext
+        {
             entRes = ss.resolver
         };
 
@@ -498,7 +539,8 @@ internal partial class GlWorldRenderer : IRenderer {
 
         {
             using var ___ = new Performance.Call("Manage renderer buffers");
-            foreach (var rb in ss.RenderBuffers) {
+            foreach (var rb in ss.RenderBuffers)
+            {
                 if (!this.renderBuffers.TryGetValue(rb.BackendHandle, out var createdRb)
                     || createdRb.Size.w != rb.Width
                     || createdRb.Size.h != rb.Height)
@@ -518,7 +560,8 @@ internal partial class GlWorldRenderer : IRenderer {
 
         mainBuffer = this.renderBuffers[rb0.BackendHandle];
         var pb = mainBuffer as DepthPeelRenderBuffer;
-        if (pb == null) {
+        if (pb == null)
+        {
             Console.WriteLine("Can't render scene because renderbuffer isn't DepthPeelRenderBuffer");
             return;
         }
@@ -526,10 +569,13 @@ internal partial class GlWorldRenderer : IRenderer {
         GL.Enable(EnableCap.PolygonOffsetFill);
 
         // combination of depth peeling and multisampling requires sample shading
-        if (pb.IsMultisampled) {
+        if (pb.IsMultisampled)
+        {
             GL.Enable(EnableCap.SampleShading);
             GL.MinSampleShading(1.0f);
-        } else {
+        }
+        else
+        {
             GL.Disable(EnableCap.SampleShading);
         }
 
@@ -549,7 +595,7 @@ internal partial class GlWorldRenderer : IRenderer {
         GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
         GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
 
-        var bufs = new DrawBuffersEnum[] {DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1, DrawBuffersEnum.ColorAttachment2};
+        var bufs = new DrawBuffersEnum[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1, DrawBuffersEnum.ColorAttachment2 };
         GL.DrawBuffers(2, bufs);
 
         GL.BlendEquation(BlendEquationMode.FuncAdd);
@@ -561,23 +607,26 @@ internal partial class GlWorldRenderer : IRenderer {
         var smat = M4x4.Ortho(0.0f, mainBuffer.Size.w, 0.0f, mainBuffer.Size.h, -1.0f, 1.0f);
         var query = GL.GenQuery();
 
-        var _programs = platform.Programs;
+        var _programs = renderPlatform.Programs;
 
         // TODO: bind framebuffer when we have render targets
         var pbSize = mainBuffer.Size;
-        if(cam is OrthoCameraState ocam) {
+        if (cam is OrthoCameraState ocam)
+        {
             ocam.width = pbSize.w;
             ocam.height = pbSize.h;
         }
 
-        M4x4 worldToClip = cam.CreateWorldToClipMatrix((float)pbSize.w/(float)pbSize.h);
+        M4x4 worldToClip = cam.CreateWorldToClipMatrix((float)pbSize.w / (float)pbSize.h);
         int p = 0;
-        for(p = 0; p < 24; p++) {
+        for (p = 0; p < 24; p++)
+        {
             drawId = 0;
             GL.ColorMask(true, true, true, true);
             GL.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             GL.Clear(ClearBufferMask.DepthBufferBit/* | ClearBufferMask.ColorBufferBit*/);
-            foreach(var prog in _programs) {
+            foreach (var prog in _programs)
+            {
                 var msloc = GL.GetUniformLocation(prog, "_Multisample");
                 var loc1 = GL.GetUniformLocation(prog, "_depthPeelTexMs");
                 var loc2 = GL.GetUniformLocation(prog, "_depthPeelTex");
@@ -588,8 +637,8 @@ internal partial class GlWorldRenderer : IRenderer {
                 GL.BindTextureUnit(1, pb.PeelTex);
                 GL.BindTextureUnit(2, pb.PeelTex);
                 GL.ProgramUniform1(prog, msloc, pb.IsMultisampled ? 1 : 0);
-                GL.BindSampler(1, platform.GetSampler(PlatformTextureSampler.Blit));
-                GL.BindSampler(2, platform.GetSampler(PlatformTextureSampler.Blit));
+                GL.BindSampler(1, renderPlatform.GetSampler(PlatformTextureSampler.Blit));
+                GL.BindSampler(2, renderPlatform.GetSampler(PlatformTextureSampler.Blit));
             }
             GL.BeginQuery(QueryTarget.SamplesPassed, query);
             //GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
@@ -624,7 +673,8 @@ internal partial class GlWorldRenderer : IRenderer {
                 }
             }
 
-            if(ss.Meshes != null) {
+            if (ss.Meshes != null)
+            {
                 RenderMeshes(ss.Meshes, worldToClip, smat, ss.DynamicProperties);
             }
 
@@ -634,23 +684,27 @@ internal partial class GlWorldRenderer : IRenderer {
 
             passedcount = 0;
             GL.GetQueryObject(query, GetQueryObjectParam.QueryResult, out passedcount);
-            if(passedcount <= 0) {
+            if (passedcount <= 0)
+            {
                 break;
             }
 
             pb.NextLayer();
         }
 
-        if(ss.Glyphs != null) {
+        if (ss.Glyphs != null)
+        {
             RenderGlyphs(new Vector2(pbSize.w, pbSize.h), ss.Glyphs, cam, in ctx);
         }
 
         GL.DeleteQuery(query);
-        if(p >= 10) {
-            Debug.Warning($"Rendering frame took {p} depth peels. Samples passed: {passedcount}", rate: 1.0f/60.0f);
+        if (p >= 10)
+        {
+            Debug.Warning($"Rendering frame took {p} depth peels. Samples passed: {passedcount}", rate: 1.0f / 60.0f);
         }
 
-        if (pb.IsMultisampled) {
+        if (pb.IsMultisampled)
+        {
             GL.Disable(EnableCap.SampleShading);
         }
 
@@ -659,7 +713,7 @@ internal partial class GlWorldRenderer : IRenderer {
         // render skia (all skia GL commands get executed here)
         //platform.Skia.Clear();
         sw.Restart();
-        if(ss.Canvases != null)
+        if (ss.Canvases != null)
             RenderCanvases(mainBuffer, ss.Canvases, worldToClip);
 
         pb.MakePresentable(); // make presentable so blur can read it
@@ -674,7 +728,8 @@ internal partial class GlWorldRenderer : IRenderer {
         //platform.Skia.Flush();
         // render skia (all skia GL commands get executed here)
 
-        foreach (var buf in this.renderBuffers.Values) {
+        foreach (var buf in this.renderBuffers.Values)
+        {
             buf.OnPostRender();
         }
     }

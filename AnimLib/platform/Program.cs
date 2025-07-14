@@ -36,7 +36,7 @@ internal class Program
 
     static void AssemblyPathChanged(string newpath, AnimationPlayer player)
     {
-        Console.WriteLine($"Assembly path changed to {newpath}");
+        Debug.Log($"Assembly path changed to {newpath}");
         var behaviour = LoadAndWatchBehaviour(newpath, player);
         if(behaviour != null)
         {
@@ -133,8 +133,72 @@ internal class Program
     static void LaunchHeadless(bool useSkiaSoftware = false, string? projectPath = null)
     {
         Debug.Log("Launching headless");
-        var platform = new HeadlessOpenTKPlatform();
+        var platform = new HeadlessGlPlatform();
         Debug.Log("Exiting");
+        var renderState = new RenderState(platform);
+
+        var view = new SceneView(0, 0, 100, 100, 1920, 1080);
+        renderState.AddSceneView(view);
+
+        AnimationPlayer player = new(new NoProjectBehaviour(), useThreads: false);
+
+        player.ResourceManager.OnAssemblyChanged += (path) => AssemblyPathChanged(path, player);
+
+        SynchronizationContext.SetSynchronizationContext(mainCtx);
+
+        bool exit = false;
+        string exitReason = "None";
+
+        bool first = true;
+
+        renderState.OnPreRender += () =>
+        {
+            mainCtx.InvokeAllPosted();
+
+            float refreshRate = 60.0f;
+            // render editor UI
+            var frameStatus = player.NextFrame(1.0 / refreshRate, out var ret);
+            if (frameStatus == AnimationPlayer.FrameStatus.New)
+            {
+                renderState.SetScene(ret!);
+            }
+            renderState.SceneStatus = frameStatus;
+            renderState.RenderGizmos = !player.Exporting;
+
+            if (frameStatus == AnimationPlayer.FrameStatus.Still && !first)
+            {
+                exit = true;
+                exitReason = "No more frames.";
+            }
+            Debug.Log($"{frameStatus}");
+            first = false;
+        };
+        renderState.OnPostRender += player.OnEndRenderScene;
+
+        projectPath = "/home/ttammear/temp/AnimLib.VisualTests/Entities3D/Entities3D.animproj";
+
+        if (projectPath != null)
+        {
+            Debug.Log($"Loading project {projectPath}");
+            player.ResourceManager.SetProject(projectPath);
+        }
+
+        platform.Load();
+
+        //player.Seek(0.0);
+        player.Bake();
+        var filename = "animation-"+DateTime.Now.ToString("yyyy_MM_dd_HHmmss")+".mp4";
+        player.ExportAnimation(filename, 0.0, 60.0);
+        player.Play();
+
+        while (!exit)
+        {
+            Debug.Log("Frame");
+            platform.RenderFrame(new FrameEventArgs(1.0 / 60.0));
+        }
+        player.Close();
+        Console.WriteLine($"Application closing. Reason: {exitReason}");
+        if (watcher != null) watcher.Dispose();
     }
 
     static void LaunchEditor(bool useSkiaSoftware = false, string? projectPath = null)

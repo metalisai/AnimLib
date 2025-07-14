@@ -99,12 +99,12 @@ internal class RenderState
     {
         CreateMeshes();
 
-        var glPlatform = platform as OpenTKPlatform;
-        if (glPlatform == null)
+        var renderPlatform = platform as IRendererPlatform;
+        if (renderPlatform == null)
         {
-            throw new Exception("GlWorldRenderer currently requires OpenTKPlatform");
+            throw new Exception("GlWorldRenderer currently requires IRendererPlatform");
         }
-        renderer = new GlWorldRenderer(glPlatform, this);
+        renderer = new GlWorldRenderer(renderPlatform, this);
         //renderer = new TessallationRenderer(platform as OpenTKPlatform, this);
         Debug.TLog($"Renderer implementation: {renderer}");
     }
