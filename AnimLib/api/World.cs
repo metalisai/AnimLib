@@ -493,6 +493,12 @@ public class World
         return ent;
     }
 
+    public void Marker(string id)
+    {
+        var cmd = new WorldMarkerCommand(id, Time.T);
+        _commands.Add(cmd);
+    }
+
     internal DynPropertyId CreateDynProperty(object? vl, DynProperty prop)
     {
         var id = GetUniqueDynId();

@@ -12,7 +12,7 @@ public enum FrameColorSpace {
     sRGB
 }
 
-internal struct CapturedFrame {
+public struct CapturedFrame {
     public int width;
     public int height;
     public byte[] data;

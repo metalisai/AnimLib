@@ -67,7 +67,7 @@ internal class Program
         }
     }
 
-    static AnimationBehaviour? LoadBehaviour(string fullpath) {
+    internal static AnimationBehaviour? LoadBehaviour(string fullpath) {
         System.Console.WriteLine($"Trying to load animation assembly {fullpath}");
         if (watcher == null)
         {
@@ -149,8 +149,6 @@ internal class Program
         bool exit = false;
         string exitReason = "None";
 
-        bool first = true;
-
         renderState.OnPreRender += () =>
         {
             mainCtx.InvokeAllPosted();
@@ -163,15 +161,12 @@ internal class Program
                 renderState.SetScene(ret!);
             }
             renderState.SceneStatus = frameStatus;
-            renderState.RenderGizmos = !player.Exporting;
 
-            if (frameStatus == AnimationPlayer.FrameStatus.Still && !first)
+            if (frameStatus == AnimationPlayer.FrameStatus.Still)
             {
                 exit = true;
                 exitReason = "No more frames.";
             }
-            Debug.Log($"{frameStatus}");
-            first = false;
         };
         renderState.OnPostRender += player.OnEndRenderScene;
 

@@ -62,6 +62,9 @@ internal class AnimationPlayer {
     public event EventHandler<bool>? OnPlayStateChanged;
     public event EventHandler<float>? OnProgressUpdate;
 
+    public delegate void MarkerDelegate(string id, bool forward);
+    public event MarkerDelegate? OnMarker;
+
     // must rebake animation?
     volatile bool mustUpdate = false;
     // animation out of date, might be waiting for changes to stop
@@ -210,7 +213,8 @@ internal class AnimationPlayer {
         }
     }
 
-    public AnimationPlayer(AnimationBehaviour defaultBehaviour, bool useThreads = true) {
+    public AnimationPlayer(AnimationBehaviour defaultBehaviour, bool useThreads = true)
+    {
         this.defaultBehaviour = defaultBehaviour;
         currentBehaviour = defaultBehaviour;
         var settings = new AnimationSettings();
@@ -223,9 +227,11 @@ internal class AnimationPlayer {
 
         running = true;
         // Create a thread and call a background method
-        bakeThread = new Thread(new ThreadStart(BakeProc));  
+        bakeThread = new Thread(new ThreadStart(BakeProc));
         // Start thread  
-        bakeThread.Start(); 
+        bakeThread.Start();
+
+        machine.OnMarkerExecuted += (id, forward) => OnMarker?.Invoke(id, forward);
     }
 
     public void OnEndRenderScene(IEnumerable<SceneView> views) {
@@ -413,6 +419,7 @@ internal class AnimationPlayer {
             OnProgressUpdate?.Invoke(this, (float)progress);
             return ret;
         } else {
+            // NOTE: frame is captured in OnEndRenderScene
             var endTime = Math.Min(export.endTime, machine.GetEndTime());
             export.currentProgress = machine.GetPlaybackTime();
             Debug.Log($"Exporting time {machine.GetPlaybackTime()}/{endTime}");

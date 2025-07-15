@@ -37,6 +37,9 @@ internal class WorldMachine {
 
     List<(DynPropertyId propId, SpecialWorldPropertyType type)> _specialProperties = new ();
 
+    public delegate void MarkerDelegate(string id, bool forward);
+    public event MarkerDelegate? OnMarkerExecuted;
+
     public double fps = 60.0;
     string _lastAction = ""; // this is for debug
 
@@ -405,6 +408,9 @@ internal class WorldMachine {
             case WorldSpecialPropertyCommand specialPropertyCommand:
             _specialProperties.Add((specialPropertyCommand.propertyId, specialPropertyCommand.property));
             break;
+            case WorldMarkerCommand markerCmd:
+            OnMarkerExecuted?.Invoke(markerCmd.id, true);
+            break;
             default:
             Debug.Warning($"Unknown world command {cmd}");
             break;
@@ -412,87 +418,103 @@ internal class WorldMachine {
     }
 
     private void Undo(WorldCommand cmd) {
-        switch(cmd) {
+        switch (cmd)
+        {
             case WorldDynCreateCommand dynCreate:
-            DestroyDynEntity(dynCreate.entity);
-            break;
+                DestroyDynEntity(dynCreate.entity);
+                break;
             case WorldDynDestroyCommand dynDestroy:
-            CreateDynEntity(dynDestroy.entity);
-            break;
+                CreateDynEntity(dynDestroy.entity);
+                break;
             case WorldPropertyMultiCommand wpm:
-            {
-                for(int i = 0; i < wpm.entityIds.Length; i++) {
-                    var eid = wpm.entityIds[i];
-                    var oval = wpm.oldvalue[i];
-                    var lower = char.ToLower(wpm.property[0]) + wpm.property.Substring(1);
-                    var state = _entities[eid];
-                    if(state is EntityState2D && wpm.property.ToLower() == "canvasid") {
-                        var newCanvas = _canvases[(int)oval];
-                        var oldCanvas = _canvases[(int)wpm.newvalue];
-                        switch(state) {
+                {
+                    for (int i = 0; i < wpm.entityIds.Length; i++)
+                    {
+                        var eid = wpm.entityIds[i];
+                        var oval = wpm.oldvalue[i];
+                        var lower = char.ToLower(wpm.property[0]) + wpm.property.Substring(1);
+                        var state = _entities[eid];
+                        if (state is EntityState2D && wpm.property.ToLower() == "canvasid")
+                        {
+                            var newCanvas = _canvases[(int)oval];
+                            var oldCanvas = _canvases[(int)wpm.newvalue];
+                            switch (state)
+                            {
+                                case ShapeState:
+                                case MorphShapeState:
+                                    oldCanvas.Entities.RemoveAll(x => x.entityId == eid);
+                                    newCanvas.Entities.Add((EntityState2D)state);
+                                    break;
+                            }
+                        }
+                        var field = state.GetType().GetField(lower);
+                        if (field != null)
+                        {
+                            field.SetValue(state, oval);
+                        }
+                        else
+                        {
+                            var prop = state.GetType().GetProperty(lower);
+                            prop?.SetValue(state, oval);
+                        }
+                    }
+                }
+                break;
+            case WorldPropertyCommand worldProperty:
+                {
+                    var lower = char.ToLower(worldProperty.property[0]) + worldProperty.property.Substring(1);
+                    var state = _entities[worldProperty.entityId];
+                    if (state is EntityState2D && worldProperty.property.ToLower() == "canvasid")
+                    {
+                        var newCanvas = _canvases[(int)(worldProperty.oldvalue ?? throw new Exception("oldvalue is null"))];
+                        var oldCanvas = _canvases[(int)(worldProperty.newvalue ?? throw new Exception("newvalue is null"))];
+                        switch (state)
+                        {
                             case ShapeState:
                             case MorphShapeState:
-                            oldCanvas.Entities.RemoveAll(x => x.entityId == eid);
-                            newCanvas.Entities.Add((EntityState2D)state);
-                            break;
+                                oldCanvas.Entities.RemoveAll(x => x.entityId == worldProperty.entityId);
+                                newCanvas.Entities.Add((EntityState2D)state);
+                                break;
                         }
                     }
                     var field = state.GetType().GetField(lower);
-                    if (field != null) {
-                        field.SetValue(state, oval);
-                    } else {
+                    if (field != null)
+                    {
+                        field.SetValue(state, worldProperty.oldvalue);
+                    }
+                    else
+                    {
                         var prop = state.GetType().GetProperty(lower);
-                        prop?.SetValue(state, oval);
+                        prop?.SetValue(state, worldProperty.oldvalue);
                     }
                 }
-            }
-            break;
-            case WorldPropertyCommand worldProperty:
-            {
-                var lower = char.ToLower(worldProperty.property[0]) + worldProperty.property.Substring(1);
-                var state = _entities[worldProperty.entityId];
-                if(state is EntityState2D && worldProperty.property.ToLower() == "canvasid") {
-                    var newCanvas = _canvases[(int)(worldProperty.oldvalue ?? throw new Exception("oldvalue is null"))];
-                    var oldCanvas = _canvases[(int)(worldProperty.newvalue ?? throw new Exception("newvalue is null"))];
-                    switch(state) {
-                        case ShapeState:
-                        case MorphShapeState:
-                        oldCanvas.Entities.RemoveAll(x => x.entityId == worldProperty.entityId);
-                        newCanvas.Entities.Add((EntityState2D)state);
-                        break;
-                    }
-                }
-                var field = state.GetType().GetField(lower);
-                if (field != null) {
-                    field.SetValue(state, worldProperty.oldvalue);
-                } else {
-                    var prop = state.GetType().GetProperty(lower);
-                    prop?.SetValue(state, worldProperty.oldvalue);
-                }
-            }
-            break;
+                break;
             case WorldSetActiveCameraCommand setActiveCameraCommand:
-            _activeCamera = setActiveCameraCommand.oldCamEntId == 0 ? null : _dynEntities[setActiveCameraCommand.oldCamEntId] as Camera;
-            break;
+                _activeCamera = setActiveCameraCommand.oldCamEntId == 0 ? null : _dynEntities[setActiveCameraCommand.oldCamEntId] as Camera;
+                break;
             case WorldCreateDynPropertyCommand createDynPropertyCommand:
-            var removed = _dynamicPropertyValues.Remove(createDynPropertyCommand.propertyId);
-            if(!removed) {
-                throw new Exception("Destroying a dyn property that does not exist!");
-            }
-            break;
+                var removed = _dynamicPropertyValues.Remove(createDynPropertyCommand.propertyId);
+                if (!removed)
+                {
+                    throw new Exception("Destroying a dyn property that does not exist!");
+                }
+                break;
             case WorldDynPropertyCommand dynPropertyCommand:
-            _dynamicPropertyValues[dynPropertyCommand.propertyId] = dynPropertyCommand.oldvalue;
-            break;
+                _dynamicPropertyValues[dynPropertyCommand.propertyId] = dynPropertyCommand.oldvalue;
+                break;
             case WorldPropertyEvaluatorCreate evaluatorCreate:
                 _propertyEvaluators.Remove(evaluatorCreate.propertyId);
                 _dynamicPropertyValues[evaluatorCreate.propertyId] = evaluatorCreate.oldValue;
-            break;
+                break;
             case WorldPropertyEvaluatorDestroy evaluatorDestroy:
                 _propertyEvaluators.Add(evaluatorDestroy.propertyId, evaluatorDestroy.evaluator);
                 EvaluateSpecialProperties();
                 // TODO: this is bugged when the evaluator depends on other non-special properties
                 _dynamicPropertyValues[evaluatorDestroy.propertyId] = evaluatorDestroy.finalValue;
                 break;
+            case WorldMarkerCommand markerCmd:
+            OnMarkerExecuted?.Invoke(markerCmd.id, false);
+            break;
         }
     }
 

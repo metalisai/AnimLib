@@ -62,10 +62,13 @@ internal record WorldEndCommand(double time) : WorldCommand(time);
 
 internal record WorldCreateRenderBufferCommand(int width, int height, int id, double time) : WorldCommand(time);
 
+internal record WorldMarkerCommand(string id, double time) : WorldCommand(time);
+
 /// <summary>
 /// Property types that are internally evaluated.
 /// </summary>
-public enum SpecialWorldPropertyType {
+public enum SpecialWorldPropertyType
+{
     /// <summary> The current time in seconds. Starting from the beginning of the animation. </summary>
     Time,
 };
