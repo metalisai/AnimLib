@@ -5,7 +5,7 @@ name: .NET Linux build
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "ci-test" ]
   pull_request:
     branches: [ "master" ]
 
@@ -22,6 +22,15 @@ jobs:
       run: |
           sudo apt-get update
           sudo apt-get install -y libfreetype6 libfreetype6-dev
+    - name: Install Mesa and EGL dependencies
+      run: |
+        sudo apt install -y \
+          libegl1 \
+          libgles2 \
+          libgl1-mesa-dri \
+          libegl-mesa0 \
+          libglapi-mesa \
+          libegl1-mesa-dev
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
@@ -34,6 +43,10 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Test
+      env:
+        LIBGL_ALWAYS_SOFTWARE: "1"
+        MESA_LOADER_DRIVER_OVERRIDE: "llvmpipe"
+        EGL_PLATFORM: "surfaceless"
       run: dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
     - name: Code Coverage Report
       uses: irongut/CodeCoverageSummary@v1.3.0
