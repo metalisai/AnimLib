@@ -46,7 +46,7 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
     public SkiaRenderer Skia => SkiaRenderer!;
     public int BlitVao => blitvao;
 
-    public int rectVao;
+    public int rectVao, rectVbo;
     public int dynVao, dynVbo;
     public int blitvao = -1, blitvbo = -1;
 
@@ -183,7 +183,7 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
 
         CompileShaders();
         Debug.Log("Shader compilation complete");
-        CreateMeshes(out rectVao, out dynVao, out dynVbo, out blitvao, out blitvbo);
+        CreateMeshes(out rectVao, out rectVbo, out dynVao, out dynVbo, out blitvao, out blitvbo);
         Debug.Log("Platform meshes created");
         SetupImgui();
         Debug.Log("ImGui resources created");
@@ -640,7 +640,7 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
         GL.BufferData(BufferTarget.ArrayBuffer, vData.Length * sizeof(float), vData, BufferUsageHint.DynamicDraw);
     }
 
-    internal static void CreateMeshes(out int rectVao, out int dynVao, out int dynVbo, out int blitvao, out int blitvbo) {
+    internal static void CreateMeshes(out int rectVao, out int rectVbo, out int dynVao, out int dynVbo, out int blitvao, out int blitvbo) {
         var vData = new float[] {
            -0.5f, -0.5f, 0.0f, 1.0f,
             0.5f, -0.5f, 0.0f, 1.0f,
@@ -658,8 +658,8 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
         };
         rectVao = GL.GenVertexArray();
         GL.BindVertexArray(rectVao);
-        var vbo = GL.GenBuffer();
-        GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
+        rectVbo = GL.GenBuffer();
+        GL.BindBuffer(BufferTarget.ArrayBuffer, rectVbo);
         GL.BufferData(BufferTarget.ArrayBuffer, vData.Length * sizeof(float), vData, BufferUsageHint.StaticDraw);
         GL.EnableVertexAttribArray(0);
         GL.EnableVertexAttribArray(2);

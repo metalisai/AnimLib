@@ -19,14 +19,14 @@ internal class HeadlessGlPlatform : IRendererPlatform, IDisposable
     }
 
     static DebugProc proc = OpenTKPlatform.debugCallback;
-    int blitSampler, mipmapSampler, linearSampler;
-    int _blitProgram, _defaultProgram;
+    int blitSampler = -1, mipmapSampler = -1, linearSampler = -1;
+    int _blitProgram = -1, _defaultProgram = -1;
     public SkiaRenderer? SkiaRenderer;
     public Dictionary<string, AllocatedResources> allocatedResources = new();
     public static ConcurrentBag<string> destroyedOwners = new();
     List<int> _programs = new List<int>();
 
-    public int rectVao;
+    public int rectVao, rectVbo;
     public int dynVao, dynVbo;
     public int blitvao = -1, blitvbo = -1;
     private bool disposedValue;
@@ -207,7 +207,7 @@ internal class HeadlessGlPlatform : IRendererPlatform, IDisposable
 
         CompileShaders();
         Debug.Log("Shader compilation complete");
-        OpenTKPlatform.CreateMeshes(out rectVao, out dynVao, out dynVbo, out blitvao, out blitvbo);
+        OpenTKPlatform.CreateMeshes(out rectVao, out rectVbo, out dynVao, out dynVbo, out blitvao, out blitvbo);
 
         string version = GL.GetString(StringName.Version);
         string shadingLang = GL.GetString(StringName.ShadingLanguageVersion);
@@ -276,7 +276,7 @@ internal class HeadlessGlPlatform : IRendererPlatform, IDisposable
         {
             if (disposing)
             {
-                
+                SkiaRenderer?.Dispose();
             }
 
             disposedValue = true;
@@ -288,12 +288,23 @@ internal class HeadlessGlPlatform : IRendererPlatform, IDisposable
             // NOTE: assuming there is no concurrent access at this point!
             var ares = allocatedResources.Values;
             allocatedResources.Clear();
+            destroyedOwners.Clear();
             foreach (var val in ares)
             {
                 GL.DeleteBuffers(val.buffers.Count(), val.buffers.ToArray());
                 GL.DeleteVertexArrays(val.vaos.Count(), val.vaos.ToArray());
                 GL.DeleteTextures(val.textures.Count(), val.textures.ToArray());
             }
+
+            GL.DeleteVertexArray(rectVao);
+            GL.DeleteVertexArray(dynVao);
+            GL.DeleteVertexArray(blitvao);
+            GL.DeleteBuffer(rectVbo);
+            GL.DeleteBuffer(dynVbo);
+            GL.DeleteBuffer(blitvbo);
+            if (blitSampler >= 0) GL.DeleteSampler(blitSampler);
+            if (mipmapSampler >= 0) GL.DeleteSampler(mipmapSampler);
+            if (linearSampler >= 0) GL.DeleteSampler(linearSampler);
 
             Egl.DestroyContext(_eglDpy, _eglCtx);
             _eglCtx = IntPtr.Zero;

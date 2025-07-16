@@ -16,7 +16,7 @@ namespace AnimLib;
 /// <summary>
 /// A canvas renderer using SkiaSharp.
 /// </summary>
-internal partial class SkiaRenderer
+internal partial class SkiaRenderer : IDisposable
 {
     public enum RenderMode {
         None,
@@ -49,11 +49,8 @@ internal partial class SkiaRenderer
 
     IRendererPlatform platform;
 
-    TextPlacement textPlacement;
-
     public SkiaRenderer(IRendererPlatform platform) {
         this.platform = platform;
-        textPlacement = new TextPlacement(TextPlacement.DefaultFontPath, System.IO.Path.GetFileNameWithoutExtension(TextPlacement.DefaultFontPath));
     }
 
     private SKImage? LoadTexture(Texture2D texture) {
@@ -551,6 +548,8 @@ internal partial class SkiaRenderer
     }
 
     int _texture = -1;
+    private bool disposedValue;
+
     public int Texture{
         get {
             return _texture;
@@ -560,19 +559,21 @@ internal partial class SkiaRenderer
         }
     }
 
+    const string OWNER_NAME = "SkiaRenderer";
+
     public void Flush(int entityId) {
         ctx?.ResetContext();
         canvas?.Flush();
 
         // blit software buffer to scren
-        if(mode == RenderMode.Software) {
-            using(var img = surface?.Snapshot()) {
-                if(img == null) {
+        if (mode == RenderMode.Software) {
+            using (var img = surface?.Snapshot()) {
+                if (img == null) {
                     Debug.Error("SkiaRenderer: surface snapshot failed");
                     return;
                 }
-                if(tex == null) {
-                    tex = new Texture2D("SkiaRenderer"); 
+                if (tex == null) {
+                    tex = new Texture2D(OWNER_NAME);
                 }
                 var requiredSize = img.Info.BytesSize;
                 tex.GenerateMipmap = false;
@@ -581,16 +582,16 @@ internal partial class SkiaRenderer
                 //tex.Format = Texture2D.TextureFormat.RGBA8;
                 tex.Format = this.hdr ? Texture2D.TextureFormat.RGBA16F : Texture2D.TextureFormat.RGBA8;
                 // allocate new buffer if needed
-                if(tex.RawData == null || tex.RawData.Length != tex.Width * tex.Height * 4) {
+                if (tex.RawData == null || tex.RawData.Length != tex.Width * tex.Height * 4) {
                     tex.RawData = new byte[requiredSize];
                 }
-                if(tex.RawData.Length < requiredSize) {
+                if (tex.RawData.Length < requiredSize) {
                     Debug.Error($"Skia buffer too small, required {requiredSize} bytes, got {tex.RawData.Length}");
                     return;
                 }
                 var pinned = GCHandle.Alloc(tex.RawData, GCHandleType.Pinned);
                 System.IntPtr dst = pinned.AddrOfPinnedObject();
-                if(img.ReadPixels(img.Info, dst)) {
+                if (img.ReadPixels(img.Info, dst)) {
                     platform.LoadTexture(tex);
                     _texture = tex.GLHandle;
                 } else {
@@ -600,13 +601,48 @@ internal partial class SkiaRenderer
             }
         }
         // TODO: blit entityId in OpenGL mode
-        else if(mode == RenderMode.OpenGL) {
+        else if (mode == RenderMode.OpenGL) {
             var src = glBuffer as DepthPeelRenderBuffer;
-            if(src == null) {
+            if (src == null) {
                 Debug.Error("SkiaRenderer: glBuffer is not DepthPeelRenderBuffer");
                 return;
             }
             _texture = src.Texture();
         }
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposedValue)
+        {
+            if (disposing)
+            {
+                glBuffer?.Dispose();
+                glInterface?.Dispose();
+                surface?.Dispose();
+                canvas?.Dispose();
+                renderTarget?.Dispose();
+                ctx?.Dispose();
+                platform.DestroyOwner(OWNER_NAME);
+            }
+
+            // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+            // TODO: set large fields to null
+            disposedValue = true;
+        }
+    }
+
+    // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+    // ~SkiaRenderer()
+    // {
+    //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+    //     Dispose(disposing: false);
+    // }
+
+    public void Dispose()
+    {
+        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }
