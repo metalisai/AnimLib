@@ -47,7 +47,7 @@ public class CircleTests : IDisposable
         platform.Init();
     }
 
-    [Fact]
+    [LinuxOnlyFact]
     public void CreateCircle_Circle_Rendered()
     {
         platform.ClearMarkers();
