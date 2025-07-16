@@ -15,7 +15,7 @@ public class TestingPlatform
     List<string> pendingScreenshotCaptures = new();
 
     public delegate void SSDelegate(string markerId, CapturedFrame frame);
-    public event SSDelegate ScreenshotCaptured;
+    public event SSDelegate? ScreenshotCaptured;
 
 
     public TestingPlatform()
@@ -36,7 +36,7 @@ public class TestingPlatform
             foreach (var markerId in pendingScreenshotCaptures)
             {
                 var img = views.First().CaptureScene(Texture2D.TextureFormat.RGB16)!.Value;
-                ScreenshotCaptured(markerId, img);
+                ScreenshotCaptured?.Invoke(markerId, img);
             }
             pendingScreenshotCaptures.Clear();
         }

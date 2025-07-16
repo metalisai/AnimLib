@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.InteropServices;
-using AnimLib;
 using OpenTK.Windowing.Common;
 using OpenTK.Graphics.Egl;
 using System.Linq;
@@ -10,7 +9,7 @@ using System.Collections.Concurrent;
 
 namespace AnimLib;
 
-internal class HeadlessGlPlatform : IRendererPlatform
+internal class HeadlessGlPlatform : IRendererPlatform, IDisposable
 {
     public class AllocatedResources
     {
@@ -30,6 +29,7 @@ internal class HeadlessGlPlatform : IRendererPlatform
     public int rectVao;
     public int dynVao, dynVbo;
     public int blitvao = -1, blitvbo = -1;
+    private bool disposedValue;
 
     public class EGLBindingsContext : OpenTK.IBindingsContext
     {
@@ -45,35 +45,53 @@ internal class HeadlessGlPlatform : IRendererPlatform
 
     public int BlitVao => blitvao;
 
-    [DllImport("libEGL.so")]
-    private static extern IntPtr eglGetDisplay(IntPtr native_display);
+    nint _eglCtx = IntPtr.Zero, _eglDpy = IntPtr.Zero;
 
     public HeadlessGlPlatform()
     {
-        //var dsp = eglGetDisplay(IntPtr.Zero);
-        //Debug.Log($"Display: {dsp}");
-        IntPtr dpy = Egl.GetDisplay(IntPtr.Zero);
-        Egl.Initialize(dpy, out var major, out var minor);
-        Debug.Log($"EGL {major}.{minor}");
-        nint[] configBuf = new nint[128];
-        var success = Egl.ChooseConfig(dpy, [Egl.SURFACE_TYPE, Egl.PBUFFER_BIT, Egl.NONE], configBuf, configBuf.Length, out var num_config);
-        Debug.Log($"EGL ChooseConfig success: {success}. Config count: {num_config} {string.Join(' ', configBuf.Select(x => x.ToString()))}");
-        var surf = Egl.CreatePbufferSurface(dpy, configBuf.First(), [Egl.WIDTH, 1920, Egl.HEIGHT, 1080, Egl.VG_COLORSPACE, Egl.VG_COLORSPACE_sRGB, Egl.NONE]);
-        var ecode = Egl.GetError();
-        Debug.Log($"Surface: {surf} Error: {ecode}");
-        Egl.BindAPI(RenderApi.GL);
-        ecode = Egl.GetError();
-        Debug.Log($"Egl.BindAPI: {ecode}");
+        try
+        {
+            _eglDpy = Egl.GetDisplay(IntPtr.Zero);
+            Egl.Initialize(_eglDpy, out var major, out var minor);
+            Debug.Log($"EGL {major}.{minor}");
+            nint[] configBuf = new nint[128];
+            var success = Egl.ChooseConfig(_eglDpy, [Egl.SURFACE_TYPE, Egl.PBUFFER_BIT, Egl.NONE], configBuf, configBuf.Length, out var num_config);
+            Debug.Log($"EGL ChooseConfig success: {success}. Config count: {num_config} {string.Join(' ', configBuf.Select(x => x.ToString()))}");
+            //var surf = Egl.CreatePbufferSurface(dpy, configBuf.First(), [Egl.WIDTH, 1920, Egl.HEIGHT, 1080, Egl.VG_COLORSPACE, Egl.VG_COLORSPACE_sRGB, Egl.NONE]);
+            //var ecode = Egl.GetError();
+            //Debug.Log($"Surface: {surf} Error: {ecode}");
+            Egl.BindAPI(RenderApi.GL);
+            var ecode = Egl.GetError();
+            Debug.Log($"Egl.BindAPI: {ecode}");
 
-        var ctx = Egl.CreateContext(dpy, configBuf[0], IntPtr.Zero, [Egl.CONTEXT_MAJOR_VERSION, 3, Egl.CONTEXT_MINOR_VERSION, 3, Egl.CONTEXT_OPENGL_DEBUG, 1, Egl.NONE]);
-        ecode = Egl.GetError();
-        Debug.Log($"Egl.CreateContext: {ecode}");
+            var extensions = Marshal.PtrToStringAnsi(Egl.QueryString(_eglDpy, Egl.EXTENSIONS))?.Split(' ') ?? [];
+            Debug.Log($"EGL Extensions: {extensions}");
+            if (!extensions.Contains("EGL_KHR_surfaceless_context"))
+            {
+                throw new Exception("EGL doesn't support creating surfaceless context!");
+            }
+            else if (!extensions.Contains("EGL_KHR_create_context"))
+            {
+                throw new Exception("EGL doesn't support creating a context!");
+            }
 
-        Egl.MakeCurrent(dpy, surf, surf, ctx);
-        ecode = Egl.GetError();
-        Debug.Log($"Egl.MakeCurrent: {ecode}");
+            _eglCtx = Egl.CreateContext(_eglDpy, configBuf[0], IntPtr.Zero, [Egl.CONTEXT_MAJOR_VERSION, 3, Egl.CONTEXT_MINOR_VERSION, 3, Egl.CONTEXT_OPENGL_DEBUG, 1, Egl.NONE]);
+            ecode = Egl.GetError();
+            Debug.Log($"Egl.CreateContext: {ecode}");
 
-        OpenTK.Graphics.OpenGL4.GL.LoadBindings(new EGLBindingsContext());
+            Egl.MakeCurrent(_eglDpy, Egl.NO_SURFACE, Egl.NO_SURFACE, _eglCtx);
+            ecode = Egl.GetError();
+            Debug.Log($"Egl.MakeCurrent: {ecode}");
+
+            GL.LoadBindings(new EGLBindingsContext());
+        }
+        catch (Exception)
+        {
+            if (_eglCtx != IntPtr.Zero)
+            {
+                Egl.DestroyContext(_eglDpy, _eglCtx);
+            }
+        }
 
         OnLoaded = (s, e) => { };
         PRenderFrame = (e) => { };
@@ -250,5 +268,48 @@ internal class HeadlessGlPlatform : IRendererPlatform
         //SwapBuffers();
         sw.Stop();
         Performance.TimeToWaitSync = sw.Elapsed.TotalSeconds;
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposedValue)
+        {
+            if (disposing)
+            {
+                
+            }
+
+            disposedValue = true;
+            foreach (var program in _programs)
+            {
+                GL.DeleteShader(program);
+            }
+
+            // NOTE: assuming there is no concurrent access at this point!
+            var ares = allocatedResources.Values;
+            allocatedResources.Clear();
+            foreach (var val in ares)
+            {
+                GL.DeleteBuffers(val.buffers.Count(), val.buffers.ToArray());
+                GL.DeleteVertexArrays(val.vaos.Count(), val.vaos.ToArray());
+                GL.DeleteTextures(val.textures.Count(), val.textures.ToArray());
+            }
+
+            Egl.DestroyContext(_eglDpy, _eglCtx);
+            _eglCtx = IntPtr.Zero;
+        }
+    }
+
+    ~HeadlessGlPlatform()
+    {
+        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        Dispose(disposing: false);
+    }
+
+    public void Dispose()
+    {
+        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }
