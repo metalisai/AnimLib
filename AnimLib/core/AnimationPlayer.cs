@@ -110,7 +110,7 @@ internal class AnimationPlayer {
         }
     }
     
-    Thread bakeThread;
+    Thread? bakeThread;
 
     volatile int frameId = 0;
     volatile int setDirtyAt = 0;
@@ -202,8 +202,10 @@ internal class AnimationPlayer {
         }
     }
 
-    public void Close() {
+    public void Close()
+    {
         running = false;
+        bakeThread?.Join();
     }
 
     public void CancelExport() {
@@ -225,20 +227,26 @@ internal class AnimationPlayer {
 
         trackPlayer = new TrackPlayer();
 
-        running = true;
-        // Create a thread and call a background method
-        bakeThread = new Thread(new ThreadStart(BakeProc));
-        // Start thread  
-        bakeThread.Start();
+        if (useThreads)
+        {
+            running = true;
+            // Create a thread and call a background method
+            bakeThread = new Thread(new ThreadStart(BakeProc));
+            // Start thread  
+            bakeThread.Start();
+        }
 
         machine.OnMarkerExecuted += (id, forward) => OnMarker?.Invoke(id, forward);
     }
 
-    public void OnEndRenderScene(IEnumerable<SceneView> views) {
-        if(Exporting) {
+    public void OnEndRenderScene(IEnumerable<SceneView> views)
+    {
+        if (Exporting)
+        {
             //var tex = controls.MainView.CaptureScene();
             var tex = views.FirstOrDefault()?.CaptureScene(Texture2D.TextureFormat.RGB16);
-            if (tex != null) {
+            if (tex != null)
+            {
                 FrameCaptured(tex.Value);
             }
         }

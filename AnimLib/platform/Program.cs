@@ -186,7 +186,6 @@ internal class Program
 
         while (!exit)
         {
-            Debug.Log("Frame");
             platform.RenderFrame(new FrameEventArgs(1.0 / 60.0));
         }
         player.Close();
