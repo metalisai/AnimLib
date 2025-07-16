@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace AnimLib;
 
-public class TestingPlatform
+public class TestingPlatform : IDisposable
 {
     HeadlessGlPlatform glPlatform;
-    static SyncCtx mainCtx = new ();
+    static SyncCtx mainCtx = new();
     List<string> screenshotMarkers = new();
 
     List<string> pendingScreenshotCaptures = new();
@@ -17,6 +18,11 @@ public class TestingPlatform
     public delegate void SSDelegate(string markerId, CapturedFrame frame);
     public event SSDelegate? ScreenshotCaptured;
 
+    bool exit = false;
+    string exitReason = "None";
+    AnimationPlayer? player;
+    RenderState? renderState;
+    private bool disposedValue;
 
     public TestingPlatform()
     {
@@ -26,6 +32,11 @@ public class TestingPlatform
     public void AddScreenshotMarker(string markerName)
     {
         screenshotMarkers.Add(markerName);
+    }
+
+    public void ClearMarkers()
+    {
+        screenshotMarkers.Clear();
     }
 
     // callback called by renderer (for capturing view images)
@@ -50,19 +61,14 @@ public class TestingPlatform
         }
     }
 
-    public void Run(string projectFilePath)
+    public void Init()
     {
-        throw new NotImplementedException();
-    }
-
-    public void Run(AnimationBehaviour behaviour)
-    {
-        var renderState = new RenderState(glPlatform);
+        renderState = new RenderState(glPlatform);
 
         var view = new SceneView(0, 0, 100, 100, 1920, 1080);
         renderState.AddSceneView(view);
 
-        AnimationPlayer player = new(new NoProjectBehaviour(), useThreads: false);
+        player = new(new NoProjectBehaviour(), useThreads: false);
         player.OnMarker += OnMarker;
         player.ResourceManager.OnAssemblyChanged += (path) =>
         {
@@ -71,10 +77,6 @@ public class TestingPlatform
             player.SetBehaviour(beh);
         };
         SynchronizationContext.SetSynchronizationContext(mainCtx);
-
-        // TODO: this code is exactly the same as in Program.LaunchHeadless
-        bool exit = false;
-        string exitReason = "None";
 
         renderState.OnPreRender += () =>
         {
@@ -98,12 +100,17 @@ public class TestingPlatform
         renderState.OnPostRender += player.OnEndRenderScene;
         renderState.OnPostRender += OnEndRenderScene;
 
-        //player.ResourceManager.SetProject(projectFilePath);
-        player.SetBehaviour(behaviour);
-
         glPlatform.Load();
+    }
 
-        //player.Seek(0.0);
+    public void Run(string projectFilePath)
+    {
+        if (player == null)
+        {
+            throw new Exception("Call Init() before running!");
+        }
+
+        player.ResourceManager.SetProject(projectFilePath);
         player.Bake();
         player.Play();
 
@@ -111,7 +118,59 @@ public class TestingPlatform
         {
             glPlatform.RenderFrame(new FrameEventArgs(1.0 / 60.0));
         }
-        player.Close();
-        Console.WriteLine($"Application closing. Reason: {exitReason}");
+        Debug.Log($"Animation done playing. Reason: {exitReason}");
+    }
+
+    public void Run(AnimationBehaviour behaviour)
+    {
+        if (player == null)
+        {
+            throw new Exception("Call Init() before running!");
+        }
+
+        player.SetBehaviour(behaviour);
+
+        player.Bake();
+        player.Play();
+
+        while (!exit)
+        {
+            glPlatform.RenderFrame(new FrameEventArgs(1.0 / 60.0));
+        }
+        Debug.Log($"Animation done playing. Reason: {exitReason}");
+    }
+
+    public void Close()
+    {
+        player?.Close();
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposedValue)
+        {
+            if (disposing)
+            {
+                glPlatform.Dispose();
+            }
+
+            // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+            // TODO: set large fields to null
+            disposedValue = true;
+        }
+    }
+
+    // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+    // ~TestingPlatform()
+    // {
+    //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+    //     Dispose(disposing: false);
+    // }
+
+    public void Dispose()
+    {
+        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }

@@ -114,7 +114,7 @@ internal class HeadlessGlPlatform : IRendererPlatform, IDisposable
     }
 
     public void DeleteShader(int shader) {
-        GL.DeleteShader(shader);
+        GL.DeleteProgram(shader);
         _programs.Remove(shader);
     }
 
@@ -280,9 +280,10 @@ internal class HeadlessGlPlatform : IRendererPlatform, IDisposable
             }
 
             disposedValue = true;
-            foreach (var program in _programs)
+            // NOTE: making copy to keep iterator valid
+            foreach (var program in _programs.ToArray())
             {
-                GL.DeleteShader(program);
+                DeleteShader(program);
             }
 
             // NOTE: assuming there is no concurrent access at this point!

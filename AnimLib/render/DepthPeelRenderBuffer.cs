@@ -452,7 +452,7 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
     public void ReadPixels(ref byte data, Texture2D.TextureFormat format = Texture2D.TextureFormat.RGB8)
     {
         //GL.ReadPixels(0, 0, Width, Height, PixelFormat.Rgb, PixelType.UnsignedByte, ref data);
-        GL.BindTexture(TextureTarget.Texture2D, _colorTex);
+        GL.BindTexture(_multisample ? TextureTarget.Texture2DMultisample : TextureTarget.Texture2D, _colorTex);
         PixelFormat fmt;
         PixelType type;
         switch(format) {
