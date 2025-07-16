@@ -65,7 +65,7 @@ internal class HeadlessGlPlatform : IRendererPlatform, IDisposable
             Debug.Log($"Egl.BindAPI: {ecode}");
 
             var extensions = Marshal.PtrToStringAnsi(Egl.QueryString(_eglDpy, Egl.EXTENSIONS))?.Split(' ') ?? [];
-            Debug.Log($"EGL Extensions: {extensions}");
+            Debug.Log($"EGL Extensions: {string.Join(' ', extensions)}");
             if (!extensions.Contains("EGL_KHR_surfaceless_context"))
             {
                 throw new Exception("EGL doesn't support creating surfaceless context!");
