@@ -109,7 +109,7 @@ internal class CanvasState : EntityState3D
 /// <summary>
 /// A canvas is a 2D plane in 3D space. It is defined by a center, a normal, an up vector, and a size. 2D objects are always created on a canvas.
 /// </summary>
-public partial class Canvas : DynVisualEntity3D {
+public partial class Canvas : VisualEntity3D {
     [ThreadStatic]
     static Canvas? _default;
 

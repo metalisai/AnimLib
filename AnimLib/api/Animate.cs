@@ -72,7 +72,7 @@ public static class Animate {
     /// <param name="angle">The total angle to orbit.</param>
     /// <param name="duration">The duration of the orbit operation.</param>
     /// <returns>A task that represents the animation operation.</returns>
-    public static async Task OrbitAndLookAt(DynVisualEntity3D obj, Vector3 axis, Vector3 p, float angle, float duration)
+    public static async Task OrbitAndLookAt(VisualEntity3D obj, Vector3 axis, Vector3 p, float angle, float duration)
     {
         // TODO: velocity ramping not instant
         double startTime = AnimLib.Time.T;
@@ -100,7 +100,7 @@ public static class Animate {
         }, duration); 
     }
 
-    public static Task Offset(this DynVisualEntity2D ent, Vector2 offset, double duration = 1.0, EaseType curve = EaseType.EaseInOut)
+    public static Task Offset(this VisualEntity2D ent, Vector2 offset, double duration = 1.0, EaseType curve = EaseType.EaseInOut)
     {
         /*return InterpT(x =>
         {
@@ -109,7 +109,7 @@ public static class Animate {
         return InterpT(ent.PositionProperty, ent.Position + offset, duration, curve);
     }
     
-    public static Task Move(this DynVisualEntity2D ent, Vector2 moveTo, double duration = 1.0, EaseType curve = EaseType.EaseInOut)
+    public static Task Move(this VisualEntity2D ent, Vector2 moveTo, double duration = 1.0, EaseType curve = EaseType.EaseInOut)
     {
         return InterpT(ent.PositionProperty, moveTo, duration, curve);
     }
@@ -161,9 +161,9 @@ public static class Animate {
                 return evaluator.Invoke(end);
             }
         };
-        World.current.BeginDynEvaluator(property, timeEvaluator);
+        World.current.BeginEvaluator(property, timeEvaluator);
         await AnimLib.Time.WaitUntilT(endTime);
-        World.current.EndDynEvaluator(property, evaluator.Invoke(end));
+        World.current.EndEvaluator(property, evaluator.Invoke(end));
     }
 
     /// <summary>
@@ -346,13 +346,13 @@ public static class Animate {
     /// <param name="duration">The duration of the morph.</param>
     /// <param name="curve">The interpolation curve to use.</param>
     /// <param name="destroyStartShape">Whether to destroy the start shape when creating the morph shape.</param>
-    public static async Task<DynShape> CreateMorph(DynShape startShape, DynShape endShape, float duration, EaseType curve = EaseType.EaseInOut, bool destroyStartShape = true)
+    public static async Task<Shape> CreateMorph(Shape startShape, Shape endShape, float duration, EaseType curve = EaseType.EaseInOut, bool destroyStartShape = true)
     {
         var morph = new MorphShape(startShape, endShape);
         if (destroyStartShape && startShape.Created) {
-            World.current.DestroyDyn(startShape);
+            World.current.Destroy(startShape);
         }
-        World.current.CreateDynInstantly(morph);
+        World.current.CreateInstantly(morph);
         double startTime = AnimLib.Time.T;
         double endTime = startTime + duration;
         while (AnimLib.Time.T - startTime < duration) {
@@ -362,13 +362,13 @@ public static class Animate {
             morph.Progress = t;
             await AnimLib.Time.WaitFrame();
         }
-        World.current.DestroyDyn(morph);
-        var newShape = (DynShape)endShape.Clone();
+        World.current.Destroy(morph);
+        var newShape = (Shape)endShape.Clone();
         //newShape.Transform = new Transform2D(startShape.Transform, newShape);
         newShape.Position = startShape.Position;
         newShape.Rotation = startShape.Rotation;
         newShape.Scale = startShape.Scale;
-        World.current.CreateDynInstantly(newShape);
+        World.current.CreateInstantly(newShape);
         return newShape;
     }
 
@@ -385,7 +385,7 @@ public static class Animate {
         {
             default:
             case TextCreationMode.Instant:
-                World.current.CreateDynInstantly(text);
+                World.current.CreateInstantly(text);
                 break;
             case TextCreationMode.Fade:
                 foreach (var c in text.CurrentShapes)
@@ -395,7 +395,7 @@ public static class Animate {
                     c.s.Trim = (0.0f, 1.0f);
                 }
                 text.Color = text.Color.WithA(0);
-                World.current.CreateDynInstantly(text);
+                World.current.CreateInstantly(text);
                 foreach (var c in text.CurrentShapes)
                 {
                     last = Animate.Color(c.s, c.s.Color.WithA(0), c.s.Color.WithA(255), 0.5f);
@@ -410,7 +410,7 @@ public static class Animate {
                     c.s.Mode = ShapeMode.Contour;
                     c.s.Trim = (0.0f, 0.0f);
                 }
-                World.current.CreateDynInstantly(text);
+                World.current.CreateInstantly(text);
                 foreach (var c in text.CurrentShapes)
                 {
                     async Task AnimateCreation(float from, float to)

@@ -38,7 +38,7 @@ internal class StarState : ShapeState
 /// <summary>
 /// A star shaped 2D entity.
 /// </summary>
-public partial class Star : DynShape
+public partial class Star : Shape
 {
     private static ShapePath CreateStarPath(float outerR, float innerR, int points = 5)
     {

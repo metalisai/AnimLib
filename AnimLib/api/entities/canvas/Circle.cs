@@ -24,7 +24,7 @@ internal class CircleState : ShapeState
 /// <summary>
 /// A circle shaped entity.
 /// </summary>
-public partial class Circle : DynShape
+public partial class Circle : Shape
 {
     private static ShapePath CreateCirclePath(float radius)
     {

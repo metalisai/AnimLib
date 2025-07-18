@@ -56,7 +56,7 @@ internal class SvgSpriteState : EntityState2D
 /// <summary>
 /// A circle shaped entity.
 /// </summary>
-public partial class SvgSprite : DynVisualEntity2D
+public partial class SvgSprite : VisualEntity2D
 {
     /// <summary>
     /// Creates a new 2D Svg sprite with given svg source and dimensions.

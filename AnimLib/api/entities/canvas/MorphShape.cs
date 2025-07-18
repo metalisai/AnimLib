@@ -170,12 +170,12 @@ internal class MorphShapeState : EntityState2D
 /// <summary>
 /// A morph shape between two shapes.
 /// </summary>
-public partial class MorphShape : DynVisualEntity2D
+public partial class MorphShape : VisualEntity2D
 {
     /// <summary>
     /// Creates a new morph shape between two shapes.
     /// </summary>
-    public MorphShape(DynShape a, DynShape b, float progress = 0.0f) : base(a)
+    public MorphShape(Shape a, Shape b, float progress = 0.0f) : base(a)
     {
         this._shape1P.Value = a.Path;
         this._shape2P.Value = b.Path;

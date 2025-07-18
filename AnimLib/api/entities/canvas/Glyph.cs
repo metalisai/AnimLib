@@ -33,7 +33,7 @@ internal class GlyphState : EntityState2D
 /// <summary>
 /// A (cached) glyph that's drawn from a font atlas.
 /// </summary>
-public partial class Glyph : DynVisualEntity2D {
+public partial class Glyph : VisualEntity2D {
     /// <summary>
     /// Creates a new glyph with given width and height.
     /// </summary>

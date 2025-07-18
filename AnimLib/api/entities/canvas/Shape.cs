@@ -5,7 +5,7 @@ namespace AnimLib;
 /// <summary>
 /// Internal state of a <see cref="Shape"/>.
 /// </summary>
-[GenerateDynProperties(forType: typeof(DynShape))]
+[GenerateDynProperties(forType: typeof(Shape))]
 internal class ShapeState : EntityState2D {
     [Dyn]
     public ShapePath path;
@@ -37,5 +37,24 @@ internal class ShapeState : EntityState2D {
         get {
             throw new NotImplementedException();
         }
+    }
+}
+
+/// <summary>
+/// A shape defined by path.
+/// </summary>
+public partial class Shape : VisualEntity2D, IColored
+{
+
+    public Shape(ShapePath path)
+    {
+        this.Path = path;
+    }
+
+    internal override object GetState(Func<DynPropertyId, object?> evaluator)
+    {
+        var shape = new ShapeState(Path ?? new ShapePath());
+        GetState(shape, evaluator);
+        return shape;
     }
 }

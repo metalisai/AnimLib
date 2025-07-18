@@ -41,7 +41,7 @@ internal class SpriteState : EntityState2D
 /// <summary>
 /// A 2D sprite. Displays a bitmap image.
 /// </summary>
-public partial class Sprite : DynVisualEntity2D
+public partial class Sprite : VisualEntity2D
 {
     // <summary>
     /// Create a new sprite.

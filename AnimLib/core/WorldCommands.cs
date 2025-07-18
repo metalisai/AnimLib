@@ -53,8 +53,8 @@ internal record WorldCreateDynPropertyCommand (
     double time
 ) : WorldCommand(time);
 
-internal record WorldDynCreateCommand(DynVisualEntity entity, double time) : WorldCommand(time);
-internal record WorldDynDestroyCommand(DynVisualEntity entity, double time) : WorldCommand(time);
+internal record WorldCreateCommand(VisualEntity entity, double time) : WorldCommand(time);
+internal record WorldDestroyCommand(VisualEntity entity, double time) : WorldCommand(time);
 
 internal record WorldSetActiveCameraCommand(int cameraEntId, int oldCamEntId, double time) : WorldCommand(time);
 

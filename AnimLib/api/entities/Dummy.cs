@@ -17,7 +17,7 @@ internal class DummyState : EntityState3D
 /// <summary>
 /// A dummy object. Useful for debugging or parenting (the transform kind, not the human kind).
 /// </summary>
-public partial class Dummy : DynVisualEntity3D
+public partial class Dummy : VisualEntity3D
 {
     /// <summary> Create a new dummy object. </summary>
     public Dummy() : base() { }

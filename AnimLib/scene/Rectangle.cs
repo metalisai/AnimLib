@@ -62,7 +62,7 @@ internal class PlayerRect : SceneObject2D {
         return new PlayerRect(this);
     }
 
-    public override DynVisualEntity2D InitializeEntity()
+    public override VisualEntity2D InitializeEntity()
     {
         var ent = new Rectangle(this.size.x, this.size.y);
         ent.Color = this.color;

@@ -194,7 +194,7 @@ internal class PlayerScene {
         return null;
     }
 
-    public DynVisualEntity? GetSceneEntityByName(string name) {
+    public VisualEntity? GetSceneEntityByName(string name) {
         // TODO: use hash map!
         var objs = GetObjects();
         foreach(var obj in objs) {
@@ -211,7 +211,7 @@ internal class PlayerScene {
         return null;
     }
 
-    public DynVisualEntity[] GetSceneEntitiesByName(string pattern) {
+    public VisualEntity[] GetSceneEntitiesByName(string pattern) {
         throw new NotImplementedException();
         /*Regex ex = new Regex(pattern);
         var objs = GetObjects();
@@ -238,13 +238,13 @@ internal class PlayerScene {
                                 Debug.Error("SceneObject2D.InitializeEntity() return null");
                                 break;
                             }
-                            Func<DynVisualEntity, bool> canvasMatch = (DynVisualEntity ce) => {
+                            Func<VisualEntity, bool> canvasMatch = (VisualEntity ce) => {
                                 switch(ce) {
                                     case Canvas canvas:
                                         if(canvas.Name == so2d.CanvasName) {
                                             System.Diagnostics.Debug.Assert(ce.Created);
                                             c.CanvasId = canvas.Id;
-                                            world.CreateDynInstantly(c);
+                                            world.CreateInstantly(c);
                                             sceneObjects[c.Id] = e.obj;
                                             return true;
                                         }
@@ -309,11 +309,11 @@ internal class PlayerScene {
                     }
                 }*/ else if(e.type == SceneEventType.Delete) {
                     //var ent = world.FindEntityByCreator(e.obj);
-                    DynVisualEntity? ent = null;
+                    VisualEntity? ent = null;
                     if(ent == null) {
                         Debug.Error($"Scene destroying entity that isn't created by us {e.obj.name}");
                     } else {
-                        world.DestroyDyn(ent);
+                        world.Destroy(ent);
                     }
                 }
             } else {

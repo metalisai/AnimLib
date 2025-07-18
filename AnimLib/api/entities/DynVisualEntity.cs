@@ -32,7 +32,7 @@ internal abstract class EntityState
 /// <summary>
 /// A visual entity that can be animated. Base for both 2D and 3D entities.
 /// </summary>
-public abstract class DynVisualEntity
+public abstract class VisualEntity
 {
     /// <summary>
     /// The ID of this entity.
@@ -59,14 +59,14 @@ public abstract class DynVisualEntity
     /// <summary>
     /// Creates a new visual entity.
     /// </summary>
-    internal DynVisualEntity(DynVisualEntity other)
+    internal VisualEntity(VisualEntity other)
     {
         this.ParentId = other.ParentId;
         this.Active = other.Active;
         this.SortKey = other.SortKey;
     }
 
-    internal DynVisualEntity()
+    internal VisualEntity()
     {
     }
 

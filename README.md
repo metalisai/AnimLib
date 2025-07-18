@@ -8,12 +8,12 @@
 
 ## What is this?
 This is a WIP application to programmatically create animations. 
-It's not very user friendly right now, so I wouldn't recommend using it yet.
+It's not very user friendly or well documented, so I wouldn't recommend using it yet.
 
-The main use case is creating visualizations with 2D vector graphics, but it's intended to support 3D as well.
-I started working on this years ago and occasionally come back to it every now and then. It's still very incomplete/buggy and probably needs a major
-refactor. The initial version was very different from what it is now. I've lost interest in the project and I didn't see any reason to keep it private, so I
-decided to put it up on github.
+The main use case is creating visualizations with 2D vector graphics, but it's intended to support 3D triangle meshes as well.  
+The animations are written in C# and compiled into a .dll plugin that the application can load.  
+  
+The current development goal is getting the animation engine to a point where it can cover most of the use cases I have in mind.
 
 [Some example renders.](https://blog.tammearu.eu/animlib/)
 

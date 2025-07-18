@@ -20,7 +20,7 @@ internal abstract class CameraState : EntityState3D
     public abstract Ray RayFromClip(Vector2 clipPos, float aspect);
 }
 
-public abstract partial class Camera : DynVisualEntity3D
+public abstract partial class Camera : VisualEntity3D
 {
     internal Camera() : base() { }
 }

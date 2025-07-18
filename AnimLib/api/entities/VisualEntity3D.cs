@@ -1,6 +1,6 @@
 namespace AnimLib;
 
-[GenerateDynProperties(forType: typeof(DynVisualEntity3D))]
+[GenerateDynProperties(forType: typeof(VisualEntity3D))]
 internal abstract class EntityState3D : EntityState
 {
     [Dyn]
@@ -41,9 +41,9 @@ internal abstract class EntityState3D : EntityState
     }
 }
 
-public abstract partial class DynVisualEntity3D : DynVisualEntity
+public abstract partial class VisualEntity3D : VisualEntity
 {
-    internal DynVisualEntity3D()
+    internal VisualEntity3D()
     {
 
     }

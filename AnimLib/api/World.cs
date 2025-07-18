@@ -183,20 +183,20 @@ public class World
 
     List<WorldCommand> _commands = new ();
     List<WorldSoundCommand> _soundCommands = new ();
-    List<Func<DynVisualEntity, bool>> DynCreationListeners = new ();
+    List<Func<VisualEntity, bool>> CreationListeners = new ();
 
     Dictionary<DynPropertyId, Func<Dictionary<DynPropertyId, object?>, object?>> _activeDynEvaluators = new ();
 
     // used by EntityCollection to keep track of children
-    private Dictionary<int, List<DynVisualEntity>> _dynChildren = new ();
-    private Dictionary<int, DynVisualEntity> _dynParents = new();
+    private Dictionary<int, List<VisualEntity>> _children = new ();
+    private Dictionary<int, VisualEntity> _parents = new();
 
-    private Dictionary<int, DynVisualEntity> _dynEntities = new ();
+    private Dictionary<int, VisualEntity> _entities = new ();
 
     private Dictionary<DynPropertyId, object?> _dynamicPropertyValues = new ();
     private Dictionary<DynPropertyId, DynProperty> _dynamicProperties = new ();
 
-    private Stack<List<DynVisualEntity>> _dynCaptureStack = new();
+    private Stack<List<VisualEntity>> _captureStack = new();
 
     object? currentEditor = null; // who edits things right now (e.g. scene or animationbehaviour)
 
@@ -324,10 +324,10 @@ public class World
         var screenCam = new OrthoCamera();
         screenCam.Width = settings.Width;
         screenCam.Height= settings.Height;
-        CreateDynInstantly(screenCam);
+        CreateInstantly(screenCam);
 
         var defaultCanvas = new Canvas(CanvasState.DEFAULTNAME, screenCam);
-        CreateDynInstantly(defaultCanvas);
+        CreateInstantly(defaultCanvas);
         Canvas.Default = defaultCanvas;
 
         this.ActiveCanvas = defaultCanvas;
@@ -340,13 +340,13 @@ public class World
         );
         _commands.Add(sprop);
 
-        CreateDynInstantly(cam);
+        CreateInstantly(cam);
         ActiveCamera = cam;
         EndEditing();
     }
 
     internal Canvas? FindCanvas(string name) {
-        foreach(var ent in _dynEntities) {
+        foreach(var ent in _entities) {
             if(ent.Value is Canvas) {
                 var canvas = ent.Value as Canvas;
                 if(canvas?.Name == name) {
@@ -365,7 +365,7 @@ public class World
         Resources.Textures.Add(texture);
     }
 
-    internal void BeginDynEvaluator(DynProperty prop, Func<Dictionary<DynPropertyId, object?>, object?> evaluator) {
+    internal void BeginEvaluator(DynProperty prop, Func<Dictionary<DynPropertyId, object?>, object?> evaluator) {
         var id = prop.Id;
         if (id.Id == 0) {
             return;
@@ -388,7 +388,7 @@ public class World
         };
     }
 
-    internal void EndDynEvaluator(DynProperty prop, object? finalValue) {
+    internal void EndEvaluator(DynProperty prop, object? finalValue) {
         var id = prop.Id;
         if (id.Id == 0) {
             return;
@@ -411,7 +411,7 @@ public class World
         _activeDynEvaluators.Remove(id);
     }
 
-    private void DynEntityCreated(DynVisualEntity entity)
+    private void EntityCreated(VisualEntity entity)
     {
         entity.Id = GetUniqueId();
         if (currentEditor == null)
@@ -424,71 +424,71 @@ public class World
         else {
             Debug.Warning("Entity created without creator. This is not a problem but might make debugging harder.");
         }*/
-        var cmd = new WorldDynCreateCommand(
+        var cmd = new WorldCreateCommand(
             entity: entity,
             time: Time.T
         );
         _commands.Add(cmd);
         entity.OnCreated();
-        _dynEntities.Add(entity.Id, entity);
+        _entities.Add(entity.Id, entity);
 
-        if (_dynCaptureStack.Count > 0)
+        if (_captureStack.Count > 0)
         {
-            foreach (var capture in _dynCaptureStack)
+            foreach (var capture in _captureStack)
             {
                 capture.Add(entity);
             }
         }
         
-        CheckDynDependantEntities(entity);
+        CheckDependantEntities(entity);
     }
 
-    private void DynEntityDestroyed(DynVisualEntity entity)
+    private void EntityDestroyed(VisualEntity entity)
     {
-        foreach(var list in _dynCaptureStack) {
+        foreach(var list in _captureStack) {
             list.RemoveAll(x => x.Id == entity.Id);
         }
     }
 
-    private void CheckDynDependantEntities(DynVisualEntity newent) {
-        for(int i = DynCreationListeners.Count - 1; i >= 0; i--) {
-            var wd = DynCreationListeners[i];
+    private void CheckDependantEntities(VisualEntity newent) {
+        for(int i = CreationListeners.Count - 1; i >= 0; i--) {
+            var wd = CreationListeners[i];
             if(wd.Invoke(newent)) {
-                DynCreationListeners.RemoveAt(i);
+                CreationListeners.RemoveAt(i);
             }
         }
     }
 
-    internal void AttachDynChild(DynVisualEntity parent, DynVisualEntity child)
+    internal void AttachChild(VisualEntity parent, VisualEntity child)
     {
-        if (!_dynChildren.ContainsKey(parent.Id))
+        if (!_children.ContainsKey(parent.Id))
         {
-            _dynChildren.Add(parent.Id, new List<DynVisualEntity>());
+            _children.Add(parent.Id, new List<VisualEntity>());
         }
         child.ManagedLifetime = true;
-        _dynChildren[parent.Id].Add(child);
-        _dynParents.Add(child.Id, parent);
+        _children[parent.Id].Add(child);
+        _parents.Add(child.Id, parent);
     }
     
-    internal void DetachDynChild(DynVisualEntity parent, DynVisualEntity child)
+    internal void DetachChild(VisualEntity parent, VisualEntity child)
     {
-        if (!_dynChildren.ContainsKey(parent.Id))
+        if (!_children.ContainsKey(parent.Id))
         {
             Debug.Error("Parent does not have any children");
             return;
         }
         child.ManagedLifetime = false;
-        _dynChildren[parent.Id].Remove(child);
-        _dynParents.Remove(child.Id);
+        _children[parent.Id].Remove(child);
+        _parents.Remove(child.Id);
     }
     
-    internal T MatchCreation<T>(T ent, Func<DynVisualEntity, bool> match) where T : DynVisualEntity
+    internal T MatchCreation<T>(T ent, Func<VisualEntity, bool> match) where T : VisualEntity
     {
-        DynCreationListeners.Add(match);
+        CreationListeners.Add(match);
         // check if the entity already exists
-        foreach (var dent in _dynEntities.Values.ToList())
+        foreach (var dent in _entities.Values.ToList())
         {
-            CheckDynDependantEntities(dent);
+            CheckDependantEntities(dent);
         }
         return ent;
     }
@@ -536,13 +536,13 @@ public class World
         _dynamicPropertyValues[id] = value;
     }
 
-    public T CreateDynInstantly<T>(T ent) where T : DynVisualEntity {
-        DynEntityCreated(ent);
+    public T CreateInstantly<T>(T ent) where T : VisualEntity {
+        EntityCreated(ent);
         return ent;
     }
 
-    public Task CreateDynFadeIn<T>(T entity, float duration) where T : DynVisualEntity,IColored {
-        CreateDynInstantly(entity);
+    public Task CreateFadeIn<T>(T entity, float duration) where T : VisualEntity,IColored {
+        CreateInstantly(entity);
         var c = entity.Color;
         var alpha = c.a;
         return Animate.InterpF(x => {
@@ -558,7 +558,7 @@ public class World
     /// <param name="duration">The duration of the whole animation.</param>
     /// <returns></returns>
     /// <typeparam name="T">The type of the shape.</typeparam>
-    public async Task CreateTraceAndFade<T>(T entity, float duration) where T : DynShape, IColored {
+    public async Task CreateTraceAndFade<T>(T entity, float duration) where T : Shape, IColored {
         bool fadeIn = entity.Mode == ShapeMode.FilledContour || entity.Mode == ShapeMode.Filled;
         float traceDuration = fadeIn ? duration*0.5f : duration;
         var oldMode = entity.Mode;
@@ -566,7 +566,7 @@ public class World
         var alpha = c.a;
         entity.Mode = ShapeMode.Contour;
         entity.Trim = (0.0f, 0.0f);
-        CreateDynInstantly(entity);
+        CreateInstantly(entity);
         await Animate.InterpF(x => {
                 entity.Trim = (0.0f, x);
             }, 0.0f, 1.0f, traceDuration);
@@ -581,8 +581,8 @@ public class World
     /// <summary>
     /// Create an <c>IColored</c> entity with a fade in animation. Calls the <c>setcolor</c> function each time the color is updated.
     /// </summary>
-    public Task CreateFadeIn<T>(T entity, Color startColor, Action<Color> setColor, float duration) where T : DynVisualEntity,IColored {
-        CreateDynInstantly(entity);
+    public Task CreateFadeIn<T>(T entity, Color startColor, Action<Color> setColor, float duration) where T : VisualEntity,IColored {
+        CreateInstantly(entity);
         var c = startColor;
         var alpha = c.a;
         return Animate.InterpF(x => {
@@ -594,30 +594,30 @@ public class World
     /// <summary>
     /// Destroy an <c>IColored</c> entity with a fade out animation.
     /// </summary>
-    public async Task DestroyFadeOut<T>(T entity, float duration) where T : DynVisualEntity, IColored {
+    public async Task DestroyFadeOut<T>(T entity, float duration) where T : VisualEntity, IColored {
         var c = entity.Color;
         await Animate.InterpF(x => {
                 c.a = (byte)Math.Round((1.0f-x)*c.a);
                 entity.Color = c;
             }, 0.0f, 1.0f, duration);
-        DestroyDyn(entity);
+        Destroy(entity);
     }
 
     /// <summary>
     /// Clone a dynamic entity. Only state will be copied, the entity will not be created implicitly.
     /// </summary>
-    public T CloneDyn<T>(T e) where T : DynVisualEntity {
+    public T Clone<T>(T e) where T : VisualEntity {
         var ret = e.Clone();
         return (T)ret;
     }
 
-    public T CreateDynClone<T>(T e) where T : DynVisualEntity {
+    public T CreateClone<T>(T e) where T : VisualEntity {
         var ret = (T)e.Clone();
-        CreateDynInstantly(ret);
+        CreateInstantly(ret);
         return ret;
     }
 
-    public void DestroyDyn(DynVisualEntity obj)
+    public void Destroy(VisualEntity obj)
     {
         if (!obj.Created) return;
 
@@ -629,23 +629,23 @@ public class World
         }*/
 
         // destroy all children
-        if (_dynChildren.ContainsKey(obj.Id))
+        if (_children.ContainsKey(obj.Id))
         {
-            var localC = _dynChildren[obj.Id].ToArray();
+            var localC = _children[obj.Id].ToArray();
             foreach (var child in localC)
             {
-                DetachDynChild(obj, child);
-                DestroyDyn(child);
+                DetachChild(obj, child);
+                Destroy(child);
             }
         }
-        var cmd = new WorldDynDestroyCommand(
+        var cmd = new WorldDestroyCommand(
             entity: obj,
             time: Time.T
         );
         obj.Created.Value = false;
         _commands.Add(cmd);
 
-        DynEntityDestroyed(obj);
+        EntityDestroyed(obj);
     }
 
     internal WorldCommand[] GetCommands() {

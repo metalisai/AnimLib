@@ -37,7 +37,7 @@ internal class Text2DState : EntityState2D
 /// </summary>
 public class Text2D : EntityCollection2D, IColored
 {
-    List<(DynShape s, char c)> Glyphs = new ();
+    List<(Shape s, char c)> Glyphs = new ();
     internal float size;
     internal string? font;
     internal Color color;
@@ -77,7 +77,7 @@ public class Text2D : EntityCollection2D, IColored
         foreach(var g in Glyphs) {
             DestroyChild(g.s);
         }
-        var placedShapes = Animator.Current?.ShapeText(Text, Vector2.ZERO, (int)Size, Font) ?? new List<(DynShape s, char c)>();
+        var placedShapes = Animator.Current?.ShapeText(Text, Vector2.ZERO, (int)Size, Font) ?? new List<(Shape s, char c)>();
         foreach(var g in placedShapes) {
             g.s.Color = Color;
             g.s.SortKey.Value = base.SortKey.Value;
@@ -106,7 +106,7 @@ public class Text2D : EntityCollection2D, IColored
     /// <summary>
     /// Property to get the underlying shapes.
     /// </summary>
-    public (DynShape s, char c)[] CurrentShapes {
+    public (Shape s, char c)[] CurrentShapes {
         get {
             return Glyphs.ToArray();
         }
@@ -115,14 +115,14 @@ public class Text2D : EntityCollection2D, IColored
     /// <summary>
     /// Property to get the underlying shapes given a string.
     /// </summary>
-    public DynShape[] GetSubstring(string str) {
+    public Shape[] GetSubstring(string str) {
         var mystr = new string(this.Glyphs.Select(x => x.c).ToArray());
         var idx = mystr.IndexOf(str);
         if(idx >= 0) {
             var range = Glyphs.GetRange(idx, str.Length).Select(x => x.s).ToArray();
             return range;
         }
-        return Array.Empty<DynShape>();
+        return Array.Empty<Shape>();
     }
 
     /// <summary>

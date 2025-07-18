@@ -8,7 +8,7 @@ namespace AnimLib {
             t.Position = position;
             t.Text = "";
             if(!t.Created) {
-                World.current.CreateDynInstantly(t);
+                World.current.CreateInstantly(t);
             }
             string current = "";
             foreach(var c in text) {

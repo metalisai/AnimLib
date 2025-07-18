@@ -2,7 +2,7 @@ using System;
 
 namespace AnimLib;
 
-public abstract class MeshEntity3D : DynVisualEntity3D
+public abstract class MeshEntity3D : VisualEntity3D
 {
     /// <summary>
     /// Version of the mesh. Setting properties might require regenerating mesh,

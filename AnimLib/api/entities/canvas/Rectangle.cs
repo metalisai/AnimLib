@@ -33,7 +33,7 @@ internal class RectangleState : ShapeState
 /// <summary>
 /// A rectangle shaped entity.
 /// </summary>
-public partial class Rectangle : DynShape
+public partial class Rectangle : Shape
 {
     private static ShapePath CreateRectanglePath(float w, float h)
     {

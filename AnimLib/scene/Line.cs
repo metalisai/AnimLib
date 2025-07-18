@@ -38,12 +38,12 @@ internal class PlayerLine : SceneObject2D {
         return false;
     }
 
-    public override DynVisualEntity2D InitializeEntity() {
+    public override VisualEntity2D InitializeEntity() {
         var pb = new PathBuilder();
         pb.MoveTo(start);
         pb.LineTo(end);
         var path = pb;
-        var lineShape = new DynShape(path);
+        var lineShape = new Shape(path);
         lineShape.Color = color;
         lineShape.Position = transform.Pos;
         lineShape.Rotation = transform.Rot;

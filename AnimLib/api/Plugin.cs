@@ -78,11 +78,11 @@ internal class NoProjectBehaviour : AnimationBehaviour {
         //hw.HAlign = TextHorizontalAlignment.Center;
         //hw.VAlign = TextVerticalAlignment.Center;
         // TODO: this thing  is screaming for multiline text
-        var hw2 = world.CloneDyn(hw);
+        var hw2 = world.Clone(hw);
         hw2.Position = new Vector2(100.0f, -200.0f+31.0f);
         hw2.Text = "File->New project... or File->Open project... to continue";
-        world.CreateDynInstantly(hw);
-        world.CreateDynInstantly(hw2);
+        world.CreateInstantly(hw);
+        world.CreateInstantly(hw2);
         await Task.Yield();
     }
 }
@@ -106,11 +106,11 @@ internal class ErrorBehaviour : AnimationBehaviour {
         hw.VAlign = TextVerticalAlignment.Center;
         // TODO: this thing  is screaming for multiline text
         hw.Text = "Error occurred during animation";
-        var hw2 = world.CloneDyn(hw);
+        var hw2 = world.Clone(hw);
         hw2.Position = new Vector2(100.0f, -200.0f+31.0f);
         hw2.Text = "Fix your animation and try again!";
-        world.CreateDynInstantly(hw);
-        world.CreateDynInstantly(hw2);
+        world.CreateInstantly(hw);
+        world.CreateInstantly(hw2);
         await Task.Yield();
     }
 }
@@ -134,15 +134,15 @@ internal class EmptyBehaviour : AnimationBehaviour {
         hw.VAlign = TextVerticalAlignment.Center;
         // TODO: this thing  is screaming for multiline text
         hw.Text = "No project assembly (.dll) found!";
-        var hw2 = world.CloneDyn(hw);
+        var hw2 = world.Clone(hw);
         hw2.Position = new Vector2(100.0f, -200.0f+31.0f);
         hw2.Text = "Go to project directory and build it";
-        var hw3 = world.CloneDyn(hw);
+        var hw3 = world.Clone(hw);
         hw3.Position = new Vector2(100.0f, -200.0f+62.0f);
         hw3.Text = "The animation will reload automatically";
-        world.CreateDynInstantly(hw);
-        world.CreateDynInstantly(hw2);
-        world.CreateDynInstantly(hw3);
+        world.CreateInstantly(hw);
+        world.CreateInstantly(hw2);
+        world.CreateInstantly(hw3);
 
         await Task.Yield();
     }

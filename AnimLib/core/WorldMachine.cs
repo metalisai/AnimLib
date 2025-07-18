@@ -14,15 +14,15 @@ internal class WorldMachine {
     {
         // TODO: remove
         public List<EntityState2D> Entities = new List<EntityState2D>();
-        public List<DynVisualEntity2D> NewEntities = new();
+        public List<VisualEntity2D> NewEntities = new();
     }
     List<Glyph> _glyphs = new List<Glyph>();
     List<MeshEntity3D> _meshEntities = new();
-    List<DynVisualEntity> _cameras =  new ();
+    List<VisualEntity> _cameras =  new ();
 
-    List<DynShape> _dynShapes = new List<DynShape>();
+    List<Shape> _dynShapes = new List<Shape>();
 
-    Dictionary<int, DynVisualEntity> _dynEntities = new();
+    Dictionary<int, VisualEntity> _dynEntities = new();
 
     Dictionary<int, CanvasEntities> _canvases = new Dictionary<int, CanvasEntities>();
     //Dictionary<VisualEntity, EntityState> _entities = new Dictionary<VisualEntity, EntityState>();
@@ -260,14 +260,14 @@ internal class WorldMachine {
         return ret;
     }
 
-    private void CreateDynEntity(DynVisualEntity ent)
+    private void CreateDynEntity(VisualEntity ent)
     {
         switch (ent)
         {
             case Glyph g1:
                 _glyphs.Add(g1);
                 break;
-            case DynVisualEntity2D ent2d:
+            case VisualEntity2D ent2d:
                 var canvas = (Canvas)_dynEntities[ent2d.CanvasId];
                 _canvases[canvas.Id].NewEntities.Add(ent2d);
                 break;
@@ -287,7 +287,7 @@ internal class WorldMachine {
         _dynEntities.Add(ent.Id, ent);
     }
 
-    private void DestroyDynEntity(DynVisualEntity ent)
+    private void DestroyDynEntity(VisualEntity ent)
     {
         switch (ent)
         {
@@ -297,7 +297,7 @@ internal class WorldMachine {
             case MeshEntity3D ent3d:
                 _meshEntities.RemoveAll(x => x.Id == ent.Id);
                 break;
-            case DynVisualEntity2D ent2d:
+            case VisualEntity2D ent2d:
                 foreach (var s in _canvases) s.Value.NewEntities.RemoveAll(x => x.Id == ent.Id);
                 break;
             case Canvas canv:
@@ -315,10 +315,10 @@ internal class WorldMachine {
 
     private void Execute(WorldCommand cmd) {
         switch(cmd) {
-            case WorldDynCreateCommand dynCreate:
+            case WorldCreateCommand dynCreate:
                 CreateDynEntity(dynCreate.entity);
             break;
-            case WorldDynDestroyCommand dynDestroy:
+            case WorldDestroyCommand dynDestroy:
             DestroyDynEntity(dynDestroy.entity);
             break;
             case WorldPropertyMultiCommand wpm:
@@ -420,10 +420,10 @@ internal class WorldMachine {
     private void Undo(WorldCommand cmd) {
         switch (cmd)
         {
-            case WorldDynCreateCommand dynCreate:
+            case WorldCreateCommand dynCreate:
                 DestroyDynEntity(dynCreate.entity);
                 break;
-            case WorldDynDestroyCommand dynDestroy:
+            case WorldDestroyCommand dynDestroy:
                 CreateDynEntity(dynDestroy.entity);
                 break;
             case WorldPropertyMultiCommand wpm:

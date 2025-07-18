@@ -91,8 +91,8 @@ internal class TextPlacement : System.IDisposable {
         return ret;
     }
 
-    List<(DynShape s, char c)> PlaceTextAsShapes(Buffer buf, string original, Vector2 origin, float size, ref LoadedFont lf) {
-        var ret = new List<(DynShape, char)>();
+    List<(Shape s, char c)> PlaceTextAsShapes(Buffer buf, string original, Vector2 origin, float size, ref LoadedFont lf) {
+        var ret = new List<(Shape, char)>();
         var len = buf.Length;
         if(len <= 0) {
             return ret;
@@ -119,7 +119,7 @@ internal class TextPlacement : System.IDisposable {
                 Performance.CachedGlyphPaths = CachedGlyphPaths.Count;
             }
             var sp = path.ToShapePath();
-            var shape = new DynShape(sp);
+            var shape = new Shape(sp);
             shape.Position = new Vector2(posx, posy);
             shape.Mode = ShapeMode.Filled;
             char c = original[(int)cluster];
@@ -219,7 +219,7 @@ internal class TextPlacement : System.IDisposable {
         }
     }
 
-    public List<(DynShape, char c)> PlaceTextAsShapes(string text, Vector2 origin, int size, string? font = null) {
+    public List<(Shape, char c)> PlaceTextAsShapes(string text, Vector2 origin, int size, string? font = null) {
         var buf = new Buffer();
         buf.AddUtf8(text);
         buf.GuessSegmentProperties();

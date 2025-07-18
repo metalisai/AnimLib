@@ -46,7 +46,7 @@ internal class PlayerCircle : SceneObject2D {
         return (transform.Pos-point).Length < radius;
     }
 
-    public override DynVisualEntity2D InitializeEntity()
+    public override VisualEntity2D InitializeEntity()
     {
         var ent = new Circle(this.radius);
         ent.Color = this.color;
