@@ -214,7 +214,7 @@ internal class WorldMachine {
     {
 
         var l = new List<CanvasSnapshot>();
-        foreach (var c in _canvases.OrderBy(x => _dynEntities[x.Key].SortKey))
+        foreach (var c in _canvases.OrderBy(x => _dynEntities[x.Key].SortKey.Value))
         {
             var canvas = (Canvas)_dynEntities[c.Key];
             var effects = canvas.Effects.Select(x =>
