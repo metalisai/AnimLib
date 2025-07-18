@@ -61,7 +61,7 @@ public partial class Star : Shape
     {
         var state = new StarState(new ShapePath());
         GetState(state, evaluator);
-        state.path = CreateStarPath(state.innerRadius, state.outerRadius, state.numPoints);
+        state.path = CreateStarPath(state.outerRadius, state.innerRadius, state.numPoints);
         return state;
     }
 }

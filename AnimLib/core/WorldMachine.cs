@@ -12,8 +12,6 @@ internal class WorldMachine {
 
     public class CanvasEntities
     {
-        // TODO: remove
-        public List<EntityState2D> Entities = new List<EntityState2D>();
         public List<VisualEntity2D> NewEntities = new();
     }
     List<Glyph> _glyphs = new List<Glyph>();
@@ -226,7 +224,7 @@ internal class WorldMachine {
             var css = new CanvasSnapshot()
             {
                 //Entities = c.Value.Entities.Where(x => x.active).Select(x => (EntityState2D)x.Clone()).ToArray(),
-                Entities = c.Value.NewEntities.Where(x => x.Active).Select(x => (EntityState2D)x.GetState(GetDynProp)).Concat(c.Value.Entities.Where(x => x.active).Select(x => x)).ToArray(),
+                Entities = c.Value.NewEntities.Where(x => x.Active).Select(x => (EntityState2D)x.GetState(GetDynProp)).ToArray(),
                 Canvas = (CanvasState)canvas.GetState(GetDynProp),
                 Effects = effects,
             };
@@ -321,72 +319,6 @@ internal class WorldMachine {
             case WorldDestroyCommand dynDestroy:
             DestroyDynEntity(dynDestroy.entity);
             break;
-            case WorldPropertyMultiCommand wpm:
-            {
-                var lower = char.ToLower(wpm.property[0]) + wpm.property.Substring(1);
-                for(int i = 0; i < wpm.entityIds.Length; i++) {
-                    var eid = wpm.entityIds[i];
-                    var oldValue = wpm.oldvalue[i];
-                    if(!_entities.ContainsKey(eid)) {
-                        Debug.Error($"Setting property of an entity that doesnt exist. Entity {eid}, property {wpm.property}");
-                        Debug.Error($"Last worldmachine action: {_lastAction}");
-                        Debug.Error($"Command {_playCursorCmd}/{Program.Length}");
-                    }
-                    var state = _entities[eid];
-                    // move 2D entity from 1 canvas to another if its changed
-                    if(state is EntityState2D && wpm.property.ToLower() == "canvasid") {
-                        var oldCanvas = _canvases[(int)oldValue];
-                        var newCanvas = _canvases[(int)wpm.newvalue];
-                        switch(state) {
-                            case ShapeState:
-                            case MorphShapeState:
-                            oldCanvas.Entities.RemoveAll(x => x.entityId == eid);
-                            newCanvas.Entities.Add((EntityState2D)state);
-                            break;
-                        }
-                    }
-                    var field = state.GetType().GetField(lower);
-                    if (field != null) {
-                        field.SetValue(state, wpm.newvalue);
-                    } else {
-                        var prop = state.GetType().GetProperty(lower);
-                        prop?.SetValue(state, wpm.newvalue);
-                    }
-                }
-            }
-            break;
-            case WorldPropertyCommand worldProperty:
-            {
-                //Console.WriteLine($"Property {worldProperty.property} set!");
-                var lower = char.ToLower(worldProperty.property[0]) + worldProperty.property.Substring(1);
-                if(!_entities.ContainsKey(worldProperty.entityId)) {
-                    Debug.Error($"Setting property of an entity that doesnt exist. Entity {worldProperty.entityId}, property {worldProperty.property}");
-                    Debug.Error($"Last worldmachine action: {_lastAction}");
-                    Debug.Error($"Command {_playCursorCmd}/{Program.Length}");
-                }
-
-                var state = _entities[worldProperty.entityId];
-                // move 2D entity from 1 canvas to another if its changed
-                if(state is EntityState2D && worldProperty.property.ToLower() == "canvasid") {
-                    var oldCanvas = _canvases[(int)(worldProperty.oldvalue ?? throw new Exception("oldvalue is null"))];
-                    var newCanvas = _canvases[(int)(worldProperty.newvalue ?? throw new Exception("newvalue is null"))];
-                    switch(state) {
-                        case ShapeState:
-                        case MorphShapeState:
-                        oldCanvas.Entities.RemoveAll(x => x.entityId == worldProperty.entityId);
-                        newCanvas.Entities.Add((EntityState2D)state);
-                        break;
-                    }
-                }
-                var field = state.GetType().GetField(lower);
-                if (field != null) {
-                    field.SetValue(state, worldProperty.newvalue);
-                } else {
-                    var prop = state.GetType().GetProperty(lower);
-                    prop?.SetValue(state, worldProperty.newvalue);
-                }
-            }
-            break;
             case WorldSetActiveCameraCommand setActiveCameraCommand:
             Debug.Assert(_dynEntities[setActiveCameraCommand.cameraEntId] is Camera);
             _activeCamera = _dynEntities[setActiveCameraCommand.cameraEntId] as Camera;
@@ -425,69 +357,6 @@ internal class WorldMachine {
                 break;
             case WorldDestroyCommand dynDestroy:
                 CreateDynEntity(dynDestroy.entity);
-                break;
-            case WorldPropertyMultiCommand wpm:
-                {
-                    for (int i = 0; i < wpm.entityIds.Length; i++)
-                    {
-                        var eid = wpm.entityIds[i];
-                        var oval = wpm.oldvalue[i];
-                        var lower = char.ToLower(wpm.property[0]) + wpm.property.Substring(1);
-                        var state = _entities[eid];
-                        if (state is EntityState2D && wpm.property.ToLower() == "canvasid")
-                        {
-                            var newCanvas = _canvases[(int)oval];
-                            var oldCanvas = _canvases[(int)wpm.newvalue];
-                            switch (state)
-                            {
-                                case ShapeState:
-                                case MorphShapeState:
-                                    oldCanvas.Entities.RemoveAll(x => x.entityId == eid);
-                                    newCanvas.Entities.Add((EntityState2D)state);
-                                    break;
-                            }
-                        }
-                        var field = state.GetType().GetField(lower);
-                        if (field != null)
-                        {
-                            field.SetValue(state, oval);
-                        }
-                        else
-                        {
-                            var prop = state.GetType().GetProperty(lower);
-                            prop?.SetValue(state, oval);
-                        }
-                    }
-                }
-                break;
-            case WorldPropertyCommand worldProperty:
-                {
-                    var lower = char.ToLower(worldProperty.property[0]) + worldProperty.property.Substring(1);
-                    var state = _entities[worldProperty.entityId];
-                    if (state is EntityState2D && worldProperty.property.ToLower() == "canvasid")
-                    {
-                        var newCanvas = _canvases[(int)(worldProperty.oldvalue ?? throw new Exception("oldvalue is null"))];
-                        var oldCanvas = _canvases[(int)(worldProperty.newvalue ?? throw new Exception("newvalue is null"))];
-                        switch (state)
-                        {
-                            case ShapeState:
-                            case MorphShapeState:
-                                oldCanvas.Entities.RemoveAll(x => x.entityId == worldProperty.entityId);
-                                newCanvas.Entities.Add((EntityState2D)state);
-                                break;
-                        }
-                    }
-                    var field = state.GetType().GetField(lower);
-                    if (field != null)
-                    {
-                        field.SetValue(state, worldProperty.oldvalue);
-                    }
-                    else
-                    {
-                        var prop = state.GetType().GetProperty(lower);
-                        prop?.SetValue(state, worldProperty.oldvalue);
-                    }
-                }
                 break;
             case WorldSetActiveCameraCommand setActiveCameraCommand:
                 _activeCamera = setActiveCameraCommand.oldCamEntId == 0 ? null : _dynEntities[setActiveCameraCommand.oldCamEntId] as Camera;

@@ -100,12 +100,13 @@ public static class Animate {
         }, duration); 
     }
 
+    public static Task Offset(this VisualEntity3D ent, Vector3 offset, double duration = 1.0, EaseType curve = EaseType.EaseInOut)
+    {
+        return InterpT(ent.PositionProperty, ent.Position + offset, duration, curve);
+    }
+
     public static Task Offset(this VisualEntity2D ent, Vector2 offset, double duration = 1.0, EaseType curve = EaseType.EaseInOut)
     {
-        /*return InterpT(x =>
-        {
-            ent.Position.Value = x;
-        }, (Vector2)ent.Position, ent.Position + offset, duration, curve);*/
         return InterpT(ent.PositionProperty, ent.Position + offset, duration, curve);
     }
     
@@ -364,7 +365,7 @@ public static class Animate {
         }
         World.current.Destroy(morph);
         var newShape = (Shape)endShape.Clone();
-        //newShape.Transform = new Transform2D(startShape.Transform, newShape);
+        newShape.Anchor = startShape.Anchor;
         newShape.Position = startShape.Position;
         newShape.Rotation = startShape.Rotation;
         newShape.Scale = startShape.Scale;

@@ -9,25 +9,8 @@ internal record WorldSoundCommand(float volume, double time) : WorldCommand(time
 
 internal record WorldPlaySoundCommand(SoundSample sound, float volume, double time) : WorldSoundCommand(volume, time);
 
-internal record WorldPropertyMultiCommand (
-    int[] entityIds,
-    string property,
-    object newvalue,
-    object[] oldvalue,
-    double time
-) : WorldCommand(time);
-
 internal record WorldDynPropertyCommand (
     DynPropertyId propertyId,
-    object? newvalue,
-    object? oldvalue,
-    double time
-) : WorldCommand(time);
-
-// entity properties
-internal record WorldPropertyCommand (
-    int entityId,
-    string property,
     object? newvalue,
     object? oldvalue,
     double time

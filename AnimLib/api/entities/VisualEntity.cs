@@ -61,9 +61,9 @@ public abstract class VisualEntity
     /// </summary>
     internal VisualEntity(VisualEntity other)
     {
-        this.ParentId = other.ParentId;
-        this.Active = other.Active;
-        this.SortKey = other.SortKey;
+        this.ParentId.Value = other.ParentId.Value;
+        this.Active.Value = other.Active.Value;
+        this.SortKey.Value = other.SortKey.Value;
     }
 
     internal VisualEntity()
