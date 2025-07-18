@@ -26,7 +26,7 @@ Check the following example code and the rendering below.
 using AnimLib;
 using System.Threading.Tasks;
 
-public class Yo : AnimationBehaviour
+public class MyAnimation : AnimationBehaviour
 {
     public void Init(AnimationSettings settings) {
         settings.Name = "My animation";
@@ -38,17 +38,18 @@ public class Yo : AnimationBehaviour
     public async Task Animation(World world, Animator animator) {
         // create text "Hello, world!"
         var hw = new Text2D("Hello, world!", size: 22.0f, color: Color.RED);
-        hw.Transform.Pos = new Vector2(100.0f, 100.0f);
+        hw.Position = new Vector2(100.0f, 100.0f);
         hw.Anchor = new Vector2(-0.5f, 0.0f); // screen is -0.5 ... 0.5 with origin at center
 
-        // find an existing rectangle that has been created in the editor application
-        var rect = animator.Scene.GetSceneEntityByName("rect") as Rectangle;
-        if (rect != null)
-            _ = Animate.Move(rect.Transform, rect.Transform.Pos + new Vector2(100.0f, 100.0f), 1.0f);
+        var rect = new Rectangle(100.0f, 100.0f);
+        rect.Position = new Vector2(300.0f, 300.0f);
+        rect.Color = Color.BLUE;
+        world.CreateInstantly(rect);
+        _ = Animate.Move(rect, rect.Position + new Vector2(100.0f, 100.0f), 1.0f);
 
         // create another text
         var hw2 = world.Clone(hw);
-        hw2.Transform.Pos = new Vector2(100.0f, 200.0f);
+        hw2.Position = new Vector2(100.0f, 200.0f);
         hw2.Text = "Already here! Yes, it's true!";
         // place 'hw2' text into world with no fade
         world.CreateInstantly(hw2);
@@ -56,7 +57,7 @@ public class Yo : AnimationBehaviour
         // interpolate hw2 text color to green, wait until it finishes
         await Animate.Color(hw2, Color.GREEN, 1.0f);
         // move hw2 text down 100 pixels without waiting for it to complete
-        _ = Animate.Move(hw2.Transform, hw2.Transform.Pos + new Vector2(0.0f, 100.0f), 1.0f);
+        _ = Animate.Move(hw2, hw2.Position + new Vector2(0.0f, 100.0f), 1.0f);
 
         // create a single circle with an alpha fade in
         float size = 30.0f;
@@ -68,7 +69,7 @@ public class Yo : AnimationBehaviour
         {
             var c2 = world.CreateClone(circle);
             // equivalent to the above Animate.Move
-            _ = Animate.Offset(c2.Transform, new Vector2(i*2.0f*size, j*2.0f*size), 1.0f);
+            _ = Animate.Offset(c2, new Vector2(i*2.0f*size, j*2.0f*size), 1.0f);
         }
 
         // fade in the hello world text, didn't await the expanding circles so both happen at the same time

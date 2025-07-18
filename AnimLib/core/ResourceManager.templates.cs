@@ -55,13 +55,13 @@ public void Init(AnimationSettings settings) {
 
 public async Task Animation(World world, Animator animator) {
     var hw = new Text2D(""Hello, world!"", size: 22.0f, color: Color.RED);
-    hw.Transform.Pos = new Vector2(100.0f, 100.0f);
+    hw.Position = new Vector2(100.0f, 100.0f);
     hw.Anchor = new Vector2(-0.5f, 0.2f);
     hw.HAlign = TextHorizontalAlignment.Center;
     hw.VAlign = TextVerticalAlignment.Center;
 
     var hw2 = world.Clone(hw);
-    hw2.Transform.Pos = new Vector2(100.0f, 200.0f);
+    hw2.Position = new Vector2(100.0f, 200.0f);
     hw2.Text = ""Already here"";
     world.CreateInstantly(hw2);
 
