@@ -7,3 +7,6 @@
 [submodule "AnimLib.ImGui"]
 	path = AnimLib.ImGui
 	url = https://github.com/metalisai/AnimLib.ImGui.git
+[submodule "AnimLib.Tests"]
+	path = AnimLib.Tests
+	url = https://github.com/metalisai/AnimLib.Tests.git
