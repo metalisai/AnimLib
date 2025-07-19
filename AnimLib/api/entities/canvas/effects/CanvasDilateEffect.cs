@@ -21,7 +21,7 @@ public class CanvasDilateEffect : CanvasEffect {
     /// Create a new dilate effect.
     /// </summary>
     public CanvasDilateEffect(float radius = 0.0f) {
-        this.RadiusP = new DynProperty<float>("radius", radius);
+        this.RadiusP = new DynProperty<float>("radius", radius, RadiusP);
         properties["radius"] = this.RadiusP;
     }
 }

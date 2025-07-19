@@ -89,7 +89,7 @@ public abstract partial class VisualEntity2D : VisualEntity
 
     internal VisualEntity2D()
     {
-        if (World.current.ActiveCanvas.Created)
+        if (World.current?.ActiveCanvas.Created ?? false)
         {
             // this is here to make the compiler happy
             _canvasIdP.Value = Canvas.Default?.Id ?? throw new Exception("Can't find default canvas");
@@ -144,13 +144,13 @@ public abstract partial class VisualEntity2D : VisualEntity
     internal override void OnCreated()
     {
         base.OnCreated();
-        _canvasIdP = new DynProperty<int>("canvasId", CanvasId);
-        _positionP = new DynProperty<Vector2>("position", Position);
-        _rotationP = new DynProperty<float>("rotation", Rotation);
-        _scaleP = new DynProperty<Vector2>("scale", Scale);
-        _anchorP = new DynProperty<Vector2>("anchor", Anchor);
-        _pivotP = new DynProperty<Vector2>("pivot", Pivot);
-        _homographyP = new DynProperty<M3x3?>("homography", Homography);
+        _canvasIdP = new DynProperty<int>("canvasId", CanvasId, _canvasIdP);
+        _positionP = new DynProperty<Vector2>("position", Position, _positionP);
+        _rotationP = new DynProperty<float>("rotation", Rotation, _rotationP);
+        _scaleP = new DynProperty<Vector2>("scale", Scale, _scaleP);
+        _anchorP = new DynProperty<Vector2>("anchor", Anchor, _anchorP);
+        _pivotP = new DynProperty<Vector2>("pivot", Pivot, _pivotP);
+        _homographyP = new DynProperty<M3x3?>("homography", Homography, _homographyP);
 
         // entities dont have id before creation, so the id must be resolved after creation
         if (Parent != null)

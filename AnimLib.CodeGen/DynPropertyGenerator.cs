@@ -41,6 +41,7 @@ public class DynPropertyGenerator : IIncrementalGenerator
 
             foreach (var dclass in classes)
             {
+                if (dclass == null) continue;
                 var classFields = fields!
                     .Where(f => f!.ClassName == dclass!.stateClassName)
                     .ToList();
@@ -69,13 +70,14 @@ public class DynPropertyGenerator : IIncrementalGenerator
                     // TODO: report diagnostic
                     throw new Exception($"No forType specified?");
                 }
+                var hasEmptyConstructor = !forType.Constructors.Any() || forType.Constructors.Any(x => x.Parameters.Length == 0);
                 bool generateOnlyProperties = false;
                 if (attr.ConstructorArguments[1].Value is bool onlyProperties)
                 {
                     generateOnlyProperties = onlyProperties;
                 }
                 var stateClassName = symbol.Name;
-                return new DynClassInfo(forType.ToDisplayString(), forType.Name, stateClassName, generateOnlyProperties, isAbstract);
+                return new DynClassInfo(forType.ToDisplayString(), forType.Name, stateClassName, generateOnlyProperties, isAbstract, hasEmptyConstructor);
             }
         }
 
@@ -183,17 +185,17 @@ public class DynPropertyGenerator : IIncrementalGenerator
             var (_, backingFieldName) = GetPropertyNames(field);
             if (!field.isRef)
             {
-                sb.AppendLine($"            {backingFieldName} = new DynProperty<{field.Type}>(\"{field.FieldName}\", {backingFieldName}.Value);");
+                sb.AppendLine($"            {backingFieldName} = new DynProperty<{field.Type}>(\"{field.FieldName}\", {backingFieldName}.Value, {backingFieldName});");
             }
             else
             {
-                sb.AppendLine($"            {backingFieldName} = new DynProperty<{field.Type}?>(\"{field.FieldName}\", {backingFieldName}.Value);");
+                sb.AppendLine($"            {backingFieldName} = new DynProperty<{field.Type}?>(\"{field.FieldName}\", {backingFieldName}.Value, {backingFieldName});");
             }
         }
         sb.AppendLine("        }"); // OnCreated
 
         // Copy constructor
-        sb.AppendLine($"        internal {classInfo.forTypeName}({classInfo.forTypeName} other) : base(other) {{");
+            sb.AppendLine($"        internal {classInfo.forTypeName}({classInfo.forTypeName} other) : base(other) {{");
         foreach (var field in fields)
         {
             if (field == null) continue;
@@ -271,7 +273,7 @@ public class DynPropertyGenerator : IIncrementalGenerator
     }
 
     private record DynFieldInfo(string ClassName, string Namespace, string FieldName, string Type, bool isRef, string Initializer, string[] onSet);
-    private record DynClassInfo(string forFullTypeName, string forTypeName, string stateClassName, bool onlyProperties, bool isAbstract);
+    private record DynClassInfo(string forFullTypeName, string forTypeName, string stateClassName, bool onlyProperties, bool isAbstract, bool hasEmptyConstructor);
 }
 
 namespace System.Runtime.CompilerServices

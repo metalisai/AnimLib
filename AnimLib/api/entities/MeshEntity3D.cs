@@ -23,13 +23,13 @@ public abstract class MeshEntity3D : VisualEntity3D
     internal override void OnCreated()
     {
         base.OnCreated();
-        MeshVersion = new DynProperty<int>("meshVersion", MeshVersion.Value);
+        MeshVersion = new DynProperty<int>("meshVersion", MeshVersion.Value, MeshVersion);
     }
 
     private protected void GetState(NewMeshBackedGeometry state, Func<DynPropertyId, object?> evaluator)
     {
         base.GetState(state, evaluator);
-        Debug.Assert(this.Created);
+        Debug.Assert(this.Id >= 0);
         state.UID = NewMeshBackedGeometry.GenerateEntityName(this.Id);
         state.MeshVersion = this.MeshVersion;
     }

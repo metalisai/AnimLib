@@ -82,7 +82,7 @@ public static class Animate {
         var offset = obj.Position - p;
         axis = axis.Normalized;
 
-        _ = InterpF(obj.PositionProperty, time =>
+        var task = InterpF(obj.PositionProperty, time =>
         {
             var et = Ease.Evaluate(time, EaseType.EaseInOut);
             var a = (float)et * angle;
@@ -97,7 +97,8 @@ public static class Animate {
             var r = Quaternion.AngleAxis((a / 180.0f) * (float)Math.PI, axis);
             var pos = pointToOrbit + (r * offset);
             return Quaternion.LookRotation((p - pos).Normalized, axis);
-        }, duration); 
+        }, duration);
+        await task;
     }
 
     public static Task Offset(this VisualEntity3D ent, Vector3 offset, double duration = 1.0, EaseType curve = EaseType.EaseInOut)
@@ -111,6 +112,11 @@ public static class Animate {
     }
     
     public static Task Move(this VisualEntity2D ent, Vector2 moveTo, double duration = 1.0, EaseType curve = EaseType.EaseInOut)
+    {
+        return InterpT(ent.PositionProperty, moveTo, duration, curve);
+    }
+
+    public static Task Move(this VisualEntity3D ent, Vector3 moveTo, double duration = 1.0, EaseType curve = EaseType.EaseInOut)
     {
         return InterpT(ent.PositionProperty, moveTo, duration, curve);
     }

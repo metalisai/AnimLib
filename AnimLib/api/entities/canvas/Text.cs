@@ -37,7 +37,7 @@ internal class Text2DState : EntityState2D
 /// </summary>
 public class Text2D : EntityCollection2D, IColored
 {
-    List<(Shape s, char c)> Glyphs = new ();
+    List<(Shape s, char c)> Glyphs = new();
     internal float size;
     internal string? font;
     internal Color color;
@@ -62,7 +62,8 @@ public class Text2D : EntityCollection2D, IColored
     /// <summary>
     /// Copy constructor.
     /// </summary>
-    public Text2D(Text2D state) : base(state) {
+    public Text2D(Text2D state) : base(state)
+    {
         this.text = state.text;
         this.size = state.size;
         this.font = state.font;
@@ -73,12 +74,15 @@ public class Text2D : EntityCollection2D, IColored
     /// <summary>
     /// Create the shapes that make up the text.
     /// </summary>
-    protected void ShapeText() {
-        foreach(var g in Glyphs) {
+    protected void ShapeText()
+    {
+        foreach (var g in Glyphs)
+        {
             DestroyChild(g.s);
         }
         var placedShapes = Animator.Current?.ShapeText(Text, Vector2.ZERO, (int)Size, Font) ?? new List<(Shape s, char c)>();
-        foreach(var g in placedShapes) {
+        foreach (var g in placedShapes)
+        {
             g.s.Color = Color;
             g.s.SortKey.Value = base.SortKey.Value;
             Attach(g.s);
@@ -89,7 +93,8 @@ public class Text2D : EntityCollection2D, IColored
     /// <summary>
     /// Create the underlying shapes.
     /// </summary>
-    protected void CreateText() {
+    protected void CreateText()
+    {
         /*foreach(var g in Glyphs) {
             g.s.state.selectable = false;
         }*/
@@ -98,7 +103,8 @@ public class Text2D : EntityCollection2D, IColored
     /// <summary>
     /// When this entity is created, create the underlying shapes.
     /// </summary>
-    internal override void OnCreated() {
+    internal override void OnCreated()
+    {
         CreateText();
         base.OnCreated();
     }
@@ -106,8 +112,10 @@ public class Text2D : EntityCollection2D, IColored
     /// <summary>
     /// Property to get the underlying shapes.
     /// </summary>
-    public (Shape s, char c)[] CurrentShapes {
-        get {
+    public (Shape s, char c)[] CurrentShapes
+    {
+        get
+        {
             return Glyphs.ToArray();
         }
     }
@@ -115,10 +123,12 @@ public class Text2D : EntityCollection2D, IColored
     /// <summary>
     /// Property to get the underlying shapes given a string.
     /// </summary>
-    public Shape[] GetSubstring(string str) {
+    public Shape[] GetSubstring(string str)
+    {
         var mystr = new string(this.Glyphs.Select(x => x.c).ToArray());
         var idx = mystr.IndexOf(str);
-        if(idx >= 0) {
+        if (idx >= 0)
+        {
             var range = Glyphs.GetRange(idx, str.Length).Select(x => x.s).ToArray();
             return range;
         }
@@ -128,14 +138,18 @@ public class Text2D : EntityCollection2D, IColored
     /// <summary>
     /// Name of the font used to generate the text.
     /// </summary>
-    public string? Font {
-        get {
+    public string? Font
+    {
+        get
+        {
             return font;
         }
-        set {
+        set
+        {
             var oldFont = font;
             font = value;
-            if (oldFont != value) {
+            if (oldFont != value)
+            {
                 ShapeText();
             }
         }
@@ -144,14 +158,18 @@ public class Text2D : EntityCollection2D, IColored
     /// <summary>
     /// Font size in world units. (pixels for the default canvas)
     /// </summary>
-    public float Size {
-        get {
+    public float Size
+    {
+        get
+        {
             return size;
         }
-        set {
+        set
+        {
             var oldSize = size;
             size = value;
-            if (oldSize != value) {
+            if (oldSize != value)
+            {
                 ShapeText();
             }
         }
@@ -160,16 +178,21 @@ public class Text2D : EntityCollection2D, IColored
     /// <summary>
     /// The text to display.
     /// </summary>
-    public string Text {
-        get {
+    public string Text
+    {
+        get
+        {
             return text;
         }
-        set {
+        set
+        {
             var oldText = text;
             text = value;
-            if (oldText != value) {
+            if (oldText != value)
+            {
                 ShapeText();
-                if (this.Created) {
+                if (this.Created)
+                {
                     CreateText();
                 }
             }
@@ -184,13 +207,14 @@ public class Text2D : EntityCollection2D, IColored
         /*get {
             return ((Text2DState)state).halign;
         }*/
-        set {
+        set
+        {
             // TODO: retypeset glyphs
             /*World.current.SetProperty(this, "HAlign", value, ((Text2DState)state).halign);
             ((Text2DState)state).halign = value;*/
         }
     }
-    
+
     /// <summary>
     /// Vertical alignment of the text.
     /// </summary>
@@ -199,7 +223,8 @@ public class Text2D : EntityCollection2D, IColored
         /*get {
             return ((Text2DState)state).valign;
         }*/
-        set {
+        set
+        {
             // TODO: retypeset glyphs
             /*World.current.SetProperty(this, "VAlign", value, ((Text2DState)state).valign);
             ((Text2DState)state).valign = value;*/
@@ -209,7 +234,8 @@ public class Text2D : EntityCollection2D, IColored
     /// <summary>
     /// The color of the text. Controls the color of the underlying shapes.
     /// </summary>
-    public Color Color { 
+    public Color Color
+    {
         get
         {
             return color;
@@ -217,7 +243,8 @@ public class Text2D : EntityCollection2D, IColored
         set
         {
             color = value;
-            foreach(var g in Glyphs) {
+            foreach (var g in Glyphs)
+            {
                 g.s.Color = value;
             }
         }
@@ -226,13 +253,16 @@ public class Text2D : EntityCollection2D, IColored
     /// <summary>
     /// The key used to sort this entity on the canvas.
     /// </summary>
-    new public int SortKey {
+    new public int SortKey
+    {
         /*get {
             return ((Text2DState)state).sortKey;
         }*/
-        set {
+        set
+        {
             base.SortKey.Value = value;
-            foreach(var g in Glyphs) {
+            foreach (var g in Glyphs)
+            {
                 g.s.SortKey.Value = value;
             }
         }
@@ -241,7 +271,8 @@ public class Text2D : EntityCollection2D, IColored
     /// <summary>
     /// Clone this text entity.
     /// </summary>
-    internal override object Clone() {
+    internal override object Clone()
+    {
         return new Text2D(this);
     }
 
@@ -263,4 +294,5 @@ public class Text2D : EntityCollection2D, IColored
         this.GetState(state, evaluator);
         return state;
     }
+    
 }

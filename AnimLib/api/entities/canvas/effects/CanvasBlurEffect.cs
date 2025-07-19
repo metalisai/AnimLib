@@ -21,7 +21,7 @@ public class CanvasBlurEffect : CanvasEffect {
     /// Create a new blur effect.
     /// </summary>
     public CanvasBlurEffect(float radius = 0.0f) {
-        this.RadiusP = new DynProperty<float>("radius", radius);
+        this.RadiusP = new DynProperty<float>("radius", radius, RadiusP);
         properties["radius"] = this.RadiusP;
     }
 }

@@ -332,7 +332,7 @@ public class World
 
         this.ActiveCanvas = defaultCanvas;
 
-        this.CurrentTime = new DynProperty<double>("time", 0.0f);
+        this.CurrentTime = new DynProperty<double>("time", 0.0f, CurrentTime);
         var sprop = new WorldSpecialPropertyCommand(
             propertyId: CurrentTime.Id,
             SpecialWorldPropertyType.Time,
@@ -364,13 +364,32 @@ public class World
     internal void AddResource(Texture2D texture) {
         Resources.Textures.Add(texture);
     }
+    
+    /// <summary>
+    /// Begin capturing creation of entities. All entities created after this call will be added to the returned list.
+    /// </summary>
+    public List<VisualEntity> BeginCapture() {
+        var ret = new List<VisualEntity>();
+        _captureStack.Push(ret);
+        return ret;
+    }
 
-    internal void BeginEvaluator(DynProperty prop, Func<Dictionary<DynPropertyId, object?>, object?> evaluator) {
+    /// <summary>
+    /// End capturing creation of entities.
+    /// </summary>
+    public void EndCapture() {
+        _captureStack.Pop();
+    }
+
+    internal void BeginEvaluator(DynProperty prop, Func<Dictionary<DynPropertyId, object?>, object?> evaluator)
+    {
         var id = prop.Id;
-        if (id.Id == 0) {
+        if (id.Id == 0)
+        {
             return;
         }
-        if (_activeDynEvaluators.ContainsKey(id)) {
+        if (_activeDynEvaluators.ContainsKey(id))
+        {
             Debug.Error($"Dyn property {id} already has active evaluator. Make sure you don't evaluate a property from multiple places at the same time.");
             return;
         }
@@ -383,7 +402,8 @@ public class World
         );
         _commands.Add(cmd);
         _activeDynEvaluators.Add(id, evaluator);
-        prop.Evaluator = () => {
+        prop.Evaluator = () =>
+        {
             return evaluator(_dynamicPropertyValues);
         };
     }
@@ -413,7 +433,7 @@ public class World
 
     private void EntityCreated(VisualEntity entity)
     {
-        entity.Id = GetUniqueId();
+        entity.Id.Value = GetUniqueId();
         if (currentEditor == null)
         {
             Debug.Error("Entity created when no one is editing!? Use StartEditing() before modifying world.");
@@ -615,6 +635,14 @@ public class World
         var ret = (T)e.Clone();
         CreateInstantly(ret);
         return ret;
+    }
+
+    public void Destroy<T>(T[] objs) where T : VisualEntity
+    {
+        foreach (var obj in objs)
+        {
+            Destroy(obj);
+        }
     }
 
     public void Destroy(VisualEntity obj)

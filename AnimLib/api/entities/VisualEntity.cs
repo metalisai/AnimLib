@@ -1,4 +1,5 @@
 using System;
+using ExCSS;
 
 namespace AnimLib;
 
@@ -37,7 +38,7 @@ public abstract class VisualEntity
     /// <summary>
     /// The ID of this entity.
     /// </summary>
-    public int Id { get; internal set; }
+    public DynProperty<int> Id = DynProperty<int>.CreateEmpty(-1);
     public bool ManagedLifetime { get; internal set; }
     /// <summary>
     /// The parent entity ID.
@@ -74,7 +75,7 @@ public abstract class VisualEntity
 
     private protected void GetState(EntityState dest, Func<DynPropertyId, object?> evaluator)
     {
-        dest.entityId = Id;
+        dest.entityId = evaluator(Id.Id) as int? ?? -1;
         dest.active = evaluator(Active.Id) as bool? ?? default(bool);
         dest.sortKey = evaluator(SortKey.Id) as int? ?? default(int);
         dest.parentId = evaluator(ParentId.Id) as int? ?? default(int);
@@ -82,11 +83,11 @@ public abstract class VisualEntity
 
     internal virtual void OnCreated()
     {
-        ParentId = new DynProperty<int>("parent", ParentId.Value);
-        Active = new DynProperty<bool>("active", Active.Value);
-        SortKey = new DynProperty<int>("sortKey", SortKey.Value);
-        Created = new DynProperty<bool>("created", Created.Value);
-        this.Created.Value = true;
+        Id = new DynProperty<int>("id", Id.Value, Id);
+        ParentId = new DynProperty<int>("parent", ParentId.Value, ParentId);
+        Active = new DynProperty<bool>("active", Active.Value, Active);
+        SortKey = new DynProperty<int>("sortKey", SortKey.Value, SortKey);
+        Created = new DynProperty<bool>("created", true, Created);
     }
 
     abstract internal object Clone();

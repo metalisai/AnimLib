@@ -75,8 +75,15 @@ public record DynProperty {
         }
     }
 
-    internal DynProperty(string name, object? initialValue, Type expectedType) {
-        this.Id = World.current.CreateDynProperty(initialValue, this);
+    internal DynProperty(string name, object? initialValue, Type expectedType, DynProperty? old) {
+        if (old == null || old.Name == "__invalid__")
+        {
+            this.Id = World.current.CreateDynProperty(initialValue, this);
+        }
+        else
+        {
+            this.Id = old.Id;
+        }
         this.Name = name;
         this._value = initialValue;
         this.ExpectedType = expectedType;
@@ -129,8 +136,8 @@ public record DynProperty<T> : DynProperty {
         }
     }
 
-    internal DynProperty(string name, T initialValue) 
-        : base(name, initialValue, typeof(T)) {
+    internal DynProperty(string name, T initialValue, DynProperty? old) 
+        : base(name, initialValue, typeof(T), old) {
     }
 
     private DynProperty(T? initial) : base(initial, typeof(T)) {

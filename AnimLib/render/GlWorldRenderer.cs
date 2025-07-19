@@ -619,7 +619,7 @@ internal partial class GlWorldRenderer : IRenderer
 
         M4x4 worldToClip = cam.CreateWorldToClipMatrix((float)pbSize.w / (float)pbSize.h);
         int p = 0;
-        for (p = 0; p < 24; p++)
+        for (p = 0; p < 12; p++)
         {
             drawId = 0;
             GL.ColorMask(true, true, true, true);
@@ -640,7 +640,7 @@ internal partial class GlWorldRenderer : IRenderer
                 GL.BindSampler(1, renderPlatform.GetSampler(PlatformTextureSampler.Blit));
                 GL.BindSampler(2, renderPlatform.GetSampler(PlatformTextureSampler.Blit));
             }
-            GL.BeginQuery(QueryTarget.SamplesPassed, query);
+            //GL.BeginQuery(QueryTarget.SamplesPassed, query);
             //GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
 
             // TODO: cache meshes based on mesh.MeshVersion
@@ -678,16 +678,16 @@ internal partial class GlWorldRenderer : IRenderer
                 RenderMeshes(ss.Meshes, worldToClip, smat, ss.DynamicProperties);
             }
 
-            GL.EndQuery(QueryTarget.SamplesPassed);
+            //GL.EndQuery(QueryTarget.SamplesPassed);
 
             // TODO: OnRender delegate!
 
-            passedcount = 0;
+            /*passedcount = 0;
             GL.GetQueryObject(query, GetQueryObjectParam.QueryResult, out passedcount);
             if (passedcount <= 0)
             {
                 break;
-            }
+            }*/
 
             pb.NextLayer();
         }

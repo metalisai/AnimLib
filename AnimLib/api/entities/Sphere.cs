@@ -99,7 +99,7 @@ public partial class Sphere : MeshEntity3D, IColored
 
     internal override object GetState(Func<DynPropertyId, object?> evaluator)
     {
-        Debug.Assert(this.Created); // Id is only valid if the entity is created
+        Debug.Assert(this.Id >= 0);
         var state = new SphereState(NewMeshBackedGeometry.GenerateEntityName(this.Id));
         GetState(state, evaluator);
         return state;

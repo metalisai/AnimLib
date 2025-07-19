@@ -244,7 +244,13 @@ internal class WorldMachine {
             resolver = new EntityStateResolver(
                 GetEntityState: entid =>
                 {
-                    return _entities.ContainsKey(entid) ? _entities[entid] : null;
+                    //return _entities.ContainsKey(entid) ? _entities[entid] : null;
+                    _dynEntities.TryGetValue(entid, out var ret);
+                    if (ret != null)
+                    {
+                        return (EntityState)ret.GetState(GetDynProp);
+                    }
+                    return null;
                 }
             ),
             Canvases = l.ToArray(),
