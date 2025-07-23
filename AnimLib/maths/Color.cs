@@ -2,6 +2,12 @@ using System;
 
 namespace AnimLib;
 
+public enum ColorPalette
+{
+    Default,
+    Saturated
+}
+
 /// <summary>
 /// A color with 4 channels.
 /// </summary>
@@ -12,14 +18,56 @@ public struct Color {
     /// </summary>
     public float r, g, b, a;
 
+    public Color(string hex)
+    {
+        if (string.IsNullOrWhiteSpace(hex))
+            throw new ArgumentException("Hex color string cannot be null or empty.");
+
+        // Remove leading #
+        if (hex.StartsWith("#"))
+            hex = hex.Substring(1);
+
+        // Support 6-digit (RGB) and 8-digit (RGBA)
+        if (hex.Length != 6 && hex.Length != 8)
+            throw new ArgumentException("Hex string must be 6 or 8 characters long.");
+
+        byte rByte = byte.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
+        byte gByte = byte.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
+        byte bByte = byte.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
+        byte aByte = 255;
+
+        if (hex.Length == 8)
+        {
+            aByte = byte.Parse(hex.Substring(6, 2), System.Globalization.NumberStyles.HexNumber);
+        }
+
+        // Convert to sRGB (0-1) float
+        float sr = rByte / 255f;
+        float sg = gByte / 255f;
+        float sb = bByte / 255f;
+        float sa = aByte / 255f;
+
+        // Convert to linear space
+        r = SRGBToLinear(sr);
+        g = SRGBToLinear(sg);
+        b = SRGBToLinear(sb);
+        a = sa; // Alpha is typically left as-is
+    }
+
+    private static float SRGBToLinear(float c)
+    {
+        return (c <= 0.04045f) ? c / 12.92f : MathF.Pow((c + 0.055f) / 1.055f, 2.4f);
+    }
+
     /// <summary>
     /// Create color from a 32-but color. In range 0-255.
     /// </summary>
-    public Color(byte R, byte G, byte B, byte A) {
-        this.r = (float)R/255.0f;
-        this.g = (float)G/255.0f;
-        this.b = (float)B/255.0f;
-        this.a = (float)A/255.0f;
+    public Color(byte R, byte G, byte B, byte A)
+    {
+        this.r = (float)R / 255.0f;
+        this.g = (float)G / 255.0f;
+        this.b = (float)B / 255.0f;
+        this.a = (float)A / 255.0f;
     }
 
     /// <summary>
@@ -201,30 +249,98 @@ public struct Color {
         }
     }
 
+    public static Color TEST
+    {
+        get
+        {
+            return Color.BLACK;
+        }
+    }
+
+    private static ColorPalette _palette;
+
+    public static ColorPalette Palette
+    {
+        get => _palette;
+        set
+        {
+            _palette = value;
+            switch (value)
+            {
+                case ColorPalette.Saturated:
+                    _white = new Color("#ffffffff");
+                    _black = new Color("#000000ff");
+                    _red = new Color("#ff0000ff");
+                    _blue = new Color("#0000ffff");
+                    _brown = new Color("#a52900ff");
+                    _green = new Color("#00ff00ff");
+                    _yellow = new Color("#ffff00ff");
+                    _cyan = new Color("#00ffffff");
+                    _magenta = new Color("#ff00ffff");
+                    _transparent = new Color("#ffffff00");
+                    _orange = new Color("#ff7e00ff");
+                    _violet = new Color("#9100ffff");
+                    break;
+                default:
+                    _white = new Color("#ffffffff");
+                    _black = new Color("#000000ff");
+                    _red = new Color("#b40c0cff");
+                    _blue = new Color("#045793ff");
+                    _brown = new Color("#6d392eff");
+                    _green = new Color("#108010");
+                    _yellow = new Color("#dbb714ff");
+                    _cyan = new Color("#009daeff");
+                    _magenta = new Color("#c40e6aff");
+                    _transparent = new Color("#ffffff00");
+                    _orange = new Color("#db6100ff");
+                    _violet = new Color("#74499cff");
+                    break;
+            }
+        }
+    }
+
+    static Color()
+    {
+        Palette = ColorPalette.Default;
+    }
+
+    private static Color _black = new Color(0, 0, 0, 255);
+    private static Color _white = new Color(255, 255, 255, 255);
+    private static Color _red = new Color(255, 0, 0, 255);
+    private static Color _green = new Color(0, 255, 0, 255);
+    private static Color _blue = new Color(0, 0, 255, 255);
+    private static Color _yellow = new Color(255, 255, 0, 255);
+    private static Color _cyan = new Color(0, 255, 255, 255);
+    private static Color _magenta = new Color(255, 0, 255, 255);
+    private static Color _transparent = new Color(255, 255, 255, 0);
+    private static Color _orange = new Color(240, 94, 35, 255);
+    private static Color _brown = new Color(101, 67, 33, 255);
+    private static Color _violet = new Color(121, 61, 244, 255);
+
     /// <summary> The color black. </summary>
-    public static readonly Color BLACK = new Color(0, 0, 0, 255);
+    public static Color BLACK { get => _black; }  
     /// <summary> The color white. </summary>
-    public static readonly Color WHITE = new Color(255, 255, 255, 255);
+    public static Color WHITE { get => _white; }  
     /// <summary> The color red. </summary>
-    public static readonly Color RED = new Color(255, 0, 0, 255);
+    public static Color RED { get => _red; }  
     /// <summary> The color green. </summary>
-    public static readonly Color GREEN = new Color(0, 255, 0, 255);
+    public static Color GREEN { get => _green; }  
     /// <summary> The color blue. </summary>
-    public static readonly Color BLUE = new Color(0, 0, 255, 255);
+    public static Color BLUE { get => _blue; }  
     /// <summary> The color yellow. </summary>
-    public static readonly Color YELLOW = new Color(255, 255, 0, 255);
+    public static Color YELLOW { get => _yellow; }  
     /// <summary> The color cyan. </summary>
-    public static readonly Color CYAN = new Color(0, 255, 255, 255);
+    public static Color CYAN { get => _cyan; }  
     /// <summary> The color magenta. </summary>
-    public static readonly Color MAGENTA = new Color(255, 0, 255, 255);
+    public static Color MAGENTA { get => _magenta; }  
     /// <summary> Clear.</summary>
-    public static readonly Color TRANSPARENT = new Color(255, 255, 255, 0);
+    public static Color TRANSPARENT { get => _transparent; }  
     /// <summary> The color orange. </summary>
-    public static readonly Color ORANGE = new Color(240, 94, 35, 255);
+    public static Color ORANGE { get => _orange; }  
     /// <summary> The color pink. </summary>
-    public static readonly Color BROWN = new Color(101, 67, 33, 255);
+    public static Color BROWN { get => _brown; }  
     /// <summary> The color pink. </summary>
-    public static readonly Color VIOLET = new Color(121, 61, 244, 255);
+    public static Color VIOLET { get => _violet; }  
 
     /// <summary>
     /// Interpolate between two colors in RGB space.
