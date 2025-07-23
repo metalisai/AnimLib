@@ -619,7 +619,7 @@ internal partial class GlWorldRenderer : IRenderer
 
         M4x4 worldToClip = cam.CreateWorldToClipMatrix((float)pbSize.w / (float)pbSize.h);
         int p = 0;
-        for (p = 0; p < 12; p++)
+        for (p = 0; p < 24; p++)
         {
             drawId = 0;
             GL.ColorMask(true, true, true, true);

@@ -169,6 +169,7 @@ internal class Program
             }
         };
         renderState.OnPostRender += player.OnEndRenderScene;
+        
 
         if (projectPath != null)
         {
@@ -181,7 +182,7 @@ internal class Program
         //player.Seek(0.0);
         player.Bake();
         var filename = "animation-"+DateTime.Now.ToString("yyyy_MM_dd_HHmmss")+".mp4";
-        player.ExportAnimation(filename, 0.0, 60.0);
+        player.ExportAnimation(filename, 0.0, null);
         player.Play();
 
         while (!exit)

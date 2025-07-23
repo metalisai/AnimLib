@@ -38,29 +38,26 @@ public static class Animate {
     /// <param name="p">The center of the orbit.</param>
     /// <param name="angle">The total angle to orbit.</param>
     /// <param name="duration">The duration of the orbit operation.</param>
-    /*public static async Task OrbitPoint(Transform obj, Vector3 axis, Vector3 p, float angle, float duration) {
+    public static async Task OrbitPoint(VisualEntity3D obj, Vector3 axis, Vector3 p, float angle, float duration) {
         // TODO: velocity ramping not instant
-        bool infinite = false;;
         if (duration == 0.0f) {
-            infinite = true;
             duration = 1.0f;
         }
         double startTime = AnimLib.Time.T;
         double endTime = startTime + duration;
 
         var pointToOrbit = p;
-        var offset = obj.Pos - p;
+        var offset = obj.Position - p;
         axis = axis.Normalized;
 
-        while (infinite || AnimLib.Time.T < endTime) {
-            var t = (AnimLib.Time.T - startTime)/ duration;
-            var et = Ease.Evaluate(t, EaseType.EaseInOut);
+        await InterpF(obj.PositionProperty, time =>
+        {
+            var et = Ease.Evaluate(time, EaseType.EaseInOut);
             var a = (float)et * angle;
-            var r = Quaternion.AngleAxis((a / 180.0f)*(float)Math.PI, axis);
-            obj.Pos = pointToOrbit + (r * offset);
-            await AnimLib.Time.WaitFrame();
-        }
-    }*/
+            var r = Quaternion.AngleAxis((a / 180.0f) * (float)Math.PI, axis);
+            return pointToOrbit + (r * offset);
+        }, duration);
+    }
 
     /// <summary>
     /// Orbits a transform perpendicular to the given axis. Movement starts at the current position and orbits the specified angle during the given duration.

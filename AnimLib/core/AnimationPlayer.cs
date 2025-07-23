@@ -252,11 +252,11 @@ internal class AnimationPlayer {
         }
     }
 
-    internal void ExportAnimation(string filename, double start, double end)
+    internal void ExportAnimation(string filename, double start, double? end)
     {
         Console.WriteLine($"Export animation {filename} from time {start} to {end}.");
         var path = "Videos/"+filename;
-        export = new AnimationExport(path, start, end, 0.0, new FfmpegExporter());
+        export = new AnimationExport(path, start, end ?? settings.MaxLength, 0.0, new FfmpegExporter());
 
         machine.SeekSeconds(start);
         var root = Path.GetDirectoryName(path);
