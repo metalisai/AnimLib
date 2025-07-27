@@ -501,6 +501,7 @@ internal class SceneView
             colorSpace = renderBuffer.ColorSpace,
         };
         renderBuffer.BindForRender();
+        renderBuffer.MakePresentable();
         renderBuffer.ReadPixels(ref tex.data[0], format);
         return tex;
     }

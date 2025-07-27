@@ -451,22 +451,24 @@ internal partial class DepthPeelRenderBuffer : IBackendRenderBuffer, IDisposable
 
     public void ReadPixels(ref byte data, Texture2D.TextureFormat format = Texture2D.TextureFormat.RGB8)
     {
-        //GL.ReadPixels(0, 0, Width, Height, PixelFormat.Rgb, PixelType.UnsignedByte, ref data);
-        GL.BindTexture(_multisample ? TextureTarget.Texture2DMultisample : TextureTarget.Texture2D, _colorTex);
         PixelFormat fmt;
         PixelType type;
-        switch(format) {
+        switch (format)
+        {
             case Texture2D.TextureFormat.RGB8:
-            fmt = PixelFormat.Rgb;
-            type = PixelType.UnsignedByte;
-            break;
+                fmt = PixelFormat.Rgb;
+                type = PixelType.UnsignedByte;
+                break;
             case Texture2D.TextureFormat.RGB16:
-            fmt = PixelFormat.Rgb;
-            type = PixelType.UnsignedShort;
-            break;
+                fmt = PixelFormat.Rgb;
+                type = PixelType.UnsignedShort;
+                break;
             default:
-            throw new Exception("Unsupported texture format");
+                throw new Exception("Unsupported texture format");
         }
+        
+        // NOTE: _colorTex is blit to _presentTex when MakePresentable() is called
+        GL.BindTexture(TextureTarget.Texture2D, _presentTex);
         GL.GetTexImage(TextureTarget.Texture2D, 0, fmt, type, ref data);
     }
 
