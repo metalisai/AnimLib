@@ -36,6 +36,13 @@ internal partial class GlWorldRenderer : IRenderer
     EffectBuffer effectBuffer;
     GlKawaseBlur kawaseBlur;
 
+    record CachedMesh(ColoredTriangleMeshGeometry geom)
+    {
+        public DateTime lastRendered { get; set; }
+    }
+    // TODO: these need to be disposed
+    Dictionary<string, CachedMesh> cachedMeshes = new();
+
     private struct FrameContext
     {
         public required EntityStateResolver entRes;
@@ -649,11 +656,33 @@ internal partial class GlWorldRenderer : IRenderer
                 var marr = ss.NewMeshes!;
                 var meshes = new ColoredTriangleMesh[marr.Length];
                 var geoms = new ColoredTriangleMeshGeometry[marr.Length];
+                var delete = new bool[marr.Length];
                 for (int i = 0; i < marr.Length; i++)
                 {
                     var mbg = marr[i];
-                    geoms[i] = new ColoredTriangleMeshGeometry("");
-                    marr[i].GenerateMesh(geoms[i]);
+                    var key = marr[i].GenerateCacheKey();
+                    if (key != null && cachedMeshes.TryGetValue(key, out var mesh))
+                    {
+                        geoms[i] = mesh.geom;
+                        mesh.lastRendered = DateTime.UtcNow;
+                        delete[i] = false;
+                    }
+                    else
+                    {
+                        geoms[i] = new ColoredTriangleMeshGeometry("");
+                        marr[i].GenerateMesh(geoms[i]);
+                        if (key != null)
+                        {
+                            var cv = new CachedMesh(geoms[i]);
+                            cachedMeshes.Add(key, cv);
+                            cv.lastRendered = DateTime.UtcNow;
+                            delete[i] = false;
+                        }
+                        else
+                        {
+                            delete[i] = true;
+                        }
+                    }
                     meshes[i] = new ColoredTriangleMesh
                     {
                         modelToWorld = mbg.ModelToWorld(ctx.entRes),
@@ -665,11 +694,14 @@ internal partial class GlWorldRenderer : IRenderer
                     };
                 }
                 RenderMeshes(meshes, worldToClip, smat, ss.DynamicProperties);
-                foreach (var geom in geoms)
+                foreach (var (geom, del) in geoms.Zip(delete))
                 {
-                    GL.DeleteBuffer(geom.EBOHandle);
-                    GL.DeleteBuffer(geom.VBOHandle);
-                    GL.DeleteVertexArray(geom.VAOHandle);
+                    if (del)
+                    {
+                        GL.DeleteBuffer(geom.EBOHandle);
+                        GL.DeleteBuffer(geom.VBOHandle);
+                        GL.DeleteVertexArray(geom.VAOHandle);
+                    }
                 }
             }
 
@@ -731,6 +763,24 @@ internal partial class GlWorldRenderer : IRenderer
         foreach (var buf in this.renderBuffers.Values)
         {
             buf.OnPostRender();
+        }
+
+        // Delete cached meshes that haven't been used in a while
+        List<string> toDelete = new();
+        foreach (var (key, val) in cachedMeshes)
+        {
+            if ((DateTime.UtcNow - val.lastRendered).TotalSeconds > 30.0f)
+            {
+                var geom = val.geom;
+                GL.DeleteBuffer(geom.EBOHandle);
+                GL.DeleteBuffer(geom.VBOHandle);
+                GL.DeleteVertexArray(geom.VAOHandle);
+                toDelete.Add(key);
+            }
+        }
+        foreach (var k in toDelete)
+        {
+            cachedMeshes.Remove(k);
         }
     }
 }

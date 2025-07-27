@@ -29,6 +29,11 @@ internal class MeshState : MeshBackedGeometry
         this.outline = ms.outline;
     }
 
+    public override string? GenerateCacheKey()
+    {
+        return null; // not reusable
+    }
+
     public override void GenerateMesh(ColoredTriangleMeshGeometry mesh)
     {
         mesh.vertices = vertices;

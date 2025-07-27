@@ -27,6 +27,11 @@ internal class QuadState : MeshBackedGeometry
         this.color = qs.color;
     }
 
+    public override string? GenerateCacheKey()
+    {
+        return $"quad-{color}-{vertices[0]}-{vertices[1]}-{vertices[2]}-{vertices[3]}";
+    }
+
     public override void GenerateMesh(ColoredTriangleMeshGeometry mesh)
     {
         mesh.vertices = vertices;

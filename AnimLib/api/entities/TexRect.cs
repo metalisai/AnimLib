@@ -21,6 +21,11 @@ internal class TexRectState : MeshBackedGeometry
         this.Shader = BuiltinShader.TexturedQuadShader;
     }
 
+    public override string? GenerateCacheKey()
+    {
+        return "texRect";
+    }
+
     public override void GenerateMesh(ColoredTriangleMeshGeometry mesh)
     {
         mesh.vertexMode = MeshVertexMode.Triangles;

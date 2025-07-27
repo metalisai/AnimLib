@@ -22,6 +22,11 @@ internal class SphereState : MeshBackedGeometry
         this.radius = sls.radius;
     }
 
+    public override string? GenerateCacheKey()
+    {
+        return $"sphere-{color}-{radius}";
+    }
+
     public override void GenerateMesh(ColoredTriangleMeshGeometry mesh)
     {
         // uvSphere

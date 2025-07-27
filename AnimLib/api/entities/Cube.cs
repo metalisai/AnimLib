@@ -22,6 +22,11 @@ internal class CubeState : MeshBackedGeometry
         this.color = sls.color;
     }
 
+    public override string? GenerateCacheKey()
+    {
+        return $"cube-{color}";
+    }
+
     public override void GenerateMesh(ColoredTriangleMeshGeometry mesh)
     {
         mesh.vertices = new Vector3[] {

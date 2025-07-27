@@ -25,6 +25,7 @@ internal abstract class MeshBackedGeometry : EntityState3D
 {
     public BuiltinShader Shader = BuiltinShader.LineShader;
     public string UID = "";
+    public abstract string? GenerateCacheKey();
     public abstract void GenerateMesh(ColoredTriangleMeshGeometry mesh);
     public int MeshVersion = 0;
 

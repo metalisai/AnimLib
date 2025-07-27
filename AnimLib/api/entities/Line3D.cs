@@ -27,6 +27,11 @@ internal class Line3DState : MeshBackedGeometry
         this.vertexMode = sls.vertexMode;
     }
 
+    public override string? GenerateCacheKey()
+    {
+        return null; // not reusable
+    }
+
     public override void GenerateMesh(ColoredTriangleMeshGeometry mesh)
     {
         mesh.vertexMode = vertexMode;
