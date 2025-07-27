@@ -240,7 +240,7 @@ internal class WorldMachine {
         var ret = new WorldSnapshot()
         {
             Glyphs = _glyphs.Where(x => x.Active).Select(x => (GlyphState)x.GetState(GetDynProp)).ToArray(),
-            NewMeshes = _meshEntities.Where(x => x.Active).Select(x => (NewMeshBackedGeometry)x.GetState(GetDynProp)).ToArray(),
+            NewMeshes = _meshEntities.Where(x => x.Active).Select(x => (MeshBackedGeometry)x.GetState(GetDynProp)).ToArray(),
             resolver = new EntityStateResolver(
                 GetEntityState: entid =>
                 {

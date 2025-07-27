@@ -243,6 +243,14 @@ public static class Animate {
         entity.Color = targetColor;
     }
 
+    public static async Task Color(DynProperty<Color> prop, Color startColor, Color targetColor, double duration, EaseType curve = EaseType.EaseInOut)
+    {
+        await InterpF(prop, (x) =>
+        {
+            return AnimLib.Color.LerpHSV(startColor, targetColor, (float)x);
+        }, duration);
+    }
+
     /// <summary>
     /// Interpolates a <c>IColored</c> entity from its current color to a target color. Uses HSV color space.
     /// </summary>
@@ -250,7 +258,8 @@ public static class Animate {
     /// <param name="targetColor">The target color.</param>
     /// <param name="duration">The duration of the color change.</param>
     /// <param name="curve">The interpolation curve to use.</param>
-    public static Task Color(IColored entity, Color targetColor, double duration, EaseType curve = EaseType.EaseInOut) {
+    public static Task Color(IColored entity, Color targetColor, double duration, EaseType curve = EaseType.EaseInOut)
+    {
         return Color(entity, entity.Color, targetColor, duration, curve);
     }
 

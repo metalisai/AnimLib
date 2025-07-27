@@ -528,6 +528,8 @@ void main() {
     vec3 tint = vec3(gl_FragCoord.z);
     float d = min(min(g_bary.x, g_bary.y), g_bary.z);
 
+    // This is ugly af for anisotropic triangles
+
     vec3 dxbary = dFdx(g_bary);
     float dxd = min(min(dxbary.x, dxbary.y), dxbary.z);
     vec3 dybary = dFdy(g_bary);

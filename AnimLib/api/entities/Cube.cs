@@ -5,7 +5,7 @@ using System.Linq;
 namespace AnimLib;
 
 [GenerateDynProperties(forType: typeof(Cube))]
-internal class CubeState : NewMeshBackedGeometry
+internal class CubeState : MeshBackedGeometry
 {
     [Dyn]
     public Color color = Color.YELLOW;
@@ -72,7 +72,7 @@ public partial class Cube : MeshEntity3D, IColored
     internal override object GetState(Func<DynPropertyId, object?> evaluator)
     {
         Debug.Assert(this.Id >= 0);
-        var state = new CubeState(NewMeshBackedGeometry.GenerateEntityName(this.Id));
+        var state = new CubeState(MeshBackedGeometry.GenerateEntityName(this.Id));
         GetState(state, evaluator);
         return state;
     }

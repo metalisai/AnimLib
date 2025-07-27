@@ -4,7 +4,7 @@ using System;
 namespace AnimLib;
 
 [GenerateDynProperties(forType: typeof(Sphere))]
-internal class SphereState : NewMeshBackedGeometry
+internal class SphereState : MeshBackedGeometry
 {
     [Dyn]
     public Color color = Color.YELLOW;
@@ -100,7 +100,7 @@ public partial class Sphere : MeshEntity3D, IColored
     internal override object GetState(Func<DynPropertyId, object?> evaluator)
     {
         Debug.Assert(this.Id >= 0);
-        var state = new SphereState(NewMeshBackedGeometry.GenerateEntityName(this.Id));
+        var state = new SphereState(MeshBackedGeometry.GenerateEntityName(this.Id));
         GetState(state, evaluator);
         return state;
     }

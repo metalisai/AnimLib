@@ -26,11 +26,11 @@ public abstract class MeshEntity3D : VisualEntity3D
         MeshVersion = new DynProperty<int>("meshVersion", MeshVersion.Value, MeshVersion);
     }
 
-    private protected void GetState(NewMeshBackedGeometry state, Func<DynPropertyId, object?> evaluator)
+    private protected void GetState(MeshBackedGeometry state, Func<DynPropertyId, object?> evaluator)
     {
         base.GetState(state, evaluator);
         Debug.Assert(this.Id >= 0);
-        state.UID = NewMeshBackedGeometry.GenerateEntityName(this.Id);
+        state.UID = MeshBackedGeometry.GenerateEntityName(this.Id);
         state.MeshVersion = this.MeshVersion;
     }
 

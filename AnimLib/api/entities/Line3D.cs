@@ -5,7 +5,7 @@ using System.Linq;
 namespace AnimLib;
 
 [GenerateDynProperties(forType: typeof(Line3D))]
-internal class Line3DState : NewMeshBackedGeometry
+internal class Line3DState : MeshBackedGeometry
 {
     [Dyn(onSet: ["MeshDirty"])]
     internal MeshVertexMode vertexMode = MeshVertexMode.Strip;
@@ -68,7 +68,7 @@ public partial class Line3D : MeshEntity3D, IColored
     internal override object GetState(Func<DynPropertyId, object?> evaluator)
     {
         Debug.Assert(this.Id >= 0);
-        var state = new Line3DState(NewMeshBackedGeometry.GenerateEntityName(this.Id));
+        var state = new Line3DState(MeshBackedGeometry.GenerateEntityName(this.Id));
         GetState(state, evaluator);
         return state;
     }

@@ -5,7 +5,7 @@ using System.Linq;
 namespace AnimLib;
 
 [GenerateDynProperties(forType: typeof(Mesh))]
-internal class MeshState : NewMeshBackedGeometry
+internal class MeshState : MeshBackedGeometry
 {
     [Dyn]
     public Vector3[] vertices = [];
@@ -54,7 +54,7 @@ public partial class Mesh : MeshEntity3D, IColored
     internal override object GetState(Func<DynPropertyId, object?> evaluator)
     {
         Debug.Assert(this.Id >= 0);
-        var state = new MeshState(NewMeshBackedGeometry.GenerateEntityName(this.Id));
+        var state = new MeshState(MeshBackedGeometry.GenerateEntityName(this.Id));
         GetState(state, evaluator);
         return state;
     }

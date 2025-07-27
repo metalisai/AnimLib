@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace AnimLib;
 
 [GenerateDynProperties(forType: typeof(Quad))]
-internal class QuadState : NewMeshBackedGeometry
+internal class QuadState : MeshBackedGeometry
 {
     [Dyn(onSet: ["MeshDirty"])]
     public Vector3[] vertices = new Vector3[4];
@@ -53,7 +53,7 @@ public partial class Quad : MeshEntity3D, IColored
     internal override object GetState(Func<DynPropertyId, object?> evaluator)
     {
         Debug.Assert(this.Id >= 0);
-        var state = new QuadState(NewMeshBackedGeometry.GenerateEntityName(this.Id));
+        var state = new QuadState(MeshBackedGeometry.GenerateEntityName(this.Id));
         GetState(state, evaluator);
         return state;
     }

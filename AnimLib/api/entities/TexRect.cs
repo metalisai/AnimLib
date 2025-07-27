@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace AnimLib;
 
 [GenerateDynProperties(forType: typeof(TexRect))]
-internal class TexRectState : NewMeshBackedGeometry
+internal class TexRectState : MeshBackedGeometry
 {
     [Dyn]
     public Texture2D texture;
@@ -56,7 +56,7 @@ public partial class TexRect : MeshEntity3D
     internal override object GetState(Func<DynPropertyId, object?> evaluator)
     {
         Debug.Assert(this.Id >= 0);
-        var state = new TexRectState(this.Texture, NewMeshBackedGeometry.GenerateEntityName(this.Id));
+        var state = new TexRectState(this.Texture, MeshBackedGeometry.GenerateEntityName(this.Id));
         GetState(state, evaluator);
         return state;
     }

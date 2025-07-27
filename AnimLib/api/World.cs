@@ -134,7 +134,7 @@ internal class WorldSnapshot {
     public required CameraState? Camera;
     public required RectangleState[] Rectangles;
     public required GlyphState[] Glyphs;
-    public required NewMeshBackedGeometry[] NewMeshes;
+    public required MeshBackedGeometry[] NewMeshes;
     public required ColoredTriangleMesh[] Meshes;
     public required CanvasSnapshot[] Canvases;
     // NOTE: the first renderbuffer is always the main one

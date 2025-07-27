@@ -1,46 +1,45 @@
+using System;
 using System.Collections.Generic;
 
-namespace AnimLib {
+namespace AnimLib;
 
-    internal abstract class MeshBackedGeometry : EntityState3D, IRendererResource {
-        public Color outline = Color.BLACK;
-        public BuiltinShader Shader = BuiltinShader.LineShader;
+/// <summary>
+/// The mode of a line.
+/// </summary>
+public enum MeshVertexMode {
+    /// <summary>
+    /// Each pair of vertices are a single line segment.
+    /// </summary>
+    Segments,
+    /// <summary>
+    /// The vertices are a continuous line strip.
+    /// </summary>
+    Strip,
+    /// <summary>
+    /// The vertices are trialngle list.
+    /// </summary>
+    Triangles,
+};
 
-        int _version = 0;
-        public int Version { get => _version; }
-        
-        public void Dirty() {
-            _version++;
-        } 
+internal abstract class MeshBackedGeometry : EntityState3D
+{
+    public BuiltinShader Shader = BuiltinShader.LineShader;
+    public string UID = "";
+    public abstract void GenerateMesh(ColoredTriangleMeshGeometry mesh);
+    public int MeshVersion = 0;
 
-        public Dictionary<string, DynProperty> properties = new ();
-
-        public readonly RendererHandle RendererHandle = new RendererHandle();
-        /*public abstract object Clone();*/
-        public abstract void UpdateMesh(ColoredTriangleMeshGeometry mesh);
-        public List<(string, object)> shaderProperties = new List<(string, object)>();
-        public string ownerGuid;
-
-        public MeshBackedGeometry(string ownerGuid) {
-            this.ownerGuid = ownerGuid;
-        }
-
-        public MeshBackedGeometry(MeshBackedGeometry mbg) : base(mbg) {
-            this.ownerGuid = mbg.ownerGuid;
-            this.Shader = mbg.Shader;
-            this.shaderProperties = mbg.shaderProperties;
-            this.properties = mbg.properties;
-            this._version = mbg._version;
-        }
-
-        public string GetOwnerGuid() {
-            return ownerGuid;
-        }
-
-        protected MeshBackedGeometry(RendererHandle handle, string ownerGuid) {
-            RendererHandle = handle;
-            this.ownerGuid = ownerGuid;
-        }
+    public static string GenerateEntityName(int entityId)
+    {
+        return "entity" + entityId.ToString();
     }
 
+    public MeshBackedGeometry(string uid) : base()
+    {
+
+    }
+
+    public virtual List<(string, object)> GetShaderProperties()
+    {
+        return [];
+    }
 }
