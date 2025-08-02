@@ -36,8 +36,8 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
 
     System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
 
-    public int WinWidth { get { return Size.X; } }
-    public int WinHeight { get { return Size.Y; } }
+    public int WinWidth { get { return FramebufferSize.X; } }
+    public int WinHeight { get { return FramebufferSize.Y; } }
 
     private int imguiVao, imguiVbo, imguiEbo;
 
@@ -117,13 +117,13 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
 
     protected override void OnResize(ResizeEventArgs e) {
         if(OnSizeChanged != null) {
-            OnSizeChanged(this.Size.X, this.Size.Y);
+            OnSizeChanged(this.FramebufferSize.X, this.FramebufferSize.Y);
         }
         if (OnDisplayChanged != null)
         {
             var monitor = Monitors.GetMonitorFromWindow(this);
-            OnDisplayChanged(Size.X, Size.Y, monitor.CurrentVideoMode.RefreshRate);
-            Debug.Log($"Resize {Size.X}x{Size.Y}@{monitor.CurrentVideoMode.RefreshRate}");
+            OnDisplayChanged(FramebufferSize.X, FramebufferSize.Y, monitor.CurrentVideoMode.RefreshRate);
+            Debug.Log($"Resize {FramebufferSize.X}x{FramebufferSize.Y}@{monitor.CurrentVideoMode.RefreshRate}");
         }
         base.OnResize(e);
     }
@@ -234,7 +234,7 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
 
         // skia
         SkiaRenderer = new SkiaRenderer(this);
-        if (!_useSkiaSoftware) {
+        if (false && !_useSkiaSoftware) {
             SkiaRenderer.CreateGL(true);
         } else {
             // FYI this is unusably slow with HDR backbuffer
@@ -430,7 +430,7 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
             } else { // rendering gui
                 GL.Uniform1(entIdLoc, 0xAAAAAAA);
             }
-            GL.Scissor((int)dc.clipRect.Item1, Size.Y - (int)dc.clipRect.Item4, (int)(dc.clipRect.Item3-dc.clipRect.Item1), (int)(dc.clipRect.Item4-dc.clipRect.Item2));
+            GL.Scissor((int)dc.clipRect.Item1, FramebufferSize.Y - (int)dc.clipRect.Item4, (int)(dc.clipRect.Item3-dc.clipRect.Item1), (int)(dc.clipRect.Item4-dc.clipRect.Item2));
 #warning remove
             GL.BindSampler(0, linearSampler);
             GL.DrawElementsBaseVertex(PrimitiveType.Triangles, (int)dc.elemCount, DrawElementsType.UnsignedShort, new IntPtr(dc.idxOffset*sizeof(ushort)), (int)dc.vOffset);
@@ -448,13 +448,13 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
 
     public void RenderGUI(Imgui.DrawList data, IList<SceneView> views, IBackendRenderBuffer rb)
     {
-        GL.Viewport(0, 0, rb.Size.Item1, rb.Size.Item2);
         var pb = rb as DepthPeelRenderBuffer;
 
         GL.Enable(EnableCap.PolygonOffsetFill);
         System.Diagnostics.Debug.Assert(pb is DepthPeelRenderBuffer);
 
         pb.BindForRender();
+        GL.Viewport(0, 0, FramebufferSize.X, FramebufferSize.Y);
         GL.DepthMask(true);
         GL.ClearDepth(1.0f);
         GL.Clear(ClearBufferMask.DepthBufferBit);
@@ -489,7 +489,7 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
         }
         RenderImGui(data, views, rb);
         pb.NextLayer();
-        if (data != null) pb.BlendToScreen(Size.X, Size.Y);
+        if (data != null) pb.BlendToScreen(FramebufferSize.X, FramebufferSize.Y);
     }
 
     public static void GlClearBackbuffer(int x, int y, int w, int h) {
