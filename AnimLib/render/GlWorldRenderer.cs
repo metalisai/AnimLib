@@ -91,6 +91,7 @@ internal partial class GlWorldRenderer : IRenderer
             {
                 using var __ = new Performance.Call("WorldRenderer buf.BlitTextureWithEntityId");
                 buf.BlitTextureWithEntityId(renderPlatform.Skia.Texture, canvas.Canvas.entityId);
+                Performance.DrawCalls++;
             }
         }
     }
@@ -162,6 +163,7 @@ internal partial class GlWorldRenderer : IRenderer
                     int vertCount = m.Geometry.vertices.Length;
                     IntPtr colorOffset = new IntPtr(vertCount * vertSize);
                     IntPtr edgeOffset = new IntPtr(vertCount * (vertSize + colorSize));
+                    Performance.MeshesUploaded++;
 
                     if (m.Geometry.VAOHandle < 0)
                     {
@@ -295,6 +297,7 @@ internal partial class GlWorldRenderer : IRenderer
                 if (m.Geometry.indices.Length > 0)
                 {
                     GL.DrawElements(primType, m.Geometry.copiedIndices, DrawElementsType.UnsignedInt, 0);
+                    Performance.DrawCalls++;
                 }
                 else
                 {
@@ -314,6 +317,7 @@ internal partial class GlWorldRenderer : IRenderer
                     }
                     Debug.Assert(m.Geometry.copiedVertices == m.Geometry.copiedColors);
                     GL.DrawArrays(primType, 0, m.Geometry.copiedVertices);
+                    Performance.DrawCalls++;
                     if (m.Shader == BuiltinShader.LineShader)
                     {
                         GL.Disable(EnableCap.LineSmooth);
@@ -531,6 +535,8 @@ internal partial class GlWorldRenderer : IRenderer
     public void RenderScene(WorldSnapshot ss, CameraState cam, bool gizmo, out IBackendRenderBuffer mainBuffer)
     {
         using var _ = new Performance.Call("WorldRenderer.RenderScene");
+        Performance.MeshesUploaded = 0;
+        Performance.DrawCalls = 0;
 
         this.gizmo = gizmo;
         long passedcount = 0;
@@ -703,11 +709,6 @@ internal partial class GlWorldRenderer : IRenderer
                         GL.DeleteVertexArray(geom.VAOHandle);
                     }
                 }
-            }
-
-            if (ss.Meshes != null)
-            {
-                RenderMeshes(ss.Meshes, worldToClip, smat, ss.DynamicProperties);
             }
 
             //GL.EndQuery(QueryTarget.SamplesPassed);

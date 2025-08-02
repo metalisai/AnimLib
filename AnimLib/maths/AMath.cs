@@ -96,7 +96,7 @@ public static class AMath
         var dif = end - start;
         var difp = p - start;
         float len2 = Vector3.Dot(dif, dif);
-        if (len2 < float.Epsilon) return start;
+        if (len2 < 1e-6) return start;
         float t = Vector3.Dot(difp, dif) / len2;
         t = Math.Clamp(t, 0.0f, 1.0f);
         var ret = start + dif * t;

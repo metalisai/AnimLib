@@ -29,7 +29,8 @@ public enum TextCreationMode {
 /// <summary>
 /// Helper class to animate entities. Part of the AnimLib user API.
 /// </summary>
-public static class Animate {
+public static class Animate
+{
     /// <summary>
     /// Orbits a transform perpendicular to the given axis. Movement starts at the current position and orbits the specified angle during the given duration.
     /// </summary>
@@ -38,9 +39,11 @@ public static class Animate {
     /// <param name="p">The center of the orbit.</param>
     /// <param name="angle">The total angle to orbit.</param>
     /// <param name="duration">The duration of the orbit operation.</param>
-    public static async Task OrbitPoint(VisualEntity3D obj, Vector3 axis, Vector3 p, float angle, float duration) {
+    public static async Task OrbitPoint(VisualEntity3D obj, Vector3 axis, Vector3 p, float angle, float duration)
+    {
         // TODO: velocity ramping not instant
-        if (duration == 0.0f) {
+        if (duration == 0.0f)
+        {
             duration = 1.0f;
         }
         double startTime = AnimLib.Time.T;
@@ -107,7 +110,7 @@ public static class Animate {
     {
         return InterpT(ent.PositionProperty, ent.Position + offset, duration, curve);
     }
-    
+
     public static Task Move(this VisualEntity2D ent, Vector2 moveTo, double duration = 1.0, EaseType curve = EaseType.EaseInOut)
     {
         return InterpT(ent.PositionProperty, moveTo, duration, curve);
@@ -116,6 +119,11 @@ public static class Animate {
     public static Task Move(this VisualEntity3D ent, Vector3 moveTo, double duration = 1.0, EaseType curve = EaseType.EaseInOut)
     {
         return InterpT(ent.PositionProperty, moveTo, duration, curve);
+    }
+
+    public static Task Scale(this VisualEntity3D ent, Vector3 newScale, double duration, EaseType curve = EaseType.EaseInOut)
+    {
+        return InterpT(ent.ScaleProperty, newScale, duration, curve);
     }
 
     /// <summary>
@@ -150,18 +158,23 @@ public static class Animate {
     /// <param name="duration">The duration of the interpolation.</param>
     /// <param name="curve">The interpolation curve to use.</param>
     /// <typeparam name="T">The type of the property.</typeparam>
-    public static async Task InterpF<T>(DynProperty<T> property, Func<float, T> evaluator, double duration, float start = 0.0f, float end = 1.0f, EaseType curve = EaseType.EaseInOut) {
+    public static async Task InterpF<T>(DynProperty<T> property, Func<float, T> evaluator, double duration, float start = 0.0f, float end = 1.0f, EaseType curve = EaseType.EaseInOut)
+    {
         double endTime = AnimLib.Time.T + duration;
         double startT = AnimLib.Time.T;
         var timePropertyId = World.current.CurrentTime.Id;
-        Func<Dictionary<DynPropertyId, object?>, object?> timeEvaluator = (dict) => {
+        Func<Dictionary<DynPropertyId, object?>, object?> timeEvaluator = (dict) =>
+        {
             var time = dict[timePropertyId] as double? ?? default(float);
             var relativeTime = (double)time - startT;
             var t = (float)Math.Clamp(relativeTime / duration, 0.0f, 1.0f);
             t = Ease.Evaluate(t, curve);
-            if (relativeTime < duration) {
+            if (relativeTime < duration)
+            {
                 return evaluator.Invoke(start + (end - start) * t);
-            } else {
+            }
+            else
+            {
                 return evaluator.Invoke(end);
             }
         };
@@ -180,12 +193,12 @@ public static class Animate {
     /// <param name="curve">The interpolation curve to use.</param>
     /// <typeparam name="T">The type of the input and output values.</typeparam>
     /// <typeparam name="F">The type of the duration.</typeparam>
-    public static async Task InterpT<T,F>(Action<T> action, T start, T end, F duration, EaseType curve = EaseType.EaseInOut) 
-        where T : 
+    public static async Task InterpT<T, F>(Action<T> action, T start, T end, F duration, EaseType curve = EaseType.EaseInOut)
+        where T :
             IAdditionOperators<T, T, T>,
             ISubtractionOperators<T, T, T>,
             IMultiplyOperators<T, F, T>
-        where F : 
+        where F :
             IFloatingPoint<F>,
             IPowerFunctions<F>,
             ITrigonometricFunctions<F>
@@ -193,8 +206,9 @@ public static class Animate {
         T startD = start;
         T endD = end;
         F endTime = F.CreateChecked(AnimLib.Time.T) + duration;
-        while (F.CreateChecked(AnimLib.Time.T) < endTime) {
-            F progress = F.One - (endTime - F.CreateChecked(AnimLib.Time.T))/ duration;
+        while (F.CreateChecked(AnimLib.Time.T) < endTime)
+        {
+            F progress = F.One - (endTime - F.CreateChecked(AnimLib.Time.T)) / duration;
             var t = F.Clamp(progress, F.Zero, F.One);
             t = Ease.Evaluate(t, curve);
             action.Invoke(start + (endD - startD) * t);
@@ -218,7 +232,7 @@ public static class Animate {
         {
             var t = Ease.Evaluate(time, curve);
             return startD + (endD - startD) * t;
-        }, duration);           
+        }, duration);
     }
 
     /// <summary>
@@ -268,14 +282,16 @@ public static class Animate {
     /// </summary>
     /// <param name="action">The animation lambda.</param>
     /// <param name="duration">The duration of the animation.</param>
-    public static async Task Time(Action<double> action, double duration) {
+    public static async Task Time(Action<double> action, double duration)
+    {
         double startT = AnimLib.Time.T;
         double endT = AnimLib.Time.T + duration;
-        while (AnimLib.Time.T < endT) {
+        while (AnimLib.Time.T < endT)
+        {
             action.Invoke(AnimLib.Time.T - startT);
             await AnimLib.Time.WaitFrame();
         }
-        action.Invoke(endT-startT);
+        action.Invoke(endT - startT);
     }
 
     /// <summary>
@@ -288,7 +304,7 @@ public static class Animate {
     /// <param name="v0">The initial velocity.</param>
     /// <typeparam name="T">The type of the values. Scalar or a vector.</typeparam>
     public static async Task Accelerate<T>(Action<T> action, T x0, T a, float duration, T v0 = default(T))
-        where T : 
+        where T :
             struct,
             IAdditionOperators<T, T, T>,
             ISubtractionOperators<T, T, T>,
@@ -296,13 +312,14 @@ public static class Animate {
     {
         double startT = AnimLib.Time.T;
         double endT = AnimLib.Time.T + duration;
-        while (AnimLib.Time.T < endT) {
+        while (AnimLib.Time.T < endT)
+        {
             double currentT = AnimLib.Time.T - startT;
-            T currentValue = x0 + v0*(float)currentT + a*(float)currentT*(float)currentT;
+            T currentValue = x0 + v0 * (float)currentT + a * (float)currentT * (float)currentT;
             action.Invoke(currentValue);
             await AnimLib.Time.WaitFrame();
         }
-        action.Invoke(x0 + v0*duration + a*duration*duration);
+        action.Invoke(x0 + v0 * duration + a * duration * duration);
     }
 
     /// <summary>
@@ -323,8 +340,10 @@ public static class Animate {
     /// </summary>
     /// <param name="action">The lambda to call every frame.</param>
     /// <param name="token">The cancellation token that allows cancelling the operation.</param>
-    public static async Task Update(Action action, CancellationToken token) {
-        while (!token.IsCancellationRequested) {
+    public static async Task Update(Action action, CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
             action.Invoke();
             await AnimLib.Time.WaitFrame();
         }
@@ -338,17 +357,19 @@ public static class Animate {
     /// <param name="amplitude">The amplitude of the sine wave.</param>
     /// <param name="timeOffset">The time offset of the sine wave.</param>
     /// <param name="duration">The duration of the sine wave.</param>
-    public static async Task Sine(Action<float> action, double frequency, double amplitude = 1.0f, double timeOffset = 0.0f, double duration = 0.0) {
+    public static async Task Sine(Action<float> action, double frequency, double amplitude = 1.0f, double timeOffset = 0.0f, double duration = 0.0)
+    {
         bool infinite = duration <= 0.0;
         double startTime = AnimLib.Time.T;
         double endTime = startTime + duration;
-        while (infinite || AnimLib.Time.T < endTime) {
+        while (infinite || AnimLib.Time.T < endTime)
+        {
             double t = AnimLib.Time.T - startTime + timeOffset;
-            var f = (float)(amplitude * Math.Sin(t * frequency * Math.PI*0.5));
+            var f = (float)(amplitude * Math.Sin(t * frequency * Math.PI * 0.5));
             action.Invoke(f);
             await AnimLib.Time.WaitFrame();
         }
-        action.Invoke((float)(amplitude * Math.Sin(duration*frequency*Math.PI*0.5)));
+        action.Invoke((float)(amplitude * Math.Sin(duration * frequency * Math.PI * 0.5)));
     }
 
     /// <summary>
@@ -362,14 +383,16 @@ public static class Animate {
     public static async Task<Shape> CreateMorph(Shape startShape, Shape endShape, float duration, EaseType curve = EaseType.EaseInOut, bool destroyStartShape = true)
     {
         var morph = new MorphShape(startShape, endShape);
-        if (destroyStartShape && startShape.Created) {
+        if (destroyStartShape && startShape.Created)
+        {
             World.current.Destroy(startShape);
         }
         World.current.CreateInstantly(morph);
         double startTime = AnimLib.Time.T;
         double endTime = startTime + duration;
-        while (AnimLib.Time.T - startTime < duration) {
-            double progress = 1.0 - (endTime - AnimLib.Time.T)/ duration;
+        while (AnimLib.Time.T - startTime < duration)
+        {
+            double progress = 1.0 - (endTime - AnimLib.Time.T) / duration;
             var t = (float)Math.Clamp(progress, 0.0f, 1.0f);
             t = Ease.Evaluate(t, curve);
             morph.Progress = t;
@@ -440,5 +463,48 @@ public static class Animate {
                 await last;
                 break;
         }
+    }
+
+    static public (Vector3, Quaternion) ObservingTransform(Vector3 aabbMin, Vector3 aabbMax, Vector3 cameraForward, PerspectiveCamera cam, float aspect)
+    {
+        // TODO: this doesn't account for perspective properly
+        //   need to use margin
+
+        Vector3 aabbCenter = (aabbMin + aabbMax) * 0.5f;
+        Vector3 aabbSize = aabbMax - aabbMin;
+        float boundingRadius = aabbSize.Length * 0.5f;
+        Vector3 viewDir = cameraForward.Normalized;
+
+        float verticalFovRad = float.DegreesToRadians(cam.Fov);
+
+        // Angle for the tightest fit
+        float frustumHeight = boundingRadius;
+        float distanceVertical = boundingRadius / MathF.Tan(verticalFovRad / 2.0f);
+        float distanceHorizontal = boundingRadius / (MathF.Tan(verticalFovRad / 2.0f) * aspect);
+
+        // Take the max to ensure the whole AABB fits
+        float requiredDistance = MathF.Max(distanceVertical, distanceHorizontal);
+        Vector3 cameraPosition = aabbCenter - viewDir * requiredDistance * 2.0;
+
+        Vector3 directionToTarget = (aabbCenter - cameraPosition).Normalized;
+        var rot = Quaternion.LookRotation(directionToTarget, Vector3.UP);
+        return (cameraPosition, rot);
+    }
+
+    static public Task TransformTo(VisualEntity3D ent, Vector3 targetPos, Quaternion targetRot, float duration)
+    {
+        var startPos = ent.Position;
+        var startRot = ent.Rotation;
+        var startForward = ent.Rotation * Vector3.FORWARD;
+        var endForward = targetRot * Vector3.FORWARD;
+        Task[] tasks = [InterpF(ent.PositionProperty, (t) =>
+            {
+                return BezierCurve.Cubic(startPos, startPos + startForward, targetPos - endForward, targetPos, t);
+            }, duration),
+            InterpF(ent.RotationProperty, (t) =>
+            {
+                return Quaternion.Slerp(startRot, targetRot, t);
+            }, duration)];
+        return Task.WhenAll(tasks);
     }
 }

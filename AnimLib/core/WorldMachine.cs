@@ -258,9 +258,9 @@ internal class WorldMachine {
             RenderBuffers = _renderBuffers.ToArray(),
             // TODO: populate these
             Rectangles = Array.Empty<RectangleState>(),
-            Meshes = Array.Empty<ColoredTriangleMesh>(),
             DynamicProperties = _dynamicPropertyValues.ToDictionary(),
         };
+        Array.Sort(ret.NewMeshes, new EntComparer());
         return ret;
     }
 

@@ -750,8 +750,12 @@ internal class PlayerControls {
         Imgui.Text($"  Canvas rendering: {Performance.TimeToRenderCanvases*1000.0:N3}ms");
         Imgui.Text($"Number of scene views: {Performance.views}");
         Imgui.Text($"Number of commands in animation: {Performance.CommandCount}");
-        if (Imgui.TreeNode("Commands")) {
-            for (int i = 0; i < Performance.CommandCount; i++) {
+        Imgui.Text($"Number of meshes uploaded last scene frame: {Performance.MeshesUploaded}");
+        Imgui.Text($"Number of draw calls last scene frame: {Performance.DrawCalls}");
+        if (Imgui.TreeNode("Commands"))
+        {
+            for (int i = 0; i < Performance.CommandCount; i++)
+            {
                 var cmd = Performance.Commands[i];
                 if (Imgui.TreeNode($"{cmd.GetType().Name} {cmd.time} {i}"))
                 {

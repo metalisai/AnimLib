@@ -36,7 +36,6 @@ internal abstract class MeshBackedGeometry : EntityState3D
 
     public MeshBackedGeometry(string uid) : base()
     {
-
     }
 
     public virtual List<(string, object)> GetShaderProperties()
