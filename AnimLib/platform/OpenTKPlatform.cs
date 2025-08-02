@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using OpenTK.Mathematics;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace AnimLib;
 
@@ -90,17 +91,23 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
         _useSkiaSoftware = skiaSoftware;
 
         FileDrop += (FileDropEventArgs args) => {
-            if(PFileDrop != null) {
+            if (PFileDrop != null) {
                 PFileDrop(args);
             }
         };
 
         this.VSync = VSyncMode.On;
         Context.SwapInterval = 1;
+        OpenTK.Windowing.Desktop.GLFWProvider.SetErrorCallback(this.GLFWErrorCallback);
+    }
+
+    private void GLFWErrorCallback(OpenTK.Windowing.GraphicsLibraryFramework.ErrorCode errorCode, string desc)
+    {
+        
     }
 
     public int GetSampler(PlatformTextureSampler sampler) {
-        switch(sampler) {
+        switch (sampler) {
             case PlatformTextureSampler.Mipmap:
                 return mipmapSampler;
             case PlatformTextureSampler.Blit:
@@ -121,9 +128,15 @@ internal partial class OpenTKPlatform : GameWindow, IInteractivePlatform
         }
         if (OnDisplayChanged != null)
         {
-            var monitor = Monitors.GetMonitorFromWindow(this);
-            OnDisplayChanged(FramebufferSize.X, FramebufferSize.Y, monitor.CurrentVideoMode.RefreshRate);
-            Debug.Log($"Resize {FramebufferSize.X}x{FramebufferSize.Y}@{monitor.CurrentVideoMode.RefreshRate}");
+            int refreshRate = 60;
+            try
+            {
+                var monitor = Monitors.GetMonitorFromWindow(this);
+                refreshRate = monitor.CurrentVideoMode.RefreshRate;
+            }
+            catch (Exception) { }
+            OnDisplayChanged(FramebufferSize.X, FramebufferSize.Y, refreshRate);
+            Debug.Log($"Resize {FramebufferSize.X}x{FramebufferSize.Y}@{refreshRate}");
         }
         base.OnResize(e);
     }
