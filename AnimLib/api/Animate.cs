@@ -478,7 +478,6 @@ public static class Animate
         float verticalFovRad = float.DegreesToRadians(cam.Fov);
 
         // Angle for the tightest fit
-        float frustumHeight = boundingRadius;
         float distanceVertical = boundingRadius / MathF.Tan(verticalFovRad / 2.0f);
         float distanceHorizontal = boundingRadius / (MathF.Tan(verticalFovRad / 2.0f) * aspect);
 
@@ -491,15 +490,23 @@ public static class Animate
         return (cameraPosition, rot);
     }
 
+    static public Task TransformToLimited(VisualEntity3D ent, Vector3 targetPos, Quaternion targetRot, float minDuration, float maxSpeed)
+    {
+        var startPos = ent.Position;
+        float duration = float.Max(minDuration, (targetPos - startPos).Length / maxSpeed);
+        return TransformTo(ent, targetPos, targetRot, duration);
+    }
+
     static public Task TransformTo(VisualEntity3D ent, Vector3 targetPos, Quaternion targetRot, float duration)
     {
         var startPos = ent.Position;
         var startRot = ent.Rotation;
         var startForward = ent.Rotation * Vector3.FORWARD;
         var endForward = targetRot * Vector3.FORWARD;
+        float oAmount = MathF.Min(1.0f, (targetPos - startPos).Length);
         Task[] tasks = [InterpF(ent.PositionProperty, (t) =>
             {
-                return BezierCurve.Cubic(startPos, startPos + startForward, targetPos - endForward, targetPos, t);
+                return BezierCurve.Cubic(startPos, startPos + oAmount*startForward, targetPos - oAmount*endForward, targetPos, t);
             }, duration),
             InterpF(ent.RotationProperty, (t) =>
             {

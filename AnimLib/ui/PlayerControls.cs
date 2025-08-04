@@ -764,6 +764,12 @@ internal class PlayerControls {
             }
             Imgui.TreePop();
         }
+        var commandsGrouped = Performance.Commands.GroupBy(x => x.GetType()).Select(g => (g.Key, g.Count()));
+        Imgui.Text("Command counts by type");
+        foreach (var g in commandsGrouped)
+        {
+            Imgui.Text($"  {g.Key} {g.Item2}");
+        }
 
         Imgui.Text($"Last bake time: {Performance.TimeToBake*1000:N3}ms");
 
