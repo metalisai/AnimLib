@@ -15,10 +15,10 @@ namespace AnimLib;
 //  and wants to run completion on main thread (ConfigureAwait(true) which is default)
 class SyncCtx : SynchronizationContext
 {
-    static ConcurrentBag<(SendOrPostCallback, object?)> postedCallbacks = new();
+    static ConcurrentQueue<(SendOrPostCallback, object?)> postedCallbacks = new();
     public override void Post(SendOrPostCallback d, object? state)
     {
-        postedCallbacks.Add((d, state));
+        postedCallbacks.Enqueue((d, state));
     }
     public override void Send(SendOrPostCallback d, object? state)
     {
@@ -27,7 +27,7 @@ class SyncCtx : SynchronizationContext
 
     public void InvokeAllPosted()
     {
-        while (postedCallbacks.TryTake(out var d))
+        while (postedCallbacks.TryDequeue(out var d))
         {
             d.Item1.Invoke(d.Item2);
         }
