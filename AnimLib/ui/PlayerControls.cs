@@ -387,7 +387,7 @@ internal class PlayerControls {
         Imgui.End();
     }
 
-    async Task<string> NewProject()
+    async Task<string?> NewProject()
     {
         var result = await FileChooser.ChooseDirectory("Choose a directory for new project...", "");
         System.Console.WriteLine($"new project: {result}");
@@ -398,7 +398,7 @@ internal class PlayerControls {
         return result;
     }
 
-    async Task<string> OpenProject()
+    async Task<string?> OpenProject()
     {
         var result = await FileChooser.ChooseFile("Choose a project file to open...", "", new string[] { "*.animproj" });
         System.Console.WriteLine($"open project: {result}");
