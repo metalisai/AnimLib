@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace AnimLib;
 
@@ -386,33 +387,51 @@ internal class PlayerControls {
         Imgui.End();
     }
 
-    private void DrawMainMenu() {
+    async Task<string> NewProject()
+    {
+        var result = await FileChooser.ChooseDirectory("Choose a directory for new project...", "");
+        System.Console.WriteLine($"new project: {result}");
+        if (!string.IsNullOrEmpty(result))
+        {
+            player.ResourceManager.CreateProject(result);
+        }
+        return result;
+    }
+
+    async Task<string> OpenProject()
+    {
+        var result = await FileChooser.ChooseFile("Choose a project file to open...", "", new string[] { "*.animproj" });
+        System.Console.WriteLine($"open project: {result}");
+        if (!string.IsNullOrEmpty(result))
+        {
+            player.ResourceManager.SetProject(result);
+        }
+        else
+        {
+            Debug.Warning("Failed to choose project file");
+        }
+        return result;
+    }
+
+    private void DrawMainMenu()
+    {
         Imgui.BeginMenuBar();
         if (Imgui.BeginMenu("File"))
         {
             if (Imgui.MenuItem("New project..."))
             {
-                var result = FileChooser.ChooseDirectory("Choose a directory for new project...", "");
-                System.Console.WriteLine($"new project: {result}");
-                if(!string.IsNullOrEmpty(result)) {
-                    player.ResourceManager.CreateProject(result);
-                }
+                _ = NewProject();
             }
             if (Imgui.MenuItem("Open project..."))
             {
-                var result = FileChooser.ChooseFile("Choose a project file to open...", "", new string[] {"*.animproj"});
-                System.Console.WriteLine($"open project: {result}");
-                if(!string.IsNullOrEmpty(result)) {
-                    player.ResourceManager.SetProject(result);
-                } else {
-                    Debug.Warning("Failed to choose project file");
-                }
+                _ = OpenProject();
             }
             if (Imgui.MenuItem("Export video..."))
             {
                 _showExport = !_showExport;
-                if(_showExport) {
-                    exportfileName = "animation-"+DateTime.Now.ToString("yyyy_MM_dd_HHmmss")+".mp4";
+                if (_showExport)
+                {
+                    exportfileName = "animation-" + DateTime.Now.ToString("yyyy_MM_dd_HHmmss") + ".mp4";
                 }
             }
             if (Imgui.MenuItem("Update"))
@@ -445,13 +464,14 @@ internal class PlayerControls {
         if (Imgui.BeginMenu("Create"))
         {
             var cam = view.LastCamera as PerspectiveCameraState;
-            if(cam != null) 
+            if (cam != null)
             {
-                Vector4 col = new (0.5f, 0.5f, 0.5f, 1.0f);
+                Vector4 col = new(0.5f, 0.5f, 0.5f, 1.0f);
                 Imgui.PushStyleColor(Imgui.ImGuiCol.Text, ref col);
                 Imgui.Text("(Drag and drop)");
                 Imgui.PopStyleColor();
-                Action<string, int, bool> createItem = (string name, int idx, bool is2d) => {
+                Action<string, int, bool> createItem = (string name, int idx, bool is2d) =>
+                {
                     Imgui.DragDropItem(name);
                 };
                 /*
@@ -474,7 +494,8 @@ internal class PlayerControls {
 
         Imgui.EndMenuBar();
 
-        if(currentError != null) {
+        if (currentError != null)
+        {
             var wf = Imgui.ImGuiWindowFlags.AlwaysAutoResize;
             bool open = true;
             Imgui.Begin("Animation error", ref open, wf);

@@ -7,7 +7,7 @@ using System.Text;
 
 namespace AnimLib {
     class FileChooser {
-        static public string ChooseFile(string title, string path, string[] filters)
+        static public Task<string?> ChooseFile(string title, string path, string[] filters)
         {
             using(var ofd = new OpenFileDialog())
             {
@@ -35,22 +35,22 @@ namespace AnimLib {
                 ofd.RestoreDirectory = true;
 
                 if(ofd.ShowDialog() == DialogResult.OK) {
-                    return ofd.FileName;
+                    return Task.FromResult(ofd.FileName);
                 }
                 return null;
             }
         }
 
-        static public string ChooseDirectory(string title, string path)
+        static public Task<string?> ChooseDirectory(string title, string path)
         {
             using(var fbd = new FolderBrowserDialog())
             {
                 fbd.InitialDirectory = path;
                 fbd.Description = title;
                 if(fbd.ShowDialog() == DialogResult.OK) {
-                    return fbd.SelectedPath;
+                    return Task.FromResult(fbd.SelectedPath);
                 }
-                return null;
+                return Task.FromResult(null);
             }
         }
     }

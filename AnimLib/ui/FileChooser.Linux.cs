@@ -1,10 +1,11 @@
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace AnimLib {
 #if Linux
     class FileChooser {
-        static private string RunZenity(string arguments) {
+        static private async Task<string?> RunZenity(string arguments) {
             var startInfo = new ProcessStartInfo() {
                 FileName = "zenity",
                 Arguments = arguments,
@@ -19,18 +20,18 @@ namespace AnimLib {
                 } catch (Exception) {
                     Debug.Error($"Failed to run file chooser. On Linux zenity is required, make sure it is installed!");
                 }
-                process.WaitForExit();
+                await process.WaitForExitAsync();
                 var ret = process.StandardOutput.ReadLine();
                 if(string.IsNullOrEmpty(ret)) {
                     Debug.Warning($"Zenity output was empty! Exit code: {process.ExitCode}, Error: {process.StandardError.ReadLine()}");
                     Debug.Log($"Zenity command-line was: \"{startInfo.FileName} {startInfo.Arguments}\"");
-                    throw new Exception("Zenity output was empty!");
+                    return null;
                 }
                 return ret;
             }
         }
 
-        static public string ChooseFile(string title, string path, string[] filters)
+        static public Task<string?> ChooseFile(string title, string path, string[] filters)
         {
             string arguments = $"--file-selection --title=\"{title}\"";
             if(!string.IsNullOrEmpty(path))
@@ -48,7 +49,7 @@ namespace AnimLib {
             return RunZenity(arguments);
         }
 
-        static public string ChooseDirectory(string title, string path)
+        static public Task<string?> ChooseDirectory(string title, string path)
         {
             var args = $"--file-selection --directory --save --title=\"{title}\"";
             if(!string.IsNullOrEmpty(path))
