@@ -4,6 +4,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.Windows.Forms;
 using System.Text;
+using System.Threading;
 
 namespace AnimLib {
     class FileChooser {
