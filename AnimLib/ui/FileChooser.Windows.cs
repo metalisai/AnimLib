@@ -51,7 +51,7 @@ namespace AnimLib {
                 if(fbd.ShowDialog() == DialogResult.OK) {
                     return Task.FromResult(fbd.SelectedPath);
                 }
-                return Task.FromResult(null);
+                return Task.FromResult<string?>(null);
             }
         }
     }
