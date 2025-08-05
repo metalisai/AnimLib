@@ -172,7 +172,7 @@ internal partial class GlWorldRenderer : IRenderer
                         int ebo = GL.GenBuffer();
                         GL.BindVertexArray(vao);
                         GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
-                        if (m.Geometry.indices.Length > 0)
+                        if ((m.Geometry.indices?.Length ?? 0) > 0)
                         {
                             GL.BindBuffer(BufferTarget.ElementArrayBuffer, ebo);
                         }
@@ -261,7 +261,7 @@ internal partial class GlWorldRenderer : IRenderer
                         edgeHandle.Free();
                     }
                     GL.BindBuffer(BufferTarget.ElementArrayBuffer, m.Geometry.EBOHandle);
-                    if (m.Geometry.indices.Length > 0)
+                    if (m.Geometry.indices != null && m.Geometry.indices?.Length > 0)
                     {
                         var handle = GCHandle.Alloc(m.Geometry.indices, GCHandleType.Pinned);
                         IntPtr ptr = handle.AddrOfPinnedObject();
@@ -294,12 +294,15 @@ internal partial class GlWorldRenderer : IRenderer
                         primType = PrimitiveType.Triangles;
                         break;
                 }
-                if (m.Geometry.indices.Length > 0)
+                if (m.Geometry.indices != null) // have indices
                 {
-                    GL.DrawElements(primType, m.Geometry.copiedIndices, DrawElementsType.UnsignedInt, 0);
-                    Performance.DrawCalls++;
+                    if (m.Geometry.indices.Length > 0)
+                    {
+                        GL.DrawElements(primType, m.Geometry.copiedIndices, DrawElementsType.UnsignedInt, 0);
+                        Performance.DrawCalls++;
+                    }
                 }
-                else
+                else // have only vertices, assume user wants to draw them as triangles
                 {
                     float range = 1.0f;
 

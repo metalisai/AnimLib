@@ -56,7 +56,7 @@ public class ColoredTriangleMeshGeometry : IRendererResource {
     /// <summary>
     /// The indices referencing the vertices.
     /// </summary>
-    public uint[] indices = Array.Empty<uint>();
+    public uint[]? indices = null;
     /// <summary>
     /// Vertex colors.
     /// </summary>

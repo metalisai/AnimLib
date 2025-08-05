@@ -7,9 +7,9 @@ namespace AnimLib;
 [GenerateDynProperties(forType: typeof(Mesh))]
 internal class MeshState : MeshBackedGeometry
 {
-    [Dyn]
+    [Dyn(onSet: ["MeshDirty"])]
     public Vector3[] vertices = [];
-    [Dyn]
+    [Dyn(onSet: ["MeshDirty"])]
     public uint[] indices = [];
     [Dyn]
     public Color color;

@@ -540,7 +540,7 @@ void main() {
     float edge = smoothstep(edgeLocation-dd, edgeLocation, d);
     vec3 outColorRGB = _Color.rgb*g_color.rgb;
     float alpha = _Color.a*g_color.a;
-    outColor = mix(vec4(outColorRGB*alpha, alpha), _Outline, 1.0-edge);
+    outColor = mix(vec4(outColorRGB*alpha, alpha), vec4(_Outline.rgb, 1.0), 1.0-edge);
     outEntityId = _EntityId;
 }";
 
