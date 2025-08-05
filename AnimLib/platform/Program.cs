@@ -11,17 +11,24 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace AnimLib;
 
-class SyncCtx : SynchronizationContext {
-    static ConcurrentBag<(SendOrPostCallback, object?)> postedCallbacks = new ();
-    public override void Post(SendOrPostCallback d, object? state) {
+// NOTE: this is needed in case editor kicks off a task that runs on different thread
+//  and wants to run completion on main thread (ConfigureAwait(true) which is default)
+class SyncCtx : SynchronizationContext
+{
+    static ConcurrentBag<(SendOrPostCallback, object?)> postedCallbacks = new();
+    public override void Post(SendOrPostCallback d, object? state)
+    {
         postedCallbacks.Add((d, state));
     }
-    public override void Send(SendOrPostCallback d, object? state) {
+    public override void Send(SendOrPostCallback d, object? state)
+    {
         throw new NotImplementedException();
     }
 
-    public void InvokeAllPosted() {
-        while(postedCallbacks.TryTake(out var d)) {
+    public void InvokeAllPosted()
+    {
+        while (postedCallbacks.TryTake(out var d))
+        {
             d.Item1.Invoke(d.Item2);
         }
     }
