@@ -68,7 +68,7 @@ public class TestingPlatform : IDisposable
         var view = new SceneView(0, 0, 100, 100, 1920, 1080);
         renderState.AddSceneView(view);
 
-        player = new(new NoProjectBehaviour(), useThreads: false);
+        player = new(new LoadedPluginBehaviour(new NoProjectBehaviour()), useThreads: false);
         player.OnMarker += OnMarker;
         player.ResourceManager.OnAssemblyChanged += (path) =>
         {
@@ -128,7 +128,7 @@ public class TestingPlatform : IDisposable
             throw new Exception("Call Init() before running!");
         }
 
-        player.SetBehaviour(behaviour);
+        player.SetBehaviour(new LoadedPluginBehaviour(behaviour));
 
         player.Bake();
         player.Play();

@@ -21,6 +21,7 @@ $@"<Project Sdk=""Microsoft.NET.Sdk"">
 <PropertyGroup>
 <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 </PropertyGroup>
 
 <ItemGroup>

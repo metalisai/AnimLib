@@ -258,11 +258,22 @@ public struct Vector2 : IEquatable<Vector2>,
         var nt = Vector3.smooth1.Evaluate(t);
         return Lerp(a, b, nt);
     }
+    
+    /// <summary>
+    /// Whether this vector contains NaN.
+    /// </summary>
+    [JsonIgnore]
+    public bool ContainsNan {
+        get {
+            return float.IsNaN(this.x) || float.IsNaN(this.y);
+        }
+    }
 
     /// <summary>
     /// Converts the vector to a string.
     /// </summary>
-    public override string ToString() {
+    public override string ToString()
+    {
         return $"({x},{y})";
     }
 

@@ -50,7 +50,7 @@ internal class AnimationPlayer {
 
     volatile BakedAnimation? preparedAnimation;
 
-    AnimationBehaviour currentBehaviour;
+    LoadedPluginBehaviour currentBehaviour;
     readonly AnimationBehaviour defaultBehaviour;
     volatile BakedAnimation? currentAnimation;
 
@@ -132,9 +132,9 @@ internal class AnimationPlayer {
         }
     }
 
-    public AnimationSettings SetBehaviour(AnimationBehaviour behaviour) {
+    public AnimationSettings SetBehaviour(LoadedPluginBehaviour behaviour) {
         var settings = new AnimationSettings();
-        behaviour.Init(settings);
+        behaviour.Behaviour.Init(settings);
         this.settings = settings;
         this.currentBehaviour = behaviour;
         Scene = ResourceManager.GetScene() ?? PlayerScene.Empty;
@@ -147,7 +147,7 @@ internal class AnimationPlayer {
     public void Bake()
     {
         AnimationBaker baker = new AnimationBaker(ResourceManager);
-        var newbeh = (AnimationBehaviour?)Activator.CreateInstance(currentBehaviour.GetType());
+        var newbeh = (AnimationBehaviour?)Activator.CreateInstance(currentBehaviour.Behaviour.GetType());
         if (newbeh == null)
         {
             throw new Exception("Failed to create new behaviour instance");
@@ -179,7 +179,7 @@ internal class AnimationPlayer {
                 animationDirty = false;
                 mustUpdate = false;
                 // create clean instance
-                var newbeh = (AnimationBehaviour?)Activator.CreateInstance(currentBehaviour.GetType());
+                var newbeh = (AnimationBehaviour?)Activator.CreateInstance(currentBehaviour.Behaviour.GetType());
                 if (newbeh == null)
                 {
                     Debug.Warning("Failed to create new behaviour instance");
@@ -215,12 +215,13 @@ internal class AnimationPlayer {
         }
     }
 
-    public AnimationPlayer(AnimationBehaviour defaultBehaviour, bool useThreads = true)
+    public AnimationPlayer(LoadedPluginBehaviour defaultBehaviour, bool useThreads = true)
     {
-        this.defaultBehaviour = defaultBehaviour;
+        Debug.Assert(!defaultBehaviour.HasLoadCtx);
+        this.defaultBehaviour = defaultBehaviour.Behaviour;
         currentBehaviour = defaultBehaviour;
         var settings = new AnimationSettings();
-        defaultBehaviour.Init(settings);
+        defaultBehaviour.Behaviour.Init(settings);
         this.settings = settings;
 
         SetBehaviour(defaultBehaviour);
@@ -310,7 +311,18 @@ internal class AnimationPlayer {
         trackPlayer.Play();
     }
 
-    public void FileDrop(string filename) {
+    public void Step(bool backwards = false)
+    {
+        if (export == null && currentAnimation != null)
+        {
+            float dt = 1.0f / currentAnimation.FPS;
+            machine.Step(backwards ? -dt : dt);
+            frameChanged = true;
+        }
+    }
+
+    public void FileDrop(string filename)
+    {
         ResourceManager.AddResource(filename);
     }
 

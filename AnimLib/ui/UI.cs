@@ -230,11 +230,26 @@ internal class UserInterface
             }
         }
     }
+
+    public void BindKey(Action action, Keys key)
+    {
+        uiPlatform.PKeyUp += (KeyboardKeyEventArgs args) =>
+        {
+            if (args.Key == key)
+            {
+                action.Invoke();
+            }
+        };
+    }
     
-    public int GetGuiEntityAtPixel(IBackendRenderBuffer pb, Vector2 pixel) {
-        if(pixel.x >= 0.0f && pixel.x < pb.Size.Item1 && pixel.y >= 0.0f && pixel.y < pb.Size.Item2) {
-            return pb.GetEntityAtPixel((int)pixel.x, pb.Size.Item2-(int)pixel.y-1);
-        } else {
+    public int GetGuiEntityAtPixel(IBackendRenderBuffer pb, Vector2 pixel)
+    {
+        if (pixel.x >= 0.0f && pixel.x < pb.Size.Item1 && pixel.y >= 0.0f && pixel.y < pb.Size.Item2)
+        {
+            return pb.GetEntityAtPixel((int)pixel.x, pb.Size.Item2 - (int)pixel.y - 1);
+        }
+        else
+        {
             return -2;
         }
     }

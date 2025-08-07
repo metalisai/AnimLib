@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Linq;
 using System.Threading.Tasks;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace AnimLib;
 
@@ -70,6 +71,9 @@ internal class PlayerControls {
 
     public PlayerControls(RenderState renderer, UserInterface ui, AnimationPlayer player) {
         this.ui = ui;
+
+        ui.BindKey(() => this.player?.Step(false), Keys.Period);
+        ui.BindKey(() => this.player?.Step(true), Keys.Comma);
 
         view = new SceneView(0, 0, 100, 100, 1920, 1080);
         renderer.AddSceneView(view);

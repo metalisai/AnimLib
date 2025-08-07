@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using System;
+using System.Linq;
 
 namespace AnimLib;
 
@@ -98,7 +99,8 @@ public class ShapePath {
     /// <summary>
     /// A (single) path that consists of only straight lines.
     /// </summary>
-    public struct LinearPath {
+    public struct LinearPath
+    {
         /// <summary>
         /// Connected points.
         /// </summary>
@@ -125,6 +127,60 @@ public class ShapePath {
             }
             return builder.Build();
         }
+
+        public float MinDistanceTo(Vector2 pos)
+        {
+            List<(Vector2 s, Vector2 e)> segs = new();
+            for (int i = 1; i < points.Length; i++)
+            {
+                var p1 = points[i - 1];
+                var p2 = points[i];
+                segs.Add((p1, p2));
+            }
+            if (closed)
+            {
+                segs.Add((points[points.Length - 1], points[0]));
+            }
+
+            float minDist = float.MaxValue;
+            foreach (var (s, e) in segs)
+            {
+                float d = (AMath.ClosestPointOnLineSegment(pos, s, e) - pos).Length;
+                if (d < minDist)
+                {
+                    minDist = d;
+                }
+            }
+            return minDist;
+        }
+    }
+
+    public static (float[,], Rect) CalculateSDF(ShapePath path, int maxRes, int padding, int linearizationSteps=1000)
+    {
+        Debug.Assert(maxRes > 2*padding);
+        var skPath = path.ToSKPath();
+        var bounds = skPath.TightBounds;
+        var internalRes = maxRes - 2 * padding;
+        float stepX = bounds.Width / (internalRes - 1);
+        float stepY = bounds.Height / (internalRes - 1);
+        float step = float.Max(stepX, stepY);
+        int resX = (int)MathF.Round(bounds.Width / step);
+        int resY = (int)MathF.Round(bounds.Height / step);
+        var origin = new Vector2(bounds.Left, bounds.Bottom) - new Vector2(padding * step, -padding*step);
+        var linearPath = path.Linearize(linearizationSteps);
+        int sizeX = resX + 2 * padding;
+        int sizeY = resY + 2 * padding;
+        var buf = new float[sizeY, sizeX];
+        Debug.Assert(buf.GetLength(0) <= maxRes && buf.GetLength(1) <= maxRes);
+        for (int y = 0; y < sizeY; y++)
+        for (int x = 0; x < sizeX; x++)
+        {
+            Vector2 curPos = origin + new Vector2(step * x, -step * y);
+            var dist = linearPath.Min(x => x.MinDistanceTo(curPos));
+            bool inside = skPath.Contains(curPos.x, curPos.y);
+            buf[y, x] = inside ? -dist : dist;
+        }
+        return (buf, new Rect(origin.x, origin.y, sizeX * step, sizeY * step));
     }
 
     /// <summary>

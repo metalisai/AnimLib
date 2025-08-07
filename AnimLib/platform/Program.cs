@@ -34,6 +34,30 @@ class SyncCtx : SynchronizationContext
     }
 }
 
+internal class LoadedPluginBehaviour
+{
+    AnimationBehaviour behaviour;
+    // Note the entire purpose of this object is to keep reference to this
+    AssemblyLoadContext? context;
+    private bool hasLoadCtx;
+
+    public AnimationBehaviour Behaviour => behaviour;
+    public bool HasLoadCtx => hasLoadCtx;
+
+    public LoadedPluginBehaviour(AnimationBehaviour behv, AssemblyLoadContext ctx)
+    {
+        this.behaviour = behv;
+        this.context = ctx;
+        this.hasLoadCtx = true;
+    }
+
+    public LoadedPluginBehaviour(AnimationBehaviour behv)
+    {
+        this.behaviour = behv;
+        this.hasLoadCtx = false;
+    }
+}
+
 /// <summary>
 /// The entry point of the application.
 /// </summary>
@@ -45,28 +69,35 @@ internal class Program
     {
         Debug.Log($"Assembly path changed to {newpath}");
         var behaviour = LoadAndWatchBehaviour(newpath, player);
-        if(behaviour != null)
+        if (behaviour != null)
         {
             player.SetBehaviour(behaviour);
         }
     }
 
     [STAThread]
-    static void OnChanged(object sender, FileSystemEventArgs args, AnimationPlayer player) {
-        AnimationBehaviour? plugin = null;
+    static void OnChanged(object sender, FileSystemEventArgs args, AnimationPlayer player)
+    {
+        LoadedPluginBehaviour? plugin = null;
         Debug.Log("Behaviour changed, trying to reload");
-        for(int i = 0; i < 5; i++) {
-            try {
+        for (int i = 0; i < 5; i++)
+        {
+            try
+            {
                 Thread.Sleep(100);
-                plugin = LoadBehaviour(args.FullPath);
+                plugin= LoadBehaviour(args.FullPath);
                 Console.WriteLine("Behaviour changed, reloaded ");
                 break;
-            } catch (Exception e) {
+            }
+            catch (Exception e)
+            {
                 Console.WriteLine("Failed to load behaviour. Reason: " + e.Message);
             }
         }
-        if(plugin != null) {
-            mainCtx.Post(new SendOrPostCallback((o) => { 
+        if (plugin != null)
+        {
+            mainCtx.Post(new SendOrPostCallback((o) =>
+            {
                 player.SetBehaviour(plugin);
                 player.SetAnimationDirty(true);
                 Console.WriteLine("Behaviour set!");
@@ -74,46 +105,65 @@ internal class Program
         }
     }
 
-    internal static AnimationBehaviour? LoadBehaviour(string fullpath) {
+    internal static LoadedPluginBehaviour? LoadBehaviour(string fullpath)
+    {
         System.Console.WriteLine($"Trying to load animation assembly {fullpath}");
         if (watcher == null)
         {
             Debug.Warning($"Behaviour watch not started when loading a behaviour, automatic hot reload will not work.");
         }
         var assemblyLoadContext = new AssemblyLoadContext("asmloadctx", true);
-        try {
-            using (var fs = new FileStream(fullpath, FileMode.Open, FileAccess.Read))
+        assemblyLoadContext.Resolving += (ctx, name) =>
+        {
+            var pluginDir = Path.GetDirectoryName(fullpath);
+            if (pluginDir == null)
             {
-
-                // pdb
-                System.Reflection.Assembly asm;
-                using(var fs2 = new FileStream(fullpath.Replace(".dll", ".pdb"), FileMode.Open, FileAccess.Read)) {
-                    asm = assemblyLoadContext.LoadFromStream(fs, fs2);
-                }
-                Type[] animPlugins = asm.GetExportedTypes().Where(x => !x.IsInterface && !x.IsAbstract && typeof(AnimationBehaviour).IsAssignableFrom(x)).ToArray();
-                if(animPlugins.Length == 0) {
-                    System.Console.WriteLine($"Assembly did not contain animation behaviour");
-                    return null;
-                }
-                var instance = Activator.CreateInstance(animPlugins[0]);
-                //assemblyLoadContext.Unload();
-                if (watcher != null) {
-                    watcher.EnableRaisingEvents = true;
-                }
-                System.Console.WriteLine($"Animation behaviour loaded");
-                return instance as AnimationBehaviour;
+                return null;
             }
-        }
-        catch (Exception e) {
-            Debug.Error($"Exception when loading behaviour: {e}\nUsing empty behaviour");
-            if (watcher != null) {
+            string depPath = Path.Combine(pluginDir, $"{name.Name}.dll");
+            if (File.Exists(depPath))
+            {
+                return ctx.LoadFromAssemblyPath(depPath);
+            }
+            return null;
+        };
+
+        try
+        {
+            using var fs = new FileStream(fullpath, FileMode.Open, FileAccess.Read);
+            // pdb
+            System.Reflection.Assembly asm;
+            using var fs2 = new FileStream(fullpath.Replace(".dll", ".pdb"), FileMode.Open, FileAccess.Read);
+            asm = assemblyLoadContext.LoadFromStream(fs, fs2);
+            Type[] animPlugins = asm.GetExportedTypes().Where(x => !x.IsInterface && !x.IsAbstract && typeof(AnimationBehaviour).IsAssignableFrom(x)).ToArray();
+            if (animPlugins.Length == 0)
+            {
+                Console.WriteLine($"Assembly did not contain animation behaviour");
+                return null;
+            }
+            var instance = Activator.CreateInstance(animPlugins[0]);
+            if (instance == null) return null;
+            //assemblyLoadContext.Unload();
+            if (watcher != null)
+            {
                 watcher.EnableRaisingEvents = true;
             }
-            return new EmptyBehaviour();
+            Console.WriteLine($"Animation behaviour loaded");
+            return new LoadedPluginBehaviour((AnimationBehaviour)instance, assemblyLoadContext);
+        }
+        catch (Exception e)
+        {
+            Debug.Error($"Exception when loading behaviour: {e}\nUsing empty behaviour");
+            if (watcher != null)
+            {
+                watcher.EnableRaisingEvents = true;
+            }
+            return new LoadedPluginBehaviour(new EmptyBehaviour());
         }
     }
 
-    static AnimationBehaviour? LoadAndWatchBehaviour(string fullpath, AnimationPlayer player) {
+    static LoadedPluginBehaviour? LoadAndWatchBehaviour(string fullpath, AnimationPlayer player)
+    {
         if (watcher != null)
         {
             Debug.Log($"Current behaviour watch disposed");
@@ -122,7 +172,8 @@ internal class Program
         }
         Debug.Log($"Starting new behaviour watch on {fullpath}");
         var path = Path.GetDirectoryName(fullpath);
-        if (path == null) { 
+        if (path == null)
+        {
             Debug.Error($"Could not get directory name of {fullpath}");
             return null;
         }
@@ -147,7 +198,7 @@ internal class Program
         var view = new SceneView(0, 0, 100, 100, 1920, 1080);
         renderState.AddSceneView(view);
 
-        AnimationPlayer player = new(new NoProjectBehaviour(), useThreads: false);
+        AnimationPlayer player = new(new LoadedPluginBehaviour(new NoProjectBehaviour()), useThreads: false);
 
         player.ResourceManager.OnAssemblyChanged += (path) => AssemblyPathChanged(path, player);
 
@@ -176,7 +227,7 @@ internal class Program
             }
         };
         renderState.OnPostRender += player.OnEndRenderScene;
-        
+
 
         if (projectPath != null)
         {
@@ -188,7 +239,7 @@ internal class Program
 
         //player.Seek(0.0);
         player.Bake();
-        var filename = "animation-"+DateTime.Now.ToString("yyyy_MM_dd_HHmmss")+".mp4";
+        var filename = "animation-" + DateTime.Now.ToString("yyyy_MM_dd_HHmmss") + ".mp4";
         player.ExportAnimation(filename, 0.0, null);
         player.Play();
 
@@ -209,7 +260,7 @@ internal class Program
         var renderState = new RenderState(platform);
         var ui = new UserInterface(platform, renderState);
 
-        AnimationPlayer player = new(new NoProjectBehaviour());
+        AnimationPlayer player = new(new LoadedPluginBehaviour(new NoProjectBehaviour()));
         PlayerControls pctrl = new(renderState, ui, player);
 
 
@@ -324,11 +375,11 @@ internal class Program
     static void Main(string[] args)
     {
         var skiaSoftwareOption = new Option<bool>(
-            "--skia-software", 
+            "--skia-software",
             "Use SkiaSharp software rendering"
         );
         var projectOption = new Option<string>(
-            "--project", 
+            "--project",
             "Project file to load"
         );
         var rootCommand = new RootCommand("Animation editor");
@@ -336,14 +387,15 @@ internal class Program
         skiaSoftwareOption.IsRequired = false;
         rootCommand.AddOption(projectOption);
         projectOption.IsRequired = false;
-        rootCommand.SetHandler( (useSw, project) => {
-                Debug.Log($"Using SkiaSharp software rendering: {useSw}");
-                LaunchEditor(useSw, project);
-            }, skiaSoftwareOption, projectOption
+        rootCommand.SetHandler((useSw, project) =>
+        {
+            Debug.Log($"Using SkiaSharp software rendering: {useSw}");
+            LaunchEditor(useSw, project);
+        }, skiaSoftwareOption, projectOption
         );
 
         var projectOption2 = new Option<string>(
-            "--project", 
+            "--project",
             "Project file to load"
         );
         projectOption2.IsRequired = true;
@@ -361,7 +413,8 @@ internal class Program
         Debug.Log($"Root command returned {code}. Exiting");
     }
 
-    static void ExHandler(object sender, UnobservedTaskExceptionEventArgs args) {
+    static void ExHandler(object sender, UnobservedTaskExceptionEventArgs args)
+    {
         throw args.Exception;
     }
 }
