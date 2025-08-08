@@ -103,8 +103,8 @@ public class Animator {
     /// <summary>
     /// Shape a string with the given font and size. Returns a list of shapes and the characters.
     /// </summary>
-    public List<(Shape s, char c)> ShapeText(string texts, Vector2 pos, int size, string? font = null) {
-        return textPlacement.PlaceTextAsShapes(texts, pos, size, font);
+    public List<(Shape s, char c)> ShapeText(string texts, Vector2 pos, int size, string? font = null, TextHorizontalAlignment halign = TextHorizontalAlignment.Left) {
+        return textPlacement.PlaceTextAsShapes(texts, pos, size, font, halign);
     }
 
     /// <summary>

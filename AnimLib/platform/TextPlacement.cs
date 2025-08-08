@@ -91,7 +91,7 @@ internal class TextPlacement : System.IDisposable {
         return ret;
     }
 
-    List<(Shape s, char c)> PlaceTextAsShapes(Buffer buf, string original, Vector2 origin, float size, ref LoadedFont lf) {
+    List<(Shape s, char c)> PlaceTextAsShapes(Buffer buf, string original, Vector2 origin, float size, ref LoadedFont lf, TextHorizontalAlignment halign = TextHorizontalAlignment.Left) {
         var ret = new List<(Shape, char)>();
         var len = buf.Length;
         if(len <= 0) {
@@ -104,7 +104,9 @@ internal class TextPlacement : System.IDisposable {
 
         float x = origin.x;
         float y = origin.y;
-        for (int i = 0; i < len; i++) {
+        var shapes = new Shape[len];
+        for (int i = 0; i < len; i++)
+        {
             float posx = x + pos[i].XOffset;
             float posy = y + pos[i].YOffset;
             x += pos[i].XAdvance;
@@ -112,7 +114,8 @@ internal class TextPlacement : System.IDisposable {
             var cluster = info[i].Cluster;
             char cp = (char)info[i].Codepoint;
             var key = new TPGlyphKey(cp, size, lf.name);
-            if(!CachedGlyphPaths.TryGetValue(key, out var path)) {
+            if (!CachedGlyphPaths.TryGetValue(key, out var path))
+            {
                 path = lf.skFont.GetGlyphPath((ushort)info[i].Codepoint);
                 path.Transform(mirrorMat);
                 CachedGlyphPaths.Add(key, path);
@@ -122,9 +125,21 @@ internal class TextPlacement : System.IDisposable {
             var shape = new Shape(sp);
             shape.Position = new Vector2(posx, posy);
             shape.Mode = ShapeMode.Filled;
+            shapes[i] = shape;
             char c = original[(int)cluster];
             ret.Add((shape, c));
         }
+        float hoffset = halign switch
+        {
+            TextHorizontalAlignment.Center => -0.5f*x,
+            TextHorizontalAlignment.Right => -x,
+            _ => 0.0f,
+        };
+        foreach (var shape in shapes)
+        {
+            shape.Position = shape.Position + new Vector2(hoffset, 0.0f);
+        }
+
         return ret;
     }
 
@@ -219,7 +234,7 @@ internal class TextPlacement : System.IDisposable {
         }
     }
 
-    public List<(Shape, char c)> PlaceTextAsShapes(string text, Vector2 origin, int size, string? font = null) {
+    public List<(Shape, char c)> PlaceTextAsShapes(string text, Vector2 origin, int size, string? font = null, TextHorizontalAlignment halign = TextHorizontalAlignment.Left) {
         var buf = new Buffer();
         buf.AddUtf8(text);
         buf.GuessSegmentProperties();
@@ -230,7 +245,7 @@ internal class TextPlacement : System.IDisposable {
         if(LoadedFonts.TryGetValue(fontname, out lf)) {
             lf.font.SetScale(size, size);
             lf.font.Shape(buf);
-            var textb = PlaceTextAsShapes(buf, text, origin, size, ref lf);
+            var textb = PlaceTextAsShapes(buf, text, origin, size, ref lf, halign);
             buf.Dispose();
             return textb;
         } else {

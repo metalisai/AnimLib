@@ -42,6 +42,7 @@ public class Text2D : EntityCollection2D, IColored
     internal string? font;
     internal Color color;
     internal string text;
+    internal TextHorizontalAlignment halign;
 
     /// <summary>
     /// Creates a new text entity with the given text, size, font and color.
@@ -80,7 +81,7 @@ public class Text2D : EntityCollection2D, IColored
         {
             DestroyChild(g.s);
         }
-        var placedShapes = Animator.Current?.ShapeText(Text, Vector2.ZERO, (int)Size, Font) ?? new List<(Shape s, char c)>();
+        var placedShapes = Animator.Current?.ShapeText(Text, Vector2.ZERO, (int)Size, Font, halign) ?? new List<(Shape s, char c)>();
         foreach (var g in placedShapes)
         {
             g.s.Color = Color;
@@ -204,14 +205,10 @@ public class Text2D : EntityCollection2D, IColored
     /// </summary>
     public TextHorizontalAlignment HAlign
     {
-        /*get {
-            return ((Text2DState)state).halign;
-        }*/
         set
         {
-            // TODO: retypeset glyphs
-            /*World.current.SetProperty(this, "HAlign", value, ((Text2DState)state).halign);
-            ((Text2DState)state).halign = value;*/
+            halign = value;
+            ShapeText();
         }
     }
 
