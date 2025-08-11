@@ -133,8 +133,16 @@ internal class Program
             using var fs = new FileStream(fullpath, FileMode.Open, FileAccess.Read);
             // pdb
             System.Reflection.Assembly asm;
-            using var fs2 = new FileStream(fullpath.Replace(".dll", ".pdb"), FileMode.Open, FileAccess.Read);
-            asm = assemblyLoadContext.LoadFromStream(fs, fs2);
+            var pdbFile = fullpath.Replace(".dll", ".pdb");
+            if (File.Exists(pdbFile))
+            {
+                using var fs2 = new FileStream(pdbFile, FileMode.Open, FileAccess.Read);
+                asm = assemblyLoadContext.LoadFromStream(fs, fs2);
+            }
+            else
+            {
+                asm = assemblyLoadContext.LoadFromStream(fs, null);
+            }
             Type[] animPlugins = asm.GetExportedTypes().Where(x => !x.IsInterface && !x.IsAbstract && typeof(AnimationBehaviour).IsAssignableFrom(x)).ToArray();
             if (animPlugins.Length == 0)
             {

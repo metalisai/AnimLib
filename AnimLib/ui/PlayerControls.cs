@@ -500,7 +500,7 @@ internal class PlayerControls {
 
         if (currentError != null)
         {
-            var wf = Imgui.ImGuiWindowFlags.AlwaysAutoResize;
+            var wf = Imgui.ImGuiWindowFlags.AlwaysAutoResize | Imgui.ImGuiWindowFlags.AlwaysHorizontalScrollbar;
             bool open = true;
             Imgui.Begin("Animation error", ref open, wf);
             Imgui.Text(currentError);
