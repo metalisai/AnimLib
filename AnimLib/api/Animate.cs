@@ -126,6 +126,17 @@ public static class Animate
         return InterpT(ent.ScaleProperty, newScale, duration, curve);
     }
 
+    public static Task Rotate(this VisualEntity2D ent, float targetRotation, double duration, EaseType curve = EaseType.EaseInOut)
+    {
+        float startAngle = ent.Rotation;
+        return InterpF(ent.RotationProperty, (t) =>
+        {
+            var d = (targetRotation - startAngle + MathF.PI) % (2 * MathF.PI) - MathF.PI;
+            d = d != -MathF.PI ? d : MathF.PI;
+            return startAngle + d * t;
+        }, duration);
+    }
+
     /// <summary>
     /// Interpolate a float with given interpolation curve.
     /// </summary>
@@ -414,8 +425,9 @@ public static class Animate
     /// <param name="text">The text to create.</param>
     /// <param name="mode">The creation mode.</param>
     /// <param name="charDelay">The delay between creating each character.</param>
-    public static async Task CreateText(Text2D text, TextCreationMode mode = TextCreationMode.PathAndFade, float charDelay = 0.1f)
+    public static async Task CreateText(Text2D text, TextCreationMode mode = TextCreationMode.PathAndFade, float charDelay = 0.1f, Color? outline = null)
     {
+        var outlineColor = outline ?? new Color(0.0f, 0.0f, 0.0f, 1.0f);
         var last = Task.CompletedTask;
         switch (mode)
         {
@@ -442,7 +454,7 @@ public static class Animate
             case TextCreationMode.PathAndFade:
                 foreach (var c in text.CurrentShapes)
                 {
-                    c.s.ContourColor = AnimLib.Color.BLACK;
+                    c.s.ContourColor = text.Color;
                     c.s.Mode = ShapeMode.Contour;
                     c.s.Trim = (0.0f, 0.0f);
                 }
@@ -457,8 +469,10 @@ public static class Animate
                         await Animate.Color(c.s, c.s.Color.WithA(0), c.s.Color.WithA(255), 0.5f);
                         c.s.Mode = ShapeMode.FilledContour;
                     }
-                    _ = AnimateCreation(0.0f, 1.0f);
-                    await AnimLib.Time.WaitSeconds(charDelay);
+                    Task cr = AnimateCreation(0.0f, 1.0f);
+                    Task nextChar = AnimLib.Time.WaitSeconds(charDelay);
+                    last = Task.WhenAll([cr, nextChar]);
+                    await nextChar;
                 }
                 await last;
                 break;

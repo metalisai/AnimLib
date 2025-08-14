@@ -350,11 +350,23 @@ internal class AnimationPlayer {
         New,
         Still,
     }
+    
+    public (int minutes, int seconds) CurrentTime
+    {
+        get
+        {
+            var curSeconds = machine.GetProgress() * machine.GetPlaybackTime();
+            var minutes = (int)Math.Floor(curSeconds / 60.0f);
+            var seconds = (int)Math.Floor(curSeconds % 60.0f);
+            return (minutes, seconds);
+        }
+    }
 
-    public FrameStatus NextFrame(double dt, out WorldSnapshot? ss) {
+    public FrameStatus NextFrame(double dt, out WorldSnapshot? ss)
+    {
         frameId++;
 
-        if(!haveProject)
+        if (!haveProject)
         {
             ss = null;
             return FrameStatus.None;
@@ -363,28 +375,36 @@ internal class AnimationPlayer {
         // Serialize only if nothing has changed for 15 frames
         // *otherwise we'd be serializing every grame when picking colors etc)
         bool settled = (frameId - setDirtyAt) > 3;
-        if(sceneDirty && settled) {
+        if (sceneDirty && settled)
+        {
             SerializeHandles();
             sceneDirty = false;
         }
 
         var prep = preparedAnimation;
-        if(prep != null) { // new animation set
+        if (prep != null)
+        { // new animation set
             var progress = machine.HasProgram ? machine.GetProgress() : 0.0;
             preparedAnimation = null;
 
-            if(OnAnimationBaked != null) {
+            if (OnAnimationBaked != null)
+            {
                 OnAnimationBaked();
             }
-            if(prep.error != null) {
-                if(OnError != null) {
+            if (prep.error != null)
+            {
+                if (OnError != null)
+                {
                     OnError(prep.error.Value.msg, prep.error.Value.stackTrace);
                 }
-                if (currentAnimation == null) {
+                if (currentAnimation == null)
+                {
                     currentAnimation = prep;
                     Performance.CommandCount = prep.Commands.Length;
-                }                
-            } else {
+                }
+            }
+            else
+            {
                 currentAnimation = prep;
                 Performance.CommandCount = prep.Commands.Length;
                 Performance.Commands = prep.Commands.ToArray();
@@ -392,22 +412,32 @@ internal class AnimationPlayer {
             }
 
             DeserializeHandles(); // Load stored handles
-            foreach(var handle in prep.Handles2D) {
+            foreach (var handle in prep.Handles2D)
+            {
                 Vector2 pos;
-                lock(handleLock) {
-                    if(!VectorHandleMap.TryGetValue(handle.Identifier, out pos)) {
+                lock (handleLock)
+                {
+                    if (!VectorHandleMap.TryGetValue(handle.Identifier, out pos))
+                    {
                         VectorHandleMap.Add(handle.Identifier, handle.Position);
-                    } else {
+                    }
+                    else
+                    {
                         VectorHandleMap[handle.Identifier] = handle.Position;
                     }
                 }
             }
-            foreach(var handle in prep.Handles3D) {
+            foreach (var handle in prep.Handles3D)
+            {
                 Vector3 pos;
-                lock(handleLock) {
-                    if(!VectorHandleMap3D.TryGetValue(handle.Identifier, out pos)) {
+                lock (handleLock)
+                {
+                    if (!VectorHandleMap3D.TryGetValue(handle.Identifier, out pos))
+                    {
                         VectorHandleMap3D.Add(handle.Identifier, handle.Position);
-                    } else {
+                    }
+                    else
+                    {
                         VectorHandleMap3D[handle.Identifier] = handle.Position;
                     }
                 }
@@ -419,18 +449,22 @@ internal class AnimationPlayer {
             machine.Seek(progress);
         }
 
-        if(!machine.HasProgram) {
+        if (!machine.HasProgram)
+        {
             ss = null;
             return FrameStatus.None;
         }
 
-        if(export == null) {
+        if (export == null)
+        {
             var ret = FrameStatus.Still;
             ss = null;
-            if(!paused) {
+            if (!paused)
+            {
                 paused = machine.Step(dt);
             }
-            if(!paused || frameChanged) {
+            if (!paused || frameChanged)
+            {
                 ret = FrameStatus.New;
                 ss = machine.GetWorldSnapshot();
                 frameChanged = false;
@@ -438,7 +472,9 @@ internal class AnimationPlayer {
             var progress = machine.GetProgress();
             OnProgressUpdate?.Invoke(this, (float)progress);
             return ret;
-        } else {
+        }
+        else
+        {
             // NOTE: frame is captured in OnEndRenderScene
             var endTime = Math.Min(export.endTime, machine.GetEndTime());
             export.currentProgress = machine.GetPlaybackTime();
@@ -449,7 +485,8 @@ internal class AnimationPlayer {
             {
                 export.exporter.Stop();
                 var sound = currentAnimation?.SoundTrack;
-                if (sound != null) {
+                if (sound != null)
+                {
                     var lengthSeconds = machine.GetPlaybackTime();
                     var count = Math.Min(sound.samples[0].Length, (int)Math.Round(lengthSeconds * sound.sampleRate));
                     var samples = sound.samples[0].Take(count).ToArray();

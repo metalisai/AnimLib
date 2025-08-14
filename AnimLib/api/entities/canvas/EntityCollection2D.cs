@@ -65,7 +65,16 @@ public abstract class EntityCollection2D : VisualEntity2D {
     public void Disband()
     {
         foreach(var e in entities) {
-            if (e.Created) {
+            if (e.Created)
+            {
+                // keep entities in same place in world space (they wont be attached to parent anymore)
+                switch (e)
+                {
+                    case VisualEntity2D e2d:
+                        e2d.Position = this.Position + e2d.Position;
+                        e2d.Anchor = this.Anchor;
+                        break;
+                }
                 World.current.DetachChild(this, e);
             }
         }

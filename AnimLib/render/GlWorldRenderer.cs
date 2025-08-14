@@ -181,12 +181,12 @@ internal partial class GlWorldRenderer : IRenderer
                         {
                             throw new Exception("Color.r is not float, VertexAttribPointer expects float!");
                         }
-
+#endif
                         if (m.Shader == BuiltinShader.QuadShader)
                         {
                             m.Geometry.edgeCoordinates = quadTex;
                         }
-#endif
+
                         if (m.Geometry.edgeCoordinates != null && m.Geometry.edgeCoordinates.Length > 0)
                         {
                             GL.EnableVertexAttribArray(2);

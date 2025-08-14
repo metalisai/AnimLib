@@ -473,7 +473,7 @@ void main() {
     float ddist = 1.0 - 3.0*length(vec2(dFdx(dist),dFdy(dist)));
     float mul = smoothstep(0.49*ddist, 0.49, dist);
 
-    outColor = mix(vec4(outColorRGB*alpha, alpha), _Outline, mul);
+    outColor = mix(vec4(outColorRGB*alpha, alpha), vec4(_Outline.rgb*alpha, alpha), mul);
     outEntityId = _EntityId;
 }";
 
@@ -540,7 +540,7 @@ void main() {
     float edge = smoothstep(edgeLocation-dd, edgeLocation, d);
     vec3 outColorRGB = _Color.rgb*g_color.rgb;
     float alpha = _Color.a*g_color.a;
-    outColor = mix(vec4(outColorRGB*alpha, alpha), vec4(_Outline.rgb, 1.0), 1.0-edge);
+    outColor = mix(vec4(outColorRGB*alpha, alpha), vec4(_Outline.rgb*alpha, alpha), 1.0-edge);
     outEntityId = _EntityId;
 }";
 

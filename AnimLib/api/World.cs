@@ -496,6 +496,7 @@ public class World
             Debug.Error("Parent does not have any children");
             return;
         }
+        child.ParentId.Value = -1;
         child.ManagedLifetime = false;
         _children[parent.Id].Remove(child);
         _parents.Remove(child.Id);

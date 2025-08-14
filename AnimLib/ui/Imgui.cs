@@ -232,7 +232,7 @@ internal class Imgui {
     public static extern void imgui_animlib_set_font_texture(IntPtr ctx, int texture);
     //EXPORT IRect imgui_animlib_scene_window(ImGuiAnimlibState* state, double view_aspect, int texture_handle);
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
-    public static extern IRect imgui_animlib_scene_window(IntPtr ctx, double view_aspect, int texture_handle, bool playing, float cursor, float cursosr_max);
+    public static extern IRect imgui_animlib_scene_window(IntPtr ctx, double view_aspect, int texture_handle, bool playing, float cursor, float cursosr_max, int minutes, int seconds);
     //EXPORT void imgui_animlib_set_cb(ImGuiAnimlibState* state, AnimlibCallbackId cb_id, void* cb);
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
     static extern void imgui_animlib_set_cb(IntPtr ctx, AnimlibCallbackId cb_id, IntPtr cb);
@@ -511,8 +511,8 @@ internal class Imgui {
         imgui_animlib_begin_frame(ctxHandle);
     }
 
-    public IRect SceneWindow(double viewAspect, int textureHandle, bool playing, float cursor, float cursor_max) {
-        return imgui_animlib_scene_window(ctxHandle, viewAspect, textureHandle, playing, cursor, cursor_max);
+    public IRect SceneWindow(double viewAspect, int textureHandle, bool playing, float cursor, float cursor_max, int minutes, int seconds) {
+        return imgui_animlib_scene_window(ctxHandle, viewAspect, textureHandle, playing, cursor, cursor_max, minutes, seconds);
     }
 
     public Imgui.DrawList Render() {

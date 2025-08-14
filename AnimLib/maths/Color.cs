@@ -90,11 +90,17 @@ public struct Color {
         this.a = v.w;
     }
 
+    public Color()
+    {
+        
+    }
+
     /// <summary>
     /// Overload to multiply a color by a scalar. Component-wise.
     /// </summary>
-    public static Color operator*(float l, Color r) {
-        return new Color(l*r.r, l*r.g, l*r.b, l*r.a);
+    public static Color operator *(float l, Color r)
+    {
+        return new Color(l * r.r, l * r.g, l * r.b, l * r.a);
     }
 
     /// <summary>

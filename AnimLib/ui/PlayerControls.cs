@@ -804,7 +804,8 @@ internal class PlayerControls {
     }
 
     public void DoInterface() {
-        this.ui.imgui.SceneWindow((double)view.BufferWidth/view.BufferHeight, view.TextureHandle, this.playing, this.progress, 1.0f);
+        var (min, sec) = player.CurrentTime;
+        this.ui.imgui.SceneWindow((double)view.BufferWidth/view.BufferHeight, view.TextureHandle, this.playing, this.progress, 1.0f, min, sec);
 
         if(_showPerformance) {
             ShowPerf();
