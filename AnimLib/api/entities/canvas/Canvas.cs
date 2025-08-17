@@ -2,6 +2,12 @@ using System;
 
 namespace AnimLib;
 
+public enum CanvasUnits
+{
+    Pixels,
+    Points,
+}
+
 [GenerateDynProperties(forType: typeof(Canvas))]
 internal class CanvasState : EntityState3D
 {
@@ -26,6 +32,10 @@ internal class CanvasState : EntityState3D
     public string name;
     [Dyn]
     public CanvasEffect[] effects = [];
+    [Dyn]
+    public CanvasUnits units = CanvasUnits.Pixels;
+    [Dyn(onSet: ["CheckEntities"])]
+    public int dpi = 96;
 
     public CanvasState(string name)
     {
@@ -109,19 +119,23 @@ internal class CanvasState : EntityState3D
 /// <summary>
 /// A canvas is a 2D plane in 3D space. It is defined by a center, a normal, an up vector, and a size. 2D objects are always created on a canvas.
 /// </summary>
-public partial class Canvas : VisualEntity3D {
+public partial class Canvas : VisualEntity3D
+{
     [ThreadStatic]
     static Canvas? _default;
 
     /// <summary>
     /// The default canvas. Uses screen coordinates and is rendered directly on screen.
     /// </summary>
-    public static Canvas? Default {
-        get {
+    public static Canvas? Default
+    {
+        get
+        {
             return _default;
         }
 
-        internal set {
+        internal set
+        {
             _default = value;
         }
     }
@@ -129,8 +143,9 @@ public partial class Canvas : VisualEntity3D {
     /// <summary>
     /// Add a post effect to this canvas.
     /// </summary>
-    public void AddEffect(CanvasEffect effect) {
-        var newArr = new CanvasEffect[Effects.Length+1];
+    public void AddEffect(CanvasEffect effect)
+    {
+        var newArr = new CanvasEffect[Effects.Length + 1];
         Array.Copy(Effects, newArr, Effects.Length);
         newArr[Effects.Length] = effect;
         Effects = newArr;
@@ -139,7 +154,8 @@ public partial class Canvas : VisualEntity3D {
     /// <summary>
     /// Remove all post effects from this canvas.
     /// </summary>
-    public void ClearEffects() {
+    public void ClearEffects()
+    {
         Effects = [];
     }
 
@@ -153,7 +169,8 @@ public partial class Canvas : VisualEntity3D {
     /// <summary>
     /// Create a canvas with the given name given a ortho camera.
     /// </summary>
-    public Canvas(string name, OrthoCamera cam) : base() {
+    public Canvas(string name, OrthoCamera cam) : base()
+    {
         Width = cam.Width;
         Height = cam.Height;
         Center = Vector3.ZERO;
@@ -166,7 +183,8 @@ public partial class Canvas : VisualEntity3D {
     /// Create a canvas.
     /// identity - x is width, y is height, z is flat/depth
     /// </summary>
-    public Canvas(string name, Vector3 center, Vector3 up, Vector3 normal, Vector2 size) : base(){
+    public Canvas(string name, Vector3 center, Vector3 up, Vector3 normal, Vector2 size) : base()
+    {
         Center = center;
         Up = up;
         Normal = normal;
@@ -177,13 +195,28 @@ public partial class Canvas : VisualEntity3D {
     /// <summary>
     /// Create a new 2D canvas.
     /// </summary>
-    public Canvas(string name, Vector2 center, Vector2 size) : base() {
+    public Canvas(string name, Vector2 center, Vector2 size) : base()
+    {
         Center = new Vector3(center.x, center.y, 0.0f);
         Up = Vector3.UP;
         Normal = -Vector3.FORWARD;
         Width = size.x;
         Height = size.y;
         Is2d = true;
+    }
+
+    void CheckEntities()
+    {
+#if DEBUG
+        var ents = World.current.GetAllEntities();
+        foreach (var ent in ents)
+        {
+            if (ent is VisualEntity2D e2d)
+            {
+                Debug.Assert(e2d.CanvasId != this.Id, "Text needs to be reshaped after DPI is changed, which isn't done. Currently DPI can only be changed before creating any 2D entities.");
+            }
+        }
+#endif
     }
 
     /// <summary>

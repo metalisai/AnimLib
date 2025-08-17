@@ -212,12 +212,15 @@ internal class TextPlacement : System.IDisposable {
         activeFont = fontName;
     }
 
-    public List<(PlacedGlyph,SKPath)> PlaceText(string text, Vector2 origin, int size, string? font = null) {
+    public List<(PlacedGlyph, SKPath)> PlaceText(string text, Vector2 origin, int size, string? font = null) {
         // write line
         var buf = new Buffer();
         buf.AddUtf8(text);
         buf.GuessSegmentProperties();
-        size = size * 96 / 72; // 96 DPI ? idk
+        if (Canvas.Default!.Units == CanvasUnits.Pixels)
+        {
+            size = size * Canvas.Default!.Dpi / 72; // 96 DPI ? idk
+        }
         string fontname = font ?? activeFont;
         fontname = fontname.ToLower();
         LoadedFont lf;
@@ -238,7 +241,10 @@ internal class TextPlacement : System.IDisposable {
         var buf = new Buffer();
         buf.AddUtf8(text);
         buf.GuessSegmentProperties();
-        size = size * 96 / 72; // 96 DPI ? idk
+        if (Canvas.Default!.Units == CanvasUnits.Pixels)
+        {
+            size = size * Canvas.Default!.Dpi / 72; // 96 DPI ? idk
+        }
         string fontname = font ?? activeFont;
         fontname = fontname.ToLower();
         LoadedFont lf;

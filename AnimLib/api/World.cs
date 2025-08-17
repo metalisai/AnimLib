@@ -380,6 +380,11 @@ public class World
         _captureStack.Pop();
     }
 
+    public VisualEntity[] GetAllEntities()
+    {
+        return _entities.Values.ToArray();
+    }
+
     internal void BeginEvaluator(DynProperty prop, Func<Dictionary<DynPropertyId, object?>, object?> evaluator)
     {
         var id = prop.Id;

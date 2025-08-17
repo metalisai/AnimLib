@@ -206,6 +206,15 @@ public struct M3x3 {
         return ret;
     }
 
+    public static M3x3 Scale(float scaleX, float scaleY, float scaleZ)
+    {
+        M3x3 ret = new();
+        ret.m11 = scaleX;
+        ret.m22 = scaleY;
+        ret.m33 = scaleZ;
+        return ret;
+    }
+
     /// <summary>
     /// Create a matrix that represents 2D translation, rotation and scaling.
     /// </summary>
@@ -213,11 +222,12 @@ public struct M3x3 {
     /// <param name="r">The rotation in radians.</param>
     /// <param name="s">The scaling vector.</param>
     /// <returns>A matrix that represents 2D translation, rotation and scaling.</returns>
-    public static M3x3 TRS_2D(Vector2 t, float r, Vector2 s) {
+    public static M3x3 TRS_2D(Vector2 t, float r, Vector2 s)
+    {
         M3x3 tr, rot, sc;
 
         // TODO: simplify
-        
+
         tr.m11 = 1.0f; tr.m12 = 0.0f; tr.m13 = t.x;
         tr.m21 = 0.0f; tr.m22 = 1.0f; tr.m23 = t.y;
         tr.m31 = 0.0f; tr.m32 = 0.0f; tr.m33 = 1.0f;
@@ -226,11 +236,11 @@ public struct M3x3 {
         rot.m21 = MathF.Sin(r); rot.m22 = MathF.Cos(r); rot.m23 = 0.0f;
         rot.m31 = 0.0f; rot.m32 = 0.0f; rot.m33 = 1.0f;
 
-        sc.m11 = s.x;  sc.m12 = 0.0f; sc.m13 = 0.0f;
-        sc.m21 = 0.0f; sc.m22 = s.y;  sc.m23 = 0.0f;
+        sc.m11 = s.x; sc.m12 = 0.0f; sc.m13 = 0.0f;
+        sc.m21 = 0.0f; sc.m22 = s.y; sc.m23 = 0.0f;
         sc.m31 = 0.0f; sc.m32 = 0.0f; sc.m33 = 1.0f;
 
-        return tr*rot*sc;
+        return tr * rot * sc;
     }
 
     /// <summary>

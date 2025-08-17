@@ -235,12 +235,13 @@ internal partial class SkiaRenderer : IDisposable
             clipRegion = new SKRect(0, 0, bufferSize.w, bufferSize.h);
             return mat;
         } else {
+            SKMatrix mat2d;
             float tX = canvas.center.x;
             float tY = canvas.center.y;
-            var mat2d = new SKMatrix(1.0f, 0.0f, tX, 0.0f, 1.0f, tY, 0.0f, 0.0f, 1.0f);
-            float oX = bufferSize.w/2.0f + canvas.center.x;
-            float oY = bufferSize.h/2.0f + canvas.center.y;
-            clipRegion = new SKRect(oX - canvas.width/2.0f, oY - canvas.height/2.0f, oX + canvas.width/2.0f, oY + canvas.height/2.0f);
+            mat2d = new SKMatrix(1.0f, 0.0f, tX, 0.0f, 1.0f, tY, 0.0f, 0.0f, 1.0f);
+            float oX = bufferSize.w / 2.0f + canvas.center.x;
+            float oY = bufferSize.h / 2.0f + canvas.center.y;
+            clipRegion = new SKRect(oX - canvas.width / 2.0f, oY - canvas.height / 2.0f, oX + canvas.width / 2.0f, oY + canvas.height / 2.0f);
             return mat2d;
         }
     }
@@ -265,7 +266,8 @@ internal partial class SkiaRenderer : IDisposable
         } else {
             origin = Vector2.ZERO;
         }
-        var translation = origin + ent.position;
+        float scale = rc.units == CanvasUnits.Pixels ? 1.0f : rc.dpi / 72.0f;
+        var translation = origin + ent.position * scale;
         var trs = M3x3.TRS_2D(translation, ent.rotation, ent.scale);
         if(parentMat != null) {
             trs =parentMat.Value * trs;
@@ -275,9 +277,10 @@ internal partial class SkiaRenderer : IDisposable
 
     SKMatrix GetLocalTransform(EntityState2D ent, CanvasState rc, Rect aabb, EntityState2D[] entities, (float, float) bufferSize) {
         // TODO: AABB center and (0,0) might be misaligned?
+        float scale = rc.units == CanvasUnits.Pixels ? 1.0f : rc.dpi / 72.0f;
         var changePivot = M3x3.Translate_2D(-(new Vector2(aabb.width, aabb.height)*ent.pivot));
         var trs = getModelMatrix(ent, rc, entities, bufferSize);
-        var lt = trs * changePivot;
+        var lt = changePivot * trs * M3x3.Scale(scale, scale, 1.0f);
         //lt.m22 *= -1.0f;
         var ret = lt.ToSKMatrix();
         if (ent.homography != null)
