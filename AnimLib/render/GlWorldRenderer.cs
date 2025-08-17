@@ -530,7 +530,11 @@ internal partial class GlWorldRenderer : IRenderer
         // TODO: this is wrong!
         renderPlatform.Skia.SetBuffer(buf);
         Debug.TLog($"Created new DepthPeelRenderBuffer with size {w}x{h}");
-
+        if (renderBuffers.ContainsKey(id))
+        {
+            renderBuffers[id].Dispose();
+            renderBuffers.Remove(id);
+        }
         renderBuffers.Add(id, buf);
         return buf;
     }
