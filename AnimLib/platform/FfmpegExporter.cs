@@ -22,17 +22,26 @@ internal class FfmpegExporter {
     }
 
     public void Start(string filename, int width, int height, int framerate, int crf = 15, FrameColorSpace colorSpace = FrameColorSpace.sRGB, Texture2D.TextureFormat format = Texture2D.TextureFormat.RGB8) {
-        string outputOpt = "-c:v libvpx-vp9 -lossless 1";
+        // most players seem to choke on this :/
+        //string outputOpt = "-c:v libvpx-vp9 -lossless 1";
+        string outputOpt = "-c:v ffv1";
         string vfOpt = "vflip";
         string pixFmt = "";
 
-        if(format == Texture2D.TextureFormat.RGB8) {
+        filename = filename.Replace(".mp4", ".mkv");
+
+        if (format == Texture2D.TextureFormat.RGB8)
+        {
             pixFmt = "rgb24";
             Debug.Log("Ffmpeg using 8 bit color depth.");
-        } else if(format == Texture2D.TextureFormat.RGB16) {
+        }
+        else if (format == Texture2D.TextureFormat.RGB16)
+        {
             pixFmt = "rgb48le";
             Debug.Log("Ffmpeg using 16 bit color depth.");
-        } else {
+        }
+        else
+        {
             throw new Exception("Only RGB8 or RGB16 supported");
         }
 
@@ -140,7 +149,9 @@ internal class FfmpegExporter {
     }
 
     public void AddAudio(string videofile, short[] samples, int sampleRate) {
-        var opt = $"-y -i {videofile} -f s16le -i - -c:v copy {videofile + "-audio.mp4"}";
+        videofile = videofile.Replace(".mp4", ".mkv");
+        var opt = $"-y -i {videofile} -f s16le -i - -c:v copy {videofile + "-audio.mkv"}";
+        //var opt = $"-y -i {videofile} -f s16le -i - -c:v copy {videofile + "-audio.mp4"}";
         Debug.Log($"Audio command: {"ffmpeg "+ opt}");
 
         var info = new ProcessStartInfo("ffmpeg", opt);
