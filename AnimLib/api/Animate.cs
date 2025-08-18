@@ -5,6 +5,8 @@ using System.Numerics;
 using System.Collections.Generic;
 
 using EaseType = AnimLib.Ease.EaseType;
+using System.Collections.Immutable;
+using System.Linq;
 
 namespace AnimLib;
 
@@ -227,6 +229,18 @@ public static class Animate
             await AnimLib.Time.WaitFrame();
         }
         action.Invoke(end);
+    }
+
+    public static async Task InterpT(DynProperty<float> prop, float end, double duration, EaseType curve = EaseType.EaseInOut)
+    {
+        float startD = prop.Value;
+        float endD = end;
+        double endTime = AnimLib.Time.T + duration;
+        await InterpF(prop, time =>
+        {
+            var t = Ease.Evaluate(time, curve);
+            return startD + (endD - startD) * t;
+        }, duration);
     }
 
     public static async Task InterpT<T>(DynProperty<T> prop, T end, double duration, EaseType curve = EaseType.EaseInOut)
