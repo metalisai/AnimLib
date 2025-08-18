@@ -215,7 +215,8 @@ internal class WorldMachine {
         foreach (var c in _canvases.OrderBy(x => _dynEntities[x.Key].SortKey.Value))
         {
             var canvas = (Canvas)_dynEntities[c.Key];
-            var effects = canvas.Effects.Select(x =>
+            var canvasState = (CanvasState)canvas.GetState(GetDynProp);
+            var effects = canvasState.effects.Select(x =>
                 (x.GetType().Name,
                 x.properties.Select(x => (x.Key, this._dynamicPropertyValues[x.Value.Id]!)).ToArray())
             ).ToArray();
@@ -225,7 +226,7 @@ internal class WorldMachine {
             {
                 //Entities = c.Value.Entities.Where(x => x.active).Select(x => (EntityState2D)x.Clone()).ToArray(),
                 Entities = c.Value.NewEntities.Where(x => x.Active).Select(x => (EntityState2D)x.GetState(GetDynProp)).ToArray(),
-                Canvas = (CanvasState)canvas.GetState(GetDynProp),
+                Canvas = canvasState,
                 Effects = effects,
             };
 
