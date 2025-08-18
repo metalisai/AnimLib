@@ -443,6 +443,7 @@ public static class Animate
     {
         var outlineColor = outline ?? new Color(0.0f, 0.0f, 0.0f, 1.0f);
         var last = Task.CompletedTask;
+        var textColor = text.Color;
         switch (mode)
         {
             default:
@@ -458,12 +459,15 @@ public static class Animate
                 }
                 text.Color = text.Color.WithA(0);
                 World.current.CreateInstantly(text);
+                List<Task> cTasks = new();
                 foreach (var c in text.CurrentShapes)
                 {
-                    last = Animate.Color(c.s, c.s.Color.WithA(0), c.s.Color.WithA(255), 0.5f);
+                    last = Animate.Color(c.s.ColorProperty, textColor.WithA(0), textColor, 0.5f);
+                    cTasks.Add(last);
                     await AnimLib.Time.WaitSeconds(charDelay);
                 }
-                await last;
+                await Task.WhenAll(cTasks.ToArray());
+                text.Color = textColor;
                 break;
             case TextCreationMode.PathAndFade:
                 foreach (var c in text.CurrentShapes)
@@ -477,11 +481,12 @@ public static class Animate
                 {
                     async Task AnimateCreation(float from, float to)
                     {
-                        await Animate.InterpF(x => c.s.Trim = (from, x), from, to, 0.5f);
+                        await InterpF(x => c.s.Trim = (from, x), from, to, 0.5f);
                         c.s.Color = text.Color.WithA(0);
                         c.s.Mode = ShapeMode.FilledContour;
-                        await Animate.Color(c.s, c.s.Color.WithA(0), c.s.Color.WithA(255), 0.5f);
-                        c.s.Mode = ShapeMode.FilledContour;
+                        _ = Color(c.s.ContourColorProperty, c.s.ContourColor, c.s.ContourColor.WithA(0.0f), 0.45f);
+                        await Color(c.s.ColorProperty, textColor.WithA(0.0f), textColor, 0.5f);
+                        c.s.Mode = ShapeMode.Filled;
                     }
                     Task cr = AnimateCreation(0.0f, 1.0f);
                     Task nextChar = AnimLib.Time.WaitSeconds(charDelay);
@@ -489,6 +494,7 @@ public static class Animate
                     await nextChar;
                 }
                 await last;
+                text.Color = textColor;
                 break;
         }
     }
