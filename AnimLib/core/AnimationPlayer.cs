@@ -355,7 +355,7 @@ internal class AnimationPlayer {
     {
         get
         {
-            var curSeconds = machine.GetProgress() * machine.GetPlaybackTime();
+            var curSeconds = machine.GetProgress() * machine.GetEndTime();
             var minutes = (int)Math.Floor(curSeconds / 60.0f);
             var seconds = (int)Math.Floor(curSeconds % 60.0f);
             return (minutes, seconds);
