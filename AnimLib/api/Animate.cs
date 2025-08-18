@@ -548,4 +548,32 @@ public static class Animate
             }, duration)];
         return Task.WhenAll(tasks);
     }
+
+    static public async Task ChangeText(Text2D text, string newText)
+    {
+        Task last = Task.CompletedTask;
+        var textColor = text.Color;
+        Color? textContourColor = text.CurrentShapes.Length > 0 ? text.CurrentShapes.First().s.ContourColor : null;
+        // fade out
+        foreach (var g in text.CurrentShapes)
+        {
+            if (g.s.Mode == ShapeMode.FilledContour || g.s.Mode == ShapeMode.Contour)
+            {
+                _ = Color(g.s.ContourColorProperty, g.s.ContourColor, g.s.ContourColor.WithA(0.0f), 0.5f);
+            }
+            last = Color(g.s.ColorProperty, g.s.Color, g.s.Color.WithA(0.0f), 0.5f);
+        }
+        await last;
+        text.Text = newText;
+        text.Color = textColor.WithA(0.0f);
+        // fade in
+        if (textContourColor is Color contCol)
+        {
+            foreach (var g in text.CurrentShapes)
+            {
+                _ = Color(g.s.ContourColorProperty, contCol.WithA(0.0f), contCol.WithA(contCol.a), 0.5f);
+            }
+        }
+        await Color(text, textColor.WithA(0.0f), textColor, 0.5f);
+    }
 }
