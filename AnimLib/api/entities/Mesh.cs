@@ -15,6 +15,8 @@ internal class MeshState : MeshBackedGeometry
     public Color color;
     [Dyn]
     public Color outline;
+    [Dyn]
+    public MeshCulling culling = MeshCulling.DrawBoth;
 
     internal MeshState(string uid) : base(uid)
     {
@@ -39,6 +41,7 @@ internal class MeshState : MeshBackedGeometry
         mesh.vertices = vertices;
         mesh.indices = indices;
         mesh.colors = vertices.Select(x => color).ToArray();
+        mesh.culling = culling;
     }
 
     public override List<(string, object)> GetShaderProperties()

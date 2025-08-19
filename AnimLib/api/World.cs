@@ -48,7 +48,8 @@ internal class WorldResources : IDisposable {
 /// <summary>
 /// A solid color triangle mesh.
 /// </summary>
-public class ColoredTriangleMeshGeometry : IRendererResource {
+public class ColoredTriangleMeshGeometry : IRendererResource
+{
     /// <summary>
     /// The vertices of the mesh.
     /// </summary>
@@ -78,9 +79,11 @@ public class ColoredTriangleMeshGeometry : IRendererResource {
     internal bool Dirty = true;
     // used by renderer to know who owns the resource (to know what can be deallocated)
     internal string ownerGuid;
+    internal MeshCulling culling = MeshCulling.DrawBoth;
 
-    internal ColoredTriangleMeshGeometry(string ownerGuid) {
-        this.ownerGuid  = ownerGuid;
+    internal ColoredTriangleMeshGeometry(string ownerGuid)
+    {
+        this.ownerGuid = ownerGuid;
     }
 
     string IRendererResource.GetOwnerGuid()
@@ -89,10 +92,18 @@ public class ColoredTriangleMeshGeometry : IRendererResource {
     }
 }
 
+public enum MeshCulling
+{
+    DrawCw,
+    DrawCcw,
+    DrawBoth,
+}
+
 /// <summary>
 /// A colored triangle mesh.
 /// </summary>
-public class ColoredTriangleMesh {
+public class ColoredTriangleMesh
+{
     /// <summary> Shader to use for rendering. </summary>
     public BuiltinShader Shader = BuiltinShader.LineShader;
     /// <summary> The color of the mesh. </summary>
@@ -103,7 +114,7 @@ public class ColoredTriangleMesh {
     public required ColoredTriangleMeshGeometry Geometry;
     /// <summary> The properties of the shader.</summary>
     public List<(string, object)> shaderProperties = new List<(string, object)>();
-    internal Dictionary<string, DynProperty> properties = new ();
+    internal Dictionary<string, DynProperty> properties = new();
     /// <summary> Whether the mesh is 2D or 3D. </summary>
     public bool is2d = false;
     /// <summary> The entity id of the mesh. </summary>

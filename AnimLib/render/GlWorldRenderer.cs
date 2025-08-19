@@ -113,12 +113,25 @@ internal partial class GlWorldRenderer : IRenderer
         if (meshes.Length > 0)
         {
             // TODO: winding order is wrong?
-            GL.Disable(EnableCap.CullFace);
-            GL.FrontFace(FrontFaceDirection.Cw);
             GL.Enable(EnableCap.DepthTest);
 
             foreach (var m in meshes)
             {
+                if (m.Geometry.culling == MeshCulling.DrawBoth)
+                {
+                    GL.Disable(EnableCap.CullFace);
+                }
+                else if (m.Geometry.culling == MeshCulling.DrawCw)
+                {
+                    GL.FrontFace(FrontFaceDirection.Cw);
+                    GL.Enable(EnableCap.CullFace);
+                }
+                else if (m.Geometry.culling == MeshCulling.DrawCcw)
+                {
+                    GL.FrontFace(FrontFaceDirection.Ccw);
+                    GL.Enable(EnableCap.CullFace);
+                }
+
                 var program = GetProgram(m.Shader);
                 GL.UseProgram(program);
                 var loc = GL.GetUniformLocation(program, "_ModelToClip");
@@ -330,6 +343,8 @@ internal partial class GlWorldRenderer : IRenderer
                 drawId++;
             }
         }
+        GL.Disable(EnableCap.CullFace);
+        GL.FrontFace(FrontFaceDirection.Cw);
     }
 
     private void RenderGlyphs(Vector2 screenSize, GlyphState[] gs, CameraState worldCamera, in FrameContext ctx)
